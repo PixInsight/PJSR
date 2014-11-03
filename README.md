@@ -1,0 +1,4 @@
+PJSR
+====
+
+PixInsight JavaScript Runtime
