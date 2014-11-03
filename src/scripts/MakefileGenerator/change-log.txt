@@ -1,0 +1,316 @@
+===============================================================================
+Makefile Generator Script Changelog
+===============================================================================
+
+-------------------------------------------------------------------------------
+1.93 - Released with PI 1.8.3.1115 Ripley
+
+   - Minimum core version required is now 1.8.3.
+   - New PixInsight Core distribution on Mac OS X.
+   - Adapted to new code signing specifications on Mac OS X >= 10.9.5.
+   - Dropped support for Mac OS X < 10.8.
+
+-------------------------------------------------------------------------------
+1.92 - Unreleased (internal).
+
+   - Adjustments required for CFITSIO version 3.37 Windows builds.
+
+-------------------------------------------------------------------------------
+1.91 - Released with PI 1.8.2.1098 Ripley
+
+   - New TGV standard module that supersedes the previous TGVDenoise module.
+
+-------------------------------------------------------------------------------
+1.90 -
+
+   - Added an option to control generation of host Linux makefiles.
+   - Fix undeclared variable assignment warning in MakGenMSVC1xProjects.js
+   - Don't omit frame pointers on Mac OS X, as doing so leads to crash.
+
+-------------------------------------------------------------------------------
+1.89 - Released with PI 1.8.1.1092 Ripley
+
+   - Added support for Microsoft Visual Studio 2013.
+   - Dropped support for Visual Studio 2008.
+   - The default GCC and Clang optimization level is now -O3.
+   - New GCC compiler options for performance optimization.
+   - Support for new internal build system based on VMware shared folders.
+   - Refactored script source files.
+
+-------------------------------------------------------------------------------
+1.88 - Unreleased (internal).
+
+   - New PCL architecture scheme: Replace "x86_64" with "x64" for all 64-bit
+     build directories.
+
+-------------------------------------------------------------------------------
+1.87 - Released with PI 1.8.1.1087 Ripley
+
+   - Use the clang compiler on FreeBSD.
+   - Colorize console output with ANSI escape codes.
+   - PixInsight Core >= 1.8.1 required.
+
+-------------------------------------------------------------------------------
+1.86 - Released with PI 1.8.1.1082 Ripley
+
+   - Use exclusively the clang compiler on Mac OS X.
+   - Enable internal compatibility builds for Mac OS X 10.6/10.7.
+   - Several updates to dialog tool tips and source code comments.
+
+-------------------------------------------------------------------------------
+1.85 - Released with PI 1.8.0.1075 Ripley
+
+   - New option to disable generation of -arch and -Xarch compiler and linker
+     options on Mac OS X.
+
+-------------------------------------------------------------------------------
+1.84 - Released with PI 1.8.0.1067 Ripley
+
+   - Integration of Mozilla SpiderMonkey 24.2 RC3 JavaScript engine.
+
+-------------------------------------------------------------------------------
+1.83 - Released with PI 1.8.0.1065 Ripley
+
+   - XP_WIN macro required for SpiderMonkey 24 in core Windows builds.
+
+-------------------------------------------------------------------------------
+1.82 - Released with PI 1.8.0.1059 Ripley
+
+   - Integration of Mozilla SpiderMonkey 24.1 RC2 JavaScript engine.
+
+-------------------------------------------------------------------------------
+1.81 - Released with PI 1.8.0.1053 Ripley
+
+   - New X11 UNIX/Linux installer program.
+   - Mac OS X builds: Improved compatibility with clang in the new XCode 5
+     toolchain (which no longer includes GCC).
+   - Mac OS X builds are now signed with the codesign tool.
+   - New SplitCFA tool by Nikolay Volkov.
+
+-------------------------------------------------------------------------------
+1.80 - Released with PI 1.8.0.1017 RC7 Ripley
+
+   - Makefiles for the new TGVDenoise module.
+   - The ImageRegistration module depends now on the CMINPACK library.
+
+-------------------------------------------------------------------------------
+1.79 - Released with PI 1.8.0.1013 RC6 Ripley
+
+   - Minor improvements in core application builds.
+
+-------------------------------------------------------------------------------
+1.78 - Released with PI 1.8.0.1009 RC6 Ripley
+
+   - The JavaScript engine is now SpiderMonkey 17.0 on all platforms.
+   - Stack size increased to 4 MiB and 8 MiB on 32-bit and 64-bit Windows core
+     builds, respectively.
+   - Nikolay Volkov's CometAlignment module is now part of the official
+     distribution.
+
+-------------------------------------------------------------------------------
+1.77 - Released with PI 1.8.0.981 RC4 Ripley.
+
+   - Several minor tweaks for Mac OS X builds.
+
+-------------------------------------------------------------------------------
+1.76 - Unreleased (internal).
+
+   - After extensive testing, switch back default GCC optimizations to:
+     "-O2 -ffast-math -ftree-vectorize -flto -fwhole-program".
+
+-------------------------------------------------------------------------------
+1.75 - Released with PI 1.8.0.963 RC3 Ripley.
+
+   - New optional argument to FileLists' constructor (noImages).
+   - Don't include images in core makefiles and project files (build
+     optimization).
+   - The core updater stage one application is now PixInsightUpdater on all
+     platforms (previously it was only on Windows).
+
+-------------------------------------------------------------------------------
+1.74 - Unreleased (internal).
+
+   - Bugfix: Target XP in 32-bit Visual Studio 2012 projects. See:
+     http://blogs.msdn.com/b/vcblog/archive/2012/10/08/10357555.aspx
+
+-------------------------------------------------------------------------------
+1.73 - Released with PI 1.8.0.957 RC2 Ripley.
+
+   - Added support for Microsoft Visual Studio 2012.
+   - Automate code signing for core and core-aux Visual Studio projects.
+   - Minor bug fixes.
+
+-------------------------------------------------------------------------------
+1.72 - Unreleased (internal).
+
+   - New compiler optimizations for PCL and standard module builds with GCC
+     (UNIX/Linux): -Ofast -flto -fwhole-program
+
+-------------------------------------------------------------------------------
+1.71 - Unreleased (internal).
+
+   - Minor bug fixes.
+
+-------------------------------------------------------------------------------
+1.70 - Released with PI 1.8.0.859 RC1 Ripley.
+
+   - GCC version 4.7.2 used for all FreeBSD and Linux builds.
+   - Environment variables PCLLIBDIR32 and PCLBINDIR32 are no longer required,
+     since PCL development on 32-bit platforms is no longer supported
+     officially.
+   - Predefined project type for the open source PCL 2.x static library.
+   - Several bug fixes.
+
+-------------------------------------------------------------------------------
+1.69 - Unreleased (internal).
+
+   - GCC version 4.6.3 used for all FreeBSD and Linux builds.
+   - Default GCC optimization is now -O2 for all core and module builds.
+   - Changes in Streaming SIMD Extension (SSE) instruction support:
+      - All Mac OS X builds require SSSE3 support.
+      - 64-bit FreeBSD and Linux builds require SSE3 support.
+      - 64-bit Windows builds require SSE2 support due to limitations of the
+        VC++ 2010 compiler.
+      - 32-bit FreeBSD, Linux and Windows builds require SSE2 support.
+   - Mozilla's JavaScript engine (SpiderMonkey) version 1.8.7 used in all core
+     application builds.
+   - Several minor bug fixes.
+
+-------------------------------------------------------------------------------
+1.68 - Released with PI 1.7.4.759 Starbuck.
+
+   - Support for Objective C++ source files in PixInsight Core application
+     builds on Mac OS X.
+   - Support for multiprocessor compilation on MSVC++ 2010.
+   - Minor bug fixes.
+
+-------------------------------------------------------------------------------
+1.67 - Unreleased (internal).
+
+   - Adapted to new standard and contributed modules as of Oct 20 2011.
+
+-------------------------------------------------------------------------------
+1.66 - Unreleased (internal).
+
+   - Adapted to the new PixInsight Core source code tree model as of September
+     2011.
+   - Fixed a bug in sorting of file lists.
+
+-------------------------------------------------------------------------------
+1.65 - Released with PI 1.7.0.0693 Starbuck
+
+   - Makefiles/projects for new Fourier and Convolution standard modules.
+   - Added a '-Wl,-z,noexecstack' linker option to all Linux and FreeBSD builds
+     of executables and shared objects. This is a security feature to prevent
+     buffer overflow exploits, especially on systems without SELinux (or with
+     SELinux disabled/permissive).
+
+-------------------------------------------------------------------------------
+1.64 - Unreleased (internal).
+
+   - Support for Microsoft Visual C++ 2010 project files (.vcxproj).
+
+-------------------------------------------------------------------------------
+1.63 - Unreleased (internal).
+
+   - Changes in core makefiles for the new SpiderMonkey 1.8.5 in PI 1.7. The
+     JavaScript engine is no longer a private PI library (-pxi) since we no
+     longer customize it. We link the core application against a _standard_
+     build of Mozilla's JS engine (libmozjs185), and hence we distribute it in
+     bin/lib on all platforms.
+
+-------------------------------------------------------------------------------
+1.62 - Unreleased (internal).
+
+   - Updated generation of standard module makefiles.
+
+-------------------------------------------------------------------------------
+1.61 - Released with PI 1.6.9.0651
+
+   - Changes in core/core-aux Mac OS X makefiles for position-independent
+     PixInsight Core applications.
+
+-------------------------------------------------------------------------------
+1.60 - Unreleased (internal).
+
+   - Fix a regression where the order of items in the Platform ComboBox was
+     swapped for FreeBSD and Linux platforms.
+
+-------------------------------------------------------------------------------
+1.59 - Released with PI 1.6.9.0644
+
+-------------------------------------------------------------------------------
+1.58 - Unreleased (internal).
+
+   - Add support for Core auxiliary programs.
+   - Add support for variable optimizations on FreeBSD, Linux and OS X.
+
+-------------------------------------------------------------------------------
+1.57 - Unreleased (internal).
+
+   - Updated FreeBSD builds to use GCC 4.4.
+   - Updated core makefiles to link against QtWebKit and QtNetwork.
+
+-------------------------------------------------------------------------------
+1.56 - Unreleased (internal).
+
+   - Updated GCC optimizations (FreeBSD, Linux and Mac OS X).
+
+-------------------------------------------------------------------------------
+1.55 - Unreleased (internal).
+
+   - Released under the PixInsight Class Library / PixInsight JavaScript
+     Runtime License (PCL/PJSR License) Version 1.0.
+
+-------------------------------------------------------------------------------
+1.54 - Released with PI 1.6.1.629 for FreeBSD.
+
+-------------------------------------------------------------------------------
+1.53 - Unreleased (internal).
+
+   - Fix the whole building system for FreeBSD compatibility.
+
+-------------------------------------------------------------------------------
+1.52 - Released with PI 1.6.1.
+
+-------------------------------------------------------------------------------
+1.51 - Unreleased (internal).
+
+   - Added support for FreeBSD builds.
+   - Changes to core makefiles on Linux, FreeBSD and Windows platforms:
+      - SSE not used in all 32-bit builds (legacy i386 compatibility)
+      - SSE2 required for all 64-bit builds (legacy AMD64 compatibility)
+   - Changes to core makefiles on Mac OS X:
+      - SSE3 used in all 32-bit and 64-bit builds.
+      - Improve usage of the macdeployqt utility.
+   - LCMS dependencies removed from all module builds.
+   - LCMS option removed from the script's interface.
+   - LCMS v2 is now included as a standard third-party core library in all
+     "entire platform" builds.
+
+-------------------------------------------------------------------------------
+1.5 - Released with PI 1.6.0.
+
+   - Several changes in GCC optimization and code generation options.
+   - New Obsolete module in "entire PixInsight platform" builds.
+
+-------------------------------------------------------------------------------
+1.4 - Released with PI 1.5.9.561.
+
+   - Changes in core application projects to comply with LGPL 2.1 and Nokia/Qt
+     LGPL exceptions (essentially, dynamic linkage w/ Qt libs).
+   - Improved makefile generation on Mac OS X.
+
+-------------------------------------------------------------------------------
+1.3 - Released with PI 1.5.9.553 as an official PixInsight script.
+
+   - Several changes to OS X makefiles for Qt/Mac 4.5.3 (core builds).
+
+-------------------------------------------------------------------------------
+1.2 - Internal bugfix release.
+
+-------------------------------------------------------------------------------
+1.1 - Internal release used for initial builds of PI 1.5.8/1.5.9
+
+-------------------------------------------------------------------------------
+1.0b - Initial beta version published on PixInsight Forum.

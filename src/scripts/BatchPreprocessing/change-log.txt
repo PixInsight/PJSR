@@ -1,0 +1,399 @@
+===============================================================================
+Batch Preprocessing Script Changelog
+===============================================================================
+
+-------------------------------------------------------------------------------
+2014.07.14 - v1.37
+
+- Added dark optimization threshold parameter (IC module >= 1.3.0 required).
+- Added dark optimization window parameter.
+- Improved tool tips for image integration controls.
+
+-------------------------------------------------------------------------------
+2014.06.06 - v1.36
+
+- Added Bayer drizzle support.
+
+-------------------------------------------------------------------------------
+2014.05.30 - v1.35
+
+- New option for generation of drizzle data during the image registration task.
+- Minor GUI polishments.
+
+-------------------------------------------------------------------------------
+2014.02.01 - v1.34
+
+- Colorize console output with ANSI escape codes.
+
+-------------------------------------------------------------------------------
+2013.09.02 - v1.33
+
+- Fixed a bug where overscan region top coordinates were incorrectly written to
+  their corresponding NumericEdit controls.
+
+-------------------------------------------------------------------------------
+2013.08.25 - v1.32
+
+- Removed the StackEngine.addCustomFile() method. All the engine file adding
+  functionality is now implemented in StackEngine.addFile(). This function now
+  supports partial frame definitions. For example, we can now add a frame where
+  the exposure time and binning are known but the filter is unknown. In this
+  case the filter would be acquired from FITS header keywords automatically, if
+  possible. This allows for a more useful implementation of the Select Custom
+  Frames dialog.
+
+- Fixed a bug in the Select Custom Frames dialog that was causing "invalid
+  frame type" errors.
+
+- Fixed an "assignment to undeclared variable" warning in
+  StackEngine.purgeRemovedElements().
+
+-------------------------------------------------------------------------------
+2013.07.31 - v1.31
+
+- New noiseReductionFilterRadius and useTriangleSimilarity engine parameters.
+  These parameters provide access to recent StarAlignment features. Noise
+  reduction, which can be useful to register low-SNR images, is disabled by
+  default. Triangle similarity is enabled by default because it can deal with
+  mirrored images, so we can prevent lots of complains.
+
+- Fixed a bug that was causing file I/O errors for frames that failed to be
+  registered.
+
+- Improved diagnostics messages. The script now warns about improper use of
+  pixel rejection algorithms, especially based on the number of integrated
+  frames.
+
+-------------------------------------------------------------------------------
+2013.07.12 - v1.30
+
+- Solve an issue with the order of calibration/cosmetizing/debayering of light
+  frames when there are more than one light frame groups (e.g., more than one
+  filter) and the registration reference image belongs to one of those groups.
+  In such case, the group with the reference image must be preprocessed first.
+
+- New maxStars engine parameter. This parameter limits the maximum number of
+  stars used for image registration. The default value is 500 stars.
+
+- Modified layout of the Lights dialog page to accommodate the new maxStars
+  parameter. Image registration parameters are now edited on a separate panel.
+
+- ImageIntegration uses now the new iterative k-sigma scale estimator for
+  integration of light and flat frames, and the MAD estimator for bias and dark
+  frames.
+
+- The script requires now PI >= 1.8.0 RC7.
+
+-------------------------------------------------------------------------------
+2013.03.11 - v1.29
+
+- Fixed a styling issue in the bias overscan control. Now it inherits its font
+  and background color properties correctly from its parent dialog.
+
+- The script requires now PI >= 1.8.0 RC4.
+
+-------------------------------------------------------------------------------
+2013.02.28 - v1.28
+
+- All icons replaced with new core resources in 1.8.0 RC4.
+
+- Added "CCDBINX" as a recognized binning keyword (nonstandard FITS keyword
+  seen in some Calar Alto images).
+
+-------------------------------------------------------------------------------
+2013.02.08 - v1.27
+
+- Regression fixed: Don't group light frames by exposure times visually on
+  frame lists.
+
+- Show exposure times on tool tips for frame items.
+
+-------------------------------------------------------------------------------
+2013.02.05 - v1.26
+
+- Fixed a resource exhaustion bug during debayering of large image sets.
+
+- Fixed a bug that was preventing calibration of multi-channel data sets when
+  the 'calibrate only' option was selected.
+
+- When the registration reference image belongs to a light frame list (e.g.,
+  because it has been selected by double-clicking a tree box element), it is
+  now replaced internally by its calibrated/cosmetized/debayered counterpart.
+
+- Don't group flat frames by exposure times visually on frame lists.
+
+- Experimental support for ModernUI scalable icons in PI 1.8.0.
+
+- PI >= 1.8.0 required.
+
+-------------------------------------------------------------------------------
+2013.01.19 - v1.25
+
+- Show button icons on Mac OS X.
+
+-------------------------------------------------------------------------------
+2013.01.15 - v1.24
+
+- StackEngine.readImage() was not loading FITS keywords. Because to this bug,
+  deBayered images were not preserving calibration keywords and hence NOISEXX
+  estimates were lost.
+
+-------------------------------------------------------------------------------
+2012.07.04 - v1.23
+
+- Never show the integration warning dialog when the 'calibrate only' option
+  is enabled.
+
+- Don't show a Cancel button on the diagnostics message box if there are error
+  diagnostics.
+
+- Remove unnecessary style sheets from TreeBox controls in PI 1.8 (via
+  conditional compilation).
+
+-------------------------------------------------------------------------------
+2012.06.16 - v1.22
+
+- Removed generation of ImageIntegration HISTORY FITS keywords. The
+  ImageIntegration process already performs this task since version 1.8.1.
+
+-------------------------------------------------------------------------------
+2012.06.12 - v1.21
+
+- Fixed a regression where the registration reference image was being assigned
+  to the output directory.
+
+-------------------------------------------------------------------------------
+2012.06.11 - v1.20
+
+- Engine changes to make use of read-only output data from ImageCalibration
+  (output file paths).
+
+- New dark frame exposure time tolerance feature.
+
+- Additional error checks to make the process more robust to lack of access to
+  working files during the calibration and registration phases.
+
+- Fixed a potential problem with weird filter names used as directory names.
+
+- Additional diagnostics messages to warn on invalid file name characters in
+  filter names.
+
+- GUI fix: While we release PI 1.8 with its universal GUI style, push buttons
+  will have no icons on Mac OS X. This is to fix some extremely ugly interface
+  problems we've seen recently.
+
+-------------------------------------------------------------------------------
+2012.05.14 - v1.10
+
+- Overscan support.
+
+- Feature change: The script's default button is now the Diagnostics button
+  instead of Run. This prevents unwanted executions by pressing the Enter or
+  Return keys by accident.
+
+-------------------------------------------------------------------------------
+2012.05.11 - v1.05
+
+- Bug fix: FITS files with the .fts extension were not properly recognized in
+  previous versions due to a bug in the File.loadFITSKeywords() helper routine.
+
+- Fixed a bug in the Add Custom Frames dialog: When no explicit selection was
+  done in the Image type combo box, an invalid image type was selected.
+
+-------------------------------------------------------------------------------
+2012.04.19 - v1.0
+
+- First release version of the Batch Preprocessing script. Published as an
+  official update.
+
+- Rejection maps stored as multiple image files for all master frame types (not
+  just for master light frames), thanks to a bugfix in the ImageCalibration
+  process (released as an independent update).
+
+- When appropriate, the cosmetic correction and deBayering tasks are applied
+  irrespective of the 'calibrate only' state. When 'calibrate only' is enabled,
+  only the image registration and integration tasks are not executed.
+
+- Prevent errors caused by invalid file name characters in filter names when
+  used as FILTER postfixes.
+
+- Several bug fixes.
+
+- Change log released as a separate text file.
+
+-------------------------------------------------------------------------------
+2012.04.10 - v0.8
+
+- Integration of light frames (master light frames).
+
+- Rejection maps generated as multiple image files.
+
+- For FITS files without IMAGETYP keywords and other file formats, the script
+  can now infer image types from file names with 'bias', 'dark', 'flat' and
+  'light' substrings (case insensitive).
+
+- Improved FITS header generation.
+
+- Some GUI refactoring.
+
+-------------------------------------------------------------------------------
+2012.04.07 - v0.7
+
+- Added cosmetic correction functionality.
+
+- CSV files selectable as registration references.
+
+- Bug fixes.
+
+-------------------------------------------------------------------------------
+2012.04.05 - v0.6
+
+- Core version >= 1.7.6 required.
+
+- Added load/save settings functionality.
+
+- New Reset Preprocessing Engine dialog (Reset button).
+
+-------------------------------------------------------------------------------
+2012.04.01 - v0.5
+
+- Improved diagnostic messages.
+
+- Added FITS orientation option.
+
+- Minor bug fixes.
+
+-------------------------------------------------------------------------------
+2012.03.30 - v0.4a
+
+- Added 'signed-is-physical' input hint to ImageCalibration for compatibility
+  with 16-bit signed calibration frames produced by some image acquisition
+  applications.
+
+-------------------------------------------------------------------------------
+2012.03.28 - v0.4
+
+- Direct integration of CFA images for master bias and dark generation.
+  Requires new versions of the ImageIntegration and DSLR_RAW modules.
+
+- Exposure times acquired from EXIF metadata for file formats different from
+  FITS (e.g. DSLR_RAW and TIFF).
+
+- New file list management functions: remove selected and invert selection
+  (useful to handle masters).
+
+- Improved diagnostic message generation.
+
+- Lots of minor bug fixes.
+
+-------------------------------------------------------------------------------
+2012.03.26 - v0.3a
+
+- Fixed a problem with for ... in constructs due to new methods of the Array
+  object defined as enumerable properties --- see helper.js for more
+  information.
+
+-------------------------------------------------------------------------------
+2012.03.21 - v0.3
+
+- New custom frames functionality.
+
+- Improved error management.
+
+- Regression fix: FITS headers are now correctly written to generated master
+  calibration frames.
+
+-------------------------------------------------------------------------------
+2012.03.19 - v0.2
+
+- Added preliminary support for CFA mosaiced images.
+
+-------------------------------------------------------------------------------
+2012.03.18 - v0.1
+
+- General code revision.
+
+-------------------------------------------------------------------------------
+2012.03.04 - v0.0.7h
+
+- Added AlignmentControl (interpolation, clamping because Auto/Lanczos3
+  problems with 2x2 binning).
+
+- Remove FITS header dependencies after adding files.
+
+-------------------------------------------------------------------------------
+2012.02.28 - v0.0.7g
+
+- Fixed bug when clearing file tabs, fixed problem in getMasterDarkFrame when
+  mixing light frames with different EXPTIME values.
+
+-------------------------------------------------------------------------------
+2012.02.23 - v0.0.7f
+
+- Some GUI improvements (select reference image by clicking on the file list,
+  grouped master frame check boxes in options.
+
+-------------------------------------------------------------------------------
+2012.02.11 - v0.0.7e
+
+- Fixed problem with Math.abs in getMasterDarkFrame (a_exp.length == 1).
+
+-------------------------------------------------------------------------------
+2012.02.08 - v0.0.7d
+
+- Sort frames using FITS keywords in a more flexible way.
+
+-------------------------------------------------------------------------------
+2012.01.23 - v0.0.7c
+
+- Remove limit of >= 3 frames for calibration and alignment.
+
+-------------------------------------------------------------------------------
+2012.01.11 - v0.0.7b
+
+- Save settings.
+
+-------------------------------------------------------------------------------
+2012.01.02 - v0.0.7a
+
+- CheckBox use master frames, check imagetype in saveFile().
+
+-------------------------------------------------------------------------------
+2011.12.29 - v0.0.7a
+
+- Rewrite of internal data structure.
+
+-------------------------------------------------------------------------------
+2011.12.16 - v0.0.6d
+
+- Prevent from loading duplicate files/entries.
+
+-------------------------------------------------------------------------------
+2011.12.15 - v0.0.6c
+
+- Show files grouped in tree box.
+
+-------------------------------------------------------------------------------
+2011.12.09
+
+- Clean up code - fixed error generating master flat frames.
+
+-------------------------------------------------------------------------------
+2011.12.03
+
+- Calibrate light frames with master dark frames with different exposure time.
+
+-------------------------------------------------------------------------------
+2011.11.27
+
+- Use Rejection params (2).
+
+-------------------------------------------------------------------------------
+2011.11.26
+
+- Use masterframes.
+
+-------------------------------------------------------------------------------
+2011.11.17
+
+- Sort dark for exposure time, flat and light files for filter.
