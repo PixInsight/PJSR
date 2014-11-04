@@ -1,6 +1,7 @@
 PJSR - PixInsight JavaScript Runtime
+------------------------------------
 
-The PixInsight JavaScript Runtime (PJSR) is an ECMA 262-5 compliant environment readily available in the PixInsight Core application. PJSR is based on a custom embedding of the SpiderMonkey JavaScript engine by Mozilla Corporation. The current versions 1.8.x of PixInsight use the latest SpiderMonkey 24 engine.
+The [http://pixinsight.com/developer/pjsr/](PixInsight JavaScript Runtime) (PJSR) is an [http://www.ecma-international.org/ecma-262/5.1/](ECMA 262-5) compliant environment readily available in the PixInsight Core application. PJSR is based on a custom embedding of the [https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey](SpiderMonkey JavaScript engine) by [https://www.mozilla.org/en-US/](Mozilla Corporation). The current versions 1.8.x of PixInsight use the latest [https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/24](SpiderMonkey 24) engine.
 
 PJSR allows advanced users to create their own tools to meet their specific needs, try out new algorithms, generate high-quality graphics, and perform complex tasks involving thousands of images. Many scripts already form part of the standard PixInsight distribution to implement mission-critical tasks such as batch image preprocessing, batch image analysis, image grading, plate solving, image annotation and 3-D rendering, just to name some well-known examples. Scripts are smoothly integrated with the whole PixInsight platform: all installed processes are automatically scriptable. You can apply any sequence of processes to an image, extract its processing history, and generate a script automatically with just a couple clicks.
 
