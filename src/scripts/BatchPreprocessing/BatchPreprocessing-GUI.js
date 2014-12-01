@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// BatchPreprocessing-GUI.js - Released 2014/07/14 20:07:26 UTC
+// BatchPreprocessing-GUI.js - Released 2014/11/30 11:42:43 UTC
 // ****************************************************************************
 //
-// This file is part of Batch Preprocessing Script version 1.37
+// This file is part of Batch Preprocessing Script version 1.38
 //
 // Copyright (c) 2012 Kai Wiechen
 // Copyright (c) 2012-2014 Pleiades Astrophoto S.L.
@@ -1739,6 +1739,7 @@ function StackDialog()
    this.labelWidth1 = this.font.width( "Bayer/mosaic pattern:" + "M" );
    this.textEditWidth = 25 * this.font.width( "M" );
    this.numericEditWidth = 6 * this.font.width( "0" );
+   this.suffixEditWidth = 10 * this.font.width( "M" );
 
    this.setMinHeight( 500 );
 
@@ -1756,7 +1757,7 @@ function StackDialog()
    this.helpLabel.text =
       "<p>A script for calibration and alignment of light frames<br/>"
     + "Copyright (c) 2012 Kai Wiechen.<br/>"
-    + "Copyright (c) 2012-2013 Pleiades Astrophoto.</p>";
+    + "Copyright (c) 2012-2014 Pleiades Astrophoto.</p>";
 
    //
 
@@ -2139,25 +2140,46 @@ function StackDialog()
 
    //
 
-   var optionsSizer1 = new VerticalSizer;
-   optionsSizer1.margin = 6;
-   optionsSizer1.spacing = 4;
-   optionsSizer1.add( this.cfaImagesCheckBox );
-   optionsSizer1.add( this.optimizeDarksCheckBox );
-   optionsSizer1.add( this.generateRejectionMapsCheckBox );
-   optionsSizer1.add( this.exportCalibrationFilesCheckBox );
+   var outputFileSuffixToolTip = "<p>File suffix for output files. The BatchPreprocessing script uses " +
+      "the Extensible Image Serialization Format (XISF) by default (.xisf file suffix).</p>";
 
-   var optionsSizer2 = new VerticalSizer;
-   optionsSizer2.margin = 6;
-   optionsSizer2.spacing = 4;
-   optionsSizer2.add( this.upBottomFITSCheckBox );
-   optionsSizer2.add( this.useAsMasterBiasCheckBox );
-   optionsSizer2.add( this.useAsMasterDarkCheckBox );
-   optionsSizer2.add( this.useAsMasterFlatCheckBox );
+   this.outputSuffixLabel = new Label( this );
+   this.outputSuffixLabel.text = "Output file suffix:";
+   this.outputSuffixLabel.toolTip = outputFileSuffixToolTip;
+   this.outputSuffixLabel.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+
+   this.outputSuffixEdit = new Edit( this );
+   this.outputSuffixEdit.minWidth = this.suffixEditWidth;
+   this.outputSuffixEdit.text = engine.outputSuffix;
+   this.outputSuffixEdit.toolTip = outputFileSuffixToolTip;
+   this.outputSuffixEdit.onEditCompleted = function()
+   {
+      this.text = engine.outputSuffix = this.text.trim().toLowerCase();
+   };
+
+   //
+
+   this.optionsSizer1 = new VerticalSizer;
+   this.optionsSizer1.spacing = 4;
+   this.optionsSizer1.add( this.cfaImagesCheckBox );
+   this.optionsSizer1.add( this.optimizeDarksCheckBox );
+   this.optionsSizer1.add( this.generateRejectionMapsCheckBox );
+   this.optionsSizer1.add( this.exportCalibrationFilesCheckBox );
+   this.optionsSizer1.add( this.outputSuffixLabel );
+
+   this.optionsSizer2 = new VerticalSizer;
+   this.optionsSizer2.spacing = 4;
+   this.optionsSizer2.add( this.upBottomFITSCheckBox );
+   this.optionsSizer2.add( this.useAsMasterBiasCheckBox );
+   this.optionsSizer2.add( this.useAsMasterDarkCheckBox );
+   this.optionsSizer2.add( this.useAsMasterFlatCheckBox );
+   this.optionsSizer2.add( this.outputSuffixEdit );
 
    this.optionsSizer = new HorizontalSizer;
-   this.optionsSizer.add( optionsSizer1 );
-   this.optionsSizer.add( optionsSizer2 );
+   this.optionsSizer.margin = 6;
+   this.optionsSizer.spacing = 6;
+   this.optionsSizer.add( this.optionsSizer1 );
+   this.optionsSizer.add( this.optionsSizer2 );
 
    this.optionsControl = new ParametersControl( "Options", this );
    this.optionsControl.add( this.optionsSizer );
@@ -2203,13 +2225,13 @@ function StackDialog()
 
    //
 
-   this.outputDirEdit = new Edit( this );
-   this.outputDirEdit.minWidth = this.textEditWidth;
-   this.outputDirEdit.text = engine.outputDirectory;
-   this.outputDirEdit.toolTip = "<p>Output root directory.</p>" +
+   this.outputDirectoryEdit = new Edit( this );
+   this.outputDirectoryEdit.minWidth = this.textEditWidth;
+   this.outputDirectoryEdit.text = engine.outputDirectory;
+   this.outputDirectoryEdit.toolTip = "<p>Output root directory.</p>" +
       "<p>The Batch Preprocessing script will generate all master, calibrated and registered images " +
       "populating a directory tree rooted at the specified output directory.</p>";
-   this.outputDirEdit.onEditCompleted = function()
+   this.outputDirectoryEdit.onEditCompleted = function()
    {
       var dir = File.windowsPathToUnix( this.text.trim() );
       if ( dir.endsWith( '/' ) )
@@ -2230,12 +2252,12 @@ function StackDialog()
          var dir = gdd.directory;
          if ( dir.endsWith( '/' ) )
             dir = dir.substring( 0, dir.length-1 );
-         this.dialog.outputDirEdit.text = engine.outputDirectory = dir;
+         this.dialog.outputDirectoryEdit.text = engine.outputDirectory = dir;
       }
    };
 
    this.outputDirSizer = new HorizontalSizer;
-   this.outputDirSizer.add( this.outputDirEdit, 100 );
+   this.outputDirSizer.add( this.outputDirectoryEdit, 100 );
    this.outputDirSizer.addSpacing( 2 );
    this.outputDirSizer.add( this.outputDirSelectButton );
 
@@ -2355,7 +2377,8 @@ StackDialog.prototype.updateControls = function()
    this.useAsMasterDarkCheckBox.checked        = engine.useAsMaster[ImageType.DARK];
    this.useAsMasterFlatCheckBox.checked        = engine.useAsMaster[ImageType.FLAT];
    this.referenceImageEdit.text                = engine.referenceImage;
-   this.outputDirEdit.text                     = engine.outputDirectory;
+   this.outputDirectoryEdit.text               = engine.outputDirectory;
+   this.outputSuffixEdit.text                  = engine.outputSuffix;
 };
 
 StackDialog.prototype.refreshTreeBoxes = function()
@@ -2462,4 +2485,4 @@ StackDialog.prototype.refreshTreeBoxes = function()
 };
 
 // ****************************************************************************
-// EOF BatchPreprocessing-GUI.js - Released 2014/07/14 20:07:26 UTC
+// EOF BatchPreprocessing-GUI.js - Released 2014/11/30 11:42:43 UTC

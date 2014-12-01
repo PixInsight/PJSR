@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// BatchPreprocessing.js - Released 2014/07/14 20:07:26 UTC
+// BatchPreprocessing.js - Released 2014/11/30 11:42:43 UTC
 // ****************************************************************************
 //
-// This file is part of Batch Preprocessing Script version 1.37
+// This file is part of Batch Preprocessing Script version 1.38
 //
 // Copyright (c) 2012 Kai Wiechen
 // Copyright (c) 2012-2014 Pleiades Astrophoto S.L.
@@ -150,4 +150,4 @@ function main()
 main();
 
 // ****************************************************************************
-// EOF BatchPreprocessing.js - Released 2014/07/14 20:07:26 UTC
+// EOF BatchPreprocessing.js - Released 2014/11/30 11:42:43 UTC

@@ -3,6 +3,13 @@ Batch Preprocessing Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2014.11.30 - v1.38
+
+- Added support for the XISF format, which is now used for output by default.
+- Improved management of image identifiers in generated .xisf and .fit files.
+- New GUI controls to select the output file suffix (.xisf by default).
+
+-------------------------------------------------------------------------------
 2014.07.14 - v1.37
 
 - Added dark optimization threshold parameter (IC module >= 1.3.0 required).

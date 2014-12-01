@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// BatchPreprocessing-engine.js - Released 2014/07/14 20:07:26 UTC
+// BatchPreprocessing-engine.js - Released 2014/11/30 11:42:43 UTC
 // ****************************************************************************
 //
-// This file is part of Batch Preprocessing Script version 1.37
+// This file is part of Batch Preprocessing Script version 1.38
 //
 // Copyright (c) 2012 Kai Wiechen
 // Copyright (c) 2012-2014 Pleiades Astrophoto S.L.
@@ -257,6 +257,7 @@ function StackEngine()
    this.frameGroups = new Array;
 
    // General options
+   this.outputSuffix = ".xisf";
    this.outputDirectory = "";
    this.cfaImages = false;
    this.upBottomFITS = true;
@@ -776,14 +777,20 @@ StackEngine.prototype.deleteFrameSet = function( imageType )
 
 StackEngine.prototype.inputHints = function()
 {
-   // Input hints: DSLR_RAW hints + compatibility with signed calibration frames + FITS orientation
-   return "raw cfa signed-is-physical " + (this.upBottomFITS ? "up-bottom" : "bottom-up");
+   // Input format hints:
+   // * XISF: fits-keywords normalize
+   // * FITS: signed-is-physical up-bottom|bottom-up
+   // * DSLR_RAW: raw cfa
+   return "fits-keywords normalize raw cfa signed-is-physical " + (this.upBottomFITS ? "up-bottom" : "bottom-up");
 };
 
 StackEngine.prototype.outputHints = function()
 {
-   // Output hints: FITS orientation
-   return this.upBottomFITS ? "up-bottom" : "bottom-up";
+   // Output format hints:
+   // * XISF: properties fits-keywords no-compress-data block-alignment 4096 max-inline-block-size 3072 no-embedded-data no-resolution
+   // * FITS: up-bottom|bottom-up
+   return "properties fits-keywords no-compress-data block-alignment 4096 max-inline-block-size 3072 no-embedded-data no-resolution " +
+          (this.upBottomFITS ? "up-bottom" : "bottom-up");
 };
 
 StackEngine.prototype.readImage = function( filePath )
@@ -818,17 +825,22 @@ StackEngine.prototype.readImage = function( filePath )
 };
 
 StackEngine.prototype.writeImage = function( filePath,
-               imageWindow, rejectionLowWindow, rejectionHighWindow, slopeMapWindow )
+               imageWindow, rejectionLowWindow, rejectionHighWindow, slopeMapWindow, imageIdentifiers )
 {
-   var F = new FileFormat( ".fit", false/*toRead*/, true/*toWrite*/ );
+   var F = new FileFormat( this.outputSuffix, false/*toRead*/, true/*toWrite*/ );
    if ( F.isNull )
-      throw new Error( "No installed file format can write \'.fit\' files." ); // shouldn't happen
+      throw new Error( "No installed file format can write " + this.outputSuffix + " files." ); // shouldn't happen
 
    var f = new FileFormatInstance( F );
    if ( f.isNull )
       throw new Error( "Unable to instantiate file format: " + F.name );
 
-   if ( !f.create( filePath, this.outputHints() ) )
+   var hints = this.outputHints();
+#iflteq __PI_BUILD__ 1123
+   if ( imageIdentifiers )
+      hints += " image-ids integration,rejection_low,rejection_high,slope_map"; // ### See FIXME comment below
+#endif
+   if ( !f.create( filePath, hints ) )
       throw new Error( "Error creating output file: " + filePath );
 
    var d = new ImageDescription;
@@ -837,36 +849,71 @@ StackEngine.prototype.writeImage = function( filePath,
    if ( !f.setOptions( d ) )
       throw new Error( "Unable to set output file options: " + filePath );
 
-   f.keywords = imageWindow.keywords;
+   // ### FIXME: Core 1.8.3.x: New FileFormatInstance.setImageId() method
+   //            voids the need to add HDUNAME/EXTNAME keywords and the
+   //            image-ids XISF format hint above.
 
+#ifgt __PI_BUILD__ 1123
+   if ( imageIdentifiers )
+      f.setImageId( "integration" );
+   f.keywords = imageWindow.keywords;
+#else
+   if ( imageIdentifiers )
+      f.keywords = imageWindow.keywords.concat(
+            [new FITSKeyword( "HDUNAME", "integration", "Integrated image" )] );
+   else
+      f.keywords = imageWindow.keywords;
+#endif
    if ( !f.writeImage( imageWindow.mainView.image ) )
       throw new Error( "Error writing output file: " + filePath );
 
-   /*
-    * ### FIXME: With PI version >= 1.8.0, use ImageDescription.id instead of
-    * explicit EXTNAME keywords.
-    */
-
    if ( rejectionLowWindow && !rejectionLowWindow.isNull )
    {
-      f.keywords = rejectionLowWindow.keywords.concat(
-         [new FITSKeyword( "EXTNAME", "rejection_low", "Pixel rejection map: Low clipped pixels" )] );
+#ifgt __PI_BUILD__ 1123
+      if ( imageIdentifiers )
+         f.setImageId( "rejection_low" );
+      f.keywords = rejectionLowWindow.keywords;
+#else
+      if ( imageIdentifiers )
+         f.keywords = rejectionLowWindow.keywords.concat(
+            [new FITSKeyword( "EXTNAME", "rejection_low", "Pixel rejection map: Low clipped pixels" )] );
+      else
+         f.keywords = rejectionLowWindow.keywords;
+#endif
       if ( !f.writeImage( rejectionLowWindow.mainView.image ) )
          throw new Error( "Error writing output file (low rejection map): " + filePath );
    }
 
    if ( rejectionHighWindow && !rejectionHighWindow.isNull )
    {
-      f.keywords = rejectionHighWindow.keywords.concat(
-         [new FITSKeyword( "EXTNAME", "rejection_high", "Pixel rejection map: High clipped pixels" )] );
+#ifgt __PI_BUILD__ 1123
+      if ( imageIdentifiers )
+         f.setImageId( "rejection_high" );
+      f.keywords = rejectionHighWindow.keywords;
+#else
+      if ( imageIdentifiers )
+         f.keywords = rejectionHighWindow.keywords.concat(
+            [new FITSKeyword( "EXTNAME", "rejection_high", "Pixel rejection map: High clipped pixels" )] );
+      else
+         f.keywords = rejectionHighWindow.keywords;
+#endif
       if ( !f.writeImage( rejectionHighWindow.mainView.image ) )
          throw new Error( "Error writing output file (high rejection map): " + filePath );
    }
 
    if ( slopeMapWindow && !slopeMapWindow.isNull )
    {
-      f.keywords = slopeMapWindow.keywords.concat(
-         [new FITSKeyword( "EXTNAME", "slope_map", "Pixel rejection map: Linear fit slope" )] );
+#ifgt __PI_BUILD__ 1123
+      if ( imageIdentifiers )
+         f.setImageId( "slope_map" );
+      f.keywords = slopeMapWindow.keywords;
+#else
+      if ( imageIdentifiers )
+         f.keywords = slopeMapWindow.keywords.concat(
+            [new FITSKeyword( "EXTNAME", "slope_map", "Pixel rejection map: Linear fit slope" )] );
+      else
+         f.keywords = slopeMapWindow.keywords;
+#endif
       if ( !f.writeImage( slopeMapWindow.mainView.image ) )
          throw new Error( "Error writing output file (slope map): " + filePath );
    }
@@ -1029,7 +1076,7 @@ StackEngine.prototype.doLight = function()
                var filePath = this.frameGroups[i].fileItems[c].filePath;
                var ccFilePath = cosmetizedDirectory + '/'
                               + File.extractName( filePath )
-                              + "_c_cc.fit";
+                              + "_c_cc" + this.outputSuffix;
                if ( filePath == this.referenceImage )
                   this.actualReferenceImage = ccFilePath;
                images.push( ccFilePath );
@@ -1111,7 +1158,7 @@ StackEngine.prototype.doLight = function()
                   window = ImageWindow.windowById( "__bayer_drizzle__" );
                   var bFilePath = bayerDirectory
                                     + '/' + File.extractName( images[j] )
-                                    + "_b.fit";
+                                    + "_b" + this.outputSuffix;
                   this.writeImage( bFilePath, window );
                   window.forceClose();
                   processEvents();
@@ -1150,7 +1197,7 @@ StackEngine.prototype.doLight = function()
                window = ImageWindow.windowById( DB.outputImage );
                var dFilePath = debayerDirectory
                                  + '/' + File.extractName( images[j] )
-                                 + "_d.fit";
+                                 + "_d" + this.outputSuffix;
                this.writeImage( dFilePath, window );
                window.forceClose();
                processEvents();
@@ -1197,7 +1244,7 @@ StackEngine.prototype.doLight = function()
             SA.maxStars                   = this.maxStars;
             SA.noiseReductionFilterRadius = this.noiseReductionFilterRadius;
             SA.useTriangles               = this.useTriangleSimilarity;
-            SA.outputExtension            = ".fit";
+            SA.outputExtension            = this.outputSuffix;
             SA.outputPrefix               = "";
             SA.outputPostfix              = "_r";
             SA.outputSampleFormat         = StarAlignment.prototype.f32;
@@ -1410,7 +1457,7 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
    window.keywords = keywords.concat( window.keywords );
 
    var filePath = File.existingDirectory( this.outputDirectory + "/master" );
-   filePath += '/' + StackEngine.imageTypeToString( imageType ) + postfix + ".fit";
+   filePath += '/' + StackEngine.imageTypeToString( imageType ) + postfix + this.outputSuffix;
 
    console.noteln( "<end><cbr><br>* Writing master " + StackEngine.imageTypeToString( imageType ) + " frame:" );
    console.noteln( "<raw>" + filePath + "</raw>" );
@@ -1428,7 +1475,7 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
       if ( II.rejection == ImageIntegration.prototype.LinearFit )
          slopeMapWindow = ImageWindow.windowById( II.slopeMapImageId );
 
-      this.writeImage( filePath, window, rejectionLowWindow, rejectionHighWindow, slopeMapWindow );
+      this.writeImage( filePath, window, rejectionLowWindow, rejectionHighWindow, slopeMapWindow, true/*imageIdentifiers*/ );
 
       if ( rejectionLowWindow != null && !rejectionLowWindow.isNull )
          rejectionLowWindow.forceClose();
@@ -1439,7 +1486,7 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
    }
    else
    {
-      this.writeImage( filePath, window );
+      this.writeImage( filePath, window, null, null, null, true/*imageIdentifiers*/ );
    }
 
    window.forceClose();
@@ -1548,7 +1595,7 @@ StackEngine.prototype.doCalibrate = function( frameGroup )
    IC.darkCFADetectionMode      = this.cfaImages ? ImageCalibration.prototype.ForceCFA : ImageCalibration.prototype.DetectCFA;
    IC.darkOptimizationThreshold = this.darkOptimizationThreshold;
    IC.darkOptimizationWindow    = this.darkOptimizationWindow;
-   IC.outputExtension           = ".fit";
+   IC.outputExtension           = this.outputSuffix;
    IC.outputPrefix              = "";
    IC.outputPostfix             = "_c";
    IC.evaluateNoise             = this.evaluateNoise && imageType == ImageType.LIGHT && !this.cfaImages; // for CFAs, evaluate noise after debayer
@@ -1842,6 +1889,7 @@ StackEngine.prototype.saveSettings = function()
 
 StackEngine.prototype.setDefaultParameters = function()
 {
+   this.outputSuffix = ".xisf";
    this.outputDirectory = "";
    this.cfaImages = false;
    this.upBottomFITS = true;
@@ -1905,6 +1953,9 @@ StackEngine.prototype.importParameters = function()
    this.loadSettings();
 
    this.frameGroups.length = 0;
+
+   if ( Parameters.has( "outputSuffix" ) )
+      this.outputSuffix = Parameters.getString( "outputSuffix" );
 
    if ( Parameters.has( "outputDirectory" ) )
       this.outputDirectory = Parameters.getString( "outputDirectory" );
@@ -2107,6 +2158,7 @@ StackEngine.prototype.exportParameters = function()
 
    Parameters.set( "version", VERSION );
 
+   Parameters.set( "outputSuffix",              this.outputSuffix );
    Parameters.set( "outputDirectory",           this.outputDirectory );
    Parameters.set( "cfaImages",                 this.cfaImages );
    Parameters.set( "upBottomFITS",              this.upBottomFITS );
@@ -2214,6 +2266,22 @@ StackEngine.prototype.runDiagnostics = function()
 
    try
    {
+      if ( this.outputSuffix.isEmpty() )
+         this.error( "No output file suffix specified." );
+      else if ( !this.outputSuffix.startsWith( '.' ) )
+         this.error( "Invalid output file suffix \'" + this.outputSuffix + "\'" );
+      else
+      {
+         try
+         {
+            var F = new FileFormat( this.outputSuffix, false/*toRead*/, true/*toWrite*/ );
+         }
+         catch ( x )
+         {
+            this.error( "No installed file format can write " + this.outputSuffix + " files." );
+         }
+      }
+
       if ( this.outputDirectory.isEmpty() )
          this.error( "No output directory specified." );
       else if ( !File.directoryExists( this.outputDirectory ) )
@@ -2362,4 +2430,4 @@ StackEngine.prototype.getPath = function( filePath, imageType )
 };
 
 // ****************************************************************************
-// EOF BatchPreprocessing-engine.js - Released 2014/07/14 20:07:26 UTC
+// EOF BatchPreprocessing-engine.js - Released 2014/11/30 11:42:43 UTC
