@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocGUI.js - Released 2014/02/01 17:08:18 UTC
+// PIDocGUI.js - Released 2014/12/09 21:37:52 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.1
+// This file is part of PixInsight Documentation Compiler Script version 1.5.4
 //
 // Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
 //
@@ -87,7 +87,7 @@ function PIDocCompilerDialog()
    this.helpLabel.wordWrapping = true;
    this.helpLabel.useRichText = true;
    this.helpLabel.text = "<p><strong>" + TITLE + " version " + VERSION + "</strong><br/>" +
-                         "Copyright &copy; 2010-2013 Pleiades Astrophoto. All Rights Reserved.</p>";
+                         "Copyright &copy; 2010-2014 Pleiades Astrophoto. All Rights Reserved.</p>";
    //
 
    this.files_TreeBox = new TreeBox( this );
@@ -638,4 +638,4 @@ function PIDocCompilerDialog()
 PIDocCompilerDialog.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF PIDocGUI.js - Released 2014/02/01 17:08:18 UTC
+// EOF PIDocGUI.js - Released 2014/12/09 21:37:52 UTC

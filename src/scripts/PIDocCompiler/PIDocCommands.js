@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocCommands.js - Released 2014/02/01 17:08:17 UTC
+// PIDocCommands.js - Released 2014/12/09 21:37:52 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.1
+// This file is part of PixInsight Documentation Compiler Script version 1.5.4
 //
 // Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
 //
@@ -408,7 +408,7 @@ function SpacingParameters( parameters, tokens, index )
          this.length = parameters[0].value;
          break;
       default:
-         throw new ParseError( "Unknown/invalid spacing command parameter \'" + parameters[i].id + "\'", tokens, index );
+         throw new ParseError( "Unknown/invalid spacing command parameter \'" + parameters[0].id + "\'", tokens, index );
       }
 }
 
@@ -2945,4 +2945,4 @@ MetaCommand.indexOf = function( id )
 };
 
 // ****************************************************************************
-// EOF PIDocCommands.js - Released 2014/02/01 17:08:17 UTC
+// EOF PIDocCommands.js - Released 2014/12/09 21:37:52 UTC

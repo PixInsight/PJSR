@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocSyntaxHighlighters.js - Released 2014/02/01 17:08:17 UTC
+// PIDocSyntaxHighlighters.js - Released 2014/12/09 21:37:52 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.1
+// This file is part of PixInsight Documentation Compiler Script version 1.5.4
 //
 // Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
 //
@@ -515,13 +515,15 @@ CppSyntaxHighlighter.reservedWords =
    "compl", "const", "constexpr", "const_cast", "continue", "decltype",
    "default", "delete", "do", "double", "dynamic_cast", "else", "enum",
    "explicit", "export", "extern", "false", "float", "for", "friend", "goto",
-   "if", "inline", "int", "long", "mutable", "namespace", "new", "noexcept",
-   "not", "not_eq", "nullptr", "operator", "or", "or_eq", "private",
-   "protected", "public", "register", "reinterpret_cast", "return", "short",
-   "signed", "sizeof", "static", "static_assert", "static_cast", "struct",
-   "switch", "template", "this", "thread_local", "throw", "true", "try",
-   "typedef", "typeid", "typename", "union", "unsigned", "using", "virtual",
-   "void", "volatile", "wchar_t", "while", "xor", "xor_eq"
+   "if", "inline", "int", "int8_t", "int16_t", "int32_t", "int64_t", "intmax_t",
+   "long", "mutable", "namespace", "new", "noexcept", "not", "not_eq",
+   "nullptr", "operator", "or", "or_eq", "private", "protected", "public",
+   "register", "reinterpret_cast", "return", "short", "signed", "sizeof",
+   "static", "static_assert", "static_cast", "struct", "switch", "template",
+   "this", "thread_local", "throw", "true", "try", "typedef", "typeid",
+   "typename", "union", "unsigned", "uint8_t", "uint16_t", "uint32_t",
+   "uint64_t", "uintmax_t", "using", "virtual", "void", "volatile", "wchar_t",
+   "while", "xor", "xor_eq"
 ];
 
 CppSyntaxHighlighter.pclReservedWords =
@@ -599,4 +601,4 @@ function PMathSyntaxHighlighter()
 PMathSyntaxHighlighter.prototype = new SyntaxHighlighter;
 
 // ****************************************************************************
-// EOF PIDocSyntaxHighlighters.js - Released 2014/02/01 17:08:17 UTC
+// EOF PIDocSyntaxHighlighters.js - Released 2014/12/09 21:37:52 UTC

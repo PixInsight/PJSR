@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocMain.js - Released 2014/02/01 17:08:18 UTC
+// PIDocMain.js - Released 2014/12/09 21:37:52 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.1
+// This file is part of PixInsight Documentation Compiler Script version 1.5.4
 //
 // Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
 //
@@ -60,6 +60,8 @@
 
 function main()
 {
+   workingData.loadSettings();
+
    /*
     * Command-line mode
     */
@@ -253,6 +255,8 @@ function main()
          console.writeln();
          console.flush();
 
+         workingData.saveSettings();
+
          if ( (new MessageBox( "Do you want to perform another compilation ?",
               TITLE, StdIcon_Question, StdButton_Yes, StdButton_No )).execute() == StdButton_Yes )
             continue;
@@ -263,4 +267,4 @@ function main()
 }
 
 // ****************************************************************************
-// EOF PIDocMain.js - Released 2014/02/01 17:08:18 UTC
+// EOF PIDocMain.js - Released 2014/12/09 21:37:52 UTC
