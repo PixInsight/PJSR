@@ -225,8 +225,8 @@ function GnuCxx( F, P )
     * Without this, we'd be propagating our own build directories everywhere!
     */
    f.outTextLn( "OBJ_DIR=\"" + objectDirectory.replace(
-                                 RegExp( '^' + PCLSRCDIR ), "$(PCLSRCDIR)" ).replace(
-                                    RegExp( '^' + PCLDIR ), "$(PCLDIR)" ) + "\"" );
+                                 RegExp( '^' + escapeForRegExp(PCLSRCDIR) ), "$(PCLSRCDIR)" ).replace(
+                                    RegExp( '^' + escapeForRegExp(PCLDIR) ), "$(PCLDIR)" ) + "\"" );
    f.outTextLn( '' );
 
    f.outTextLn( ".PHONY: all" );

@@ -58,6 +58,8 @@
  * Utility routines.
  */
 
+
+
 function createDirectoryIfNotExists( dir, createIntermediateDirectories )
 {
    function createDirectory( d )
@@ -141,6 +143,15 @@ function removeDirectory( dirPath )
    removeDirectory_recursive( dirPath, dirPath );
 
    File.removeDirectory( dirPath );
+}
+
+
+/*
+ * Escaping special characters for regular expressions
+ */
+
+function escapeForRegExp(str){
+   return str.replace(/([.*+?^=!:${}()|\[\]\\])/g, "\\$1");
 }
 
 // ****************************************************************************
