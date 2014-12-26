@@ -134,7 +134,7 @@ function GnuCxx( F, P )
    P.validateGnuCxxBuild();
 
    var buildDirectory = P.gccBuildDirectory( F.baseDirectory );
-   if ( P.cleanUpPreviousBuilds )
+   if ( P.cleanUpPreviousBuilds && !P.gccDebug )
       if ( File.directoryExists( buildDirectory ) )
          removeDirectory( buildDirectory );
 
