@@ -638,6 +638,8 @@ function GeneratorParameters()
       {
          if ( this.isMacOSXPlatform() )
             s += " -framework Carbon -framework AppKit -framework ApplicationServices";
+         for ( var i = 0; i < this.extraLibraries.length; ++i )
+            s += " -l" + this.extraLibraries[i];
          s += " -lpthread -lPCL-pxi";
       }
 
