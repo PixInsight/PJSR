@@ -1,0 +1,4 @@
+This file is part of PropagatePreviews script version 2.0
+
+The complete source code with test scripts is hosted at:
+   https://bitbucket.org/bitli/bitliscripts
