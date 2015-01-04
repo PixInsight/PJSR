@@ -1,0 +1,55 @@
+PropagatePreview, testing protocol
+
+Use adhoc workspaces and the workspace TestPropagatePreviews configured as follow:
+Image table
+|Image|Size|Number of previews|
+|I128|128x128|0|
+|I256|256x256|0|
+|I256_3PV|256x256|3|
+|rect|230x100|1|
+|rectTarget|230x100|0|
+
+
+Test behavior when no propgate preview is possible
+  Launch on empty instance (test workspace not loaded)
+  Launch on instance with a single image without preview (test workspace not loaded)
+  Launch on instance with a single image with some previews
+     Test for 'propagate previews':
+          check that no target can be selected in normal mode
+          check that OK gives an error
+     Test for 'delete all previews':
+          check an error is returned when no image is selected
+          check that the single image can be selected and that preview(s) are deleted
+
+
+Test preview selection (use test workspace I256 and I256_3PV)
+  Have an image wihout preview 
+  Activate a second image of the same size with three previews
+     Test for 'propagate previews':
+        Test propagate previews when no, 1, 2, 3 previews are selected
+        Test with and without 'keep existing previews'
+     Test for 'delete all previews':
+        Test delete previews on the target image 
+    
+Test source image selection and preview selection, test target image selection  (use test workspace)
+  Have an image wihout preview (will be I128)
+  Have an image of different but proportional size with 3 previews (use I256_3PV)
+  Activate a third image 
+     Test for 'propagate previews':
+        Test that the active image is the default source image
+        Test selection of other image as source
+        Test selection of targets, check that target cannot be source
+        Test propagate to I128 and I256 in SCALE mode
+
+    Test for 'delete all previews':
+        Test delete previews on the target images and some empty image, look at log
+
+Test propagate preview from 'rect' to 'rectTarget'
+
+Test zoom factor
+Test preserve previews
+Test name propagation
+
+    
+    
+  
