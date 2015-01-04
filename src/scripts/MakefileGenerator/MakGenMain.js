@@ -261,6 +261,7 @@ function main()
 
          var F = new FileLists( projectDirectory );
 
+
          for ( var step = 0; ; )
          {
             if ( dialog.hostMakefiles_CheckBox.checked )
@@ -273,8 +274,7 @@ function main()
                }
                P.architecture = "x64";
                GnuCxx( F, P );
-               if ( step == 0 )
-                  GnuCxxAll( F, P );
+               GnuCxxAll( F, P );
             }
 
             if ( dialog.allPlatforms_CheckBox.checked )
@@ -286,41 +286,35 @@ function main()
                   GnuCxx( F, P );
                   P.architecture = "x64";
                   GnuCxx( F, P );
-                  if ( step == 0 )
-                     GnuCxxAll( F, P );
+                  GnuCxxAll( F, P );
 
                   P.platform = "Linux";
                   P.architecture = "x86";
                   GnuCxx( F, P );
                   P.architecture = "x64";
                   GnuCxx( F, P );
-                  if ( step == 0 )
-                     GnuCxxAll( F, P );
+                  GnuCxxAll( F, P );
 
                   P.platform = "MacOSX";
                   P.architecture = "x86";
                   GnuCxx( F, P );
                   P.architecture = "x64";
                   GnuCxx( F, P );
-                  if ( step == 0 )
-                     GnuCxxAll( F, P );
+                  GnuCxxAll( F, P );
                }
                else
                {
                   P.platform = "FreeBSD";
                   GnuCxx( F, P );
-                  if ( step == 0 )
-                     GnuCxxAll( F, P );
+                  GnuCxxAll( F, P );
 
                   P.platform = "Linux";
                   GnuCxx( F, P );
-                  if ( step == 0 )
-                     GnuCxxAll( F, P );
+                  GnuCxxAll( F, P );
 
                   P.platform = "MacOSX";
                   GnuCxx( F, P );
-                  if ( step == 0 )
-                     GnuCxxAll( F, P );
+                  GnuCxxAll( F, P );
                }
 
                if ( step == 0 )
@@ -343,8 +337,7 @@ function main()
                   else
                      GnuCxx( F, P );
 
-                  if ( step == 0 )
-                     GnuCxxAll( F, P );
+                  GnuCxxAll( F, P );
                }
                else if ( P.platform == "Windows" )
                {
