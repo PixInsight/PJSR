@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+********************************************************************
+PixInsight XML Object Serialization Module - XOSM 1.0
+********************************************************************
+Automatically generated on 2014/12/14 16:53:03 UTC
+PixInsight Core 01.08.03.1123 (x64)
+Copyright (c) 2003-2014 Pleiades Astrophoto
+********************************************************************
+-->
+<xosm version="1.0" xmlns="http://www.pixinsight.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.pixinsight.com http://pixinsight.com/xsd/xosm-1.0.xsd">
+   <Project creationTime="2014-12-14T16:53:03Z" filePrefix="2B2NI0HN3-" coreVersion="01.08.03.1123">
+      <description>Test workspace for propagate previews</description>
+      <features includeImages="true" includePreviews="true" includeViewProperties="true" includeTools="true" includeIcons="true" includeTextFiles="true" includeThumbnail="false" fileChecksums="true" sealedProject="true" purgeOnWrite="false" checkSpaceAvailable="true" offlineStorageThreshold="4096"/>
+      <screen width="1920" height="1200"/>
+      <workspace id="TestPropagePreviews" xpos="0" ypos="0" maxLimit="1689" status="current"/>
+   </Project>
+   <ImageWindow currentView="I256_3PV" previewsVisible="true" previewIdCount="4" maskEnabled="true" maskVisible="true" enableColorManagement="true" enableProofing="false" enableGamutCheck="false" currentChannel="0" maskMode="2" transparencyMode="1" transparencyColor="4294967295" workspace="TestPropagePreviews">
+      <fitsKeywords>
+         <keyword name="SIMPLE" value="T" comment="file does conform to FITS standard"/>
+         <keyword name="BITPIX" value="8" comment="number of bits per data pixel"/>
+         <keyword name="NAXIS" value="2" comment="number of data axes"/>
+         <keyword name="NAXIS1" value="256" comment="length of data axis 1"/>
+         <keyword name="NAXIS2" value="256" comment="length of data axis 2"/>
+         <keyword name="EXTEND" value="T" comment="FITS dataset may contain extensions"/>
+         <keyword name="COMMENT" value="" comment="FITS (Flexible Image Transport System) format is defined in 'Astronomy"/>
+         <keyword name="COMMENT" value="" comment="and Astrophysics', volume 376, page 359; bibcode: 2001A&amp;A...376..359H"/>
+         <keyword name="PROGRAM" value="'PixInsight 01.08.01.1092'" comment="Software that created this HDU"/>
+         <keyword name="COMMENT" value="" comment="PixInsight Class Library: PCL 02.00.11.0663"/>
+         <keyword name="COMMENT" value="" comment="FITS module version 01.00.14.0262"/>
+         <keyword name="COLORSPC" value="'Grayscale'" comment="PCL: Color space"/>
+         <keyword name="RESOLUTN" value="72." comment="PCL: Resolution in pixels per resolution unit"/>
+         <keyword name="RESOUNIT" value="'inch    '" comment="PCL: Resolution unit"/>
+      </fitsKeywords>
+      <geometry visible="true" left="498" top="0" width="288" height="285" status="normal"/>
+      <viewport xpos="0" ypos="0"/>
+      <MainView id="I256_3PV" creationTime="2014-05-25T13:36:24Z" zoom="1" xpos="128.00" ypos="128.00" stfEnabled="1" stfLUT24="0">
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <processing historyIndex="2">
+            <instance class="ImageIdentifier" enabled="true">
+               <time start="2014-05-25T13:36:38Z" span="0.003"/>
+               <parameter id="id">Image256_3PV</parameter>
+            </instance>
+            <instance class="ImageIdentifier" enabled="true">
+               <time start="2014-05-25T13:41:36Z" span="0.005"/>
+               <parameter id="id">I256_3PV</parameter>
+            </instance>
+         </processing>
+         <image src="@project_data_dir/2B2NI0HN3-000001" sha1="be516907c327ef072914c36f7c40d472f33012ba">
+            <imageState mode="stored" flags="64" imageId="Image256_clone"/>
+            <imageState mode="stored" flags="64" imageId="Image256_3PV">
+               <previews>
+                  <previewState id="P_TL" x0="0" y0="0" x1="50" y1="25" zoom="1" xPos="25.50" yPos="12.50"/>
+                  <previewState id="P_BR" x0="221" y0="236" x1="256" y1="256" zoom="1" xPos="17.50" yPos="10.50"/>
+                  <previewState id="P_full" x0="0" y0="0" x1="256" y1="256" zoom="1" xPos="128.50" yPos="128.50"/>
+               </previews>
+            </imageState>
+         </image>
+      </MainView>
+      <Preview id="P_TL" creationTime="2014-05-25T13:37:04Z" zoom="1" xpos="25.00" ypos="13.00" stfEnabled="1" stfLUT24="0">
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <image x0="0" y0="0" x1="50" y1="25" src="@project_data_dir/2B2NI0HN3-000002" sha1="b0c8957667d105bd30c208c4d0eb742d5b0ddfc4" volatile="false"/>
+      </Preview>
+      <Preview id="P_BR" creationTime="2014-05-25T13:37:21Z" zoom="1" xpos="18.00" ypos="10.00" stfEnabled="1" stfLUT24="0">
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <image x0="221" y0="236" x1="256" y1="256" src="@project_data_dir/2B2NI0HN3-000003" sha1="9635ab2efd7da7280fc876878ee5eaafa07a0ba4" volatile="false"/>
+      </Preview>
+      <Preview id="P_full" creationTime="2014-05-25T13:41:21Z" zoom="1" xpos="128.00" ypos="128.00" stfEnabled="1" stfLUT24="0">
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.25147349" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <image x0="0" y0="0" x1="256" y1="256" src="@project_data_dir/2B2NI0HN3-000004" sha1="be516907c327ef072914c36f7c40d472f33012ba" volatile="false"/>
+      </Preview>
+   </ImageWindow>
+   <ImageWindow currentView="rect" previewsVisible="true" previewIdCount="1" maskEnabled="true" maskVisible="true" enableColorManagement="true" enableProofing="false" enableGamutCheck="false" currentChannel="0" maskMode="2" transparencyMode="1" transparencyColor="4294967295" workspace="TestPropagePreviews">
+      <geometry visible="true" left="10" top="284" width="262" height="209" status="normal"/>
+      <viewport xpos="122" ypos="18"/>
+      <MainView id="rect" creationTime="2014-05-27T18:58:57Z" zoom="2" xpos="114.75" ypos="50.25" stfEnabled="1" stfLUT24="0">
+         <initialProcessing>
+            <instance class="NewImage" enabled="true">
+               <time start="2014-05-27T18:58:57Z" span="0.300"/>
+               <parameter id="id">rect</parameter>
+               <parameter id="width" value="230"/>
+               <parameter id="height" value="100"/>
+               <parameter id="numberOfChannels" value="1"/>
+               <parameter id="colorSpace" value="Grayscale"/>
+               <parameter id="sampleFormat" value="f32"/>
+               <parameter id="v0" value="0.31000000"/>
+               <parameter id="v1" value="0.31000000"/>
+               <parameter id="v2" value="0.31000000"/>
+            </instance>
+         </initialProcessing>
+         <image src="@project_data_dir/2B2NI0HN3-000005" sha1="e50454a16e4b7d9311276723b8ff7820160ff83a"/>
+      </MainView>
+      <Preview id="Preview01" creationTime="2014-05-27T18:59:10Z" zoom="6" xpos="58.92" ypos="47.25" stfEnabled="1" stfLUT24="0">
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <image x0="125" y0="35" x1="205" y1="100" src="@project_data_dir/2B2NI0HN3-000006" sha1="40a66d3ae7b7cb74f9e12258299222becf7abef0" volatile="false"/>
+      </Preview>
+   </ImageWindow>
+   <ImageWindow currentView="rectTarget" previewsVisible="true" previewIdCount="0" maskEnabled="true" maskVisible="true" enableColorManagement="true" enableProofing="false" enableGamutCheck="false" currentChannel="0" maskMode="2" transparencyMode="1" transparencyColor="4294967295" workspace="TestPropagePreviews">
+      <geometry visible="true" left="271" top="294" width="262" height="209" status="normal"/>
+      <viewport xpos="0" ypos="0"/>
+      <MainView id="rectTarget" creationTime="2014-05-27T19:04:27Z" zoom="1" xpos="115.00" ypos="50.00" stfEnabled="1" stfLUT24="0">
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <stf m="0.50000000" c0="0.00000000" c1="1.00000000" r0="0.00000000" r1="1.00000000"/>
+         <initialProcessing>
+            <instance class="NewImage" enabled="true">
+               <time start="2014-05-27T18:58:57Z" span="0.300"/>
+               <parameter id="id">rect</parameter>
+               <parameter id="width" value="230"/>
+               <parameter id="height" value="100"/>
+               <parameter id="numberOfChannels" value="1"/>
+               <parameter id="colorSpace" value="Grayscale"/>
+               <parameter id="sampleFormat" value="f32"/>
+               <parameter id="v0" value="0.31000000"/>
+               <parameter id="v1" value="0.31000000"/>
+               <parameter id="v2" value="0.31000000"/>
+            </instance>
+         </initialProcessing>
+         <processing historyIndex="1">
+            <instance class="ImageIdentifier" enabled="true">
+               <time start="2014-05-27T19:04:36Z" span="0.006"/>
+               <parameter id="id">rectTarget</parameter>
+            </instance>
+         </processing>
+         <image src="@project_data_dir/2B2NI0HN3-000007" sha1="e50454a16e4b7d9311276723b8ff7820160ff83a">
+            <imageState mode="stored" flags="64" imageId="rect_clone"/>
+         </image>
+      </MainView>
+   </ImageWindow>
+   <ImageWindow format="FITS" filePath="C:/Users/jmlugrin/Documents/Astronomie/Programs/PixInsight/PI_my_Scripts/BitliScripts/bitliscripts/test/PropagatePreviewsV2/Image256.fit" copy="true" currentView="I256" previewsVisible="true" previewIdCount="0" maskEnabled="true" maskVisible="true" enableColorManagement="true" enableProofing="false" enableGamutCheck="false" currentChannel="0" maskMode="2" transparencyMode="1" transparencyColor="4294967295" workspace="TestPropagePreviews">
+      <imageOptions bitsPerSample="8" ieeefpSampleFormat="false" complexSample="false" signedIntegers="false" metricResolution="false" readNormalized="true" embedICCProfile="true" embedMetadata="true" embedThumbnail="true" embedProperties="true" lowerRange="0.000000000000000" upperRange="1.000000000000000" xResolution="72.00000000" yResolution="72.00000000" isoSpeed="0" exposure="0.000" aperture="0.000" focalLength="0.000" cfaType="0"/>
+      <fitsKeywords>
+         <keyword name="SIMPLE" value="T" comment="file does conform to FITS standard"/>
+         <keyword name="BITPIX" value="8" comment="number of bits per data pixel"/>
+         <keyword name="NAXIS" value="2" comment="number of data axes"/>
+         <keyword name="NAXIS1" value="256" comment="length of data axis 1"/>
+         <keyword name="NAXIS2" value="256" comment="length of data axis 2"/>
+         <keyword name="EXTEND" value="T" comment="FITS dataset may contain extensions"/>
+         <keyword name="COMMENT" value="" comment="FITS (Flexible Image Transport System) format is defined in 'Astronomy"/>
+         <keyword name="COMMENT" value="" comment="and Astrophysics', volume 376, page 359; bibcode: 2001A&amp;A...376..359H"/>
+         <keyword name="PROGRAM" value="'PixInsight 01.08.01.1092'" comment="Software that created this HDU"/>
+         <keyword name="COMMENT" value="" comment="PixInsight Class Library: PCL 02.00.11.0663"/>
+         <keyword name="COMMENT" value="" comment="FITS module version 01.00.14.0262"/>
+         <keyword name="COLORSPC" value="'Grayscale'" comment="PCL: Color space"/>
+         <keyword name="RESOLUTN" value="72." comment="PCL: Resolution in pixels per resolution unit"/>
+         <keyword name="RESOUNIT" value="'inch    '" comment="PCL: Resolution unit"/>
+      </fitsKeywords>
+      <geometry visible="true" left="211" top="0" width="288" height="285" status="normal"/>
+      <viewport xpos="0" ypos="0"/>
+      <MainView id="I256" creationTime="2014-05-25T13:36:03Z" lastFileUpdateTime="2014-05-17T09:11:59Z" zoom="1" xpos="128.00" ypos="128.00" stfEnabled="1" stfLUT24="0">
+         <processing historyIndex="2">
+            <instance class="ImageIdentifier" enabled="true">
+               <time start="2014-05-25T13:41:42Z" span="0.002"/>
+               <parameter id="id">I256</parameter>
+            </instance>
+            <instance class="PixelMath" enabled="true">
+               <time start="2014-12-14T16:52:24Z" span="0.031"/>
+               <parameter id="expression">0.80</parameter>
+               <parameter id="expression1"></parameter>
+               <parameter id="expression2"></parameter>
+               <parameter id="expression3"></parameter>
+               <parameter id="useSingleExpression" value="true"/>
+               <parameter id="symbols"></parameter>
+               <parameter id="generateOutput" value="true"/>
+               <parameter id="singleThreaded" value="false"/>
+               <parameter id="use64BitWorkingImage" value="false"/>
+               <parameter id="rescale" value="false"/>
+               <parameter id="rescaleLower" value="0"/>
+               <parameter id="rescaleUpper" value="1"/>
+               <parameter id="truncate" value="true"/>
+               <parameter id="truncateLower" value="0"/>
+               <parameter id="truncateUpper" value="1"/>
+               <parameter id="createNewImage" value="false"/>
+               <parameter id="showNewImage" value="true"/>
+               <parameter id="newImageId"></parameter>
+               <parameter id="newImageWidth" value="0"/>
+               <parameter id="newImageHeight" value="0"/>
+               <parameter id="newImageAlpha" value="false"/>
+               <parameter id="newImageColorSpace" value="SameAsTarget"/>
+               <parameter id="newImageSampleFormat" value="SameAsTarget"/>
+               <table id="outputData" rows="0"/>
+            </instance>
+         </processing>
+         <image src="@project_data_dir/2B2NI0HN3-000008" sha1="05323268b391be68b925f1ee2ea9665a5cd6911c">
+            <imageState mode="stored" flags="64" imageId="Image256"/>
+            <imageState mode="stored" flags="1">
+               <image src="@project_data_dir/2B2NI0HN3-000009" sha1="be516907c327ef072914c36f7c40d472f33012ba"/>
+            </imageState>
+         </image>
+      </MainView>
+   </ImageWindow>
+   <ImageWindow format="FITS" filePath="C:/Users/jmlugrin/Documents/Astronomie/Programs/PixInsight/PI_my_Scripts/BitliScripts/bitliscripts/test/PropagatePreviewsV2/Image128.fit" copy="true" currentView="I128" previewsVisible="true" previewIdCount="0" maskEnabled="true" maskVisible="true" enableColorManagement="true" enableProofing="false" enableGamutCheck="false" currentChannel="0" maskMode="2" transparencyMode="1" transparencyColor="4294967295" workspace="TestPropagePreviews">
+      <imageOptions bitsPerSample="8" ieeefpSampleFormat="false" complexSample="false" signedIntegers="false" metricResolution="false" readNormalized="true" embedICCProfile="true" embedMetadata="true" embedThumbnail="true" embedProperties="true" lowerRange="0.000000000000000" upperRange="1.000000000000000" xResolution="72.00000000" yResolution="72.00000000" isoSpeed="0" exposure="0.000" aperture="0.000" focalLength="0.000" cfaType="0"/>
+      <fitsKeywords>
+         <keyword name="SIMPLE" value="T" comment="file does conform to FITS standard"/>
+         <keyword name="BITPIX" value="8" comment="number of bits per data pixel"/>
+         <keyword name="NAXIS" value="2" comment="number of data axes"/>
+         <keyword name="NAXIS1" value="128" comment="length of data axis 1"/>
+         <keyword name="NAXIS2" value="128" comment="length of data axis 2"/>
+         <keyword name="EXTEND" value="T" comment="FITS dataset may contain extensions"/>
+         <keyword name="COMMENT" value="" comment="FITS (Flexible Image Transport System) format is defined in 'Astronomy"/>
+         <keyword name="COMMENT" value="" comment="and Astrophysics', volume 376, page 359; bibcode: 2001A&amp;A...376..359H"/>
+         <keyword name="PROGRAM" value="'PixInsight 01.08.01.1092'" comment="Software that created this HDU"/>
+         <keyword name="COMMENT" value="" comment="PixInsight Class Library: PCL 02.00.11.0663"/>
+         <keyword name="COMMENT" value="" comment="FITS module version 01.00.14.0262"/>
+         <keyword name="COLORSPC" value="'Grayscale'" comment="PCL: Color space"/>
+         <keyword name="RESOLUTN" value="72." comment="PCL: Resolution in pixels per resolution unit"/>
+         <keyword name="RESOUNIT" value="'inch    '" comment="PCL: Resolution unit"/>
+      </fitsKeywords>
+      <geometry visible="true" left="0" top="0" width="212" height="209" status="normal"/>
+      <viewport xpos="0" ypos="0"/>
+      <MainView id="I128" creationTime="2014-05-25T13:36:02Z" lastFileUpdateTime="2014-05-17T09:11:49Z" zoom="1" xpos="64.00" ypos="64.00" stfEnabled="1" stfLUT24="0">
+         <processing historyIndex="2">
+            <instance class="ImageIdentifier" enabled="true">
+               <time start="2014-05-25T13:41:52Z" span="0.004"/>
+               <parameter id="id">I128</parameter>
+            </instance>
+            <instance class="PixelMath" enabled="true">
+               <time start="2014-12-14T16:52:26Z" span="0.031"/>
+               <parameter id="expression">0.80</parameter>
+               <parameter id="expression1"></parameter>
+               <parameter id="expression2"></parameter>
+               <parameter id="expression3"></parameter>
+               <parameter id="useSingleExpression" value="true"/>
+               <parameter id="symbols"></parameter>
+               <parameter id="generateOutput" value="true"/>
+               <parameter id="singleThreaded" value="false"/>
+               <parameter id="use64BitWorkingImage" value="false"/>
+               <parameter id="rescale" value="false"/>
+               <parameter id="rescaleLower" value="0"/>
+               <parameter id="rescaleUpper" value="1"/>
+               <parameter id="truncate" value="true"/>
+               <parameter id="truncateLower" value="0"/>
+               <parameter id="truncateUpper" value="1"/>
+               <parameter id="createNewImage" value="false"/>
+               <parameter id="showNewImage" value="true"/>
+               <parameter id="newImageId"></parameter>
+               <parameter id="newImageWidth" value="0"/>
+               <parameter id="newImageHeight" value="0"/>
+               <parameter id="newImageAlpha" value="false"/>
+               <parameter id="newImageColorSpace" value="SameAsTarget"/>
+               <parameter id="newImageSampleFormat" value="SameAsTarget"/>
+               <table id="outputData" rows="0"/>
+            </instance>
+         </processing>
+         <image src="@project_data_dir/2B2NI0HN3-000010" sha1="bcd46624d54dd9a1cd94cf5680d574acd15fa9da">
+            <imageState mode="stored" flags="64" imageId="Image128"/>
+            <imageState mode="stored" flags="1">
+               <image src="@project_data_dir/2B2NI0HN3-000011" sha1="0571438e1b38eae01e52b92c3711b61fbc188414"/>
+            </imageState>
+         </image>
+      </MainView>
+   </ImageWindow>
+   <ProcessInterface id="PixelMath" workspace="TestPropagePreviews">
+      <geometry visible="false" left="944" top="288" width="743" height="285" status="normal"/>
+      <instance class="PixelMath">
+         <parameter id="expression">0.80</parameter>
+         <parameter id="expression1"></parameter>
+         <parameter id="expression2"></parameter>
+         <parameter id="expression3"></parameter>
+         <parameter id="useSingleExpression" value="true"/>
+         <parameter id="symbols"></parameter>
+         <parameter id="generateOutput" value="true"/>
+         <parameter id="singleThreaded" value="false"/>
+         <parameter id="use64BitWorkingImage" value="false"/>
+         <parameter id="rescale" value="false"/>
+         <parameter id="rescaleLower" value="0"/>
+         <parameter id="rescaleUpper" value="1"/>
+         <parameter id="truncate" value="true"/>
+         <parameter id="truncateLower" value="0"/>
+         <parameter id="truncateUpper" value="1"/>
+         <parameter id="createNewImage" value="false"/>
+         <parameter id="showNewImage" value="true"/>
+         <parameter id="newImageId"></parameter>
+         <parameter id="newImageWidth" value="0"/>
+         <parameter id="newImageHeight" value="0"/>
+         <parameter id="newImageAlpha" value="false"/>
+         <parameter id="newImageColorSpace" value="SameAsTarget"/>
+         <parameter id="newImageSampleFormat" value="SameAsTarget"/>
+         <table id="outputData" rows="0"/>
+      </instance>
+   </ProcessInterface>
+   <ImageContainerInterface workspace="Workspace02">
+      <geometry visible="false" left="664" top="213" width="561" height="629" status="normal"/>
+      <instance class="ImageContainer">
+         <policies onError="continue"/>
+         <flags dontOverwrite="1" overrideMasks="1" continueAfterAbort="1"/>
+         <outputTemplate>&amp;filename;_&amp;datetime;&amp;extension;</outputTemplate>
+      </instance>
+   </ImageContainerInterface>
+</xosm>

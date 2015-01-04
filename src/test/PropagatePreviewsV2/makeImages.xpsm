@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+********************************************************************
+PixInsight XML Process Serialization Module - XPSM 1.0
+********************************************************************
+Automatically generated on 2014/05/17 09:12:34 UTC
+PixInsight Core 01.08.01.1092 (x64)
+Copyright (c) 2003-2014 Pleiades Astrophoto
+********************************************************************
+-->
+<xpsm version="1.0" xmlns="http://www.pixinsight.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.pixinsight.com http://pixinsight.com/xsd/xpsm-1.0.xsd">
+   <instance class="NewImage" id="createImage256_instance">
+      <parameter id="id"></parameter>
+      <parameter id="width" value="256"/>
+      <parameter id="height" value="256"/>
+      <parameter id="numberOfChannels" value="1"/>
+      <parameter id="colorSpace" value="Grayscale"/>
+      <parameter id="sampleFormat" value="i8"/>
+      <parameter id="v0" value="0.50000000"/>
+      <parameter id="v1" value="0.50000000"/>
+      <parameter id="v2" value="0.50000000"/>
+   </instance>
+   <instance class="IntegerResample" id="makeImage128_instance">
+      <parameter id="zoomFactor" value="-2"/>
+      <parameter id="subsampleMode" value="Average"/>
+      <parameter id="xResolution" value="72.000"/>
+      <parameter id="yResolution" value="72.000"/>
+      <parameter id="metric" value="false"/>
+      <parameter id="forceResolution" value="false"/>
+   </instance>
+   <icon id="createImage256" instance="createImage256_instance" xpos="1763" ypos="128" workspace="Workspace01"/>
+   <icon id="makeImage128" instance="makeImage128_instance" xpos="1755" ypos="173" workspace="Workspace01"/>
+</xpsm>
