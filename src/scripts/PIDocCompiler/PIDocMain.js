@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocMain.js - Released 2014/12/09 21:37:52 UTC
+// PIDocMain.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Compiler entry point.
@@ -67,11 +67,11 @@ function main()
     */
    if ( jsArguments.length > 0 )
    {
-      for ( var i in jsArguments )
+      for ( let i in jsArguments )
       {
          console.writeln( "<end><cbr>" );
 
-         var arg = jsArguments[i];
+         let arg = jsArguments[i];
          if ( arg[0] == '-' )
          {
             switch ( arg )
@@ -146,8 +146,8 @@ function main()
             if ( workingData.generateNewSystem )
                PIDocSystem.generateNewSystem( workingData.baseDirectory );
 
-            var filePath = arg.trim();
-            if ( filePath.beginsWith( '\"' ) )
+            let filePath = arg.trim();
+            if ( filePath.startsWith( '\"' ) )
                filePath = filePath.slice( 1 );
             if ( filePath.endsWith( '\"' ) )
                filePath = filePath.substring( 0, filePath.length-1 );
@@ -182,7 +182,7 @@ function main()
    /*
     * GUI mode
     */
-   var dialog = new PIDocCompilerDialog();
+   let dialog = new PIDocCompilerDialog();
    for ( ;; )
    {
       console.hide();
@@ -221,14 +221,14 @@ function main()
          console.show();
          console.abortEnabled = true;
 
-         var success = 0;
-         var warnings = 0;
+         let success = 0;
+         let warnings = 0;
 
-         for ( var i in workingData.inputFiles )
+         for ( let i in workingData.inputFiles )
          {
             try
             {
-               var P = new PIDocCompiler;
+               let P = new PIDocCompiler;
                P.compile( workingData.inputFiles[i] );
 
                if ( workingData.generateOutput )
@@ -267,4 +267,4 @@ function main()
 }
 
 // ****************************************************************************
-// EOF PIDocMain.js - Released 2014/12/09 21:37:52 UTC
+// EOF PIDocMain.js - Released 2015/01/18 20:22:19 UTC

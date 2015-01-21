@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocSystem.js - Released 2014/12/09 21:37:52 UTC
+// PIDocSystem.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * PIDoc system static data and routines.
@@ -69,23 +69,21 @@ PIDocSystem.prototype = new Object;
 PIDocSystem.systemDirectories = function()
 {
    /*
-    * PIDoc system directories as of version 1.5.0.
+    * PIDoc system directories as of version 1.6.0.
     * N.B. Update when a new system version is released.
     */
-   return new Array(
-      "docs",
-      "pidoc",
-      "pidoc/css",
-      "pidoc/graphics",
-      "pidoc/icons",
-      "pidoc/images",
-      "pidoc/scripts",
-      "pidoc/titles",
-      "pjsr",
-      "pjsr/objects",
-      "scripts",
-      "tools"
-   );
+   return [ "docs",
+            "pidoc",
+            "pidoc/css",
+            "pidoc/graphics",
+            "pidoc/icons",
+            "pidoc/images",
+            "pidoc/scripts",
+            "pidoc/titles",
+            "pjsr",
+            "pjsr/objects",
+            "scripts",
+            "tools" ];
 };
 
 /*
@@ -93,8 +91,8 @@ PIDocSystem.systemDirectories = function()
  */
 PIDocSystem.isValidSystem = function( baseDir )
 {
-   var sysDirs = PIDocSystem.systemDirectories();
-   for ( var i = 0; i < sysDirs.length; ++i )
+   let sysDirs = PIDocSystem.systemDirectories();
+   for ( let i = 0; i < sysDirs.length; ++i )
       if ( !File.directoryExists( baseDir + '/' + sysDirs[i] ) )
          return false;
    return true;
@@ -107,7 +105,7 @@ PIDocSystem.generateNewSystem = function( baseDir )
 {
    function isEmptyDirectory( dir )
    {
-      var f = new FileFind;
+      let f = new FileFind;
       if ( f.begin( dir + "/*" ) )
          do
             if ( f.name != "." && f.name != ".." )
@@ -121,8 +119,8 @@ PIDocSystem.generateNewSystem = function( baseDir )
 
    function copyFiles( targetDir, sourceDir, patterns )
    {
-      var f = new FileFind;
-      for ( var i = 0; i < patterns.length; ++i )
+      let f = new FileFind;
+      for ( let i = 0; i < patterns.length; ++i )
          if ( f.begin( sourceDir + '/' + patterns[i] ) )
             do
                if ( f.isFile )
@@ -148,14 +146,14 @@ PIDocSystem.generateNewSystem = function( baseDir )
    if ( !isEmptyDirectory( baseDir ) )
       throw new Error( "Cannot create a new PIDoc system because the target directory is not empty: " + baseDir );
 
-   var sysDir = getEnvironmentVariable( "PXI_DOCDIR" );
+   let sysDir = getEnvironmentVariable( "PXI_DOCDIR" );
    if ( sysDir.isEmpty() )
       throw new Error( "Unable to retrieve the platform documentation system directory." );
    if ( !File.directoryExists( sysDir ) )
       throw new Error( "The platform documentation system directory does not exist: " + sysDir );
 
-   var sysDirs = PIDocSystem.systemDirectories();
-   for ( var i = 0; i < sysDirs.length; ++i )
+   let sysDirs = PIDocSystem.systemDirectories();
+   for ( let i = 0; i < sysDirs.length; ++i )
       File.createDirectory( baseDir + '/' + sysDirs[i] );
 
    copyFiles( baseDir + "/pidoc/css",      sysDir + "/pidoc/css",      ["*.css"                  ] );
@@ -169,4 +167,4 @@ PIDocSystem.generateNewSystem = function( baseDir )
 };
 
 // ****************************************************************************
-// EOF PIDocSystem.js - Released 2014/12/09 21:37:52 UTC
+// EOF PIDocSystem.js - Released 2015/01/18 20:22:19 UTC

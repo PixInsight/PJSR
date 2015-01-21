@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocGlobal.js - Released 2014/12/09 21:37:52 UTC
+// PIDocGlobal.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Global definitions and auxiliary objects.
@@ -61,7 +61,7 @@
  * Current compiler version.
  */
 
-#define VERSION "1.5.4"
+#define VERSION "1.6.1"
 #define TITLE   "PixInsight Documentation Compiler"
 
 /*
@@ -120,6 +120,9 @@
 
 /*
  * Some useful custom extensions to the global String object.
+ *
+ * Many of these routines are already implemented in current PJSR core engine
+ * versions. They are kept here for historical/reference purposes.
  */
 
 /*
@@ -177,21 +180,25 @@ if ( !String.prototype.encodeWhitespace )
    };
 
 /*
- * Returns true if this string begins with the specified substring.
+ * Returns true if this string starts with the specified substring.
+ *
+ * *** Part of ECMA-262.5 - Available in PJSR Core since build 702.
  */
-if ( !String.prototype.beginsWith )
-   String.prototype.beginsWith = function( s )
+if ( !String.prototype.startsWith )
+   String.prototype.startsWith = function( s )
    {
       return this.indexOf( s ) == 0;
    };
 
 /*
  * Returns true if this string ends with the specified substring.
+ *
+ * *** Part of ECMA-262.5 - Available in PJSR Core since build 702.
  */
 if ( !String.prototype.endsWith )
    String.prototype.endsWith = function( s )
    {
-      var pos = this.lastIndexOf( s );
+      let pos = this.lastIndexOf( s );
       return pos >= 0 && pos == this.length - s.length;
    };
 
@@ -205,12 +212,21 @@ if ( !String.prototype.isEmpty )
    };
 
 /*
+ * Returns true if this string contains the specified substring.
+ */
+if ( !String.prototype.contains )
+   String.prototype.contains = function( s )
+   {
+      return this.indexOf( s ) >= 0;
+   };
+
+/*
  * Returns true if this string begins with a punctuator character: .,:;
  */
 if ( !String.prototype.isPunctuator )
    String.prototype.isPunctuator = function()
    {
-      var b = this.charCodeAt( 0 );
+      let b = this.charCodeAt( 0 );
       return b == PERIOD || b == COMMA || b == COLON || b == SCOLON;
    };
 
@@ -220,7 +236,7 @@ if ( !String.prototype.isPunctuator )
 if ( !String.prototype.isParenthesis )
    String.prototype.isParenthesis = function()
    {
-      var b = this.charCodeAt( 0 );
+      let b = this.charCodeAt( 0 );
       return b == LPAREN || b == RPAREN;
    };
 
@@ -240,7 +256,7 @@ if ( !String.prototype.isLineBreak )
 if ( !String.prototype.isIdChar )
    String.prototype.isIdChar = function( i )
    {
-      var c = this.charCodeAt( i );
+      let c = this.charCodeAt( i );
       return c >= CHa && c <= CHz || c == USCORE || c >= CHA && c <= CHZ || i > 0 && c >= CH0 && c <= CH9;
    };
 
@@ -252,7 +268,7 @@ if ( !String.prototype.isValidId )
    {
       if ( this.isEmpty() )
          return false;
-      for ( var i = 0; i < this.length; ++i )
+      for ( let i = 0; i < this.length; ++i )
          if ( !this.isIdChar( i ) )
             return false;
       return true;
@@ -296,28 +312,33 @@ if ( !String.prototype.toPlainText )
    };
 
 /*
- * Replaces all occurrences of '<', '>' and '"' with their respective
- * ISO 8859-1 character entities. Also replaces the sequences '---' and '--'
- * with em and en dash entities, respectively.
+ * Replaces all occurrences of '<', '>', '"' and '&' with their respective
+ * ISO/IEC 8859-1 character entities.
+ *
+ * Also replaces the sequences '---' and '--' with em and en dash entities,
+ * respectively.
  */
 if ( !String.prototype.toXhtml )
    String.prototype.toXhtml = function()
    {
-      return this.replace( "<", "&lt;", "g"
-                     ).replace( ">", "&gt;", "g"
-                        ).replace( "\"", "&quot;", "g"
-                           ).replace( "---", "&mdash;", "g"
-                              ).replace( "--", "&ndash;", "g" );
+      return this.replace( /&(?![A-Za-z]+[0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, "&amp;"
+                     ).replace( "<", "&lt;", "g"
+                        ).replace( ">", "&gt;", "g"
+                           ).replace( "\"", "&quot;", "g"
+                              ).replace( "---", "&mdash;", "g"
+                                 ).replace( "--", "&ndash;", "g" );
    };
 
 /*
  * Replaces all occurrences of '<', '>', '"' and '&' with their respective
- * ISO 8859-1 character entities. Does not generate em and en dash entities.
+ * ISO/IEC 8859-1 character entities.
+ *
+ * Unlike toXhtml(), this function does not generate em and en dash entities.
  */
 if ( !String.prototype.toPlainXhtml )
    String.prototype.toPlainXhtml = function()
    {
-      return this.replace( "&", "&amp;", "g"
+      return this.replace( /&(?![A-Za-z]+[0-9]*;|#[0-9]+;|#x[0-9a-fA-F]+;)/g, "&amp;"
                      ).replace( "<", "&lt;", "g"
                         ).replace( ">", "&gt;", "g"
                            ).replace( "\"", "&quot;", "g" );
@@ -337,12 +358,16 @@ if ( !String.prototype.removeHtmlTags )
    };
 
 /*
- * Removes all anchor tags (<a href=...> and <a name=...> tags).
+ * Removes all anchor tags in a section title and packs any duplicate
+ * whitespace characters.
  */
-if ( !String.prototype.removeAnchorTags )
-   String.prototype.removeAnchorTags = function()
+if ( !String.prototype.removeTitleAnchorTags )
+   String.prototype.removeTitleAnchorTags = function()
    {
-      return this.replace( /<[aA]\s+[^>]*>/g, "" ).replace( /<\/a>/g, "" );
+      return this.replace( /<[aA]\s+[^>]*>/g, ""
+                     ).replace( /<\/a>/g, ""
+                        ).replace( /\s+/g, ' '
+                           ).replace( /sp\;\s+/g, "sp;" );
    };
 
 /*
@@ -385,12 +410,12 @@ if ( !String.prototype.toUTF8 )
 
          n = Math.min( n, this.length-p );
 
-         var result = new ByteArray( n*3 + 1 ); // worst case
+         let result = new ByteArray( n*3 + 1 ); // worst case
 
-         var i = 0;
-         for ( var p1 = p+n; p < p1; ++p )
+         let i = 0;
+         for ( let p1 = p+n; p < p1; ++p )
          {
-            var u = this.charCodeAt( p );
+            let u = this.charCodeAt( p );
 
             if ( u < 0x80 )
                result.at( i++, u );
@@ -400,11 +425,11 @@ if ( !String.prototype.toUTF8 )
                   result.at( i++, 0xc0|(u >> 6) );
                else
                {
-                  var c32 = u;
+                  let c32 = u;
 
                   if ( isHighSurrogate( u ) && p < p1-1 )
                   {
-                     var low = this.charCodeAt( p+1 );
+                     let low = this.charCodeAt( p+1 );
                      if ( isLowSurrogate( low ) )
                      {
                         ++p;
@@ -458,12 +483,12 @@ if ( !ByteArray.prototype.utf8ToString )
 
       n = Math.min( n, this.length-p );
 
-      var result = new String;
-      var uc = 0;
-      var min_uc = 0;
-      var need = 0;
-      var error = -1;
-      var i = 0;
+      let result = new String;
+      let uc = 0;
+      let min_uc = 0;
+      let need = 0;
+      let error = -1;
+      let i = 0;
 
       // skip UTF8-encoded byte order mark (BOM)
       if ( n >= 3 && this.at( p ) == 0xef && this.at( p+1 ) == 0xbb && this.at( p+2 ) == 0xbf )
@@ -471,7 +496,7 @@ if ( !ByteArray.prototype.utf8ToString )
 
       for ( ; i < n; ++i )
       {
-         var ch = this.at( p+i );
+         let ch = this.at( p+i );
 
          if ( need )
          {
@@ -538,7 +563,7 @@ if ( !ByteArray.prototype.utf8ToString )
 
       if ( need )
          // we have some invalid characters remaining we need to add to the string
-         for ( var i = error; i < n; ++i )
+         for ( let i = error; i < n; ++i )
             result += String.fromCharCode( REPLACEMENT_CHARACTER );
 
       return result;
@@ -558,4 +583,4 @@ if ( !ByteArray.stringToUTF8 )
    };
 
 // ****************************************************************************
-// EOF PIDocGlobal.js - Released 2014/12/09 21:37:52 UTC
+// EOF PIDocGlobal.js - Released 2015/01/18 20:22:19 UTC

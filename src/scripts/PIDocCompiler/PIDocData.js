@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocData.js - Released 2014/12/09 21:37:52 UTC
+// PIDocData.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Compiler Working Data.
@@ -73,6 +73,7 @@ function PIDocCompilerWorkingData()
       this.generateHTML5 = true;          // Generate HTML5 or XHTML 1.0 Strict documents
       this.renderEquations = true;        // Render LaTeX equations and inline math
       this.highlightCode = true;          // Use syntax highlighting for \code blocks
+      this.numberSections = true;         // Number document sections and subsections
       this.numberAllEquations = false;    // Number equations by default
       this.numberAllFigures = true;       // Number figures by default
       this.numberAllTables = true;        // Number tables by default
@@ -97,8 +98,8 @@ function PIDocCompilerWorkingData()
          return Settings.read( SETTINGS_KEY_BASE + key, type );
       }
 
-      var o;
-      if ( (o = load( "baseDirectory", DataType_String )) != null )
+      let o = load( "baseDirectory", DataType_String );
+      if ( o != null )
          this.baseDirectory = o;
    };
 
@@ -113,4 +114,4 @@ PIDocCompilerWorkingData.prototype = new Object;
 var workingData = new PIDocCompilerWorkingData;
 
 // ****************************************************************************
-// EOF PIDocData.js - Released 2014/12/09 21:37:52 UTC
+// EOF PIDocData.js - Released 2015/01/18 20:22:19 UTC

@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// pidoc.js - Released 2014/12/09 21:37:52 UTC
+// pidoc.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Executable file.
@@ -58,7 +58,7 @@
 #feature-id    Development > Documentation Compiler
 
 #feature-info  PixInsight Documentation Compiler. This script parses a PIDoc source file and generates an \
-   XHTML document integrated with the PixInsight Reference Documentation System.<br/>\
+   HTML5/XHTML document integrated with a target PixInsight reference documentation system.<br/>\
    <br/>\
    PIDoc is a powerful markup language to generate PixInsight documentation easily and efficiently. \
    By writing their documentation in the PIDoc language, developers on the PixInsight platform can concentrate \
@@ -67,7 +67,7 @@
    seamlessly with the PixInsight reference documentation system.<br/>\
    <br/>\
    Written by Juan Conejero (PTeam)<br/>\
-   Copyright &copy; 2010-2014 Pleiades Astrophoto, S.L.
+   Copyright &copy; 2010-2015 Pleiades Astrophoto, S.L.
 
 #feature-icon  pidoc.xpm
 
@@ -84,4 +84,4 @@
 main();
 
 // ****************************************************************************
-// EOF pidoc.js - Released 2014/12/09 21:37:52 UTC
+// EOF pidoc.js - Released 2015/01/18 20:22:19 UTC

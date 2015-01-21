@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocGUI.js - Released 2014/12/09 21:37:52 UTC
+// PIDocGUI.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Graphical user interface for the PIDoc compiler.
@@ -73,8 +73,8 @@ function PIDocCompilerDialog()
 
    //
 
-   var emWidth = this.font.width( 'M' );
-   var labelWidth1 = this.font.width( "Output extension:" ) + emWidth;
+   let emWidth = this.font.width( 'M' );
+   let labelWidth1 = this.font.width( "Output extension:" ) + emWidth;
 
    //
 
@@ -87,7 +87,7 @@ function PIDocCompilerDialog()
    this.helpLabel.wordWrapping = true;
    this.helpLabel.useRichText = true;
    this.helpLabel.text = "<p><strong>" + TITLE + " version " + VERSION + "</strong><br/>" +
-                         "Copyright &copy; 2010-2014 Pleiades Astrophoto. All Rights Reserved.</p>";
+                         "Copyright &copy; 2010-2015 Pleiades Astrophoto. All Rights Reserved.</p>";
    //
 
    this.files_TreeBox = new TreeBox( this );
@@ -98,9 +98,9 @@ function PIDocCompilerDialog()
    this.files_TreeBox.numberOfColumns = 1;
    this.files_TreeBox.headerVisible = false;
 
-   for ( var i = 0; i < workingData.inputFiles.length; ++i )
+   for ( let i = 0; i < workingData.inputFiles.length; ++i )
    {
-      var node = new TreeBoxNode( this.files_TreeBox );
+      let node = new TreeBoxNode( this.files_TreeBox );
       node.setText( 0, workingData.inputFiles[i] );
    }
 
@@ -111,20 +111,20 @@ function PIDocCompilerDialog()
 
    this.filesAdd_Button.onClick = function()
    {
-      var ofd = new OpenFileDialog;
+      let ofd = new OpenFileDialog;
       ofd.multipleSelections = true;
       ofd.caption = "Select PIDoc Source Files";
       ofd.filters = [ ["PIDoc source files", "*.pidoc"], ["Any files", "*"] ];
 
       if ( ofd.execute() )
       {
-         var newFiles = 0;
-         for ( var i = 0; i < ofd.fileNames.length; ++i )
+         let newFiles = 0;
+         for ( let i = 0; i < ofd.fileNames.length; ++i )
             if ( workingData.inputFiles.indexOf( ofd.fileNames[i] ) < 0 )
             {
                if ( ++newFiles == 1 )
                   this.dialog.files_TreeBox.canUpdate = false;
-               var node = new TreeBoxNode( this.dialog.files_TreeBox );
+               let node = new TreeBoxNode( this.dialog.files_TreeBox );
                node.setText( 0, ofd.fileNames[i] );
                workingData.inputFiles.push( ofd.fileNames[i] );
             }
@@ -149,25 +149,25 @@ function PIDocCompilerDialog()
 
    this.filesAddDirectory_Button.onClick = function()
    {
-      var gdd = new GetDirectoryDialog;
+      let gdd = new GetDirectoryDialog;
       gdd.caption = "Select PIDoc Source Directory";
       if ( gdd.execute() )
       {
-         var baseDirectory = File.fullPath( gdd.directory );
+         let baseDirectory = File.fullPath( gdd.directory );
          if ( baseDirectory[baseDirectory.length-1] == '/' ) // remove a terminating slash
             if ( baseDirectory != "/" )
                baseDirectory.slice( baseDirectory.length-1, -1 );
 
-         var sourceFiles = searchDirectory( baseDirectory + "/*.pidoc", true/*recursive*/ );
+         let sourceFiles = searchDirectory( baseDirectory + "/*.pidoc", true/*recursive*/ );
          if ( sourceFiles.length > 0 )
          {
-            var newFiles = 0;
-            for ( var i = 0; i < sourceFiles.length; ++i )
+            let newFiles = 0;
+            for ( let i = 0; i < sourceFiles.length; ++i )
                if ( workingData.inputFiles.indexOf( sourceFiles[i] ) < 0 )
                {
                   if ( ++newFiles == 1 )
                      this.dialog.files_TreeBox.canUpdate = false;
-                  var node = new TreeBoxNode( this.dialog.files_TreeBox );
+                  let node = new TreeBoxNode( this.dialog.files_TreeBox );
                   node.setText( 0, sourceFiles[i] );
                   workingData.inputFiles.push( sourceFiles[i] );
                }
@@ -208,7 +208,7 @@ function PIDocCompilerDialog()
 
    this.filesInvert_Button.onClick = function()
    {
-      for ( var i = 0; i < this.dialog.files_TreeBox.numberOfChildren; ++i )
+      for ( let i = 0; i < this.dialog.files_TreeBox.numberOfChildren; ++i )
          this.dialog.files_TreeBox.child( i ).selected =
                !this.dialog.files_TreeBox.child( i ).selected;
    };
@@ -221,10 +221,10 @@ function PIDocCompilerDialog()
    this.filesRemove_Button.onClick = function()
    {
       workingData.inputFiles = new Array;
-      for ( var i = 0; i < this.dialog.files_TreeBox.numberOfChildren; ++i )
+      for ( let i = 0; i < this.dialog.files_TreeBox.numberOfChildren; ++i )
          if ( !this.dialog.files_TreeBox.child( i ).selected )
             workingData.inputFiles.push( this.dialog.files_TreeBox.child( i ).text( 0 ) );
-      for ( var i = this.dialog.files_TreeBox.numberOfChildren; --i >= 0; )
+      for ( let i = this.dialog.files_TreeBox.numberOfChildren; --i >= 0; )
          if ( this.dialog.files_TreeBox.child( i ).selected )
             this.dialog.files_TreeBox.remove( i );
    };
@@ -260,7 +260,7 @@ function PIDocCompilerDialog()
 
    this.baseDir_Edit.onEditCompleted = function()
    {
-      var dir = File.windowsPathToUnix( this.text.trim() );
+      let dir = File.windowsPathToUnix( this.text.trim() );
       if ( dir == DEFAULT_BASE_DIR_TEXT )
          dir = "";
       else if ( dir.endsWith( '/' ) )
@@ -289,12 +289,12 @@ function PIDocCompilerDialog()
    this.baseDirSelect_Button.toolTip = "<p>Select the target PIDoc system directory.</p>";
    this.baseDirSelect_Button.onClick = function()
    {
-      var gdd = new GetDirectoryDialog;
+      let gdd = new GetDirectoryDialog;
       gdd.initialPath = workingData.baseDirectory;
       gdd.caption = "Select Target PIDoc System Directory";
       if ( gdd.execute() )
       {
-         var dir = gdd.directory;
+         let dir = gdd.directory;
          if ( dir.endsWith( '/' ) )
             dir = dir.substring( 0, dir.length-1 );
          this.dialog.baseDir_Edit.text = workingData.baseDirectory = dir;
@@ -349,7 +349,7 @@ function PIDocCompilerDialog()
 
    //
 
-   var documentType_ToolTip = "<p>The type of generated documents: either HTML 5 or XHTML 1.0 Strict.</p>"
+   let documentType_ToolTip = "<p>The type of generated documents: either HTML 5 or XHTML 1.0 Strict.</p>"
 
    this.documentType_Label = new Label( this );
    this.documentType_Label.text = "Document type:";
@@ -638,4 +638,4 @@ function PIDocCompilerDialog()
 PIDocCompilerDialog.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF PIDocGUI.js - Released 2014/12/09 21:37:52 UTC
+// EOF PIDocGUI.js - Released 2015/01/18 20:22:19 UTC

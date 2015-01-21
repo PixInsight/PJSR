@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocCommands.js - Released 2014/12/09 21:37:52 UTC
+// PIDocCommands.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Formal descriptions and implementations of all PIDoc commands.
@@ -74,7 +74,7 @@ function MetaCommand( id,                 // command identifier
 
    this.indexOfNextArgument = function( tokens, nextIndex )
    {
-      var i = nextIndex;
+      let i = nextIndex;
       while ( i < tokens.length && (tokens[i] instanceof Marker || tokens[i] instanceof Whitespace) )
          ++i;
       return i;
@@ -82,7 +82,7 @@ function MetaCommand( id,                 // command identifier
 
    this.indexOfNextRequiredArgument = function( tokens, nextIndex )
    {
-      var i = this.indexOfNextArgument( tokens, nextIndex );
+      let i = this.indexOfNextArgument( tokens, nextIndex );
       if ( i == tokens.length )
          throw new ParseError( "\\" + this.id + ": Expected a command argument", tokens, nextIndex-1 );
       return i;
@@ -90,6 +90,32 @@ function MetaCommand( id,                 // command identifier
 }
 
 MetaCommand.prototype = new Object;
+
+/*
+function MacroCommand( id, numberOfParameters, sourceCode )
+{
+   this.__base__ = Object;
+   this.__base__();
+
+   this.id = id;
+   this.numberOfParameters = numberOfParameters;
+   this.sourceCode = sourceCode;
+
+   this.replace = function( arguments )
+   {
+      if ( arguments.length != this.numberOfParameters )
+         throw new ParseError( "\\" + this.id + ": Invalid number of macro arguments: "
+                             + arguments.length.toString() + " provided, "
+                             + this.numberOfParameters.toString() + " expected", tokens, nextIndex-1 );
+      let s = this.sourceCode;
+      for ( let i = 0; i < this.numberOfParameters; ++i )
+         s = s.replace( new RegExp( "\\$" + (i+1).toString() + "\\b" ), arguments[i], "g" );
+      return s;
+   };
+}
+
+MacroCommand.prototype = new Object;
+*/
 
 /*
  * Code/Verbatim Parameters.
@@ -102,7 +128,7 @@ function CodeParameters( command, parameters, tokens, index )
    this.mode = "inline";
    this.lang = workingData.highlightCode ? "auto" : "none";
 
-   for ( var i = 0; i < parameters.length; ++i )
+   for ( let i = 0; i < parameters.length; ++i )
       switch ( parameters[i].id )
       {
       case "import":
@@ -117,7 +143,7 @@ function CodeParameters( command, parameters, tokens, index )
          if ( !parameters[i].hasValue() )
             throw new ParseError( "Missing code language specification.", tokens, index );
          this.lang = parameters[i].value;
-         if ( this.lang != "none" && this.lang != "auto" && this.lang != "js" && this.lang != "c++" && this.lang != "pmath" )
+         if ( ["none","auto","js","c++","xml","pidoc","pmath"].indexOf( this.lang ) < 0 )
             throw new ParseError( "Unsupported source code language \'" + this.lang + "\'", tokens, index );
          break;
       default:
@@ -147,11 +173,15 @@ function BlockParameters( command, parameters, tokens, index )
    this.marginRight = '';
    this.marginTop = '';
    this.marginBottom = '';
+   this.paddingLeft = '';
+   this.paddingRight = '';
+   this.paddingTop = '';
+   this.paddingBottom = '';
    this.width = '';
    this.height = '';
    this.wrap = '';
 
-   for ( var i = 0; i < parameters.length; ++i )
+   for ( let i = 0; i < parameters.length; ++i )
       switch ( parameters[i].id )
       {
       case "border":
@@ -160,6 +190,7 @@ function BlockParameters( command, parameters, tokens, index )
          else
             this.border = "1px solid black";
          break;
+
       case "float":
          if ( parameters[i].hasValue() )
             this.floating = parameters[i].value;
@@ -171,6 +202,7 @@ function BlockParameters( command, parameters, tokens, index )
             throw new ParseError( "Missing value of the display parameter.", tokens, index );
          this.displayMode = parameters[i].value;
          break;
+
       case "marginleft":
       case "margin_left":
       case "marginLeft": // ### N.B.: All capitalized forms are now deprecated - retained for compatibility
@@ -218,6 +250,55 @@ function BlockParameters( command, parameters, tokens, index )
             throw new ParseError( "Missing value of the margin parameter.", tokens, index );
          this.marginLeft = this.marginRight = this.marginTop = this.marginBottom = parameters[i].value;
          break;
+
+      case "paddingleft":
+      case "padding_left":
+      case "paddingLeft":
+         if ( !parameters[i].hasValue() )
+            throw new ParseError( "Missing value of the paddingleft parameter.", tokens, index );
+         this.paddingLeft = parameters[i].value;
+         break;
+      case "paddingright":
+      case "padding_right":
+      case "paddingRight":
+         if ( !parameters[i].hasValue() )
+            throw new ParseError( "Missing value of the paddingright parameter.", tokens, index );
+         this.paddingRight = parameters[i].value;
+         break;
+      case "paddinghorz":
+      case "padding_horz":
+      case "paddingHorz":
+         if ( !parameters[i].hasValue() )
+            throw new ParseError( "Missing value of the paddinghorz parameter.", tokens, index );
+         this.paddingLeft = this.paddingRight = parameters[i].value;
+         break;
+      case "paddingtop":
+      case "padding_top":
+      case "paddingTop":
+         if ( !parameters[i].hasValue() )
+            throw new ParseError( "Missing value of the paddingtop parameter.", tokens, index );
+         this.paddingTop = parameters[i].value;
+         break;
+      case "paddingbottom":
+      case "padding_bottom":
+      case "paddingBottom":
+         if ( !parameters[i].hasValue() )
+            throw new ParseError( "Missing value of the paddingbottom parameter.", tokens, index );
+         this.paddingBottom = parameters[i].value;
+         break;
+      case "paddingvert":
+      case "padding_vert":
+      case "paddingVert":
+         if ( !parameters[i].hasValue() )
+            throw new ParseError( "Missing value of the paddingvert parameter.", tokens, index );
+         this.paddingTop = this.paddingBottom = parameters[i].value;
+         break;
+      case "padding":
+         if ( !parameters[i].hasValue() )
+            throw new ParseError( "Missing value of the padding parameter.", tokens, index );
+         this.paddingLeft = this.paddingRight = this.paddingTop = this.paddingBottom = parameters[i].value;
+         break;
+
       case "size":
          if ( !parameters[i].hasValue() )
             throw new ParseError( "Missing value of the size parameter.", tokens, index );
@@ -233,6 +314,7 @@ function BlockParameters( command, parameters, tokens, index )
             throw new ParseError( "Missing value of the height parameter.", tokens, index );
          this.height = parameters[i].value;
          break;
+
       case "wrap":
          if ( parameters[i].hasValue() )
             throw new ParseError( "The wrap parameter takes no value.", tokens, index );
@@ -250,13 +332,15 @@ function BlockParameters( command, parameters, tokens, index )
 
    this.toCssSource = function()
    {
-      var css = '';
+      let css = '';
       if ( !this.border.isEmpty() )
          css += "border:" + this.border + ";";
+
       if ( !this.floating.isEmpty() )
          css += "float:" + this.floating + ";";
       if ( !this.displayMode.isEmpty() )
          css += "display:" + this.displayMode + ";";
+
       if ( !this.marginLeft.isEmpty() )
          css += "margin-left:" + this.marginLeft + ";";
       if ( !this.marginRight.isEmpty() )
@@ -265,10 +349,21 @@ function BlockParameters( command, parameters, tokens, index )
          css += "margin-top:" + this.marginTop + ";";
       if ( !this.marginBottom.isEmpty() )
          css += "margin-bottom:" + this.marginBottom + ";";
+
+      if ( !this.paddingLeft.isEmpty() )
+         css += "padding-left:" + this.paddingLeft + ";";
+      if ( !this.paddingRight.isEmpty() )
+         css += "padding-right:" + this.paddingRight + ";";
+      if ( !this.paddingTop.isEmpty() )
+         css += "padding-top:" + this.paddingTop + ";";
+      if ( !this.paddingBottom.isEmpty() )
+         css += "padding-bottom:" + this.paddingBottom + ";";
+
       if ( !this.width.isEmpty() )
          css += "width:" + this.width + ";";
       if ( !this.height.isEmpty() )
          css += "height:" + this.height + ";";
+
       if ( !this.wrap.isEmpty() )
          css += "white-space:" + this.wrap + ";";
       return css;
@@ -290,8 +385,8 @@ function ListParameters( parameters, tokens, index )
    this.spaced = false;
    this.blockParameters = undefined;
 
-   var block = new Array;
-   for ( var i = 0; i < parameters.length; ++i )
+   let block = new Array;
+   for ( let i = 0; i < parameters.length; ++i )
       switch ( parameters[i].id )
       {
       case "unordered":
@@ -340,8 +435,8 @@ function TableParameters( parameters, tokens, index )
    this.name = undefined;
    this.blockParameters = undefined;
 
-   var block = new Array;
-   for ( var i = 0; i < parameters.length; ++i )
+   let block = new Array;
+   for ( let i = 0; i < parameters.length; ++i )
       switch ( parameters[i].id )
       {
       case "header":
@@ -423,8 +518,8 @@ function ImageSelectParameters( parameters, tokens, index )
    this.menuPos = "bottom";
    this.blockParameters = undefined;
 
-   var block = new Array;
-   for ( var i = 0; i < parameters.length; ++i )
+   let block = new Array;
+   for ( let i = 0; i < parameters.length; ++i )
       switch ( parameters[i].id )
       {
       case "menupos":
@@ -473,8 +568,8 @@ function EquationParameters( command, parameters, tokens, index )
    this.scale = 1.0;
    this.blockParameters = undefined;
 
-   var block = new Array;
-   for ( var i = 0; i < parameters.length; ++i )
+   let block = new Array;
+   for ( let i = 0; i < parameters.length; ++i )
       switch ( parameters[i].id )
       {
       case "import":
@@ -499,6 +594,8 @@ function EquationParameters( command, parameters, tokens, index )
          this.numbered = true;
          break;
       case "unnumbered":
+         if ( command != "equation" )
+            throw new ParseError( "The unnumbered parameter is not applicable to inline equations.", tokens, index );
          if ( parameters[i].hasValue() )
             throw new ParseError( "The unnumbered parameter takes no value.", tokens, index );
          this.numbered = false;
@@ -537,8 +634,8 @@ function FigureParameters( command, parameters, tokens, index )
    this.name = undefined;
    this.blockParameters = undefined;
 
-   var block = new Array;
-   for ( var i = 0; i < parameters.length; ++i )
+   let block = new Array;
+   for ( let i = 0; i < parameters.length; ++i )
       switch ( parameters[i].id )
       {
       case "numbered":
@@ -583,7 +680,7 @@ function PropertyParameters( command, parameters, tokens, index )
    this.label = "";
    this.readOnly = false;
 
-   for ( var i = 0; i < parameters.length; ++i )
+   for ( let i = 0; i < parameters.length; ++i )
    {
       switch ( parameters[i].id )
       {
@@ -625,9 +722,9 @@ function PragmaParameters( parameters, tokens, index )
    this.__base__ = Object;
    this.__base__();
 
-   for ( var i = 0; i < parameters.length; ++i )
+   for ( let i = 0; i < parameters.length; ++i )
    {
-      var takesValue = false;
+      let takesValue = false;
       switch ( parameters[i].id )
       {
       case "basedir":
@@ -665,6 +762,14 @@ function PragmaParameters( parameters, tokens, index )
       case "nohighlightcode":
       case "no_highlight_code":
          workingData.highlightCode = false;
+         break;
+      case "numbersections":
+      case "number_sections":
+         workingData.numberSections = true;
+         break;
+      case "nonumbersections":
+      case "no_number_sections":
+         workingData.numberSections = false;
          break;
       case "numberequations":
       case "number_equations":
@@ -725,7 +830,7 @@ function MakeParameters( parameters, tokens, index )
    this.__base__ = Object;
    this.__base__();
 
-   for ( var i = 0; i < parameters.length; ++i )
+   for ( let i = 0; i < parameters.length; ++i )
    {
       switch ( parameters[i].id )
       {
@@ -763,15 +868,17 @@ MakeParameters.prototype = new Object;
 
 MetaCommand.commands = [
 
-   // MetaCommand constructor parameters:
-   //
-   //    id, tokenCount, hasParameters, wantsNewParagraph, xhtmlGenerator, documentGenerator
-   //
-   // Generator parameters:
-   //
-   //    tokens - The token list being compiled
-   //    i      - The current token index
-   //    p      - The index p > 0 of the parameters token
+   /*
+    * MetaCommand constructor parameters:
+    *
+    *    id, tokenCount, hasParameters, wantsNewParagraph, xhtmlGenerator, documentGenerator
+    *
+    * Generator parameters:
+    *
+    *    tokens - The token list being compiled
+    *    i      - The current token index
+    *    p      - The index p > 0 of the parameters token
+    */
 
    // -------------------------------------------------------------------------
    // Document Generators
@@ -781,7 +888,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.setClass( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -790,7 +897,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "h1", tokens, i+1 );
+         let r = tokens[i].toXhtml( "h1", tokens, i+1 );
          document.setTitle( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -799,7 +906,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.addAuthor( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -808,7 +915,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
          document.setCopyright( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -817,7 +924,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.addKeyword( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -826,9 +933,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var keywords = r.contents.split( ',' );
-         for ( var j = 0; j < keywords.length; ++j )
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let keywords = r.contents.split( ',' );
+         for ( let j = 0; j < keywords.length; ++j )
             document.addKeyword( keywords[j], tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -837,7 +944,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
          document.setBrief( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -846,9 +953,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         document.setCurrentSection( this.id );
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         document.setSummary( r.contents, tokens, i-1 );
+         document.beginSection( this.id, "Abstract", tokens, i-1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSection( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
 
@@ -856,9 +963,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         document.setCurrentSection( this.id );
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         document.setIntroduction( r.contents, tokens, i-1 );
+         document.beginSection( this.id, "Introduction", tokens, i-1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSection( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
 
@@ -866,9 +973,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         document.setCurrentSection( this.id );
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         document.setDescription( r.contents, tokens, i-1 );
+         document.beginSection( this.id, "Description", tokens, i-1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSection( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
 
@@ -876,9 +983,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         document.setCurrentSection( this.id );
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         document.setMethods( r.contents, tokens, i-1 );
+         document.beginSection( this.id, "Methods", tokens, i-1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSection( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
 
@@ -886,9 +993,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         document.setCurrentSection( this.id );
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         document.setResults( r.contents, tokens, i-1 );
+         document.beginSection( this.id, "Results", tokens, i-1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSection( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
 
@@ -896,9 +1003,29 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         document.setCurrentSection( this.id );
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         document.setDiscussion( r.contents, tokens, i-1 );
+         document.beginSection( this.id, "Discussion", tokens, i-1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSection( r.contents, tokens, i-1 );
+         return r.nextIndex;
+      } ),
+
+   new MetaCommand( "acknowledgments", 1, false, false,
+      undefined,
+      function( tokens, i, p )
+      {
+         document.beginSection( this.id, "Acknowledgments", tokens, i-1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSection( r.contents, tokens, i-1 );
+         return r.nextIndex;
+      } ),
+
+   new MetaCommand( "usage", 1, false, false,
+      undefined,
+      function( tokens, i, p )
+      {
+         document.beginSection( this.id, "Usage", tokens, i-1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSection( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
 
@@ -906,22 +1033,56 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var i0 = i-1;
-         var r1 = tokens[i].toXhtml( '', tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toXhtml( '', tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         document.setCurrentSection( this.id );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
-         document.addSection( r1.contents, r2.contents, tokens, i0 );
+         document.beginSection( this.id, r1.contents, tokens, i0 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSection( r2.contents, tokens, i0 );
          return r2.nextIndex;
       } ),
 
-   new MetaCommand( "acknowledgments", 1, false, false,
-      undefined,
+   new MetaCommand( "subsection", 2, false, false,
       function( tokens, i, p )
       {
-         document.setCurrentSection( this.id );
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         document.setAcknowledgments( r.contents, tokens, i-1 );
+         return new Contents( '', this.documentGenerator( tokens, i, p ) );
+      },
+      function( tokens, i, p )
+      {
+         let i0 = i-1;
+         let r1 = tokens[i].toXhtml( '', tokens, i+1 );
+         i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
+         document.beginSubsection( r1.contents, tokens, i0 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSubsection( r2.contents, tokens, i0 );
+         return r2.nextIndex;
+      } ),
+
+   new MetaCommand( "division", 2, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( '', this.documentGenerator( tokens, i, p ) );
+      },
+      function( tokens, i, p )
+      {
+         let i0 = i-1;
+         let r1 = tokens[i].toXhtml( '', tokens, i+1 );
+         i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
+         document.beginSubsection( r1.contents, tokens, i0 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         document.endSubsection( r2.contents, tokens, i0 );
+         return r2.nextIndex;
+      } ),
+
+   new MetaCommand( "include", 1, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( '', this.documentGenerator( tokens, i, p ) );
+      },
+      function( tokens, i, p )
+      {
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         compiler.compileFile( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
 
@@ -929,10 +1090,10 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var i0 = i-1;
-         var r1 = tokens[i].toPlainText( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toPlainText( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "", tokens, i+1 );
          document.addReference( r1.contents, r2.contents, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -941,7 +1102,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.addRelatedTool( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -950,9 +1111,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var tools = r.contents.split( ',' );
-         for ( var j = 0; j < tools.length; ++j )
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let tools = r.contents.split( ',' );
+         for ( let j = 0; j < tools.length; ++j )
             document.addRelatedTool( tools[j], tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -961,7 +1122,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.addRelatedScript( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -970,9 +1131,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var scripts = r.contents.split( ',' );
-         for ( var j = 0; j < scripts.length; ++j )
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let scripts = r.contents.split( ',' );
+         for ( let j = 0; j < scripts.length; ++j )
             document.addRelatedScript( scripts[j], tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -981,7 +1142,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.addRelatedObject( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -990,9 +1151,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var objects = r.contents.split( ',' );
-         for ( var j = 0; j < objects.length; ++j )
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let objects = r.contents.split( ',' );
+         for ( let j = 0; j < objects.length; ++j )
             document.addRelatedObject( objects[j], tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -1001,10 +1162,10 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var i0 = i-1;
-         var r1 = tokens[i].toUri( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toUri( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( '', tokens, i+1 );
+         let r2 = tokens[i].toXhtml( '', tokens, i+1 );
          document.addRelatedDocument( r1.contents, r2.contents, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1013,10 +1174,10 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var i0 = i-1;
-         var r1 = tokens[i].toUri( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toUri( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( '', tokens, i+1 );
+         let r2 = tokens[i].toXhtml( '', tokens, i+1 );
          document.addRelatedResource( r1.contents, r2.contents, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1025,9 +1186,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var objects = r.contents.split( ',' );
-         for ( var j = 0; j < objects.length; ++j )
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let objects = r.contents.split( ',' );
+         for ( let j = 0; j < objects.length; ++j )
             document.addInherits( objects[j], tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -1036,9 +1197,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var objects = r.contents.split( ',' );
-         for ( var j = 0; j < objects.length; ++j )
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let objects = r.contents.split( ',' );
+         for ( let j = 0; j < objects.length; ++j )
             document.addInherited( objects[j], tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -1047,7 +1208,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.setToolId( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -1056,7 +1217,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.setModuleId( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -1065,7 +1226,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.addCategory( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -1074,9 +1235,9 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var categories = r.contents.split( ',' );
-         for ( var j = 0; j < categories.length; ++j )
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let categories = r.contents.split( ',' );
+         for ( let j = 0; j < categories.length; ++j )
             document.addCategory( categories[j], tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -1085,18 +1246,8 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.setScriptId( r.contents, tokens, i-1 );
-         return r.nextIndex;
-      } ),
-
-   new MetaCommand( "usage", 1, false, false,
-      undefined,
-      function( tokens, i, p )
-      {
-         document.setCurrentSection( this.id );
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         document.setUsage( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
 
@@ -1104,10 +1255,10 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var i0 = i-1;
-         var r1 = tokens[i].toXhtml( '', tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toXhtml( '', tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
          document.addParameter( r1.contents, r2.contents, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1116,7 +1267,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.setObjectId( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -1125,7 +1276,7 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.addRequired( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
@@ -1134,18 +1285,18 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var label = "";
-         var readOnly = false;
+         let label = "";
+         let readOnly = false;
          if ( p > 0 )
          {
-            var parameters = new PropertyParameters( "property", tokens[p].parameters, tokens, i );
+            let parameters = new PropertyParameters( "property", tokens[p].parameters, tokens, i );
             label = parameters.label;
             readOnly = parameters.readOnly;
          }
-         var i0 = i-1;
-         var r1 = tokens[i].toPlainText( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toPlainText( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
          document.addProperty( r1.contents, r2.contents, label, readOnly, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1154,18 +1305,18 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var label = "";
-         var readOnly = false;
+         let label = "";
+         let readOnly = false;
          if ( p > 0 )
          {
-            var parameters = new PropertyParameters( "staticproperty", tokens[p].parameters, tokens, i );
+            let parameters = new PropertyParameters( "staticproperty", tokens[p].parameters, tokens, i );
             label = parameters.label;
             readOnly = parameters.readOnly;
          }
-         var i0 = i-1;
-         var r1 = tokens[i].toPlainText( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toPlainText( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
          document.addStaticProperty( r1.contents, r2.contents, label, readOnly, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1174,16 +1325,16 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var label = "";
+         let label = "";
          if ( p > 0 )
          {
-            var parameters = new PropertyParameters( "eventhandler", tokens[p].parameters, tokens, i );
+            let parameters = new PropertyParameters( "eventhandler", tokens[p].parameters, tokens, i );
             label = parameters.label;
          }
-         var i0 = i-1;
-         var r1 = tokens[i].toPlainText( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toPlainText( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
          document.addEventHandler( r1.contents, r2.contents, label, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1192,16 +1343,16 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var label = "";
+         let label = "";
          if ( p > 0 )
          {
-            var parameters = new PropertyParameters( "constructor", tokens[p].parameters, tokens, i );
+            let parameters = new PropertyParameters( "constructor", tokens[p].parameters, tokens, i );
             label = parameters.label;
          }
-         var i0 = i-1;
-         var r1 = tokens[i].toPlainText( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toPlainText( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
          document.addConstructor( r1.contents, r2.contents, label, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1210,16 +1361,16 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var label = "";
+         let label = "";
          if ( p > 0 )
          {
-            var parameters = new PropertyParameters( "method", tokens[p].parameters, tokens, i );
+            let parameters = new PropertyParameters( "method", tokens[p].parameters, tokens, i );
             label = parameters.label;
          }
-         var i0 = i-1;
-         var r1 = tokens[i].toPlainText( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toPlainText( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
          document.addMethod( r1.contents, r2.contents, label, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1228,16 +1379,16 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var label = "";
+         let label = "";
          if ( p > 0 )
          {
-            var parameters = new PropertyParameters( "staticmethod", tokens[p].parameters, tokens, i );
+            let parameters = new PropertyParameters( "staticmethod", tokens[p].parameters, tokens, i );
             label = parameters.label;
          }
-         var i0 = i-1;
-         var r1 = tokens[i].toPlainText( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toPlainText( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
          document.addStaticMethod( r1.contents, r2.contents, label, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1246,16 +1397,16 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var label = "";
+         let label = "";
          if ( p > 0 )
          {
-            var parameters = new PropertyParameters( "constant", tokens[p].parameters, tokens, i );
+            let parameters = new PropertyParameters( "constant", tokens[p].parameters, tokens, i );
             label = parameters.label;
          }
-         var i0 = i-1;
-         var r1 = tokens[i].toPlainText( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toPlainText( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
          document.addConstant( r1.contents, r2.contents, label, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1264,16 +1415,16 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var label = "";
+         let label = "";
          if ( p > 0 )
          {
-            var parameters = new PropertyParameters( "predefined", tokens[p].parameters, tokens, i );
+            let parameters = new PropertyParameters( "predefined", tokens[p].parameters, tokens, i );
             label = parameters.label;
          }
-         var i0 = i-1;
-         var r1 = tokens[i].toPlainText( tokens, i+1 );
+         let i0 = i-1;
+         let r1 = tokens[i].toPlainText( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r2 = tokens[i].toXhtml( "p", tokens, i+1 );
          document.addDefine( r1.contents, r2.contents, label, tokens, i0 );
          return r2.nextIndex;
       } ),
@@ -1282,13 +1433,16 @@ MetaCommand.commands = [
       undefined,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
+         let r = tokens[i].toPlainText( tokens, i+1 );
          document.setDocumentId( r.contents, tokens, i-1 );
          return r.nextIndex;
       } ),
 
    new MetaCommand( "pragma", 0, true, false,
-      undefined,
+      function( tokens, i, p )
+      {
+         return new Contents( '', this.documentGenerator( tokens, i, p ) );
+      },
       function( tokens, i, p )
       {
          if ( p > 0 )
@@ -1315,10 +1469,10 @@ MetaCommand.commands = [
    new MetaCommand( "label", 1, false, false,
       function( tokens, i, parameters )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var label = r.contents.trim();
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let label = r.contents.trim();
          document.addLabel( label, tokens, i );
-         return new Contents( "<a name=\"" + label + "\"></a>",
+         return new Contents( "<a id=\"" + label + "\"></a>",
                               r.nextIndex );
       },
       undefined ),
@@ -1326,11 +1480,11 @@ MetaCommand.commands = [
    new MetaCommand( "lref", 2, false, false,
       function( tokens, i, p )
       {
-         var r1 = tokens[i].toUri( tokens, i+1 );
-         var label = r1.contents.trim();
+         let r1 = tokens[i].toUri( tokens, i+1 );
+         let label = r1.contents.trim();
          document.addLabelReference( label, tokens, i );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( '', tokens, i+1 );
+         let r2 = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<a href=\"#" + label + "\">" + r2.contents + "</a>",
                               r2.nextIndex );
       },
@@ -1339,13 +1493,13 @@ MetaCommand.commands = [
    new MetaCommand( "tref", 2, false, false,
       function( tokens, i, p )
       {
-         var r1 = tokens[i].toUri( tokens, i+1 );
-         var toolId = r1.contents.trim();
+         let r1 = tokens[i].toUri( tokens, i+1 );
+         let toolId = r1.contents.trim();
          if ( !document.toolDocumentExists( toolId ) )
             document.warning( "Reference to nonexistent tool document: " + toolId, tokens, i );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( '', tokens, i+1 );
-         var toolUri = "../../tools/" + toolId + "/" + toolId + ".html";
+         let r2 = tokens[i].toXhtml( '', tokens, i+1 );
+         let toolUri = "../../tools/" + toolId + "/" + toolId + ".html";
          return new Contents( "<a href=\"" + toolUri.encodeWhitespace() + "\" title=\"" + toolUri + "\">" + r2.contents + "</a>",
                               r2.nextIndex );
       },
@@ -1354,13 +1508,13 @@ MetaCommand.commands = [
    new MetaCommand( "sref", 2, false, false,
       function( tokens, i, p )
       {
-         var r1 = tokens[i].toUri( tokens, i+1 );
-         var scriptId = r1.contents.trim();
+         let r1 = tokens[i].toUri( tokens, i+1 );
+         let scriptId = r1.contents.trim();
          if ( !document.scriptDocumentExists( scriptId ) )
             document.warning( "Reference to nonexistent script document: " + scriptId, tokens, i );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( '', tokens, i+1 );
-         var scriptUri = "../../scripts/" + scriptId + "/" + scriptId + ".html";
+         let r2 = tokens[i].toXhtml( '', tokens, i+1 );
+         let scriptUri = "../../scripts/" + scriptId + "/" + scriptId + ".html";
          return new Contents( "<a href=\"" + scriptUri.encodeWhitespace() + "\" title=\"" + scriptUri + "\">" + r2.contents + "</a>",
                               r2.nextIndex );
       },
@@ -1369,13 +1523,13 @@ MetaCommand.commands = [
    new MetaCommand( "dref", 2, false, false,
       function( tokens, i, p )
       {
-         var r1 = tokens[i].toUri( tokens, i+1 );
-         var docId = r1.contents.trim();
+         let r1 = tokens[i].toUri( tokens, i+1 );
+         let docId = r1.contents.trim();
          if ( !document.genericDocumentExists( docId ) )
             document.warning( "Reference to nonexistent document: " + docId, tokens, i );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( '', tokens, i+1 );
-         var docUri = "../../docs/" + docId + "/" + docId + ".html";
+         let r2 = tokens[i].toXhtml( '', tokens, i+1 );
+         let docUri = "../../docs/" + docId + "/" + docId + ".html";
          return new Contents( "<a href=\"" + docUri.encodeWhitespace() + "\" title=\"" + docUri + "\">" + r2.contents + "</a>",
                               r2.nextIndex );
       },
@@ -1384,10 +1538,10 @@ MetaCommand.commands = [
    new MetaCommand( "xref", 2, false, false,
       function( tokens, i, p )
       {
-         var r1 = tokens[i].toUri( tokens, i+1 );
+         let r1 = tokens[i].toUri( tokens, i+1 );
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( '', tokens, i+1 );
-         var uri = r1.contents.trim();
+         let r2 = tokens[i].toXhtml( '', tokens, i+1 );
+         let uri = r1.contents.trim();
          return new Contents( "<a href=\"" + uri.encodeWhitespace() + "\" title=\"" + uri + "\">" + r2.contents + "</a>",
                               r2.nextIndex );
       },
@@ -1396,12 +1550,12 @@ MetaCommand.commands = [
    new MetaCommand( "group", 1, true, true,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         var contents = "\n<div class=\"pidoc_group\""
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let contents = "\n<div class=\"pidoc_group\""
          if ( p > 0 )
          {
-            var parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
-            var css = parameters.toCssSource();
+            let parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
@@ -1415,12 +1569,12 @@ MetaCommand.commands = [
    new MetaCommand( "block", 1, true, true,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         var contents = "\n<div"
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let contents = "\n<div"
          if ( p > 0 )
          {
-            var parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
-            var css = parameters.toCssSource();
+            let parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
@@ -1434,7 +1588,7 @@ MetaCommand.commands = [
    new MetaCommand( "left", 1, false, true,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
          return new Contents( "\n<div style=\"text-align:left;\">\n" + r.contents + "</div>\n",
                               r.nextIndex );
       },
@@ -1443,7 +1597,7 @@ MetaCommand.commands = [
    new MetaCommand( "center", 1, false, true,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
          return new Contents( "\n<div style=\"text-align:center;\">\n" + r.contents + "</div>\n",
                               r.nextIndex );
       },
@@ -1452,113 +1606,91 @@ MetaCommand.commands = [
    new MetaCommand( "right", 1, false, true,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
          return new Contents( "\n<div style=\"text-align:right;\">\n" + r.contents + "</div>\n",
                               r.nextIndex );
-      },
-      undefined ),
-
-   new MetaCommand( "subsection", 2, true, true,
-      function( tokens, i, p )
-      {
-         var r1 = tokens[i].toXhtml( '', tokens, i+1 );
-         i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
-         var label = document.nextSubsectionLabel();
-         document.addSubsection( r1.contents, label, tokens, i );
-         return new Contents( "<a name=\"" + label + "\"></a>\n" +
-                              "<div class=\"pidoc_subsection\">\n" +
-                              "   <h4 class=\"pidoc_subsectionTitle\">" + r1.contents + "</h4>\n" +
-                              r2.contents +
-                              "</div>\n\n",
-                              r2.nextIndex );
-      },
-      undefined ),
-
-   new MetaCommand( "division", 2, true, true,
-      function( tokens, i, p )
-      {
-         var r1 = tokens[i].toXhtml( '', tokens, i+1 );
-         i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toXhtml( "p", tokens, i+1 );
-         return new Contents( "<h5 class=\"pidoc_subsectionTitle\">" + r1.contents + "</h5>\n" +
-                              r2.contents +
-                              "\n\n",
-                              r2.nextIndex );
       },
       undefined ),
 
    new MetaCommand( "verbatim", 1, true, true,
       function( tokens, i, p )
       {
-         var mode = "inline";
+         let mode = "inline";
          if ( p > 0 )
          {
-            var parameters = new CodeParameters( this.id, tokens[p].parameters, tokens, i );
+            let parameters = new CodeParameters( this.id, tokens[p].parameters, tokens, i );
             mode = parameters.mode;
          }
+         let r, text;
          switch ( mode )
          {
          default: // ?!
          case "inline":
-            var r = tokens[i].toPlainText( tokens, i+1 );
-            return new Contents( "\n<pre>" + r.contents.toXhtml().trimRight() + "</pre>\n\n",
-                                 r.nextIndex );
+            r = tokens[i].toPlainText( tokens, i+1 );
+            text = r.contents.toXhtml();
+            break;
          case "import":
-            var r = tokens[i].toUri( tokens, i+1 );
-            var filePath = document.fullFilePath( r.contents.trim() );
-            try
             {
-               var f = new File;
-               f.openForReading( filePath );
-               var buffer = f.read( DataType_ByteArray, f.size );
-               f.close();
-               return new Contents( "\n<pre>" + buffer.utf8ToString().toXhtml().trimRight() + "</pre>\n\n",
-                                    r.nextIndex );
+               r = tokens[i].toUri( tokens, i+1 );
+               let filePath = document.fullFilePath( r.contents.trim() );
+               try
+               {
+                  let f = new File;
+                  f.openForReading( filePath );
+                  let buffer = f.read( DataType_ByteArray, f.size );
+                  f.close();
+                  text = buffer.utf8ToString().toXhtml();
+               }
+               catch ( x )
+               {
+                  throw new ParseError( x.message, tokens, i );
+               }
             }
-            catch ( x )
-            {
-               throw new ParseError( x.message, tokens, i );
-            }
+            break;
          }
+         // Remove leading empty lines and trailing white spaces.
+         return new Contents( "\n<pre>" + text.replace( /(^\s*\n)+/, '' ).trimRight() + "</pre>\n\n", r.nextIndex );
       },
       undefined ),
 
    new MetaCommand( "code", 1, true, true,
       function( tokens, i, p )
       {
-         var mode = "inline";
-         var lang = workingData.highlightCode ? "auto" : "none";
+         let mode = "inline";
+         let lang = workingData.highlightCode ? "auto" : "none";
          if ( p > 0 )
          {
-            var parameters = new CodeParameters( this.id, tokens[p].parameters, tokens, i );
+            let parameters = new CodeParameters( this.id, tokens[p].parameters, tokens, i );
             mode = parameters.mode;
             lang = parameters.lang;
          }
-         var code = "";
-         var suffix = ""; // for lang:auto
+         let code = "";
+         let suffix = ""; // for lang:auto
+         let r;
          switch ( mode )
          {
          default: // ?!
          case "inline":
-            var r = tokens[i].toPlainText( tokens, i+1 );
+            r = tokens[i].toPlainText( tokens, i+1 );
             code = r.contents;
             break;
          case "import":
-            var r = tokens[i].toUri( tokens, i+1 );
-            var filePath = document.fullFilePath( r.contents.trim() );
-            suffix = File.extractSuffix( filePath );
-            try
             {
-               var f = new File;
-               f.openForReading( filePath );
-               var buffer = f.read( DataType_ByteArray, f.size );
-               f.close();
-               code = buffer.utf8ToString();
-            }
-            catch ( x )
-            {
-               throw new ParseError( x.message, tokens, i );
+               r = tokens[i].toUri( tokens, i+1 );
+               let filePath = document.fullFilePath( r.contents.trim() );
+               suffix = File.extractSuffix( filePath );
+               try
+               {
+                  let f = new File;
+                  f.openForReading( filePath );
+                  let buffer = f.read( DataType_ByteArray, f.size );
+                  f.close();
+                  code = buffer.utf8ToString();
+               }
+               catch ( x )
+               {
+                  throw new ParseError( x.message, tokens, i );
+               }
             }
             break;
          }
@@ -1581,6 +1713,14 @@ MetaCommand.commands = [
             case ".cc":
                lang = "c++";
                break;
+            case ".xml":
+            case ".html":
+            case ".xhtml":
+               lang = "xml";
+               break;
+            case ".pidoc":
+               lang = "pidoc";
+               break;
             case ".pm":
             case ".pmath":
                lang = "pmath";
@@ -1589,6 +1729,9 @@ MetaCommand.commands = [
                lang = "none";
                break;
             }
+
+         // Remove leading empty lines and trailing white spaces.
+         code = code.replace( /(^\s*\n)+/, '' ).trimRight();
 
          if ( lang == "none" ) // no syntax highlighting
             return new Contents( "\n<pre class=\"code\">" + code.toPlainXhtml().trimRight() + "</pre>\n\n", r.nextIndex );
@@ -1600,43 +1743,48 @@ MetaCommand.commands = [
           *
           * Furthermore, we cannot replace quotes in code blocks, and hence we
           * cannot use String.toPlainXhtml() as above.
+          *
+          * To highlight '<', '>' (e.g., for XML syntax highlighting) and '&',
+          * specify the &lt; &gt; and &amp; entities in regular expressions.
           */
          code = code.replace( "&", "&amp;", "g"
                      ).replace( "<", "&lt;", "g"
-                        ).replace( ">", "&gt;", "g" ).trimRight();
+                        ).replace( ">", "&gt;", "g" );
+         let h;
          switch ( lang )
          {
          default: // ?!
-         case "js":    var h = new JSSyntaxHighlighter; break;
-         case "c++":   var h = new CppSyntaxHighlighter; break;
-         case "pmath": var h = new PMathSyntaxHighlighter; break;
+         case "js":    h = new JSSyntaxHighlighter; break;
+         case "c++":   h = new CppSyntaxHighlighter; break;
+         case "xml":   h = new XMLSyntaxHighlighter; break;
+         case "pidoc": h = new PIDocSyntaxHighlighter; break;
+         case "pmath": h = new PMathSyntaxHighlighter; break;
          }
-         code = h.highlight( code );
-         return new Contents( "\n<pre class=\"code\">" + code + "</pre>\n\n", r.nextIndex );
+         return new Contents( "\n<pre class=\"code\">" + h.highlight( code ) + "</pre>\n\n", r.nextIndex );
       },
       undefined ),
 
    new MetaCommand( "equation", 1, true, true,
       function( tokens, i, p )
       {
-         var mode = "";
-         var scale = 1.0;
-         var numbered = workingData.numberAllEquations;
-         var name = undefined;
-         var contents = "<div class=\"pidoc_equation\"><img";
+         let mode = "";
+         let scale = 1.0;
+         let numbered = workingData.numberAllEquations;
+         let name = undefined;
+         let contents = "<div class=\"pidoc_equation\"><img";
          if ( p > 0 )
          {
-            var parameters = new EquationParameters( this.id, tokens[p].parameters, tokens, i );
+            let parameters = new EquationParameters( this.id, tokens[p].parameters, tokens, i );
             mode = parameters.mode;
             scale = parameters.scale;
             numbered = parameters.numbered;
             name = parameters.name;
-            var css = parameters.toCssSource();
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
-         var tex = "";
-         var r;
+         let tex = "";
+         let r;
          switch ( mode )
          {
          default:
@@ -1646,12 +1794,12 @@ MetaCommand.commands = [
             break;
          case "import":
             r = tokens[i].toUri( tokens, i+1 );
-            var filePath = document.fullFilePath( r.contents.trim() );
+            let filePath = document.fullFilePath( r.contents.trim() );
             try
             {
-               var f = new File;
+               let f = new File;
                f.openForReading( filePath );
-               var buffer = f.read( DataType_ByteArray, f.size );
+               let buffer = f.read( DataType_ByteArray, f.size );
                f.close();
                tex = buffer.utf8ToString();
             }
@@ -1661,14 +1809,14 @@ MetaCommand.commands = [
             }
             break;
          }
-         var fileName = numbered ? document.addNumberedEquation( tex, scale, name, tokens, i ) :
+         let fileName = numbered ? document.addNumberedEquation( tex, scale, name, tokens, i ) :
                                    document.addEquation( tex, scale, tokens, i );
          contents += " src=\"images/" + fileName + "\" alt=\"\"/>";
          if ( numbered )
          {
-            var number = document.currentEquationNumber();
-            contents = "<a name=\"" + document.internalNumberedLabel( "equation", number ) + "\"></a>\n" + contents +
-                       format( "<span class=\"pidoc_equation_number\">[%d]</span>", number );
+            let number = document.currentEquationNumber();
+            contents = "<a id=\"" + document.internalNumberedLabel( "equation", number ) + "\"></a>" + contents +
+                       format( "<span class=\"pidoc_equation_number\">[%d]</span>" , number );
          }
          contents += "</div>\n";
          return new Contents( contents, r.nextIndex );
@@ -1678,17 +1826,17 @@ MetaCommand.commands = [
    new MetaCommand( "im", 1, true, false,
       function( tokens, i, p )
       {
-         var scale = 1.0;
-         var css = "vertical-align:middle;";
+         let scale = 1.0;
+         let css = "vertical-align:middle;";
          if ( p > 0 )
          {
-            var parameters = new EquationParameters( this.id, tokens[p].parameters, tokens, i );
+            let parameters = new EquationParameters( this.id, tokens[p].parameters, tokens, i );
             scale = parameters.scale;
             css += parameters.toCssSource();
          }
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var tex = "$$ " + r.contents.trim() + " $$";
-         var contents = "<img style=\"" + css + "\" src=\"images/" +
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let tex = "$ " + r.contents.trim() + " $";
+         let contents = "<img style=\"" + css + "\" src=\"images/" +
                         document.addEquation( tex, 0.9*scale, tokens, i ) + "\" alt=\"\"/>";
          return new Contents( contents, r.nextIndex );
       },
@@ -1697,14 +1845,14 @@ MetaCommand.commands = [
    new MetaCommand( "image", 1, true, true,
       function( tokens, i, p )
       {
-         var r = tokens[i].toUri( tokens, i+1 );
-         var imagePath = document.fullFilePath( r.contents );
-         var imageFileName = File.extractName( imagePath ) + File.extractExtension( imagePath );
-         var contents = "<img";
+         let r = tokens[i].toUri( tokens, i+1 );
+         let imagePath = document.fullFilePath( r.contents );
+         let imageFileName = File.extractName( imagePath ) + File.extractExtension( imagePath );
+         let contents = "<img";
          if ( p > 0 )
          {
-            var parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
-            var css = parameters.toCssSource();
+            let parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
@@ -1717,16 +1865,16 @@ MetaCommand.commands = [
    new MetaCommand( "figure", 1, true, true,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         var numbered = workingData.numberAllFigures;
-         var name = undefined;
-         var contents = "\n<div class=\"pidoc_figure\""
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let numbered = workingData.numberAllFigures;
+         let name = undefined;
+         let contents = "\n<div class=\"pidoc_figure\""
          if ( p > 0 )
          {
-            var parameters = new FigureParameters( this.id, tokens[p].parameters, tokens, i );
+            let parameters = new FigureParameters( this.id, tokens[p].parameters, tokens, i );
             numbered = parameters.numbered;
             name = parameters.name;
-            var css = parameters.toCssSource();
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
@@ -1734,12 +1882,12 @@ MetaCommand.commands = [
          if ( numbered )
          {
             document.addNumberedFigure( name, tokens, i );
-            var number = document.currentFigureNumber();
-            contents += "<a name=\"" + document.internalNumberedLabel( "figure", number ) + "\"></a>\n";
-            var p1 = r.contents.indexOf( String.fromCharCode( REFMARK ) + "figure_title_tag" );
+            let number = document.currentFigureNumber();
+            contents += "<a id=\"" + document.internalNumberedLabel( "figure", number ) + "\"></a>\n";
+            let p1 = r.contents.indexOf( String.fromCharCode( REFMARK ) + "figure_title_tag" );
             if ( p1 >= 0 )
             {
-               var p2 = r.contents.indexOf( String.fromCharCode( REFMARK ), p1+1 );
+               let p2 = r.contents.indexOf( String.fromCharCode( REFMARK ), p1+1 );
                if ( p2 < 0 )
                   throw new ParseError( "Internal error: unterminated \'figure_title_tag\' symbolic reference.", tokens, i );
                r.contents = r.contents.substring( 0, p1 ) +
@@ -1760,12 +1908,12 @@ MetaCommand.commands = [
    new MetaCommand( "box", 1, true, true,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
-         var contents = "\n<div class=\"pidoc_box\""
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let contents = "\n<div class=\"pidoc_box\""
          if ( p > 0 )
          {
-            var parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
-            var css = parameters.toCssSource();
+            let parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
@@ -1782,23 +1930,24 @@ MetaCommand.commands = [
          if ( !(tokens[i] instanceof TextBlock) )
             throw new ParseError( "List items must be defined into a block argument.", tokens, i );
 
+         let parameters;
          if ( p > 0 )
-            var parameters = new ListParameters( tokens[p].parameters, tokens, i );
+            parameters = new ListParameters( tokens[p].parameters, tokens, i );
 
-         var items = tokens[i].tokens;
-         var listItems = new Array;
-         for ( var j = this.indexOfNextArgument( items, 0 ); j < items.length; )
+         let items = tokens[i].tokens;
+         let listItems = new Array;
+         for ( let j = this.indexOfNextArgument( items, 0 ); j < items.length; )
          {
-            var r = items[j].toXhtml( '', items, j+1 );
+            let r = items[j].toXhtml( '', items, j+1 );
             listItems.push( r.contents );
             j = this.indexOfNextArgument( items, r.nextIndex );
          }
 
-         var contents = '';
+         let contents = '';
          if ( listItems.length > 0 )
          {
-            var listType = (p > 0) ? parameters.listType : "unordered";
-            var listTag;
+            let listType = (p > 0) ? parameters.listType : "unordered";
+            let listTag;
             switch ( listType )
             {
             default: // ?!
@@ -1812,13 +1961,13 @@ MetaCommand.commands = [
             contents += "\n<" + listTag + " class=\"pidoc_list\"";
             if ( p > 0 )
             {
-               var css = parameters.toCssSource();
+               let css = parameters.toCssSource();
                if ( !css.isEmpty() )
                   contents += " style=\"" + css + "\"";
             }
             contents += ">\n";
 
-            for ( var j = 0; j < listItems.length; ++j )
+            for ( let j = 0; j < listItems.length; ++j )
             {
                // ### TODO: Implement [ordered:<first-item>]
                contents += "<li";
@@ -1842,33 +1991,33 @@ MetaCommand.commands = [
          if ( !(tokens[i] instanceof TextBlock) )
             throw new ParseError( "Definition list items must be defined into a block argument.", tokens, i );
 
-         var items = tokens[i].tokens;
-         var definitions = new Array;
-         for ( var j = this.indexOfNextArgument( items, 0 ); j < items.length; )
+         let items = tokens[i].tokens;
+         let definitions = new Array;
+         for ( let j = this.indexOfNextArgument( items, 0 ); j < items.length; )
          {
-            var r1 = items[j].toXhtml( "p", items, j+1 );
+            let r1 = items[j].toXhtml( "p", items, j+1 );
             j = this.indexOfNextArgument( items, r1.nextIndex );
             if ( j == items.length )
                throw new ParseError( "Missing definition list item description.", items, j-1 );
-            var r2 = items[j].toXhtml( "p", items, j+1 );
+            let r2 = items[j].toXhtml( "p", items, j+1 );
             definitions.push( new Array( r1.contents, r2.contents ) );
             j = this.indexOfNextArgument( items, r2.nextIndex );
          }
 
-         var contents = '';
+         let contents = '';
          if ( definitions.length > 0 )
          {
             contents += "\n<dl class=\"pidoc_list\"";
             if ( p > 0 )
             {
-               var parameters = new BlockParameters( "definition", tokens[p].parameters, tokens, i );
-               var css = parameters.toCssSource();
+               let parameters = new BlockParameters( "definition", tokens[p].parameters, tokens, i );
+               let css = parameters.toCssSource();
                if ( !css.isEmpty() )
                   contents += " style=\"" + css + "\"";
             }
             contents += ">\n";
 
-            for ( var j = 0; j < definitions.length; ++j )
+            for ( let j = 0; j < definitions.length; ++j )
             {
                contents += "<dt>\n" + definitions[j][0] + "</dt>\n";
                contents += "<dd>\n" + definitions[j][1] + "</dd>\n";
@@ -1889,64 +2038,64 @@ MetaCommand.commands = [
          if ( !(tokens[i] instanceof TextBlock) )
             throw new ParseError( "image selection items must be defined into a block argument.", tokens, i );
 
-         var items = tokens[i].tokens;
-         var selectionItems = new Array;
-         for ( var j = this.indexOfNextArgument( items, 0 ); j < items.length; )
+         let items = tokens[i].tokens;
+         let selectionItems = new Array;
+         for ( let j = this.indexOfNextArgument( items, 0 ); j < items.length; )
          {
-            var r1 = items[j].toUri( items, j+1 );
-            var imageFilePath = document.fullFilePath( r1.contents );
-            var imageFileName = File.extractName( imageFilePath ) + File.extractExtension( imageFilePath );
+            let r1 = items[j].toUri( items, j+1 );
+            let imageFilePath = document.fullFilePath( r1.contents );
+            let imageFileName = File.extractName( imageFilePath ) + File.extractExtension( imageFilePath );
             document.addImage( imageFilePath, items, j );
 
             j = this.indexOfNextArgument( items, r1.nextIndex );
             if ( j == items.length )
                throw new ParseError( "Missing image selection text.", items, j-1 );
-            var r2 = items[j].toXhtml( '', items, j+1 );
+            let r2 = items[j].toXhtml( '', items, j+1 );
             selectionItems.push( new Array( imageFileName, r2.contents ) );
             j = this.indexOfNextArgument( items, r2.nextIndex );
          }
          if ( selectionItems.length < 2 )
             throw new ParseError( "At least two image selection items are required.", tokens, i );
 
-         var imageId = document.uniqueId();
-         var contents = "<div class=\"pidoc_mouseover\"";
-         var menuPos = "bottom";
+         let imageId = document.uniqueId();
+         let contents = "<div class=\"pidoc_mouseover\"";
+         let menuPos = "bottom";
          if ( p > 0 )
          {
-            var parameters = new ImageSelectParameters( tokens[p].parameters, tokens, i );
+            let parameters = new ImageSelectParameters( tokens[p].parameters, tokens, i );
             menuPos = parameters.menuPos;
-            var css = parameters.toCssSource();
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
          contents += ">\n";
-         var imgTag = "<img src=\"images/" + selectionItems[0][0] + "\" id=\"" + imageId + "\" alt=\"\" />\n";
-         var ulTag = "<ul>\n";
-         for ( var j = 0; j < selectionItems.length; ++j )
+         let imgTag = "<img src=\"images/" + selectionItems[0][0] + "\" id=\"" + imageId + "\" alt=\"\" />";
+         let ulTag = "<ul>\n";
+         for ( let j = 0; j < selectionItems.length; ++j )
          {
-            var id = imageId + "_" + (j+1).toString();
-            ulTag += "<li><span style=\"opacity:" + ((j == 0) ? "1.0" : "0.0") + ";\" id=\"" + id + "\">&#x25B6;&nbsp;</span>" +
-                     "<a style=\"cursor:default;\" href=\"javascript:void( 0 );\" " +
-                        "onmouseover=\"pidoc_setImgSrc( \'" + imageId + "\', \'images/" + selectionItems[j][0] + "\' ); " +
-                                      "pidoc_hideGroup( \'" + imageId + "\', " + selectionItems.length.toString() + " ); " +
-                                      "pidoc_setOpacity( \'" + id + "\', 1.0 );\">" +
+            let id = imageId + "_" + (j+1).toString();
+            ulTag += "<li><span class=\"" + ((j == 0) ? "pidoc_indicator_default" : "pidoc_indicator") + "\" id=\"" + id + "\"></span>" +
+                     "<a href=\"javascript:void(0);\" " +
+                        "onmouseover=\"pidoc_setImgSrc(\'" + imageId + "\', \'images/" + selectionItems[j][0] + "\'); " +
+                                      "pidoc_hideGroup(\'" + imageId + "\', " + selectionItems.length.toString() + "); " +
+                                      "pidoc_setOpacity(\'" + id + "\', 1.0);\">" +
                      selectionItems[j][1] + "</a></li>\n";
          }
          ulTag += "</ul>\n";
          switch ( menuPos )
          {
          case "top":
-            contents += ulTag + imgTag;
+            contents += ulTag + imgTag + "\n";
             break;
          default: // ?!
          case "bottom":
-            contents += imgTag + ulTag;
+            contents += imgTag + "\n" + ulTag;
             break;
          case "left":
-            contents += "<div style=\"float:right; margin-left:0.75em;\">" + imgTag + "</div>" + ulTag + "<br style=\"clear:right;\" />";
+            contents += "<div class=\"pidoc_image_left\">" + imgTag + "</div>\n" + ulTag;
             break;
          case "right":
-            contents += "<div style=\"float:left; margin-right:0.75em;\">" + imgTag + "</div>" + ulTag + "<br style=\"clear:left;\" />";
+            contents += "<div class=\"pidoc_image_right\">" + imgTag + "</div>\n" + ulTag;
             break;
          }
          contents += "</div>\n";
@@ -1957,27 +2106,28 @@ MetaCommand.commands = [
    new MetaCommand( "imageswap", 2, true, true,
       function( tokens, i, p )
       {
-         var r1 = tokens[i].toUri( tokens, i+1 );
-         var outFilePath = document.fullFilePath( r1.contents );
-         var outFileName = File.extractName( outFilePath ) + File.extractExtension( outFilePath );
+         let r1 = tokens[i].toUri( tokens, i+1 );
+         let outFilePath = document.fullFilePath( r1.contents );
+         let outFileName = File.extractName( outFilePath ) + File.extractExtension( outFilePath );
          document.addImage( outFilePath, tokens, i );
+         let parameters;
          if ( p > 0 )
-            var parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
+            parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
 
          i = this.indexOfNextRequiredArgument( tokens, r1.nextIndex );
-         var r2 = tokens[i].toUri( tokens, i+1 );
-         var overFilePath = document.fullFilePath( r2.contents );
-         var overFileName = File.extractName( overFilePath ) + File.extractExtension( overFilePath );
+         let r2 = tokens[i].toUri( tokens, i+1 );
+         let overFilePath = document.fullFilePath( r2.contents );
+         let overFileName = File.extractName( overFilePath ) + File.extractExtension( overFilePath );
          document.addImage( overFilePath, tokens, i );
 
-         var imageId = document.uniqueId();
-         var linkSrc =  "<a style=\"cursor:default;\" href=\"javascript:void( 0 );\" " +
-                           "onmouseover=\"pidoc_setImgSrc( \'" + imageId + "\', \'images/" + overFileName + "\' );\" " +
-                           "onmouseout=\"pidoc_setImgSrc( \'" + imageId + "\', \'images/" + outFileName + "\' );\">";
-         var contents = "<div class=\"pidoc_mouseover\"";
+         let imageId = document.uniqueId();
+         let linkSrc =  "<a href=\"javascript:void(0);\" " +
+                           "onmouseover=\"pidoc_setImgSrc(\'" + imageId + "\', \'images/" + overFileName + "\');\" " +
+                           "onmouseout=\"pidoc_setImgSrc(\'" + imageId + "\', \'images/" + outFileName + "\');\">";
+         let contents = "<div class=\"pidoc_mouseover\"";
          if ( p > 0 )
          {
-            var css = parameters.toCssSource();
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
@@ -1994,23 +2144,24 @@ MetaCommand.commands = [
          if ( !(tokens[i] instanceof TextBlock) )
             throw new ParseError( "Table rows must be defined into a block argument.", tokens, i );
 
-         var numbered = workingData.numberAllTables;
-         var name = undefined;
-         var contents = "\n<p><table class=\"pidoc_table\"";
+         let numbered = workingData.numberAllTables;
+         let name = undefined;
+         let contents = "\n<p><table class=\"pidoc_table\"";
+         let parameters;
          if ( p > 0 )
          {
-            var parameters = new TableParameters( tokens[p].parameters, tokens, i );
+            parameters = new TableParameters( tokens[p].parameters, tokens, i );
             numbered = parameters.numbered;
             name = parameters.name;
-            var css = parameters.toCssSource();
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
          contents += ">\n";
 
-         var rows = tokens[i].tokens;
-         var nr = 0;
-         for ( var j = this.indexOfNextArgument( rows, 0 );
+         let rows = tokens[i].tokens;
+         let nr = 0;
+         for ( let j = this.indexOfNextArgument( rows, 0 );
                    j < rows.length;
                    j = this.indexOfNextArgument( rows, j+1 ) )
          {
@@ -2020,16 +2171,16 @@ MetaCommand.commands = [
             if ( numbered || (p > 0 && parameters.caption) )
             {
                contents += "<caption>";
-               var caption = (p > 0 && parameters.caption) ? rows[j].toXhtml( '', rows, j+1 ).contents : "";
+               let caption = (p > 0 && parameters.caption) ? rows[j].toXhtml( '', rows, j+1 ).contents : "";
                if ( numbered )
                {
                   document.addNumberedTable( name, tokens, i );
-                  var number = document.currentTableNumber();
-                  contents += "<a name=\"" + document.internalNumberedLabel( "table", number ) + "\"></a>\n";
-                  var p1 = caption.indexOf( String.fromCharCode( REFMARK ) + "table_title_tag" );
+                  let number = document.currentTableNumber();
+                  contents += "<a id=\"" + document.internalNumberedLabel( "table", number ) + "\"></a>\n";
+                  let p1 = caption.indexOf( String.fromCharCode( REFMARK ) + "table_title_tag" );
                   if ( p1 >= 0 )
                   {
-                     var p2 = caption.indexOf( String.fromCharCode( REFMARK ), p1+1 );
+                     let p2 = caption.indexOf( String.fromCharCode( REFMARK ), p1+1 );
                      if ( p2 < 0 )
                         throw new ParseError( "Internal error: unterminated \'table_title_tag\' symbolic reference.", rows, j );
                      caption = caption.substring( 0, p1 ) +
@@ -2038,7 +2189,7 @@ MetaCommand.commands = [
                   }
                   else
                   {
-                     var tag = format( "<span class=\"pidoc_table_title\">Table %d", number );
+                     let tag = format( "<span class=\"pidoc_table_title\">Table %d", number );
                      if ( caption.isEmpty() )
                         caption = tag;
                      else
@@ -2056,11 +2207,11 @@ MetaCommand.commands = [
             }
 
             contents += "<tr>\n";
-            var cells = rows[j].tokens;
-            var nc = 0;
-            for ( var k = this.indexOfNextArgument( cells, 0 ); k < cells.length; ++nc )
+            let cells = rows[j].tokens;
+            let nc = 0;
+            for ( let k = this.indexOfNextArgument( cells, 0 ); k < cells.length; ++nc )
             {
-               var r = cells[k].toXhtml( "p", cells, k+1 );
+               let r = cells[k].toXhtml( "p", cells, k+1 );
                if ( p > 0 && parameters.headers > 0 )
                   contents += "<th>" + r.contents + "</th>\n";
                else
@@ -2085,16 +2236,16 @@ MetaCommand.commands = [
    new MetaCommand( "note", 1, true, true,
       function( tokens, i, p )
       {
-         var contents = "\n<div class=\"pidoc_note\"";
+         let contents = "\n<div class=\"pidoc_note\"";
          if ( p > 0 )
          {
-            var parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
-            var css = parameters.toCssSource();
+            let parameters = new BlockParameters( this.id, tokens[p].parameters, tokens, i );
+            let css = parameters.toCssSource();
             if ( !css.isEmpty() )
                contents += " style=\"" + css + "\"";
          }
          contents += ">\n";
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
          contents += r.contents + "</div>\n";
          return new Contents( contents, r.nextIndex );
       },
@@ -2103,11 +2254,11 @@ MetaCommand.commands = [
    new MetaCommand( "hs", 0, true, false,
       function( tokens, i, p )
       {
-         var contents = "<span style=\"margin-left:";
-         var length = "1em";
+         let contents = "<span class=\"pidoc_hspacer\" style=\"margin-left:";
+         let length = "1em";
          if ( p > 0 )
          {
-            var parameters = new SpacingParameters( tokens[p].parameters, tokens, i );
+            let parameters = new SpacingParameters( tokens[p].parameters, tokens, i );
             if ( parameters.length != undefined )
                length = parameters.length;
          }
@@ -2116,14 +2267,14 @@ MetaCommand.commands = [
       },
       undefined ),
 
-   new MetaCommand( "vs", 0, true, false,
+   new MetaCommand( "vs", 0, true, true,
       function( tokens, i, p )
       {
-         var contents = "\n<div style=\"margin-top:";
-         var length = "1em";
+         let contents = "\n<div class=\"pidoc_vspacer\" style=\"margin-top:";
+         let length = "1em";
          if ( p > 0 )
          {
-            var parameters = new SpacingParameters( tokens[p].parameters, tokens, i );
+            let parameters = new SpacingParameters( tokens[p].parameters, tokens, i );
             if ( parameters.length != undefined )
                length = parameters.length;
          }
@@ -2135,7 +2286,7 @@ MetaCommand.commands = [
    new MetaCommand( "a", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<span class=\"pidoc_argument\">" + r.contents + "</span>",
                               r.nextIndex );
       },
@@ -2144,7 +2295,7 @@ MetaCommand.commands = [
    new MetaCommand( "c", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<span class=\"pidoc_code\">" + r.contents + "</span>",
                               r.nextIndex );
       },
@@ -2153,7 +2304,7 @@ MetaCommand.commands = [
    new MetaCommand( "e", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<em>" + r.contents + "</em>",
                               r.nextIndex );
       },
@@ -2162,7 +2313,7 @@ MetaCommand.commands = [
    new MetaCommand( "s", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<strong>" + r.contents + "</strong>",
                               r.nextIndex );
       },
@@ -2171,7 +2322,7 @@ MetaCommand.commands = [
    new MetaCommand( "u", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<u>" + r.contents + "</u>",
                               r.nextIndex );
       },
@@ -2180,7 +2331,7 @@ MetaCommand.commands = [
    new MetaCommand( "d", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<del>" + r.contents + "</del>",
                               r.nextIndex );
       },
@@ -2189,7 +2340,7 @@ MetaCommand.commands = [
    new MetaCommand( "i", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<ins>" + r.contents + "</ins>",
                               r.nextIndex );
       },
@@ -2198,7 +2349,7 @@ MetaCommand.commands = [
    new MetaCommand( "sub", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<sub>" + r.contents + "</sub>",
                               r.nextIndex );
       },
@@ -2207,7 +2358,7 @@ MetaCommand.commands = [
    new MetaCommand( "sup", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<sup>" + r.contents + "</sup>",
                               r.nextIndex );
       },
@@ -2216,7 +2367,7 @@ MetaCommand.commands = [
    new MetaCommand( "wrap", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<span class=\"pidoc_wrap\">" + r.contents + "</span>",
                               r.nextIndex );
       },
@@ -2225,7 +2376,7 @@ MetaCommand.commands = [
    new MetaCommand( "nowrap", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<span class=\"pidoc_nowrap\">" + r.contents + "</span>",
                               r.nextIndex );
       },
@@ -2234,7 +2385,7 @@ MetaCommand.commands = [
    new MetaCommand( "cite", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<cite>" + r.contents + "</cite>",
                               r.nextIndex );
       },
@@ -2243,7 +2394,7 @@ MetaCommand.commands = [
    new MetaCommand( "k", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<kbd>" + r.contents + "</kbd>",
                               r.nextIndex );
       },
@@ -2253,7 +2404,7 @@ MetaCommand.commands = [
       function( tokens, i, p )
       {
          document.warning( "The \\kbd command has been deprecated; use \\k in new code.", tokens, i );
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<kbd>" + r.contents + "</kbd>",
                               r.nextIndex );
       },
@@ -2262,7 +2413,7 @@ MetaCommand.commands = [
    new MetaCommand( "m", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<span class=\"pidoc_menu\">" + r.contents + "</span>",
                               r.nextIndex );
       },
@@ -2272,7 +2423,7 @@ MetaCommand.commands = [
       function( tokens, i, p )
       {
          document.warning( "The \\menu command has been deprecated; use \\m in new code.", tokens, i );
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<span class=\"pidoc_menu\">" + r.contents + "</span>",
                               r.nextIndex );
       },
@@ -2281,7 +2432,7 @@ MetaCommand.commands = [
    new MetaCommand( "v", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<var>" + r.contents + "</var>",
                               r.nextIndex );
       },
@@ -2291,7 +2442,7 @@ MetaCommand.commands = [
       function( tokens, i, p )
       {
          document.warning( "The \\var command has been deprecated; use \\v in new code.", tokens, i );
-         var r = tokens[i].toXhtml( '', tokens, i+1 );
+         let r = tokens[i].toXhtml( '', tokens, i+1 );
          return new Contents( "<var>" + r.contents + "</var>",
                               r.nextIndex );
       },
@@ -2300,8 +2451,8 @@ MetaCommand.commands = [
    new MetaCommand( "ref", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var name = r.contents.trim();
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let name = r.contents.trim();
          if ( name.isEmpty() )
             throw new ParseError( "Empty or missing reference name.", tokens, i );
          return new Contents( document.encodedSymbolicReference( "reference", name, tokens, i ), r.nextIndex );
@@ -2311,8 +2462,8 @@ MetaCommand.commands = [
    new MetaCommand( "eqnref", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var name = r.contents.trim();
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let name = r.contents.trim();
          if ( name.isEmpty() )
             throw new ParseError( "Empty or missing equation name.", tokens, i );
          return new Contents( document.encodedSymbolicReference( "equation", name, tokens, i ), r.nextIndex );
@@ -2322,8 +2473,8 @@ MetaCommand.commands = [
    new MetaCommand( "eqnnum", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var name = r.contents.trim();
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let name = r.contents.trim();
          if ( name.isEmpty() )
             throw new ParseError( "Empty or missing equation name.", tokens, i );
          return new Contents( document.encodedSymbolicReference( "equation_number", name, tokens, i ), r.nextIndex );
@@ -2333,8 +2484,8 @@ MetaCommand.commands = [
    new MetaCommand( "figref", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var name = r.contents.trim();
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let name = r.contents.trim();
          if ( name.isEmpty() )
             throw new ParseError( "Empty or missing figure name.", tokens, i );
          return new Contents( document.encodedSymbolicReference( "figure", name, tokens, i ), r.nextIndex );
@@ -2344,8 +2495,8 @@ MetaCommand.commands = [
    new MetaCommand( "fignum", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var name = r.contents.trim();
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let name = r.contents.trim();
          if ( name.isEmpty() )
             throw new ParseError( "Empty or missing figure name.", tokens, i );
          return new Contents( document.encodedSymbolicReference( "figure_number", name, tokens, i ), r.nextIndex );
@@ -2369,8 +2520,8 @@ MetaCommand.commands = [
    new MetaCommand( "tblref", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var name = r.contents.trim();
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let name = r.contents.trim();
          if ( name.isEmpty() )
             throw new ParseError( "Empty or missing table name.", tokens, i );
          return new Contents( document.encodedSymbolicReference( "table", name, tokens, i ), r.nextIndex );
@@ -2380,8 +2531,8 @@ MetaCommand.commands = [
    new MetaCommand( "tblnum", 1, false, false,
       function( tokens, i, p )
       {
-         var r = tokens[i].toPlainText( tokens, i+1 );
-         var name = r.contents.trim();
+         let r = tokens[i].toPlainText( tokens, i+1 );
+         let name = r.contents.trim();
          if ( name.isEmpty() )
             throw new ParseError( "Empty or missing table name.", tokens, i );
          return new Contents( document.encodedSymbolicReference( "table_number", name, tokens, i ), r.nextIndex );
@@ -2404,7 +2555,7 @@ MetaCommand.commands = [
    new MetaCommand( "nf", 0, false, false,
       function( tokens, i, p )
       {
-         return new Contents( "<br style=\"clear:both;\"/>\n", i );
+         return new Contents( "<br class=\"pidoc_clearfix\"/>\n", i );
       },
       undefined ),
 
@@ -2424,7 +2575,7 @@ MetaCommand.commands = [
       },
       undefined ),
 
-   // en space
+   // hard 'en' space
    new MetaCommand( "wn", 0, false, false,
       function( tokens, i, p )
       {
@@ -2432,7 +2583,7 @@ MetaCommand.commands = [
       },
       undefined ),
 
-   // em space
+   // hard 'em' space
    new MetaCommand( "wm", 0, false, false,
       function( tokens, i, p )
       {
@@ -2440,7 +2591,7 @@ MetaCommand.commands = [
       },
       undefined ),
 
-   // thin space
+   // hard thin space
    new MetaCommand( "wt", 0, false, false,
       function( tokens, i, p )
       {
@@ -2448,11 +2599,68 @@ MetaCommand.commands = [
       },
       undefined ),
 
+   // zero-width space
+   new MetaCommand( "z", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "&#8203;", i );
+      },
+      undefined ),
+
+   // ampersand
+   new MetaCommand( "amp", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "&amp;", i );
+      },
+      undefined ),
+
+   // slash
+   new MetaCommand( "slash", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "/", i );
+      },
+      undefined ),
+
    // backslash
    new MetaCommand( "backslash", 0, false, false,
       function( tokens, i, p )
       {
+         document.warning( "The \\backslash command has been deprecated; use \\bslash in new code.", tokens, i );
          return new Contents( "\\", i );
+      },
+      undefined ),
+
+   // backslash
+   new MetaCommand( "bslash", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "\\", i );
+      },
+      undefined ),
+
+   // hyphen
+   new MetaCommand( "h", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "&#8208;", i );
+      },
+      undefined ),
+
+   // soft hyphen
+   new MetaCommand( "shy", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "&#173;", i );
+      },
+      undefined ),
+
+   // non-breakable hyphen
+   new MetaCommand( "nhy", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "&#8209;", i );
       },
       undefined ),
 
@@ -2464,11 +2672,35 @@ MetaCommand.commands = [
       },
       undefined ),
 
+   // triangular bullet
+   new MetaCommand( "tbullet", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "&#8227;", i );
+      },
+      undefined ),
+
    // horizontal ellipsis
    new MetaCommand( "ellipsis", 0, false, false,
       function( tokens, i, p )
       {
          return new Contents( "&hellip;", i );
+      },
+      undefined ),
+
+   // midline horizontal ellipsis
+   new MetaCommand( "hellip", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "&#8943;", i );
+      },
+      undefined ),
+
+   // vertical ellipsis
+   new MetaCommand( "vellip", 0, false, false,
+      function( tokens, i, p )
+      {
+         return new Contents( "&#8942;", i );
       },
       undefined ),
 
@@ -2932,11 +3164,12 @@ MetaCommand.commands.sort( function( a, b ) { return (a.id != b.id) ? ((a.id < b
 
 MetaCommand.indexOf = function( id )
 {
-   for ( var n = MetaCommand.commands.length, i = 0, j = n; ; )
+   let n = MetaCommand.commands.length;
+   for ( let i = 0, j = n; ; )
    {
       if ( j <= i )
          return (i < n && id == MetaCommand.commands[i].id) ? i : -1;
-      var m = (i + j) >> 1;
+      let m = (i + j) >> 1;
       if ( MetaCommand.commands[m].id < id )
          i = m+1;
       else
@@ -2945,4 +3178,4 @@ MetaCommand.indexOf = function( id )
 };
 
 // ****************************************************************************
-// EOF PIDocCommands.js - Released 2014/12/09 21:37:52 UTC
+// EOF PIDocCommands.js - Released 2015/01/18 20:22:19 UTC

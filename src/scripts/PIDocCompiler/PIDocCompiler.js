@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocCompiler.js - Released 2014/12/09 21:37:52 UTC
+// PIDocCompiler.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * PIDoc compiler and document generation.
@@ -119,7 +119,7 @@ function Marker()
    this.toXhtml = function( paragraphType, tokens, nextIndex )
    {
       // Eat a sequence of contiguous markers and return empty contents
-      var i = nextIndex;
+      let i = nextIndex;
       while ( i < tokens.length && tokens[i] instanceof Marker )
          ++i;
       return new Contents( '', i );
@@ -160,7 +160,7 @@ function LineMarker( lineNumber )
    // and duplicate ones (e.g., at the beginning of a text block).
    this.clone = function( lineMarker )
    {
-      var m = new LineMarker( this.lineNumber );
+      let m = new LineMarker( this.lineNumber );
       m.isClone = true;
       return m;
    };
@@ -203,7 +203,7 @@ function DocumentLocation( tokensOrLocation, index )
    else if ( tokensOrLocation instanceof String )
    {
       // Construct from a <file-path>:<line-number> encoded sequence
-      var p = tokensOrLocation.lastIndexOf( ':' ); // don't detect a drive letter
+      let p = tokensOrLocation.lastIndexOf( ':' ); // don't detect a drive letter
       if ( p > 0 )
       {
          this.filePath = tokensOrLocation.substring( 0, p );
@@ -277,8 +277,8 @@ function Whitespace( length )
 
    this.toPlainText = function( tokens, nextIndex )
    {
-      var s = '';
-      for ( var i = 0; i < this.length; ++i )
+      let s = '';
+      for ( let i = 0; i < this.length; ++i )
          s += ' ';
       return new Contents( s, nextIndex );
    };
@@ -394,7 +394,7 @@ function TextWord( word )
 
    this.toXhtml = function( paragraphType, tokens, nextIndex )
    {
-      var contents = this.word.toXhtml();
+      let contents = this.word.toXhtml();
       if ( !paragraphType.isEmpty() )
          contents = "<" + paragraphType + ">" + contents + "</" + paragraphType + ">\n";
       return new Contents( contents, nextIndex );
@@ -422,10 +422,10 @@ function TextBlock( tokens )
 
    this.toPlainText = function( tokens, nextIndex )
    {
-      var contents = '';
-      for ( var i = 0; i < this.tokens.length; )
+      let contents = '';
+      for ( let i = 0; i < this.tokens.length; )
       {
-         var r = this.tokens[i].toPlainText( this.tokens, i+1 );
+         let r = this.tokens[i].toPlainText( this.tokens, i+1 );
          contents += r.contents;
          i = r.nextIndex;
       }
@@ -434,10 +434,10 @@ function TextBlock( tokens )
 
    this.toUri = function( tokens, nextIndex )
    {
-      var contents = '';
-      for ( var i = 0; i < this.tokens.length; )
+      let contents = '';
+      for ( let i = 0; i < this.tokens.length; )
       {
-         var r = this.tokens[i].toUri( this.tokens, i+1 );
+         let r = this.tokens[i].toUri( this.tokens, i+1 );
          contents += r.contents;
          i = r.nextIndex;
       }
@@ -446,14 +446,14 @@ function TextBlock( tokens )
 
    this.toXhtml = function( paragraphType, tokens, nextIndex )
    {
-      var beginTag = paragraphType.isEmpty() ? '' : "<" + paragraphType + ">";
-      var endTag = paragraphType.isEmpty() ? '' : "</" + paragraphType + ">\n";
-      var contents = '';
-      var paragraph = '';
+      let beginTag = paragraphType.isEmpty() ? '' : "<" + paragraphType + ">";
+      let endTag = paragraphType.isEmpty() ? '' : "</" + paragraphType + ">\n";
+      let contents = '';
+      let paragraph = '';
 
-      for ( var i = 0; i < this.tokens.length; )
+      for ( let i = 0; i < this.tokens.length; )
       {
-         var r = this.tokens[i].toXhtml( '', this.tokens, i+1 );
+         let r = this.tokens[i].toXhtml( '', this.tokens, i+1 );
 
          if ( r.contents.isEmpty() )
          {
@@ -501,8 +501,8 @@ function TextBlock( tokens )
 
    this.toString = function()
    {
-      var s = "<block={";
-      for ( var i = 0; i < this.tokens.length; ++i )
+      let s = "<block={";
+      for ( let i = 0; i < this.tokens.length; ++i )
          s += this.tokens[i].toString();
       s += "}>";
       return s;
@@ -523,7 +523,7 @@ function CommandParameter( parameter, tokens, i )
    if ( parameter.isEmpty() )
       throw new ParseError( "Expected a command parameter between '[]'", tokens, i );
 
-   var c = parameter.indexOf( ':' );
+   let c = parameter.indexOf( ':' );
    if ( c == 0 )
       throw new ParseError( "Expected a command parameter identifier before ':'", tokens, i );
    if ( c > 0 )
@@ -562,18 +562,18 @@ function CommandParameters( tokens, i, j )
 
    this.parameters = new Array;
 
-   var s = '';
+   let s = '';
    for ( ; i < j; ++i )
    {
-      var r = tokens[i].toPlainText( tokens, i );
+      let r = tokens[i].toPlainText( tokens, i );
       s += (r instanceof Contents) ? r.contents : r;
    }
    if ( !s.isEmpty() )
    {
-      var p = s[0];
+      let p = s[0];
       if ( p == ',' )
          throw new ParseError( "Missing command parameter before ','", tokens, i );
-      for ( var k = 1; k < s.length; ++k )
+      for ( let k = 1; k < s.length; ++k )
          if ( s[k] == ',' && s[k-1] != '\\' )
          {
             this.parameters.push( new CommandParameter( p.trim(), tokens, i ) );
@@ -607,8 +607,8 @@ function CommandParameters( tokens, i, j )
 
    this.toString = function()
    {
-      var s = "<parameters=";
-      for ( var i = 0; i < this.parameters.length; ++i )
+      let s = "<parameters=";
+      for ( let i = 0; i < this.parameters.length; ++i )
       {
          if ( i > 0 )
             s += ',';
@@ -632,7 +632,7 @@ function Command( id, tokens, i )
    this.__base__ = Token;
    this.__base__();
 
-   var index = MetaCommand.indexOf( id );
+   let index = MetaCommand.indexOf( id );
    if ( index < 0 )
       throw new ParseError( "Unknown command '\\" + id + "'", tokens, i );
 
@@ -640,7 +640,7 @@ function Command( id, tokens, i )
 
    this.indexOfParameters = function( tokens, nextIndex )
    {
-      var i = this.meta.indexOfNextArgument( tokens, nextIndex );
+      let i = this.meta.indexOfNextArgument( tokens, nextIndex );
       return (i < tokens.length && tokens[i] instanceof CommandParameters) ? i : -1;
    };
 
@@ -670,7 +670,7 @@ function Command( id, tokens, i )
          throw new ParseError( "The \\" + this.meta.id + " command is not a contents generator.", tokens, i-1 );
 
       // If this command takes optional parameters, look ahead for them
-      var p = this.indexOfParameters( tokens, i );
+      let p = this.indexOfParameters( tokens, i );
       if ( p > 0 )
          if ( !this.meta.hasParameters )
             throw new ParseError( "The \\" + this.meta.id + " command does not take parameters.", tokens, i-1 );
@@ -680,7 +680,7 @@ function Command( id, tokens, i )
          i = this.meta.indexOfNextRequiredArgument( tokens, (p > 0) ? p+1 : i );
 
       // Generate contents
-      var r = this.meta.xhtmlGenerator( tokens, i, p );
+      let r = this.meta.xhtmlGenerator( tokens, i, p );
 
       // Return the generated contents with the index of the next token
       if ( p < 0 || p < r.nextIndex )
@@ -699,7 +699,7 @@ function Command( id, tokens, i )
          throw new ParseError( "The \\" + this.meta.id + " command is not a document generator.", tokens, i-1 );
 
       // If this command takes optional parameters, look ahead for them
-      var p = this.indexOfParameters( tokens, i );
+      let p = this.indexOfParameters( tokens, i );
       if ( p > 0 )
          if ( !this.meta.hasParameters )
             throw new ParseError( "The \\" + this.meta.id + " command does not take parameters.", tokens, i-1 );
@@ -747,21 +747,87 @@ function PIDocCompiler()
       console.writeln( "<end><cbr><br>" +
                        "====================================================================" );
       console.writeln( "PixInsight Documentation Compiler script version " + VERSION );
-      console.writeln( "Copyright (c) 2010-2013 Pleiades Astrophoto. All Rights Reserved." );
+      console.writeln( "Copyright (c) 2010-2015 Pleiades Astrophoto. All Rights Reserved." );
       console.writeln( "====================================================================" );
       console.writeln();
       console.flush();
 
-      document.actionMessage( "Compiling source file: " + filePath );
-
       document.reset();
       gc();
-      document.setFilePath( filePath );
-      this.filePath = filePath;
-      var tokens = this.parse( this.tokenize( this.getTextLines( this.read() ) ) );
+
+      this.filePaths = [];
+
+      compiler = this;
+
+      try
+      {
+         if ( this.compileFile( filePath, [], 0 ) )
+         {
+            if ( document.xhtmlInitialized )
+               document.endXhtmlDocument();
+            else
+               document.warning( "No document has been generated (didn't \\make ?).", tokens, 1 );
+
+            document.checkLabelReferences();
+
+            document.message( "Successful compilation with " + document.warningCount + " warning(s)." );
+         }
+         else
+            document.warning( "Empty source file: " + filePath, tokens, 0 );
+
+         compiler = null;
+      }
+      catch ( x )
+      {
+         compiler = null;
+         throw x;
+      }
+   };
+
+   /*
+    * Path to the current file being compiled, either the initial file sent to
+    * the driver, or an \include file.
+    */
+   this.currentFilePath = function()
+   {
+      return this.filePaths[0];
+   };
+
+   /*
+    * Compile an \include file.
+    */
+   this.compileFile = function( filePath, _tokens, _index )
+   {
+      if ( compiler != this )
+         throw new Error( "*** Internal error: Invalid call to PIDocCompiler.compileFile()" );
+
+      if ( this.filePaths.length > 0 )
+      {
+         let path = File.extractDrive( filePath ) + File.extractDirectory( filePath );
+         if ( path.isEmpty() )
+         {
+            path = File.extractDrive( this.currentFilePath() ) + File.extractDirectory( this.currentFilePath() );
+            if ( !path.endsWith( '/' ) )
+               path += '/';
+            filePath = path + File.extractNameAndSuffix( filePath );
+         }
+      }
+
+      filePath = File.fullPath( filePath );
+
+      for ( let i = 0; i < this.filePaths.length; ++i )
+         if ( this.filePaths[i] == filePath )
+            throw new ParseError( "Circular reference to included file: " + filePath, _tokens, _index );
+
+      document.actionMessage( "Compiling source file: " + filePath );
+
+      this.filePaths.unshift( filePath );
+      document.setFilePath( this.currentFilePath() );
+
+      let tokens = this.parse( this.tokenize( this.getTextLines( this.read() ) ) );
       if ( tokens.length > 0 )
       {
-         for ( var i = 0; i < tokens.length; )
+         for ( let i = 0; i < tokens.length; )
             if ( tokens[i] instanceof Marker || tokens[i] instanceof Whitespace )
                ++i;
             else
@@ -771,18 +837,17 @@ function PIDocCompiler()
                else
                   throw new ParseError( "Expected a command token.", tokens, i );
             }
-
-         if ( document.xhtmlInitialized )
-            document.endXhtmlDocument();
-         else
-            document.warning( "No document has been generated (didn't \\make ?).", tokens, 1 );
-
-         document.checkLabelReferences();
-
-         document.message( "Successful compilation with " + document.warningCount + " warning(s)." );
       }
       else
          document.warning( "Empty source file: " + filePath, tokens, 0 );
+
+      if ( this.filePaths.length > 1 )
+      {
+         this.filePaths.shift();
+         document.setFilePath( this.currentFilePath() );
+      }
+
+      return tokens.length > 0;
    };
 
    /*
@@ -791,9 +856,9 @@ function PIDocCompiler()
     */
    this.read = function()
    {
-      var f = new File;
-      f.openForReading( this.filePath );
-      var buffer = f.read( DataType_ByteArray, f.size );
+      let f = new File;
+      f.openForReading( this.currentFilePath() );
+      let buffer = f.read( DataType_ByteArray, f.size );
       f.close();
       return buffer;
    };
@@ -805,14 +870,14 @@ function PIDocCompiler()
     */
    this.getTextLines = function( buffer )
    {
-      var lines = new Array;
-      for ( var bol = 0; ; )
+      let lines = new Array;
+      for ( let bol = 0; ; )
       {
          // Scan end-of-line sequence.
          // Support native EOL sequences on all platforms:
          // UNIX (LF), Windows (CR+LF) and old Mac (CR)
-         var n = 1;
-         var eol = buffer.linearSearch( 0x0A, bol );  // LF
+         let n = 1;
+         let eol = buffer.linearSearch( 0x0A, bol );  // LF
          if ( eol < 0 )
          {
             eol = buffer.linearSearch( 0x0D, bol );   // CR
@@ -829,10 +894,10 @@ function PIDocCompiler()
          }
 
          // Remove line comments
-         var eeol = eol;
-         for ( var p = bol; ; )
+         let eeol = eol;
+         for ( let p = bol; ; )
          {
-            var lcm = buffer.linearSearch( PERCENT, p, eol );
+            let lcm = buffer.linearSearch( PERCENT, p, eol );
             if ( lcm < 0 )
                break;
             if ( lcm == p || buffer.at( lcm-1 ) != BKSLASH ) // ignore escaped '%'
@@ -872,18 +937,18 @@ function PIDocCompiler()
     */
    this.tokenize = function( lines )
    {
-      var tokens = new Array;
-      tokens.push( new FileMarker( this.filePath ) );
+      let tokens = new Array;
+      tokens.push( new FileMarker( this.currentFilePath() ) );
 
-      var verbatim = false;
-      var verbatimPos = 0;
-      for ( var i = 0; i < lines.length; ++i )
+      let verbatim = false;
+      let verbatimPos = 0;
+      for ( let i = 0; i < lines.length; ++i )
       {
          tokens.push( new LineMarker( i ) );
 
-         var line = lines[i];
-         var token = '';
-         for ( var j = 0; j < line.length; )
+         let line = lines[i];
+         let token = '';
+         for ( let j = 0; j < line.length; )
             switch ( line.charCodeAt( j ) )
             {
             // Number sign '#'
@@ -928,7 +993,7 @@ function PIDocCompiler()
                   tokens.push( new TextWord( token ) );
                   token = '';
                }
-               for ( var n = 1; ++j < line.length; ++n )
+               for ( let n = 1; ++j < line.length; ++n )
                   if ( !isWhitespace( line.charCodeAt( j ) ) )
                   {
                      tokens.push( new Whitespace( n ) );
@@ -1008,10 +1073,10 @@ function PIDocCompiler()
     */
    this.parse = function( tokens )
    {
-      var items = new Array;
-      for ( var i = 0; i < tokens.length; ++i )
+      let items = new Array;
+      for ( let i = 0; i < tokens.length; ++i )
       {
-         var token = tokens[i];
+         let token = tokens[i];
 
          if ( token instanceof TextWord ||
               token instanceof Whitespace ||
@@ -1028,8 +1093,8 @@ function PIDocCompiler()
             if ( ++i < tokens.length )
                if ( tokens[i] instanceof TextWord )
                {
-                  var word = tokens[i].word;
-                  var j = 0;
+                  let word = tokens[i].word;
+                  let j = 0;
                   while ( ++j < word.length && isCommandIdChar( word.charCodeAt( j ) ) ) {}
                   items.push( new Command( word.substring( 0, j ), tokens, i ) );
                   if ( j < word.length )
@@ -1043,8 +1108,8 @@ function PIDocCompiler()
             if ( token.isBeginParameters() )
             {
                // Command parameters
-               var completed = false;
-               for ( var j = i; ++j < tokens.length; )
+               let completed = false;
+               for ( let j = i; ++j < tokens.length; )
                   if ( tokens[j] instanceof Bracket )
                      if ( tokens[j].isEndParameters() )
                      {
@@ -1061,21 +1126,21 @@ function PIDocCompiler()
             else if ( token.isBeginBlock() )
             {
                // Text block
-               var count = 1;
-               for ( var j = i; ++j < tokens.length; )
+               let count = 1;
+               for ( let j = i; ++j < tokens.length; )
                   if ( tokens[j] instanceof Bracket )
                      if ( tokens[j].isEndBlock() )
                      {
                         if ( --count == 0 )
                         {
-                           var block = tokens.slice( i+1, j );
-                           for ( var k = i; k >= 0; --k )
+                           let block = tokens.slice( i+1, j );
+                           for ( let k = i; k >= 0; --k )
                               if ( tokens[k] instanceof LineMarker )
                               {
                                  block.unshift( tokens[k].clone() );
                                  break;
                               }
-                           block.unshift( new FileMarker( this.filePath ) );
+                           block.unshift( new FileMarker( this.currentFilePath() ) );
                            items.push( new TextBlock( this.parse( block ) ) );
                            i = j;
                            break;
@@ -1107,15 +1172,15 @@ function PIDocCompiler()
 
    this.print = function( tokens )
    {
-      for ( var i = 0; i < tokens.length; ++i )
+      for ( let i = 0; i < tokens.length; ++i )
          console.writeln( "<raw>" + tokens[i].toString() + "</raw>" );
    };
 
    this.printXHTML = function( tokens )
    {
-      for ( var i = 0; i < tokens.length; )
+      for ( let i = 0; i < tokens.length; )
       {
-         var r = tokens[i].toXhtml( "p", tokens, i+1 );
+         let r = tokens[i].toXhtml( "p", tokens, i+1 );
          console.writeln( "<raw>" + r.contents + "</raw>" );
          i = r.nextIndex;
       }
@@ -1124,5 +1189,10 @@ function PIDocCompiler()
 
 PIDocCompiler.prototype = new Object;
 
+/*
+ * Global compiler object
+ */
+var compiler = null;
+
 // ****************************************************************************
-// EOF PIDocCompiler.js - Released 2014/12/09 21:37:52 UTC
+// EOF PIDocCompiler.js - Released 2015/01/18 20:22:19 UTC

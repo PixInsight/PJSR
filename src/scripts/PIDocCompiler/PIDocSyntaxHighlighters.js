@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocSyntaxHighlighters.js - Released 2014/12/09 21:37:52 UTC
+// PIDocSyntaxHighlighters.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Syntax highlighting of \code blocks.
@@ -78,9 +78,9 @@ function SyntaxHighlightingRule( pattern, cssClass )
       else
          end = Math.min( end, text.length );
 
-      for ( var m = [], i = 0, x = new RegExp( this.pattern, "g" ); ; )
+      for ( let m = [], i = 0, x = new RegExp( this.pattern, "g" ); ; )
       {
-         var r = x.exec( text );
+         let r = x.exec( text );
          if ( r == null || r.index >= end )
             return m;
          if ( r.index >= start )
@@ -105,10 +105,10 @@ function SyntaxHighlighter()
          start = 0;
       if ( end == undefined )
          end = text.length;
-      for ( var i = 0; i < rules.length; ++i )
+      for ( let i = 0; i < rules.length; ++i )
       {
-         var m = rules[i].findMatches( text, start, end );
-         for ( var j = 0; j < m.length; ++j )
+         let m = rules[i].findMatches( text, start, end );
+         for ( let j = 0; j < m.length; ++j )
             this.setFormat( M, m[j].start, m[j].end, m[j].cssClass );
       }
    };
@@ -119,10 +119,10 @@ function SyntaxHighlighter()
          start = 0;
       if ( end == undefined )
          end = text.length;
-      for ( var i = 0; i < rules.length; ++i )
+      for ( let i = 0; i < rules.length; ++i )
       {
-         var m = rules[i].findMatches( text, start, end );
-         for ( var j = 0; j < m.length; ++j )
+         let m = rules[i].findMatches( text, start, end );
+         for ( let j = 0; j < m.length; ++j )
          {
             if ( text[m[j].end-1] == '(' ) // don't include '(' after function identifier
                if ( --m[j].end <= m[j].start )
@@ -134,17 +134,17 @@ function SyntaxHighlighter()
 
    this.matchMultilineCPreprocessorDirectives = function( M, text )
    {
-      for ( var startIndex = 0; ; ++startIndex )
+      for ( let startIndex; ; ++startIndex )
       {
          startIndex = text.indexOf( '#', startIndex );
          if ( startIndex < 0 )
             break;
          if ( !this.inStringOrCxxSingleLineComment( text, startIndex ) )
          {
-            var isPPD = true;
-            for ( var i = startIndex; --i > 0; )
+            let isPPD = true;
+            for ( let i = startIndex; --i > 0; )
             {
-               var c = text.charCodeAt( i );
+               let c = text.charCodeAt( i );
                if ( c != SP && c != HT )
                {
                   isPPD = c == LF;
@@ -153,22 +153,23 @@ function SyntaxHighlighter()
             }
             if ( isPPD )
             {
-               var eolIndex = text.indexOf( '\n', startIndex );
+               let eolIndex = text.indexOf( '\n', startIndex );
                if ( eolIndex < 0 )
                   eolIndex = text.length;
                this.setFormat( M, startIndex, eolIndex, "preprocessor" );
 
+               let isEBS;
                do
                {
-                  var isEBS = false;
-                  var ebsIndex = text.indexOf( '\\', startIndex );
+                  isEBS = false;
+                  let ebsIndex = text.indexOf( '\\', startIndex );
                   if ( ebsIndex > 0 && ebsIndex < eolIndex )
                      if ( !this.inCxxSingleLineComment( text, ebsIndex ) )
                      {
-                        var isEBS = true;
-                        for ( var i = ebsIndex; ++i < eolIndex; )
+                        isEBS = true;
+                        for ( let i = ebsIndex; ++i < eolIndex; )
                         {
-                           var c = text.charCodeAt( i );
+                           let c = text.charCodeAt( i );
                            if ( c != SP && c != HT )
                            {
                               isEBS = c == LF;
@@ -195,16 +196,15 @@ function SyntaxHighlighter()
 
    this.matchCSingleLineComments = function( M, text )
    {
-      for ( var startIndex = 0; ; )
+      for ( let startIndex; ; )
       {
          startIndex = text.indexOf( "//", startIndex );
          if ( startIndex < 0 )
             break;
 
-         var eolIndex;
          if ( !this.inString( text, startIndex ) )
          {
-            eolIndex = text.indexOf( '\n', startIndex+2 );
+            let eolIndex = text.indexOf( '\n', startIndex+2 );
             if ( eolIndex < 0 )
                eolIndex = text.length;
             this.setFormat( M, startIndex, eolIndex, "singleLineComment" );
@@ -220,7 +220,7 @@ function SyntaxHighlighter()
 
    this.matchCMultilineComments = function( M, text )
    {
-      for ( var startIndex = 0; ; startIndex += 2 )
+      for ( let startIndex; ; startIndex += 2 )
       {
          startIndex = text.indexOf( "/*", startIndex );
          if ( startIndex < 0 )
@@ -228,7 +228,7 @@ function SyntaxHighlighter()
 
          if ( !this.inStringOrCxxSingleLineComment( text, startIndex+1 ) ) // +1 because it could be //\*
          {
-            var endIndex = text.indexOf( "\*\/", startIndex+2 );
+            let endIndex = text.indexOf( "\*\/", startIndex+2 );
             if ( endIndex < 0 )
                endIndex = text.length;
             this.setFormat( M, startIndex, endIndex+2, "multiLineComment" );
@@ -246,10 +246,10 @@ function SyntaxHighlighter()
       end = Math.min( end, M.length );
 
       // Intersection with the previous format item
-      for ( var i = start; --i >= 0; )
+      for ( let i = start; --i >= 0; )
          if ( M[i] != null )
          {
-            var j = i + M[i].length;
+            let j = i + M[i].length;
             if ( j > start )
             {
                M[i].length = start - i;
@@ -259,10 +259,10 @@ function SyntaxHighlighter()
             break;
          }
       // Intersections with overlapped format items
-      for ( var i = start; i < end; ++i )
+      for ( let i = start; i < end; ++i )
          if ( M[i] != null )
          {
-            var j = i + M[i].length;
+            let j = i + M[i].length;
             if ( j > end )
                M[end] = {length:j-end, cssClass:M[i].cssClass};
             M[i] = null;
@@ -273,8 +273,8 @@ function SyntaxHighlighter()
 
    this.applyFormat = function( text, M )
    {
-      var highlighted = "";
-      for ( var i = 0, start = 0; ; )
+      let highlighted = "";
+      for ( let i = 0, start = 0; ; )
       {
          if ( M[i] != null )
          {
@@ -299,12 +299,12 @@ function SyntaxHighlighter()
 
    this.inString = function( text, i )
    {
-      var dquo = false;
-      var squo = false;
+      let dquo = false;
+      let squo = false;
 
       while ( --i >= 0 )
       {
-         var c = text[i];
+         let c = text[i];
          if ( c == '\n' )
             return false;
          if ( i == 0 || text[i-1] != '\\' )
@@ -325,12 +325,12 @@ function SyntaxHighlighter()
 
    this.inStringOrCxxSingleLineComment = function( text, i )
    {
-      var dquo = false;
-      var squo = false;
+      let dquo = false;
+      let squo = false;
 
       while ( --i >= 0 )
       {
-         var c = text[i];
+         let c = text[i];
          if ( c == '\n' )
             return false;
          if ( i == 0 || text[i-1] != '\\' )
@@ -356,7 +356,7 @@ function SyntaxHighlighter()
    {
       while ( --i >= 0 )
       {
-         var c = text[i];
+         let c = text[i];
          if ( c == '\n' )
             return false;
          if ( c == '/' && i > 0 && text[i-1] == '/' )
@@ -395,10 +395,10 @@ function JSSyntaxHighlighter()
 
    this.highlightingRules = new Array;
 
-   for ( var i = 0; i < JSSyntaxHighlighter.reservedWords.length; ++i )
+   for ( let i = 0; i < JSSyntaxHighlighter.reservedWords.length; ++i )
       this.highlightingRules.push( new SyntaxHighlightingRule( "\\b" + JSSyntaxHighlighter.reservedWords[i] + "\\b", "keyword" ) );
 
-   for ( var i = 0; i < JSSyntaxHighlighter.ecmaReservedWords.length; ++i )
+   for ( let i = 0; i < JSSyntaxHighlighter.ecmaReservedWords.length; ++i )
       this.highlightingRules.push( new SyntaxHighlightingRule( "\\b" + JSSyntaxHighlighter.ecmaReservedWords[i] + "\\b", "ecmaKeyword" ) );
 
    this.highlightingRules.push( new SyntaxHighlightingRule( "\\b[A-Za-z0-9_]+(?=\\()", "function" ) );
@@ -409,12 +409,12 @@ function JSSyntaxHighlighter()
     * be highlighted correctly.
     */
 
-   var coreObjects = TypeDescription.coreObjects;
-   for ( var i = 0; i < coreObjects.length; ++i )
+   let coreObjects = TypeDescription.coreObjects;
+   for ( let i = 0; i < coreObjects.length; ++i )
       this.highlightingRules.push( new SyntaxHighlightingRule( "\\b" + coreObjects[i] + "(?:\\b|\\()", "object" ) );
 
-   var externalObjects = TypeDescription.externalObjects;
-   for ( var i = 0; i < externalObjects.length; ++i )
+   let externalObjects = TypeDescription.externalObjects;
+   for ( let i = 0; i < externalObjects.length; ++i )
       this.highlightingRules.push( new SyntaxHighlightingRule( "\\b" + externalObjects[i] + "(?:\\b|\\()", "externalObject" ) );
 
    this.highlightingRules.push( new SyntaxHighlightingRule( "((\\b[0-9]+)?\\.)?\\b[0-9]+([eE][-+]?[0-9]+)?\\b", "number" ) );
@@ -424,8 +424,8 @@ function JSSyntaxHighlighter()
 
    this.highlight = function( text )
    {
-      var M = new Array( text.length );
-      for ( var i = 0; i < M.length; ++i )
+      let M = new Array( text.length );
+      for ( let i = 0; i < M.length; ++i )
          M[i] = null;
 
       this.matchBlockRulesWithFunctionCalls( M, text, this.highlightingRules );
@@ -441,18 +441,20 @@ JSSyntaxHighlighter.prototype = new SyntaxHighlighter;
 
 JSSyntaxHighlighter.reservedWords =
 [
-   "break", "case", "continue", "default", "delete", "do", "else", "export", "false",
-   "for", "function", "if", "in", "new", "null", "return", "switch", "this", "true",
-   "typeof", "var", "void", "while", "with", "const", "try", "catch", "finally", "throw",
-   "instanceof", "yield", "let", "prototype", "undefined"
+   "break", "case", "catch", "class", "const", "constructor", "continue",
+   "debugger", "default", "delete", "do", "else", "export", "extends", "false",
+   "finally", "for", "function", "get", "if", "import", "in", "instanceof",
+   "let", "new", "null", "prototype", "return", "set", "static", "super",
+   "switch", "this", "throw", "true", "try", "typeof", "undefined", "var",
+   "void", "while", "with", "yield", "Infinity", "NaN"
 ];
 
 JSSyntaxHighlighter.ecmaReservedWords =
 [
-   "abstract", "boolean", "byte", "char", "class", "double", "extends", "final", "float",
-   "goto", "implements", "import", "int", "interface", "long", "native", "package",
-   "private", "protected", "public", "short", "static", "super", "synchronized", "throws",
-   "transient", "volatile", "enum"
+   "abstract", "arguments", "await", "boolean", "byte", "char", "double",
+   "enum", "final", "float", "goto", "implements", "int", "interface", "long",
+   "native", "package", "private", "protected", "public", "short",
+   "synchronized", "transient", "volatile"
 ];
 
 /*
@@ -465,13 +467,13 @@ function CppSyntaxHighlighter()
 
    this.highlightingRules = new Array;
 
-   for ( var i = 0; i < CppSyntaxHighlighter.reservedWords.length; ++i )
+   for ( let i = 0; i < CppSyntaxHighlighter.reservedWords.length; ++i )
       this.highlightingRules.push( new SyntaxHighlightingRule( "\\b" + CppSyntaxHighlighter.reservedWords[i] + "\\b", "keyword" ) );
 
-   for ( var i = 0; i < CppSyntaxHighlighter.pclReservedWords.length; ++i )
+   for ( let i = 0; i < CppSyntaxHighlighter.pclReservedWords.length; ++i )
       this.highlightingRules.push( new SyntaxHighlightingRule( "\\b" + CppSyntaxHighlighter.pclReservedWords[i] + "\\b", "pclKeyword" ) );
 
-   for ( var i = 0; i < CppSyntaxHighlighter.qtReservedWords.length; ++i )
+   for ( let i = 0; i < CppSyntaxHighlighter.qtReservedWords.length; ++i )
       this.highlightingRules.push( new SyntaxHighlightingRule( "\\b" + CppSyntaxHighlighter.qtReservedWords[i] + "\\b", "qtKeyword" ) );
 
    this.highlightingRules.push( new SyntaxHighlightingRule( "\\b[A-Za-z0-9_]+(?=\\()", "function" ) );
@@ -492,8 +494,8 @@ function CppSyntaxHighlighter()
 
    this.highlight = function( text )
    {
-      var M = new Array( text.length );
-      for ( var i = 0; i < M.length; ++i )
+      let M = new Array( text.length );
+      for ( let i = 0; i < M.length; ++i )
          M[i] = null;
 
       this.matchBlockRulesWithFunctionCalls( M, text, this.highlightingRules );
@@ -518,12 +520,12 @@ CppSyntaxHighlighter.reservedWords =
    "if", "inline", "int", "int8_t", "int16_t", "int32_t", "int64_t", "intmax_t",
    "long", "mutable", "namespace", "new", "noexcept", "not", "not_eq",
    "nullptr", "operator", "or", "or_eq", "private", "protected", "public",
-   "register", "reinterpret_cast", "return", "short", "signed", "sizeof",
-   "static", "static_assert", "static_cast", "struct", "switch", "template",
-   "this", "thread_local", "throw", "true", "try", "typedef", "typeid",
-   "typename", "union", "unsigned", "uint8_t", "uint16_t", "uint32_t",
-   "uint64_t", "uintmax_t", "using", "virtual", "void", "volatile", "wchar_t",
-   "while", "xor", "xor_eq"
+   "reinterpret_cast", "return", "short", "signed", "sizeof", "static",
+   "static_assert", "static_cast", "struct", "switch", "template", "this",
+   "thread_local", "throw", "true", "try", "typedef", "typeid", "typename",
+   "union", "unsigned", "uint8_t", "uint16_t", "uint32_t", "uint64_t",
+   "uintmax_t", "using", "virtual", "void", "volatile", "wchar_t", "while",
+   "xor", "xor_eq"
 ];
 
 CppSyntaxHighlighter.pclReservedWords =
@@ -586,8 +588,8 @@ function PMathSyntaxHighlighter()
 
    this.highlight = function( text )
    {
-      var M = new Array( text.length );
-      for ( var i = 0; i < M.length; ++i )
+      let M = new Array( text.length );
+      for ( let i = 0; i < M.length; ++i )
          M[i] = null;
 
       this.matchBlockRulesWithFunctionCalls( M, text, this.highlightingRules );
@@ -600,5 +602,254 @@ function PMathSyntaxHighlighter()
 
 PMathSyntaxHighlighter.prototype = new SyntaxHighlighter;
 
+/*
+ * XML Syntax Highlighter (generic)
+ */
+function XMLSyntaxHighlighter()
+{
+   this.__base__ = SyntaxHighlighter;
+   this.__base__();
+
+   this.highlightingRules = new Array;
+
+   this.highlightingRules.push( new SyntaxHighlightingRule( "(&[^&;]*;)", "xmlEntity" ) );
+   this.highlightingRules.push( new SyntaxHighlightingRule( "(&lt;/?[^0-9][a-zA-Z0-9:_-]*)\\s*(&gt;)?", "xmlTag" ) );
+   this.highlightingRules.push( new SyntaxHighlightingRule( "([/|\\?]?&gt;)", "xmlTag" ) );
+   this.highlightingRules.push( new SyntaxHighlightingRule( "\\s([\\w\:]*)\\s*\\=", "xmlAttributeName" ) );
+   this.highlightingRules.push( new SyntaxHighlightingRule( "\\=\\s*(\'[^\']*\')", "xmlAttributeValue" ) );
+   this.highlightingRules.push( new SyntaxHighlightingRule( "\\=\\s*(\"[^\"]*\")", "xmlAttributeValue" ) );
+
+   this.highlight = function( text )
+   {
+      let M = new Array( text.length );
+      for ( let i = 0; i < M.length; ++i )
+         M[i] = null;
+
+      for ( let i = 0; i < this.highlightingRules.length; ++i )
+      {
+         let m = this.highlightingRules[i].findMatches( text, 0, text.length );
+         for ( let j = 0; j < m.length; ++j )
+         {
+            if ( text[m[j].start] == '=' )      // attribute values don't include the equal sign
+               if ( ++m[j].start == m[j].end )
+                  continue;
+            while ( text[m[j].start] == ' ' )   // skip leading white space
+               if ( ++m[j].start == m[j].end )
+                  continue;
+
+            if ( text[m[j].end-1] == '=' )      // attributes don't include the equal sign
+               if ( --m[j].end <= m[j].start )
+                  continue;
+            while ( text[m[j].end-1] == ' ' )   // remove trailing white space
+               if ( --m[j].end <= m[j].start )
+                  continue;
+
+            this.setFormat( M, m[j].start, m[j].end, m[j].cssClass );
+         }
+      }
+
+      // CDATA
+
+      for ( let startIndex = 0; ; startIndex += 6 )
+      {
+         startIndex = text.indexOf( "&lt;![CDATA[", startIndex );
+         if ( startIndex < 0 )
+            break;
+
+         let endIndex = text.indexOf( "]]&gt;", startIndex+12 );
+         if ( endIndex < 0 )
+            endIndex = text.length;
+
+         this.setFormat( M, startIndex, endIndex+6, "xmlCDATA" );
+
+         startIndex = endIndex;
+      }
+
+      // Multiline comments
+
+      for ( let startIndex = 0; ; startIndex += 6 )
+      {
+         startIndex = text.indexOf( "&lt;!--", startIndex );
+         if ( startIndex < 0 )
+            break;
+
+         let endIndex = text.indexOf( "--&gt;", startIndex+7 );
+         if ( endIndex < 0 )
+            endIndex = text.length;
+         this.setFormat( M, startIndex, endIndex+6, "multiLineComment" );
+
+         startIndex = endIndex;
+      }
+
+      return this.applyFormat( text, M );
+   };
+}
+
+XMLSyntaxHighlighter.prototype = new SyntaxHighlighter;
+
+/*
+ * PIDoc Syntax Highlighter
+ */
+function PIDocSyntaxHighlighter()
+{
+   this.__base__ = SyntaxHighlighter;
+   this.__base__();
+
+   this.commands = new Array;
+   this.referenceCommands = new Array;
+   this.referenceCommands.push( "reference" );
+   this.referenceCommands.push( "label" );
+   for ( let i = 0; i < MetaCommand.commands.length; ++i )
+   {
+      let c = MetaCommand.commands[i];
+      this.commands.push( c.id );
+      if ( c.id.endsWith( "ref" ) || c.id.endsWith( "num" ) )
+         this.referenceCommands.push( c.id );
+   }
+
+   this.highlight = function( text )
+   {
+      text = text.replace( "&amp;", "*amp;", "g"
+                  ).replace( "&lt;", "*lt;", "g"
+                     ).replace( "&gt;", "*gt;", "g" );
+
+      let M = new Array( text.length );
+      for ( let i = 0; i < M.length; ++i )
+         M[i] = null;
+
+      // PIDoc commands
+
+      for ( let i = 0; i < this.commands.length; ++i )
+         for ( let index = 0; ; )
+         {
+            index = text.indexOf( this.commands[i], index );
+            if ( index <= 0 )
+               break;
+
+            let length = this.commands[i].length;
+
+            if ( text[index-1] == '\\' )
+               if ( index < 2 || text[index-2] != '\\' )
+                  if ( this.isWordSeparator( text, index + length ) )
+                  {
+                     this.setFormat( M, index-1, index+length, "pidocCommand" );
+
+                     // Highlight reference command arguments
+                     if ( this.referenceCommands.indexOf( this.commands[i] ) >= 0 )
+                     {
+                        let x = /\b\S+\b/g;
+                        x.lastIndex = index + length;
+                        let r = x.exec( text );
+                        if ( r != null )
+                           this.setFormat( M, r.index, x.lastIndex, "pidocReference" );
+                     }
+                  }
+
+            index += length;
+         }
+
+      // PIDoc block delimiters
+
+      {
+         let r = new SyntaxHighlightingRule( "(?:^|[^\\\\])[\\{\\}]+", "pidocBlockDelimiter" );
+         let m = r.findMatches( text, 0, text.length );
+         for ( let j = 0; j < m.length; ++j )
+            this.setFormat( M, m[j].end-1, m[j].end, m[j].cssClass ); // N.B.: the regexp can match one or two characters
+      }
+
+      // Character entities
+
+      {
+         let r = new SyntaxHighlightingRule( "(&[^&;]*;)", "pidocCharacterEntity" );
+         let m = r.findMatches( text, 0, text.length );
+         for ( let j = 0; j < m.length; ++j )
+            this.setFormat( M, m[j].start, m[j].end, m[j].cssClass );
+      }
+
+      // Command parameters
+
+      for ( let startIndex = 0; ; )
+      {
+         startIndex = this.findUnscaped( text, "[", startIndex );
+         if ( startIndex < 0 )
+            break;
+
+         let endIndex = this.findUnscaped( text, "]", startIndex+1 );
+         if ( endIndex < 0 )
+            endIndex = text.length;
+         else
+            ++endIndex; // include both brackets
+
+         this.setFormat( M, startIndex, endIndex, "pidocParameters" );
+
+         startIndex = endIndex;
+      }
+
+      // Verbatim blocks
+
+      for ( let startIndex = 0; ; )
+      {
+         startIndex = this.findUnscaped( text, "#:", startIndex );
+         if ( startIndex < 0 )
+            break;
+
+         let endIndex = text.indexOf( ":#", startIndex+2 ); // escaping is not allowed in verbatim blocks
+         if ( endIndex < 0 )
+            endIndex = text.length;
+         else
+            endIndex += 2; // include both tokens
+
+         this.setFormat( M, startIndex, endIndex, "pidocVerbatimBlock" );
+
+         startIndex = endIndex;
+      }
+
+      // Single-line comments
+
+      for ( let startIndex = 0; ; )
+      {
+         startIndex = this.findUnscaped( text, "%", startIndex );
+         if ( startIndex < 0 )
+            break;
+
+         let eolIndex = text.indexOf( '\n', startIndex+1 );
+         if ( eolIndex < 0 )
+            eolIndex = text.length;
+         this.setFormat( M, startIndex, eolIndex, "pidocComment" );
+
+         this.matchBlockRules( M, text, SyntaxHighlighter.alertRules, startIndex+1, eolIndex );
+
+         startIndex = eolIndex+1;
+      }
+
+      return this.applyFormat( text, M ).replace( "*amp;", "&amp;", "g"
+                                             ).replace( "*lt;", "&lt;", "g"
+                                                ).replace( "*gt;", "&gt;", "g" );
+   };
+
+   this.isWordSeparator = function( text, index )
+   {
+      if ( index >= text.length )
+         return true;
+      let c = text.charCodeAt( index );
+      return !(c >= CHa && c <= CHz || c >= CHA && c <= CHZ || c >= CH0 && c <= CH9 || c == USCORE);
+   };
+
+   this.findUnscaped = function( text, pattern, pos )
+   {
+      if ( pos == undefined )
+         pos = 0;
+      for ( ;; )
+      {
+         pos = text.indexOf( pattern, pos );
+         if ( pos <= 0 || text.charCodeAt( pos-1 ) != BKSLASH )
+            return pos;
+         pos += pattern.length;
+      }
+   };
+}
+
+PIDocSyntaxHighlighter.prototype = new SyntaxHighlighter;
+
 // ****************************************************************************
-// EOF PIDocSyntaxHighlighters.js - Released 2014/12/09 21:37:52 UTC
+// EOF PIDocSyntaxHighlighters.js - Released 2015/01/18 20:22:19 UTC

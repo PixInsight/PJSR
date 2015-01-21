@@ -1,12 +1,12 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// PIDocDocument.js - Released 2014/12/09 21:37:52 UTC
+// PIDocDocument.js - Released 2015/01/18 20:22:19 UTC
 // ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.5.4
+// This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
-// Copyright (c) 2010-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2014 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Document object.
@@ -68,33 +68,101 @@
 #define PIDOC_CLASS_JSOBJECT  4
 
 /*
- * The name of a temporary working file.
+ * The file name of a temporary working file.
  */
 #define PIDOC_TMP_FILE_NAME   "__pidoc__"
 
 /*
  * A generic document section.
  */
-function Section( title, text, id )
+function Section( parent, title, sectionId )
 {
    this.__base__ = Object;
    this.__base__();
 
-   this.title = title;
-   this.text = text;
-   this.id = id;
+   this.parent = parent;
+   this.title = title.replace( /a\>\s+/g, "a>" ); // remove white spaces after label tags
+   this.text = '';
+
+   if ( this.parent )
+      this.id = this.parent.id + "_:_";
+   else
+      this.id = "";
+   this.id += this.title.removeHtmlTags().trim().replace( /\s+/g, '_' ).replace( /[^a-zA-Z0-9_]/g, '' );
+
+   this.subsections = [];
+   if ( this.parent )
+      this.parent.subsections.push( this );
+
+   this.end = function( text )
+   {
+      this.text = text;
+   };
+
+   this.hasSubsection = function( title )
+   {
+      for ( let i = 0; i < this.subsections.length; ++i )
+         if ( this.subsections[i].title == title )
+            return true;
+      return false;
+   };
+
+   this.setSectionNumber = function( sn )
+   {
+      this.title = sn + "&emsp;" + this.title;
+   };
 
    this.toXhtml = function()
    {
-      return   "<a name=\"" + document.internalLabel( this.id ) + "\"></a>\n"
-             + "<div class=\"pidoc_section\">\n"
-             + "   <h3 class=\"pidoc_sectionTitle\">" + this.title + "</h3>\n"
-             + this.text
-             + "</div>\n\n";
+      let xhtml = '';
+      if ( this.parent )
+      {
+         xhtml += "<div class=\"pidoc_subsection\" id=\"" + document.internalLabel( this.id ) + "\">\n";
+         if ( this.parent.parent )
+            xhtml += "   <h5 class=\"pidoc_subsectionTitle\">" + this.title + "</h5>\n";
+         else
+            xhtml += "   <h4 class=\"pidoc_subsectionTitle\">" + this.title + "</h4>\n";
+      }
+      else
+      {
+         xhtml += Section.startXhtml( this.title, this.id );
+      }
+
+      xhtml += this.text;
+
+      for ( let i = 0; i < this.subsections.length; ++i )
+         xhtml += this.subsections[i].toXhtml();
+
+      if ( !this.parent )
+         xhtml += "   </div>\n";
+      xhtml += "</div>\n\n";
+
+      return xhtml;
    };
 }
 
 Section.prototype = new Object;
+
+Section.toggleSectionXhtml = function( id )
+{
+   return "<p class=\"pidoc_sectionToggleButton\" onclick=\"pidoc_toggleSection( '" + id + "', this );\">[hide]</p>\n";
+};
+
+Section.startXhtml = function( title, id, toggle )
+{
+   if ( toggle == undefined )
+      toggle = true;
+   return "<div class=\"pidoc_section\" id=\"" + document.internalLabel( id ) + "\">\n"
+        + "   <h3 class=\"pidoc_sectionTitle\">" + title + "</h3>\n"
+        + (toggle ? ("   " + Section.toggleSectionXhtml( id )) : "")
+        + "   <div id=\"" + id + "\">\n";
+};
+
+Section.endXhtml = function()
+{
+   return "   </div>\n"
+        + "</div>\n\n";
+};
 
 /*
  * A document section to describe a process parameter.
@@ -135,9 +203,8 @@ function ObjectPropertySection( id, formalDescription, description, label, readO
 
    this.toXhtml = function()
    {
-      return   "<a name=\"" + document.internalLabel( this.href ) + "\"></a>\n"
-             + ((this.label != undefined && !this.label.isEmpty()) ? "<a name=\"" + this.label + "\"></a>\n" : "")
-             + "<div class=\"pidoc_objectItem\">\n"
+      return   "<div class=\"pidoc_objectItem\" id=\"" + document.internalLabel( this.href ) + "\">\n"
+             + ((this.label != undefined && !this.label.isEmpty()) ? "<div id=\"" + this.label + "\">\n" : "")
              + "   <p class=\"pidoc_objectFormalDescription"
                + (this.readOnly ? " pidoc_readOnlyProperty" : "") + "\">"
                + this.formalDescription
@@ -145,30 +212,12 @@ function ObjectPropertySection( id, formalDescription, description, label, readO
              + "   <div class=\"pidoc_objectDescription\">\n"
              + this.description + '\n'
              + "   </div>\n"
+             + ((this.label != undefined && !this.label.isEmpty()) ? "</div>\n" : "")
              + "</div>\n\n";
    };
 }
 
 ObjectPropertySection.prototype = new Object;
-
-/*
- * A document subsection.
- *
- * Subsections are tracked only to include them in the Table of Contents, and
- * for indexing purposes. Subsection contents are fully generated during the
- * compilation phase.
- */
-function Subsection( title, label, sectionId )
-{
-   this.__base__ = Object;
-   this.__base__();
-
-   this.title = title;
-   this.label = label;
-   this.sectionId = sectionId;
-}
-
-Subsection.prototype = new Object;
 
 /*
  * A reference to a related resource (document, web page, etc.), within or
@@ -239,9 +288,9 @@ function EquationCache()
 
    this.find = function( tex, scale )
    {
-      for ( var i = 0; i < this.items.length; ++i )
+      for ( let i = 0; i < this.items.length; ++i )
       {
-         var item = this.items[i];
+         let item = this.items[i];
          if ( item.tex == tex )
             if ( item.scale == scale )
                return item.fileName;
@@ -251,7 +300,7 @@ function EquationCache()
 
    this.add = function( tex, scale )
    {
-      var fileName = format( "eqn_%04d.svg", ++this.count );
+      let fileName = format( "eqn_%04d.svg", ++this.count );
       this.items.push( {tex:tex, fileName:fileName, scale:scale} );
       return fileName;
    };
@@ -281,21 +330,25 @@ function PIDocDocument()
    // Document class: PIGenericDoc, PIToolDoc
    this.documentClass = PIDOC_CLASS_UNKNOWN;
 
-   // Generic items available to all document classes
+   // Document components and sections for all document classes
    this.title = '';
    this.subtitle = '';
    this.authors = new Array;
    this.copyright = '';
    this.keywords = new Array;
    this.brief = '';
-   this.summary = ''; // hmm... 'abstract' is an ECMA reserved word
-   this.description = '';
-   this.introduction = '';
-   this.methodology = '';
-   this.results = '';
-   this.discussion = '';
-   this.acknowledgments = '';
+   this.summary = null; // 'abstract' is an ECMA reserved word
+   this.introduction = null;
+   this.description = null;
+   this.methodology = null; // 'methods' is potentially conflictive
+   this.results = null;
+   this.discussion = null;
+   this.usage = null;
+   this.acknowledgments = null;
    this.sections = new Array;
+   this.currentSection = null;
+
+   // References and related resources
    this.references = new Array;
    this.relatedTools = new Array;
    this.relatedScripts = new Array;
@@ -305,7 +358,6 @@ function PIDocDocument()
 
    // Items specific to both the PIToolDoc and PIScriptDoc document classes
    this.toolId = ''
-   this.usage = '';
    this.parameters = new Array;
 
    // Items specific to the PIToolDoc document class
@@ -328,17 +380,6 @@ function PIDocDocument()
 
    // Items specific to the PIGenericDoc document class
    this.docId = '';
-
-   // Subsections array for TOC and index generation
-   this.subsections = new Array;
-   // The currentSectionId property allows us to keep track of parent sections
-   // for subsections, in the addSubsection() method.
-   this.currentSectionId = '';
-   // The section and subsection counters are used to generate automatic
-   // identifiers for custom sections and subsections in calls to
-   // setCurrentSection( "section" ) and nextSubsectionLabel().
-   this.sectionCount = 0;
-   this.subsectionCount = 0;
 
    // Generated XHTML source code
    this.xhtmlSource = '';
@@ -421,14 +462,16 @@ function PIDocDocument()
       this.copyright = '';
       this.keywords = new Array;
       this.brief = '';
-      this.summary = '';
-      this.description = '';
-      this.introduction = '';
-      this.methodology = '';
-      this.results = '';
-      this.discussion = '';
-      this.acknowledgments = '';
+      this.summary = null;
+      this.introduction = null;
+      this.description = null;
+      this.methodology = null;
+      this.results = null;
+      this.discussion = null;
+      this.usage = null;
+      this.acknowledgments = null;
       this.sections = new Array;
+      this.currentSection = null;
       this.references = new Array;
       this.relatedTools = new Array;
       this.relatedScripts = new Array;
@@ -436,7 +479,6 @@ function PIDocDocument()
       this.relatedDocuments = new Array;
       this.relatedResources = new Array;
       this.toolId = ''
-      this.usage = '';
       this.parameters = new Array;
       this.moduleId = '';
       this.categories = new Array;
@@ -453,10 +495,6 @@ function PIDocDocument()
       this.inherited = new Array;
       this.required = new Array;
       this.docId = '';
-      this.subsections = new Array;
-      this.currentSectionId = '';
-      this.sectionCount = 0;
-      this.subsectionCount = 0;
       this.xhtmlSource = '';
       this.xhtmlInitialized = false;
       this.equations.clear();
@@ -482,10 +520,10 @@ function PIDocDocument()
    // paths are considered relative to the directory of the current source file.
    this.fullFilePath = function( filePath )
    {
-      var path = filePath.trim();
+      let path = filePath.trim();
       if ( path.isEmpty() )
          return "";
-      var isRelative = path[0] != '/'
+      let isRelative = path[0] != '/'
 #ifeq __PI_PLATFORM__ MSWINDOWS
                // deal with Windows drive letters
                && (path.length == 1 || path[1] != ':')
@@ -493,7 +531,7 @@ function PIDocDocument()
                ;
       if ( isRelative )
       {
-         var dir = File.extractDrive( this.filePath ) + File.extractDirectory( this.filePath );
+         let dir = File.extractDrive( this.filePath ) + File.extractDirectory( this.filePath );
          if ( dir[dir.length-1] != '/' )
             dir += '/';
          path = dir + path;
@@ -503,15 +541,11 @@ function PIDocDocument()
 
    this.uniqueId = function()
    {
-      var N = "Aa9Bb0CcD8dEe1Ff7Gg2Hh6Ii3Jj4Kk5Ll4MmNn5OoP3pQq6Rr2Ss7TtU1uVv8Ww0Xx9YyZz";
-      var n = N.length - 1;
-      var id = "";
-      for ( var i = 0; ; )
-      {
-         id += N.charAt( Math.random()*n );
-         if ( ++i == 16 )
-            break;
-      }
+      let N = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let n = N.length - 1;
+      let id = "";
+      for ( let i = 0; i < 16; ++i )
+         id += N.charAt( Math.round( Math.random()*n ) );
       return id;
    };
 
@@ -528,19 +562,19 @@ function PIDocDocument()
    this.encodedSymbolicReference = function( type, name, tokens, index )
    {
       // <REFMARK><type>:<name>:<file>:<line><REFMARK>
-      var j = 0;
+      let j = 0;
       for ( ; j < name.length; ++j )
          if ( !name.isIdChar( j ) )
             break;
       if ( j == 0 )
          throw new ParseError( "Invalid " + type + " identifier.", tokens, index );
-      var id = name.substring( 0, j );
-      var text = name.substring( j ).toXhtml();
-      var location = new DocumentLocation( tokens, index );
-      var file = location.filePath;
-      var line = location.lineNumber.toString();
-      var ref = String.fromCharCode( REFMARK );
-      var sep = String.fromCharCode( SEPMARK );
+      let id = name.substring( 0, j );
+      let text = name.substring( j ).toXhtml();
+      let location = new DocumentLocation( tokens, index );
+      let file = location.filePath;
+      let line = location.lineNumber.toString();
+      let ref = String.fromCharCode( REFMARK );
+      let sep = String.fromCharCode( SEPMARK );
       return ref + type + sep + id + sep + file + sep + line + ref + text;
    };
 
@@ -549,10 +583,10 @@ function PIDocDocument()
    {
       ++this.warningCount;
 
-      var text = "<end><cbr><raw>** Warning: ";
+      let text = "<end><cbr><raw>** Warning: ";
       if ( tokensOrLocation != undefined )
       {
-         var location = new DocumentLocation( tokensOrLocation, index );
+         let location = new DocumentLocation( tokensOrLocation, index );
          text += location.filePath + " (" + (location.lineNumber + 1).toString() + "): ";
       }
       console.warningln( text + message + "</raw>" );
@@ -638,6 +672,7 @@ function PIDocDocument()
       case "PIJSObjectDoc":
          this.documentClass = PIDOC_CLASS_JSOBJECT;
          this.sysRelDir = "../../..";
+         workingData.numberSections = false;
          break;
       default:
          throw new ParseError( "Unknown document class \'" + documentClass + "\'", tokens, index );
@@ -650,7 +685,7 @@ function PIDocDocument()
          throw new ParseError( "Custom titles can only be defined for generic documents.", tokens, index );
       if ( !this.title.isEmpty() )
          throw new ParseError( "Redefinition of the document's title.", tokens, index );
-      this.title = title.trim();
+      this.title = title.trim().replace( /\s+/g, ' ' );
    };
 
    this.setSubtitle = function( subtitle, tokens, index )
@@ -659,7 +694,7 @@ function PIDocDocument()
          throw new ParseError( "Custom titles can only be defined for generic documents.", tokens, index );
       if ( !this.subtitle.isEmpty() )
          throw new ParseError( "Redefinition of the document's subtitle.", tokens, index );
-      this.subtitle = subtitle.trim();
+      this.subtitle = subtitle.trim().replace( /\s+/g, ' ' );
    };
 
    this.addAuthor = function( author, tokens, index )
@@ -679,7 +714,7 @@ function PIDocDocument()
 
       if ( copyright.indexOf( "&copy;" ) < 0 && copyright.indexOf( "Copyright" ) < 0 )
       {
-         var p = copyright.indexOf( "<p>" );
+         let p = copyright.indexOf( "<p>" );
          if ( p >= 0 )
             copyright = copyright.substring( 0, p ) +
                            "<p>Copyright &copy; " + copyright.substring( p+3 );
@@ -706,90 +741,160 @@ function PIDocDocument()
       if ( brief.length > 256 )
          this.warning( "The specified 'brief' description has more than 256 characters.", tokens, index );
 
-      var p = brief.indexOf( "<p" );
+      let p = brief.indexOf( "<p" );
       if ( p >= 0 )
          if ( brief.substring( p+2 ).indexOf( "<p>" ) > 0 || brief.indexOf( "<br" ) >= 0 )
             this.warning( "Defining a 'brief' description across multiple lines.", tokens, index );
       this.brief = brief;
    };
 
-   this.setSummary = function( summary, tokens, index )
+   this.beginSection = function( sectionId, title, tokens, index )
    {
-      if ( this.isToolDocument() || this.isScriptDocument() || this.isJSObjectDocument() )
-         throw new ParseError( "The Abstract section is only available for generic documents.", tokens, index );
-      if ( !this.summary.isEmpty() )
-         throw new ParseError( "Redefinition of the Abstract section.", tokens, index );
-      this.summary = summary.trim();
-      this.currentSectionId = '';
+      if ( this.currentSection )
+         throw new ParseError( "A top-level document section is already being defined: '" + this.currentSection.title + "'.", tokens, index );
+
+      switch ( sectionId )
+      {
+      case "abstract":
+      case "methods":
+      case "results":
+      case "discussion":
+         if ( !this.isGenericDocument() )
+            throw new ParseError( "The " + title + " section is only available for generic documents.", tokens, index );
+         break;
+      case "description":
+         if ( this.isGenericDocument() )
+            throw new ParseError( "The " + title + " section is not available for generic documents.", tokens, index );
+         break;
+      case "usage":
+         if ( !this.isToolDocument() && !this.isScriptDocument() )
+            throw new ParseError( "The " + title + " section is only available for tool and script documents.", tokens, index );
+         break;
+      case "introduction":
+      case "acknowledgments":
+      case "section":
+         break;
+      default:
+         throw new Error( "*** Internal error: Unknown section identifier '" + sectionId + "'." );
+      }
+
+      let alreadyDefined = false;
+      switch ( sectionId )
+      {
+      case "abstract":
+         if ( this.summary )
+            alreadyDefined = true;
+         break;
+      case "introduction":
+         if ( this.introduction )
+            alreadyDefined = true;
+         break;
+      case "description":
+         if ( this.description )
+            alreadyDefined = true;
+         break;
+      case "methods":
+         if ( this.methodology )
+            alreadyDefined = true;
+         break;
+      case "results":
+         if ( this.results )
+            alreadyDefined = true;
+         break;
+      case "discussion":
+         if ( this.discussion )
+            alreadyDefined = true;
+         break;
+      case "usage":
+         if ( this.usage )
+            alreadyDefined = true;
+         break;
+      case "acknowledgments":
+         if ( this.acknowledgments )
+            alreadyDefined = true;
+         break;
+      default:
+         for ( let i = 0; i < this.sections.length; ++i )
+            if ( this.sections[i].title == title )
+            {
+               alreadyDefined = true;
+               break;
+            }
+         break;
+      }
+
+      if ( alreadyDefined )
+         throw new ParseError( "Redefinition of the " + title + " section.", tokens, index );
+
+      this.currentSection = new Section( null, title, sectionId );
+
+      switch ( sectionId )
+      {
+      case "abstract":
+         this.summary = this.currentSection;
+         break;
+      case "introduction":
+         this.introduction = this.currentSection;
+         break;
+      case "description":
+         this.description = this.currentSection;
+         break;
+      case "methods":
+         this.methodology = this.currentSection;
+         break;
+      case "results":
+         this.results = this.currentSection;
+         break;
+      case "discussion":
+         this.discussion = this.currentSection;
+         break;
+      case "usage":
+         this.usage = this.currentSection;
+         break;
+      case "acknowledgments":
+         this.acknowledgments = this.currentSection;
+         break;
+      default:
+         this.sections.push( this.currentSection );
+         break;
+      }
    };
 
-   this.setDescription = function( description, tokens, index )
+   this.endSection = function( text, tokens, index )
    {
-      if ( !this.description.isEmpty() )
-         throw new ParseError( "Redefinition of the Description section.", tokens, index );
-      this.description = description.trim();
-      this.currentSectionId = '';
+      if ( !this.currentSection )
+         throw new Error( "*** Internal error: Invalid section termination: No section is being defined." );
+      if ( this.currentSection.parent )
+         throw new Error( "*** Internal error: Invalid section termination: A subsection is being defined." );
+
+      this.currentSection.end( text );
+      this.currentSection = this.currentSection.parent;
    };
 
-   this.setIntroduction = function( introduction, tokens, index )
+   this.beginSubsection = function( title, tokens, index )
    {
-      if ( !this.introduction.isEmpty() )
-         throw new ParseError( "Redefinition of the Introduction section.", tokens, index );
-      if ( !this.description.isEmpty() )
-         this.warning( "Defining both the Introduction and the Description sections is discouraged.", tokens, index );
-      this.introduction = introduction.trim();
-      this.currentSectionId = '';
+      if ( !this.currentSection )
+         throw new ParseError( "No top-level document section is being defined.", tokens, index );
+      if ( this.currentSection.hasSubsection( title ) )
+         throw new ParseError( "Redefinition of the '" + title + "' subsection.", tokens, index );
+
+      this.currentSection = new Section( this.currentSection, title );
    };
 
-   this.setMethods = function( methods, tokens, index )
+   this.endSubsection = function( text, tokens, index )
    {
-      if ( this.isToolDocument() || this.isScriptDocument() || this.isJSObjectDocument() )
-         throw new ParseError( "The Methods section is only available for generic documents.", tokens, index );
-      if ( !this.methodology.isEmpty() )
-         throw new ParseError( "Redefinition of the Methods section.", tokens, index );
-      this.methodology = methods.trim();
-      this.currentSectionId = '';
-   };
+      if ( !this.currentSection )
+         throw new Error( "*** Internal error: Invalid subsection termination: No section is being defined." );
+      if ( !this.currentSection.parent )
+         throw new Error( "*** Internal error: Invalid subsection termination: No subsection is being defined." );
 
-   this.setResults = function( results, tokens, index )
-   {
-      if ( this.isToolDocument() || this.isScriptDocument() || this.isJSObjectDocument() )
-         throw new ParseError( "The Results section is only available for generic documents.", tokens, index );
-      if ( !this.results.isEmpty() )
-         throw new ParseError( "Redefinition of the Results section.", tokens, index );
-      this.results = results.trim();
-      this.currentSectionId = '';
-   };
-
-   this.setDiscussion = function( discussion, tokens, index )
-   {
-      if ( this.isToolDocument() || this.isScriptDocument() || this.isJSObjectDocument() )
-         throw new ParseError( "The Discussion section is only available for generic documents.", tokens, index );
-      if ( !this.discussion.isEmpty() )
-         throw new ParseError( "Redefinition of the Discussion section.", tokens, index );
-      this.discussion = discussion.trim();
-      this.currentSectionId = '';
-   };
-
-   this.setAcknowledgments = function( acknowledgments, tokens, index )
-   {
-      if ( !this.acknowledgments.isEmpty() )
-         throw new ParseError( "Redefinition of the Acknowledgments section.", tokens, index );
-      this.acknowledgments = acknowledgments.trim();
-      this.currentSectionId = '';
-   };
-
-   this.addSection = function( sectionTitle, sectionText, tokens, index )
-   {
-      if ( this.currentSectionId.isEmpty() )
-         throw new Error( "*** Internal error: No current section has been selected." );
-      this.sections.push( new Section( sectionTitle, sectionText, this.currentSectionId ) );
-      this.currentSectionId = '';
+      this.currentSection.end( text );
+      this.currentSection = this.currentSection.parent;
    };
 
    this.referenceNumberForName = function( name )
    {
-      for ( var i = 0; i < this.references.length; ++i )
+      for ( let i = 0; i < this.references.length; ++i )
          if ( this.references[i].name == name )
          {
             ++this.references[i].count;
@@ -800,7 +905,7 @@ function PIDocDocument()
 
    this.addReference = function( name, text, tokens, index )
    {
-      for ( var i = 0; i < this.references.length; ++i )
+      for ( let i = 0; i < this.references.length; ++i )
          if ( this.references[i].name == name )
             throw new ParseError( "Duplicate reference '" + name + "'", tokens, index );
       this.references.push( new Reference( name, text ) );
@@ -811,8 +916,8 @@ function PIDocDocument()
       toolId = toolId.trim();
       if ( toolId.isEmpty() )
          return;
-      var toolUri = this.sysRelDir + "/tools/" + toolId + "/" + toolId + ".html";
-      for ( var i = 0; i < this.relatedTools.length; ++i )
+      let toolUri = this.sysRelDir + "/tools/" + toolId + "/" + toolId + ".html";
+      for ( let i = 0; i < this.relatedTools.length; ++i )
          if ( this.relatedTools[i].uri == toolUri )
             throw new ParseError( "Duplicate related tool '" + toolId + "'", tokens, index );
       if ( !this.toolDocumentExists( toolId ) )
@@ -825,8 +930,8 @@ function PIDocDocument()
       scriptId = scriptId.trim();
       if ( scriptId.isEmpty() )
          return;
-      var scriptUri = this.sysRelDir + "/scripts/" + scriptId + "/" + scriptId + ".html";
-      for ( var i = 0; i < this.relatedScripts.length; ++i )
+      let scriptUri = this.sysRelDir + "/scripts/" + scriptId + "/" + scriptId + ".html";
+      for ( let i = 0; i < this.relatedScripts.length; ++i )
          if ( this.relatedScripts[i].uri == scriptUri )
             throw new ParseError( "Duplicate related script '" + scriptId + "'", tokens, index );
       if ( !this.scriptDocumentExists( scriptId ) )
@@ -839,8 +944,8 @@ function PIDocDocument()
       objectId = objectId.trim();
       if ( objectId.isEmpty() )
          return;
-      var objectUri = this.sysRelDir + "/pjsr/objects/" + objectId + "/" + objectId + ".html";
-      for ( var i = 0; i < this.relatedObjects.length; ++i )
+      let objectUri = this.sysRelDir + "/pjsr/objects/" + objectId + "/" + objectId + ".html";
+      for ( let i = 0; i < this.relatedObjects.length; ++i )
          if ( this.relatedObjects[i].uri == objectUri )
             throw new ParseError( "Duplicate related object '" + objectId + "'", tokens, index );
       if ( !this.jsObjectDocumentExists( objectId ) )
@@ -853,8 +958,8 @@ function PIDocDocument()
       documentId = documentId.trim();
       if ( documentId.isEmpty() )
          return;
-      var documentUri = this.sysRelDir + "/docs/" + documentId + "/" + documentId + ".html";
-      for ( var i = 0; i < this.relatedDocuments.length; ++i )
+      let documentUri = this.sysRelDir + "/docs/" + documentId + "/" + documentId + ".html";
+      for ( let i = 0; i < this.relatedDocuments.length; ++i )
          if ( this.relatedDocuments[i].uri == documentUri )
             throw new ParseError( "Duplicate related document '" + documentId + "'", tokens, index );
       if ( !this.genericDocumentExists( documentId ) )
@@ -865,7 +970,7 @@ function PIDocDocument()
    this.addRelatedResource = function( resourceUri, resourceItem, tokens, index )
    {
       resourceUri = resourceUri.trim();
-      for ( var i = 0; i < this.relatedResources.length; ++i )
+      for ( let i = 0; i < this.relatedResources.length; ++i )
          if ( this.relatedResources[i].uri == resourceUri )
             throw new ParseError( "Duplicate related resource '" + resourceUri + "'", tokens, index );
       this.relatedResources.push( new RelatedResource( resourceUri, resourceItem ) );
@@ -893,16 +998,6 @@ function PIDocDocument()
       this.toolId = scriptId.removeHtmlTags().trim();
       if ( this.title.isEmpty() )
          this.title = "<h1>" + this.toolId + "</h1>\n";
-   };
-
-   this.setUsage = function( usage, tokens, index )
-   {
-      if ( !this.isToolDocument() && !this.isScriptDocument() )
-         throw new ParseError( "The Usage section is only available for tool and script documents.", tokens, index );
-      if ( !this.usage.isEmpty() )
-         throw new ParseError( "Redefinition of the Usage section.", tokens, index );
-      this.usage = usage.trim();
-      this.currentSectionId = '';
    };
 
    this.addParameter = function( parameterName, parameterDescription, tokens, index )
@@ -950,22 +1045,22 @@ function PIDocDocument()
 
    this.hasPropertyIdentifier = function( id )
    {
-      for ( var i = 0; i < this.properties.length; ++i )
+      for ( let i = 0; i < this.properties.length; ++i )
          if ( this.properties[i].id == id )
             return true;
-      for ( var i = 0; i < this.staticProperties.length; ++i )
+      for ( let i = 0; i < this.staticProperties.length; ++i )
          if ( this.staticProperties[i].id == id )
             return true;
-      for ( var i = 0; i < this.eventHandlers.length; ++i )
+      for ( let i = 0; i < this.eventHandlers.length; ++i )
          if ( this.eventHandlers[i].id == id )
             return true;
-      for ( var i = 0; i < this.methods.length; ++i )
+      for ( let i = 0; i < this.methods.length; ++i )
          if ( this.methods[i].id == id )
             return true;
-      for ( var i = 0; i < this.staticMethods.length; ++i )
+      for ( let i = 0; i < this.staticMethods.length; ++i )
          if ( this.staticMethods[i].id == id )
             return true;
-      for ( var i = 0; i < this.constants.length; ++i )
+      for ( let i = 0; i < this.constants.length; ++i )
          if ( this.constants[i].id == id )
             return true;
       return false;
@@ -973,30 +1068,30 @@ function PIDocDocument()
 
    this.hasMethodIdentifier = function( id, isStatic )
    {
-      for ( var i = 0; i < this.properties.length; ++i )
+      for ( let i = 0; i < this.properties.length; ++i )
          if ( this.properties[i].id == id )
             return true;
-      for ( var i = 0; i < this.staticProperties.length; ++i )
+      for ( let i = 0; i < this.staticProperties.length; ++i )
          if ( this.staticProperties[i].id == id )
             return true;
-      for ( var i = 0; i < this.eventHandlers.length; ++i )
+      for ( let i = 0; i < this.eventHandlers.length; ++i )
          if ( this.eventHandlers[i].id == id )
             return true;
 
       if ( isStatic )
       {
-         for ( var i = 0; i < this.methods.length; ++i )
+         for ( let i = 0; i < this.methods.length; ++i )
             if ( this.methods[i].id == id )
                return true;
       }
       else
       {
-         for ( var i = 0; i < this.staticMethods.length; ++i )
+         for ( let i = 0; i < this.staticMethods.length; ++i )
             if ( this.staticMethods[i].id == id )
                return true;
       }
 
-      for ( var i = 0; i < this.constants.length; ++i )
+      for ( let i = 0; i < this.constants.length; ++i )
          if ( this.constants[i].id == id )
             return true;
 
@@ -1006,18 +1101,18 @@ function PIDocDocument()
    this.parsePropertyFormalDescription = function( formalDescription, tokens, index )
    {
       // <data-type> <object-id>.<property-id>
-      var s = formalDescription.indexOf( ' ' );
+      let s = formalDescription.indexOf( ' ' );
       if ( s < 0 )
          throw new ParseError( "Invalid property formal description: No data type specified.", tokens, index );
-      var d = formalDescription.indexOf( '.', s+1 );
+      let d = formalDescription.indexOf( '.', s+1 );
       if ( d < 0 )
          throw new ParseError( "Invalid property formal description: No parent object specified", tokens, index );
-      var objectId = formalDescription.substring( s+1, d ).trim();
+      let objectId = formalDescription.substring( s+1, d ).trim();
       if ( objectId.isEmpty() )
          throw new ParseError( "Invalid property formal description: Missing parent object identifier", tokens, index );
       if ( objectId != this.objectId )
          throw new ParseError( "Invalid property formal description: Attempt to define a property of another object \'" + objectId + "\'", tokens, index );
-      var propertyId = formalDescription.substring( d+1 ).trim();
+      let propertyId = formalDescription.substring( d+1 ).trim();
       if ( propertyId.isEmpty() )
          throw new ParseError( "Invalid property formal description: Missing property identifier.", tokens, index );
       if ( this.hasPropertyIdentifier( propertyId ) )
@@ -1028,28 +1123,28 @@ function PIDocDocument()
    this.parseMethodFormalDescription = function( formalDescription, isStatic, tokens, index )
    {
       // <data-type> <object-id>.<method-id>( ... )
-      var s = formalDescription.indexOf( ' ' );
+      let s = formalDescription.indexOf( ' ' );
       if ( s < 0 )
          throw new ParseError( "Invalid method formal description: No return data type specified.", tokens, index );
-      var d = formalDescription.indexOf( '.', s+1 );
+      let d = formalDescription.indexOf( '.', s+1 );
       if ( d < 0 )
          throw new ParseError( "Invalid method formal description: No parent object specified", tokens, index );
-      var objectId = formalDescription.substring( s+1, d ).trim();
+      let objectId = formalDescription.substring( s+1, d ).trim();
       if ( objectId.isEmpty() )
          throw new ParseError( "Invalid method formal description: Missing parent object identifier", tokens, index );
       if ( objectId != this.objectId )
          throw new ParseError( "Invalid method formal description: Attempt to define a method of another object \'" + objectId + "\'", tokens, index );
 
-      var p1 = formalDescription.indexOf( '(', d+1 );
+      let p1 = formalDescription.indexOf( '(', d+1 );
       if ( p1 < 0 )
          throw new ParseError( "Invalid method formal description: Missing left parenthesis.", tokens, index );
-      var p2 = formalDescription.lastIndexOf( ')' );
+      let p2 = formalDescription.lastIndexOf( ')' );
       if ( p2 < 0 )
          throw new ParseError( "Invalid method formal description: Missing right parenthesis.", tokens, index );
       if ( p2 != formalDescription.length-1 )
          throw new ParseError( "Invalid method formal description: Extra tokens after right parenthesis.", tokens, index );
 
-      var methodId = formalDescription.substring( d+1, p1 ).trim();
+      let methodId = formalDescription.substring( d+1, p1 ).trim();
       if ( methodId.isEmpty() )
          throw new ParseError( "Invalid method formal description: Missing method identifier.", tokens, index );
       if ( this.hasMethodIdentifier( methodId, isStatic ) )
@@ -1060,20 +1155,20 @@ function PIDocDocument()
    this.parseConstructorFormalDescription = function( formalDescription, tokens, index )
    {
       // new object-id( ... )
-      var s = formalDescription.indexOf( ' ' );
+      let s = formalDescription.indexOf( ' ' );
       if ( s < 0 || formalDescription.substring( 0, s ).trim() != "new" )
          throw new ParseError( "Invalid constructor formal description: Missing \'new\' operator.", tokens, index );
 
-      var p1 = formalDescription.indexOf( '(', s+1 );
+      let p1 = formalDescription.indexOf( '(', s+1 );
       if ( p1 < 0 )
          throw new ParseError( "Invalid constructor formal description: Missing left parenthesis.", tokens, index );
-      var p2 = formalDescription.lastIndexOf( ')' );
+      let p2 = formalDescription.lastIndexOf( ')' );
       if ( p2 < 0 )
          throw new ParseError( "Invalid constructor formal description: Missing right parenthesis.", tokens, index );
       if ( p2 != formalDescription.length-1 )
          throw new ParseError( "Invalid constructor formal description: Extra tokens after right parenthesis.", tokens, index );
 
-      var objectId = formalDescription.substring( s+1, p1 ).trim();
+      let objectId = formalDescription.substring( s+1, p1 ).trim();
       if ( objectId.isEmpty() )
          throw new ParseError( "Invalid constructor formal description: Missing object identifier.", tokens, index );
       if ( objectId != this.objectId )
@@ -1084,14 +1179,14 @@ function PIDocDocument()
    this.parseDefineFormalDescription = function( formalDescription, tokens, index )
    {
       // #define <id> <value>
-      var s1 = formalDescription.indexOf( ' ' );
+      let s1 = formalDescription.indexOf( ' ' );
       if ( s1 < 0 || formalDescription.substring( 0, s1 ).trim() != "#define" )
          throw new ParseError( "Invalid predefined constant formal description: Missing \'#define\' directive.", tokens, index );
-      var s2 = formalDescription.indexOf( ' ', s1+1 );
+      let s2 = formalDescription.indexOf( ' ', s1+1 );
       if ( s2 < 0 )
          throw new ParseError( "Invalid predefined constant formal description: Missing macro identifier.", tokens, index );
-      var macroId = formalDescription.substring( s1+1, s2 ).trim();
-      var value = formalDescription.substring( s2+1 ).trim();
+      let macroId = formalDescription.substring( s1+1, s2 ).trim();
+      let value = formalDescription.substring( s2+1 ).trim();
       if ( value.isEmpty() )
          throw new ParseError( "Invalid predefined constant formal description: Missing macro value.", tokens, index );
       return macroId;
@@ -1100,10 +1195,10 @@ function PIDocDocument()
    this.parseRequiredFormalDescription = function( formalDescription, tokens, index )
    {
       // #include \<include-file\>
-      var s1 = formalDescription.indexOf( ' ' );
+      let s1 = formalDescription.indexOf( ' ' );
       if ( s1 < 0 || formalDescription.substring( 0, s1 ).trim() != "#include" )
          throw new ParseError( "Invalid required file formal description: Missing \'#include\' directive.", tokens, index );
-      var includeSpec = formalDescription.substring( s1+1 ).trim();
+      let includeSpec = formalDescription.substring( s1+1 ).trim();
       if ( includeSpec.isEmpty() )
          throw new ParseError( "Invalid required file formal description: Missing included file specification.", tokens, index );
       if ( !includeSpec.startsWith( '<' ) || !includeSpec.endsWith( '>' ) )
@@ -1270,11 +1365,11 @@ function PIDocDocument()
       objectId = objectId.trim();
       if ( objectId.isEmpty() )
          return;
-      var objectUri = this.sysRelDir + "/pjsr/objects/" + objectId + "/" + objectId + ".html";
-      for ( var i = 0; i < this.inherits.length; ++i )
+      let objectUri = this.sysRelDir + "/pjsr/objects/" + objectId + "/" + objectId + ".html";
+      for ( let i = 0; i < this.inherits.length; ++i )
          if ( this.inherits[i].uri == objectUri )
             throw new ParseError( "Duplicate \\inherits object identifier \'" + objectId + "\'", tokens, index );
-      for ( var i = 0; i < this.inherited.length; ++i )
+      for ( let i = 0; i < this.inherited.length; ++i )
          if ( this.inherited[i].uri == objectUri )
             throw new ParseError( "\'" + objectId + "\' cannot be inherited by and from this object.", tokens, index );
       if ( !this.jsObjectDocumentExists( objectId ) )
@@ -1289,11 +1384,11 @@ function PIDocDocument()
       objectId = objectId.trim();
       if ( objectId.isEmpty() )
          return;
-      var objectUri = this.sysRelDir + "/pjsr/objects/" + objectId + "/" + objectId + ".html";
-      for ( var i = 0; i < this.inherited.length; ++i )
+      let objectUri = this.sysRelDir + "/pjsr/objects/" + objectId + "/" + objectId + ".html";
+      for ( let i = 0; i < this.inherited.length; ++i )
          if ( this.inherited[i].uri == objectUri )
             throw new ParseError( "Duplicate \\inherited object identifier \'" + objectId + "\'", tokens, index );
-      for ( var i = 0; i < this.inherits.length; ++i )
+      for ( let i = 0; i < this.inherits.length; ++i )
          if ( this.inherits[i].uri == objectUri )
             throw new ParseError( "\'" + objectId + "\' cannot be inherited by and from this object.", tokens, index );
       if ( !this.jsObjectDocumentExists( objectId ) )
@@ -1312,35 +1407,13 @@ function PIDocDocument()
       this.docId = docId.removeHtmlTags().trim();
    };
 
-   //
-
-   this.setCurrentSection = function( sectionId )
-   {
-      this.currentSectionId = (sectionId == "section") ?
-                  format( "section%03d", ++this.sectionCount ) : sectionId;
-      this.subsectionCount = 0;
-   };
-
-   this.nextSubsectionLabel = function()
-   {
-      return this.currentSectionId + format( "_%03d", this.subsectionCount+1 );
-   };
-
-   this.addSubsection = function( title, label, tokens, index )
-   {
-      if ( this.currentSectionId.isEmpty() )
-         throw new ParseError( "Subsections cannot be defined in this context.", tokens, index );
-      this.subsections.push( new Subsection( title, label, this.currentSectionId ) );
-      ++this.subsectionCount;
-   };
-
    // Contents generation
 
    this.addImage = function( imageFilePath, tokens, index )
    {
       if ( this.images.indexOf( imageFilePath ) < 0 )
       {
-         var suffix = imageFilePath.substring( imageFilePath.lastIndexOf( '.' ) ).toLowerCase();
+         let suffix = imageFilePath.substring( imageFilePath.lastIndexOf( '.' ) ).toLowerCase();
          if ( suffix != ".jpg" && suffix != ".png" && suffix != ".svg" )
             this.warning( "Unsupported image type \'" + suffix + "\'; should be .jpg, .png or .svg.", tokens, index );
          this.images.push( imageFilePath );
@@ -1356,7 +1429,7 @@ function PIDocDocument()
 
    this.equationNumberForName = function( name )
    {
-      for ( var i = 0; i < this.equationNames.length; ++i )
+      for ( let i = 0; i < this.equationNames.length; ++i )
          if ( this.equationNames[i].name == name )
          {
             ++this.equationNames[i].count;
@@ -1367,7 +1440,7 @@ function PIDocDocument()
 
    this.equationNumberAndFileNameForName = function( name )
    {
-      for ( var i = 0; i < this.equationNames.length; ++i )
+      for ( let i = 0; i < this.equationNames.length; ++i )
          if ( this.equationNames[i].name == name )
          {
             ++this.equationNames[i].count;
@@ -1381,11 +1454,11 @@ function PIDocDocument()
    {
       function run( program )
       {
-         var P = new ExternalProcess( program );
+         let P = new ExternalProcess( program );
          if ( P.waitForStarted() )
          {
             processEvents();
-            var n = 0;
+            let n = 0;
             for ( ; n < 10 && !P.waitForFinished( 250 ); ++n )
             {
                console.write( "<end>\b" + "-/|\\".charAt( n%4 ) );
@@ -1396,20 +1469,20 @@ function PIDocDocument()
          }
          if ( P.exitStatus == ProcessExitStatus_Crash || P.exitCode != 0 )
          {
-            var e = P.stderr;
+            let e = P.stderr;
             throw new ParseError( "Process failed:\n" + program +
                                   ((e.length > 0) ? "\n" + e : ""), tokens, index );
          }
       }
 
-      var location = new DocumentLocation( tokens, index );
+      let location = new DocumentLocation( tokens, index );
       console.write( "<end><cbr>* Rendering equation (line " + (location.lineNumber+1).toString() + ")  " );
 
       tex = tex.trim();
       if ( tex.isEmpty() )
          throw new ParseError( "Empty equation" );
 
-      var fileName = this.equations.find( tex, scale );
+      let fileName = this.equations.find( tex, scale );
       if ( fileName != null )
       {
          console.writeln( "\b** cached" );
@@ -1417,13 +1490,13 @@ function PIDocDocument()
       }
 
       fileName = this.equations.add( tex, scale );
-      var filePath = File.systemTempDirectory + '/' + fileName;
+      let filePath = File.systemTempDirectory + '/' + fileName;
 
       if ( workingData.renderEquations )
       {
          // Render a TeX source code string in SVG format.
 
-         var f = new File;
+         let f = new File;
          f.createForWriting( this.tmpTeXFilePath );
          f.outTextLn( "\\documentclass[landscape,a0]{article}" );
          f.outTextLn( "\\usepackage[paperwidth=100cm,paperheight=100cm,margin=0pt]{geometry}" );
@@ -1457,13 +1530,13 @@ function PIDocDocument()
    {
       ++this.equationNumber;
 
-      var validName = name != undefined && !name.isEmpty();
+      let validName = name != undefined && !name.isEmpty();
       if ( validName )
-         for ( var i = 0; i < this.equationNames.length; ++i )
+         for ( let i = 0; i < this.equationNames.length; ++i )
             if ( this.equationNames[i].name == name )
                throw new ParseError( "Duplicate equation name \'" + name + "\'.", tokens, index );
 
-      var filePath = this.addEquation( tex, scale, tokens, index );
+      let filePath = this.addEquation( tex, scale, tokens, index );
 
       if ( validName )
          this.equationNames.push( {name:name, number:this.equationNumber, fileName:File.extractNameAndSuffix( filePath ), count:0} );
@@ -1478,7 +1551,7 @@ function PIDocDocument()
 
    this.figureNumberForName = function( name )
    {
-      for ( var i = 0; i < this.figureNames.length; ++i )
+      for ( let i = 0; i < this.figureNames.length; ++i )
          if ( this.figureNames[i].name == name )
          {
             ++this.figureNames[i].count;
@@ -1493,7 +1566,7 @@ function PIDocDocument()
 
       if ( name != undefined && !name.isEmpty() )
       {
-         for ( var i = 0; i < this.figureNames.length; ++i )
+         for ( let i = 0; i < this.figureNames.length; ++i )
             if ( this.figureNames[i].name == name )
                throw new ParseError( "Duplicate figure name \'" + name + "\'.", tokens, index );
          this.figureNames.push( {name:name, number:this.figureNumber, count:0} );
@@ -1507,7 +1580,7 @@ function PIDocDocument()
 
    this.tableNumberForName = function( name )
    {
-      for ( var i = 0; i < this.tableNames.length; ++i )
+      for ( let i = 0; i < this.tableNames.length; ++i )
          if ( this.tableNames[i].name == name )
          {
             ++this.tableNames[i].count;
@@ -1522,7 +1595,7 @@ function PIDocDocument()
 
       if ( name != undefined && !name.isEmpty() )
       {
-         for ( var i = 0; i < this.tableNames.length; ++i )
+         for ( let i = 0; i < this.tableNames.length; ++i )
             if ( this.tableNames[i].name == name )
                throw new ParseError( "Duplicate table name \'" + name + "\'.", tokens, index );
          this.tableNames.push( {name:name, number:this.tableNumber, count:0} );
@@ -1544,11 +1617,11 @@ function PIDocDocument()
 
    this.checkLabelReferences = function()
    {
-      for ( var i = 0; i < this.labelReferences.length; ++i )
+      for ( let i = 0; i < this.labelReferences.length; ++i )
          if ( this.labels.filter( function( x ) { return x.label == this.labelReferences[i].label; }, this ).length == 0 )
             this.warning( "Reference to nonexistent label: '" + this.labelReferences[i].label + "'",
                           this.labelReferences[i].location, undefined );
-      for ( var i = 0; i < this.labels.length; ++i )
+      for ( let i = 0; i < this.labels.length; ++i )
          if ( this.labelReferences.filter( function( x ) { return x.label == this.labels[i].label; }, this ).length == 0 )
             this.warning( "Unreferenced label: '" + this.labels[i].label + "'",
                           this.labels[i].location, undefined );
@@ -1574,41 +1647,37 @@ function PIDocDocument()
       if ( !this.xhtmlInitialized )
          throw new Error( "*** Internal error: invalid XHTML document finalization." );
 
-      var keywords = "";
-      for ( var i = 0; i < this.keywords.length; ++i )
+      let keywords = "";
+      for ( let i = 0; i < this.keywords.length; ++i )
       {
          if ( i > 0 )
             keywords += ", ";
          keywords += this.keywords[i];
       }
 
-      var authors = "";
-      for ( var i = 0; i < this.authors.length; ++i )
+      let authors = "";
+      for ( let i = 0; i < this.authors.length; ++i )
       {
          if ( i > 0 )
             authors += " / ";
          authors += this.authors[i];
       }
 
-      var title =
+      let title =
 (this.isJSObjectDocument() ?
 "PixInsight JavaScript Runtime" :
 "PixInsight Reference Documentation") + " | " + this.title.removeHtmlTags().trim();
 
-      var header =
-workingData.generateHTML5 ?
-  "<!DOCTYPE html>\n"
-+ "<html>\n" :
-  "<!DOCTYPE html PUBLIC \"-\/\/W3C\/\/DTD XHTML 1.0 Strict\/\/EN\" \"http:\/\/www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-+ "<html xmlns=\"http:\/\/www.w3.org/1999/xhtml\">\n";
-
       this.xhtmlSource =
-header
+  "<!DOCTYPE html"
++ (workingData.generateHTML5 ?
+  ">\n" :
+  " PUBLIC \"-\/\/W3C\/\/DTD XHTML 1.0 Strict\/\/EN\" \"http:\/\/www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n")
++ "<html xmlns=\"http:\/\/www.w3.org/1999/xhtml\">\n"
 + "<head>\n"
 + "   <meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\" />\n"
 + "   <title>" + title + "</title>\n"
 + "   <meta name=\"keywords\" content=\"" + keywords + "\" />\n"
-+ "   <meta name=\"title\" content=\"" + title + "\" />\n"
 + "   <meta name=\"author\" content=\"" + authors + "\" />\n"
 + "   <meta name=\"description\" content=\"" + this.brief.removeHtmlTags() + "\" />\n"
 + "   <meta name=\"robots\" content=\"INDEX,FOLLOW\" />\n"
@@ -1662,7 +1731,7 @@ header
          {
             if ( !this.noBackups )
             {
-               var backupFilePath = File.changeExtension( filePath, File.extractExtension( filePath ) + '~' );
+               let backupFilePath = File.changeExtension( filePath, File.extractExtension( filePath ) + '~' );
                if ( File.exists( backupFilePath ) )
                   File.remove( backupFilePath );
                File.move( filePath, backupFilePath );
@@ -1681,31 +1750,32 @@ header
          this.message( "File copied: " + targetFilePath );
       };
 
+      let docDir, outputFilePath;
       if ( this.isToolDocument() )
       {
-         var docDir = this.docBaseDir + "/tools/" + this.toolId;
-         var outputFilePath = docDir + '/' + this.toolId + ".html";
+         docDir = this.docBaseDir + "/tools/" + this.toolId;
+         outputFilePath = docDir + '/' + this.toolId + ".html";
       }
       else if ( this.isScriptDocument() )
       {
-         var docDir = this.docBaseDir + "/scripts/" + this.toolId;
-         var outputFilePath = docDir + '/' + this.toolId + ".html";
+         docDir = this.docBaseDir + "/scripts/" + this.toolId;
+         outputFilePath = docDir + '/' + this.toolId + ".html";
       }
       else if ( this.isJSObjectDocument() )
       {
-         var docDir = this.docBaseDir + "/pjsr/objects/" + this.objectId;
-         var outputFilePath = docDir + '/' + this.objectId + ".html";
+         docDir = this.docBaseDir + "/pjsr/objects/" + this.objectId;
+         outputFilePath = docDir + '/' + this.objectId + ".html";
       }
       else // generic
       {
-         var docDir = this.docBaseDir + "/docs/" + this.docId;
-         var outputFilePath = docDir + '/' + this.docId + ".html";
+         docDir = this.docBaseDir + "/docs/" + this.docId;
+         outputFilePath = docDir + '/' + this.docId + ".html";
       }
 
       this.createDirectoryIfDoesNotExist( docDir );
       this.backupFileIfExists( outputFilePath );
 
-      var f = new File;
+      let f = new File;
       f.createForWriting( outputFilePath );
       f.write( ByteArray.stringToUTF8( this.xhtmlSource ) );
       f.flush();
@@ -1714,13 +1784,13 @@ header
 
       if ( this.images.length > 0 )
       {
-         var imagesDir = docDir + "/images";
+         let imagesDir = docDir + "/images";
          this.createDirectoryIfDoesNotExist( imagesDir );
 
-         for ( var i = 0; i < this.images.length; ++i )
+         for ( let i = 0; i < this.images.length; ++i )
             if ( File.exists( this.images[i] ) )
             {
-               var targetImagePath = imagesDir + '/' +
+               let targetImagePath = imagesDir + '/' +
                      File.extractName( this.images[i] ) + File.extractExtension( this.images[i] );
                this.backupFileIfExists( targetImagePath );
                this.copyFile( targetImagePath, this.images[i] );
@@ -1779,102 +1849,88 @@ header
       if ( !this.noToc )
          this.makeToc( tokens, index );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "contents" ) + "\"></a>\n\n" );
+      // Open the contents container
+      this.addXhtmlSource( "<div id=\"" + this.internalLabel( "contents" ) + "\">\n\n" );
 
       // Optional Abstract section
       if ( this.isGenericDocument() )
-         if ( !this.summary.isEmpty() )
-            this.makeSummary( tokens, index );
+         this.makeSummary( tokens, index );
 
       // Optional Introduction section
-      if ( !this.introduction.isEmpty() )
-         this.makeIntroduction( tokens, index );
+      this.makeIntroduction( tokens, index );
 
       // Optional Description section
-      if ( !this.description.isEmpty() )
-         this.makeDescription( tokens, index );
+      this.makeDescription( tokens, index );
 
       if ( this.isToolDocument() || this.isScriptDocument() )
       {
          // Optional Parameters section (automatic if any parameter has been defined)
-         if ( this.parameters.length > 0 )
-            this.makeParameters( tokens, index );
+         this.makeParameters( tokens, index );
 
          // Optional Usage section
-         if ( !this.usage.isEmpty() )
-            this.makeUsage( tokens, index );
+         this.makeUsage( tokens, index );
       }
       else if ( this.isJSObjectDocument() )
       {
          // Instance properties
-         if ( this.properties.length > 0 )
-            this.makeProperties( tokens, index );
+         this.makeProperties( tokens, index );
 
          // Static properties
-         if ( this.staticProperties.length > 0 )
-            this.makeStaticProperties( tokens, index );
+         this.makeStaticProperties( tokens, index );
 
          // Event handlers
-         if ( this.eventHandlers.length > 0 )
-            this.makeEventHandlers( tokens, index );
+         this.makeEventHandlers( tokens, index );
 
          // Constructors
-         if ( this.constructors.length > 0 )
-            this.makeConstructors( tokens, index );
+         this.makeConstructors( tokens, index );
 
          // Instance methods
-         if ( this.methods.length > 0 )
-            this.makeMethods( tokens, index );
+         this.makeMethods( tokens, index );
 
          // Static methods
-         if ( this.staticMethods.length > 0 )
-            this.makeStaticMethods( tokens, index );
+         this.makeStaticMethods( tokens, index );
 
          // Constant properties
-         if ( this.constants.length > 0 )
-            this.makeConstants( tokens, index );
+         this.makeConstants( tokens, index );
 
          // #defined constants
-         if ( this.defines.length > 0 )
-            this.makeDefines( tokens, index );
+         this.makeDefines( tokens, index );
       }
       else
       {
          // Optional Methods section
-         if ( !this.methodology.isEmpty() )
-            this.makeMethodology( tokens, index );
+         this.makeMethodology( tokens, index );
 
          // Optional Results section
-         if ( !this.results.isEmpty() )
-            this.makeResults( tokens, index );
+         this.makeResults( tokens, index );
 
          // Optional Discussion section
-         if ( !this.discussion.isEmpty() )
-            this.makeDiscussion( tokens, index );
+         this.makeDiscussion( tokens, index );
       }
 
       // Custom sections
-      if ( this.sections.length > 0 )
-         this.makeSections( tokens, index );
+      this.makeSections( tokens, index );
 
       // Optional Acknowledgments section
-      if ( !this.acknowledgments.isEmpty() )
-         this.makeAcknowledgments( tokens, index );
+      this.makeAcknowledgments( tokens, index );
 
       // References section
-      if ( this.references.length > 0 )
-         this.makeReferences( tokens, index );
+      this.makeReferences( tokens, index );
 
       // Related Tools, Related Scripts, Related Objects and Related Resources sections
-      if ( this.relatedTools.length > 0 || this.relatedScripts.length > 0 || this.relatedObjects.length > 0 ||
-           this.relatedDocuments.length > 0 || this.relatedResources.length > 0 )
-         this.makeRelated( tokens, index );
+      this.makeRelated( tokens, index );
 
       // All document classes have a footer block
       this.makeFooter( tokens, index );
 
+      // Close the contents container
+      this.addXhtmlSource( "</div> <!-- contents -->\n\n" );
+
       // Second pass to solve all forwarded reference links
       this.solveReferences();
+
+      // Clean up invalid markup elements
+      this.cleanupMarkup();
 
       this.beenMade = true;
    };
@@ -1899,7 +1955,7 @@ header
          {
             this.addXhtmlSource( "<div id=\"authors\">\n" );
             this.addXhtmlSource( "<p>By " );
-            for ( var i = 0; i < this.authors.length; ++i )
+            for ( let i = 0; i < this.authors.length; ++i )
             {
                if ( i > 0 )
                   this.addXhtmlSource( " / " );
@@ -1913,8 +1969,8 @@ header
 
       if ( !this.brief.isEmpty() )
       {
-         var brief = this.brief;
-         var p = brief.lastIndexOf( "</p>" );
+         let brief = this.brief;
+         let p = brief.lastIndexOf( "</p>" );
          if ( p > 0 )
             brief = brief.substring( 0, p )
                     + " <a href=\"#" + this.internalLabel( "contents" ) + "\">[more]</a>"
@@ -1930,7 +1986,7 @@ header
             {
                this.addXhtmlSource( "<div id=\"categories\">\n" );
                this.addXhtmlSource( "<p><strong>Categories:</strong> " );
-               for ( var i = 0; i < this.categories.length; ++i )
+               for ( let i = 0; i < this.categories.length; ++i )
                {
                   if ( i > 0 )
                      this.addXhtmlSource( ", " );
@@ -1945,7 +2001,7 @@ header
          {
             this.addXhtmlSource( "<div id=\"keywords\">\n" );
             this.addXhtmlSource( "<p><strong>Keywords:</strong> " );
-            for ( var i = 0; i < this.keywords.length; ++i )
+            for ( let i = 0; i < this.keywords.length; ++i )
             {
                if ( i > 0 )
                   this.addXhtmlSource( ", " );
@@ -1962,7 +2018,7 @@ header
          {
             this.addXhtmlSource( "<div id=\"inherits_from\">\n" );
             this.addXhtmlSource( "<p><strong>Inherits from:</strong> " );
-            for ( var i = 0; i < this.inherits.length; ++i )
+            for ( let i = 0; i < this.inherits.length; ++i )
             {
                if ( i > 0 )
                   this.addXhtmlSource( ", " );
@@ -1977,7 +2033,7 @@ header
          {
             this.addXhtmlSource( "<div id=\"inherited_by\">\n" );
             this.addXhtmlSource( "<p><strong>Inherited by:</strong> " );
-            for ( var i = 0; i < this.inherited.length; ++i )
+            for ( let i = 0; i < this.inherited.length; ++i )
             {
                if ( i > 0 )
                   this.addXhtmlSource( ", " );
@@ -1992,7 +2048,7 @@ header
          {
             this.addXhtmlSource( "<div id=\"required\">\n" );
             this.addXhtmlSource( "<p>\n" );
-            for ( var i = 0; ; )
+            for ( let i = 0; ; )
             {
                this.addXhtmlSource( "#include " + this.required[i].toPlainXhtml() );
                if ( ++i == this.required.length )
@@ -2005,69 +2061,78 @@ header
       }
    };
 
-   this.makeSubsectionsToc = function( sectionId )
-   {
-      var s = this.subsections.filter( function( s, i, a ) { return s.sectionId == sectionId; }, this );
-      for ( var i = 0; i < s.length; ++i )
-         this.addXhtmlSource( "<li class=\"pidoc_tocSubitem\">"
-                            + "<a href=\"#" + s[i].label + "\">" + s[i].title.removeAnchorTags() + "</a></li>\n" );
-   };
-
    this.makeToc = function( tokens, index )
    {
       function jsTableData( item, href )
       {
-         item = item.removeAnchorTags();
-         var p1 = Math.max( 0, item.indexOf( ' ' ) );
-         var p2 = item.indexOf( '(', p1 );
+         item = item.removeTitleAnchorTags();
+         let p1 = Math.max( 0, item.indexOf( ' ' ) );
+         let p2 = item.indexOf( '(', p1 );
          if ( p2 < 0 )
             p2 = item.length;
-         var itemType = (p1 > 0) ? item.substring( 0, p1 ).trim() : "";
-         var itemId = item.substring( p1, p2 ).trim();
-         var itemArgs = item.substring( p2 ).trim();
+         let itemType = (p1 > 0) ? item.substring( 0, p1 ).trim() : "";
+         let itemId = item.substring( p1, p2 ).trim();
+         let itemArgs = item.substring( p2 ).trim();
          return  "<td class=\"pidoc_objectTocType\">" + itemType + "</td>\n"
                + "<td class=\"pidoc_objectTocItem\"><a href=\"#" + document.internalLabel( href ) + "\">" + itemId + "</a>" + itemArgs + "</td>\n";
       }
 
+      let sectionNumber = 0;
+
+      function sectionTOC( section, sn )
+      {
+         if ( sn == undefined )
+            sn = (++sectionNumber).toString();
+
+         if ( workingData.numberSections )
+            section.setSectionNumber( sn );
+
+         let text = "<li class=\"" + (section.parent ? "pidoc_tocSubitem" : "pidoc_tocItem") + "\">"
+                  + "<a href=\"#" + document.internalLabel( section.id ) + "\">"
+                  + section.title.removeTitleAnchorTags()
+                  + "</a>";
+
+         if ( section.subsections.length > 0 )
+         {
+            text += "\n<ul>\n";
+            for ( let i = 0; i < section.subsections.length; ++i )
+               text += sectionTOC( section.subsections[i], sn + '.' + (i+1).toString() );
+            text += "</ul>\n";
+         }
+
+         text += "</li>\n";
+         return text;
+      }
+
       this.actionMessage( "Generating table of contents..." );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "toc" ) + "\"></a>\n"
-                         + "<h3 class=\"pidoc_sectionTitle\">Contents</h3>\n"
-                         + "<p class=\"pidoc_sectionToggleButton\" onclick=\"pidoc_toggleSection( 'toc', this );\">[hide]</p>\n"
+      this.addXhtmlSource( "<h3 class=\"pidoc_sectionTitle\" id=\"" + this.internalLabel( "toc" ) + "\">Contents</h3>\n"
+                         + Section.toggleSectionXhtml( "toc" )
                          + "<div id=\"toc\">\n"
                          + "<ul>\n" );
 
-      if ( !this.summary.isEmpty() )
-         this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "abstract" ) + "\">Abstract</a></li>\n" );
+      if ( this.summary )
+         this.addXhtmlSource( sectionTOC( this.summary ) );
 
-      if ( !this.introduction.isEmpty() )
-      {
-         this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "introduction" ) + "\">Introduction</a></li>\n" );
-         this.makeSubsectionsToc( "introduction" );
-      }
+      if ( this.introduction )
+         this.addXhtmlSource( sectionTOC( this.introduction ) );
 
-      if ( !this.description.isEmpty() )
-      {
-         this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "description" ) + "\">Description</a></li>\n" );
-         this.makeSubsectionsToc( "description" );
-      }
+      if ( this.description )
+         this.addXhtmlSource( sectionTOC( this.description ) );
 
       if ( this.isToolDocument() || this.isScriptDocument() )
       {
          if ( this.parameters.length > 0 )
          {
             this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "parameters" ) + "\">Parameters</a></li>\n" );
-            for ( var i = 0; i < this.parameters.length; ++i )
+            for ( let i = 0; i < this.parameters.length; ++i )
                this.addXhtmlSource( "<li class=\"pidoc_tocSubitem\">" +
                         "<a href=\"#" + this.internalLabel( format( "parameter%03d", i+1 ) ) + "\">" +
-                        this.parameters[i].title.removeAnchorTags() + "</a></li>\n" );
+                        this.parameters[i].title.removeTitleAnchorTags() + "</a></li>\n" );
          }
 
-         if ( !this.usage.isEmpty() )
-         {
-            this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "usage" ) + "\">Usage</a></li>\n" );
-            this.makeSubsectionsToc( "usage" );
-         }
+         if ( this.usage )
+            this.addXhtmlSource( sectionTOC( this.usage ) );
       }
       else if ( this.isJSObjectDocument() )
       {
@@ -2075,7 +2140,7 @@ header
          {
             this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "properties" ) + "\">Properties</a></li>\n" );
             this.addXhtmlSource( "<table class=\"pidoc_objectToc\">\n" );
-            for ( var i = 0; i < this.properties.length; ++i )
+            for ( let i = 0; i < this.properties.length; ++i )
                this.addXhtmlSource( "<tr>\n" + jsTableData( this.properties[i].formalDescription,
                                                             this.properties[i].href ) + "</tr>\n" );
             this.addXhtmlSource( "</table>\n" );
@@ -2085,7 +2150,7 @@ header
          {
             this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "static_properties" ) + "\">Static Properties</a></li>\n" );
             this.addXhtmlSource( "<table class=\"pidoc_objectToc\">\n" );
-            for ( var i = 0; i < this.staticProperties.length; ++i )
+            for ( let i = 0; i < this.staticProperties.length; ++i )
                this.addXhtmlSource( "<tr>\n" + jsTableData( this.staticProperties[i].formalDescription,
                                                             this.staticProperties[i].href ) + "</tr>\n" );
             this.addXhtmlSource( "</table>\n" );
@@ -2095,7 +2160,7 @@ header
          {
             this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "event_handlers" ) + "\">Event Handlers</a></li>\n" );
             this.addXhtmlSource( "<table class=\"pidoc_objectToc\">\n" );
-            for ( var i = 0; i < this.eventHandlers.length; ++i )
+            for ( let i = 0; i < this.eventHandlers.length; ++i )
                this.addXhtmlSource( "<tr>\n" + jsTableData( this.eventHandlers[i].formalDescription,
                                                             this.eventHandlers[i].href ) + "</tr>\n" );
             this.addXhtmlSource( "</table>\n" );
@@ -2105,7 +2170,7 @@ header
          {
             this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "constructors" ) + "\">Constructors</a></li>\n" );
             this.addXhtmlSource( "<table class=\"pidoc_objectToc\">\n" );
-            for ( var i = 0; i < this.constructors.length; ++i )
+            for ( let i = 0; i < this.constructors.length; ++i )
                this.addXhtmlSource( "<tr>\n" + jsTableData( this.constructors[i].formalDescription,
                                                             this.constructors[i].href ) + "</tr>\n" );
             this.addXhtmlSource( "</table>\n" );
@@ -2115,7 +2180,7 @@ header
          {
             this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "methods" ) + "\">Methods</a></li>\n" );
             this.addXhtmlSource( "<table class=\"pidoc_objectToc\">\n" );
-            for ( var i = 0; i < this.methods.length; ++i )
+            for ( let i = 0; i < this.methods.length; ++i )
                this.addXhtmlSource( "<tr>\n" + jsTableData( this.methods[i].formalDescription,
                                                             this.methods[i].href ) + "</tr>\n" );
             this.addXhtmlSource( "</table>\n" );
@@ -2125,7 +2190,7 @@ header
          {
             this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "static_methods" ) + "\">Static Methods</a></li>\n" );
             this.addXhtmlSource( "<table class=\"pidoc_objectToc\">\n" );
-            for ( var i = 0; i < this.staticMethods.length; ++i )
+            for ( let i = 0; i < this.staticMethods.length; ++i )
                this.addXhtmlSource( "<tr>\n" + jsTableData( this.staticMethods[i].formalDescription,
                                                             this.staticMethods[i].href ) + "</tr>\n" );
             this.addXhtmlSource( "</table>\n" );
@@ -2135,7 +2200,7 @@ header
          {
             this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "constants" ) + "\">Constants</a></li>\n" );
             this.addXhtmlSource( "<table class=\"pidoc_objectToc\">\n" );
-            for ( var i = 0; i < this.constants.length; ++i )
+            for ( let i = 0; i < this.constants.length; ++i )
                this.addXhtmlSource( "<tr>\n" + jsTableData( this.constants[i].id,
                                                             this.constants[i].href ) + "</tr>\n" );
             this.addXhtmlSource( "</table>\n" );
@@ -2145,7 +2210,7 @@ header
          {
             this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "defines" ) + "\">Predefined Constants</a></li>\n" );
             this.addXhtmlSource( "<table class=\"pidoc_objectToc\">\n" );
-            for ( var i = 0; i < this.defines.length; ++i )
+            for ( let i = 0; i < this.defines.length; ++i )
                this.addXhtmlSource( "<tr>\n" + jsTableData( this.defines[i].id,
                                                             this.defines[i].href ) + "</tr>\n" );
             this.addXhtmlSource( "</table>\n" );
@@ -2153,37 +2218,21 @@ header
       }
       else // generic
       {
-         if ( !this.methodology.isEmpty() )
-         {
-            this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "methods" ) + "\">Methods</a></li>\n" );
-            this.makeSubsectionsToc( "methods" );
-         }
+         if ( this.methodology )
+            this.addXhtmlSource( sectionTOC( this.methodology ) );
 
-         if ( !this.results.isEmpty() )
-         {
-            this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "results" ) + "\">Results</a></li>\n" );
-            this.makeSubsectionsToc( "results" );
-         }
+         if ( this.results )
+            this.addXhtmlSource( sectionTOC( this.results ) );
 
-         if ( !this.discussion.isEmpty() )
-         {
-            this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "discussion" ) + "\">Discussion</a></li>\n" );
-            this.makeSubsectionsToc( "discussion" );
-         }
+         if ( this.discussion )
+            this.addXhtmlSource( sectionTOC( this.discussion ) );
       }
 
-      for ( var i = 0; i < this.sections.length; ++i )
-      {
-         this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( this.sections[i].id ) + "\">" +
-                              this.sections[i].title.removeAnchorTags() + "</a></li>\n" );
-         this.makeSubsectionsToc( this.sections[i].id );
-      }
+      for ( let i = 0; i < this.sections.length; ++i )
+         this.addXhtmlSource( sectionTOC( this.sections[i] ) );
 
-      if ( !this.acknowledgments.isEmpty() )
-      {
-         this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "acknowledgments" ) + "\">Acknowledgments</a></li>\n" );
-         this.makeSubsectionsToc( "acknowledgments" );
-      }
+      if ( this.acknowledgments )
+         this.addXhtmlSource( sectionTOC( this.acknowledgments ) );
 
       if ( this.references.length > 0 )
          this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "references" ) + "\">References</a></li>\n" );
@@ -2209,319 +2258,238 @@ header
 
    this.makeSummary = function( tokens, index )
    {
-      this.actionMessage( "Generating Abstract section..." );
-
-      if ( this.summary.isEmpty() )
-         throw new ParseError( "No Abstract section has been defined.", tokens, index );
-
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "abstract" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Abstract</h3>\n" +
-                           "   <div id=\"abstract\">\n" );
-
-      this.addXhtmlSource( this.summary );
-
-      this.addXhtmlSource( "   </div>\n" +
-                           "</div>\n\n" );
+      if ( this.summary )
+      {
+         this.actionMessage( "Generating Abstract section..." );
+         this.addXhtmlSource( this.summary.toXhtml() );
+      }
    };
 
    this.makeIntroduction = function( tokens, index )
    {
-      this.actionMessage( "Generating Introduction section..." );
-
-      if ( this.introduction.isEmpty() )
-         throw new ParseError( "No Introduction section has been defined.", tokens, index );
-
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "introduction" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Introduction</h3>\n\n" );
-
-      this.addXhtmlSource( this.introduction );
-
-      this.addXhtmlSource( "</div>\n\n" );
+      if ( this.introduction )
+      {
+         this.actionMessage( "Generating Introduction section..." );
+         this.addXhtmlSource( this.introduction.toXhtml() );
+      }
    };
 
    this.makeDescription = function( tokens, index )
    {
-      this.actionMessage( "Generating Description section..." );
-
-      if ( this.description.isEmpty() )
-         throw new ParseError( "No Description section has been defined.", tokens, index );
-
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "description" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Description</h3>\n\n" );
-
-      this.addXhtmlSource( this.description );
-
-      this.addXhtmlSource( "</div>\n\n" );
+      if ( this.description )
+      {
+         this.actionMessage( "Generating Description section..." );
+         this.addXhtmlSource( this.description.toXhtml() );
+      }
    };
 
    this.makeUsage = function( tokens, index )
    {
-      this.actionMessage( "Generating Usage section..." );
-
-      if ( this.usage.isEmpty() )
-         throw new ParseError( "No Usage section has been defined.", tokens, index );
-
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "usage" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Usage</h3>\n\n" );
-
-      this.addXhtmlSource( this.usage );
-
-      this.addXhtmlSource( "</div>\n\n" );
+      if ( this.usage )
+      {
+         this.actionMessage( "Generating Usage section..." );
+         this.addXhtmlSource( this.usage.toXhtml() );
+      }
    };
 
    this.makeParameters = function( tokens, index )
    {
-      this.actionMessage( "Generating Parameters section..." );
+      if ( this.parameters.length > 0 )
+      {
+         this.actionMessage( "Generating Parameters section..." );
 
-      if ( this.parameters.length <= 0 )
-         throw new ParseError( "No parameter sections have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "Parameters", "parameters" ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "parameters" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Parameters</h3>\n\n" );
+         for ( let j = 0; j < this.parameters.length; ++j )
+            this.addXhtmlSource( "      <div id=\"" + this.internalLabel( format( "parameter%03d", j+1 ) ) + "\">\n"
+                               + this.parameters[j].toXhtml()
+                               + "      </div>\n" );
 
-      for ( var j = 0; j < this.parameters.length; ++j )
-         this.addXhtmlSource( "   <a name=\"" + this.internalLabel( format( "parameter%03d", j+1 ) ) + "\"></a>\n" +
-                              this.parameters[j].toXhtml() );
-
-      this.addXhtmlSource( "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.makeProperties = function( tokens, index )
    {
-      this.actionMessage( "Generating Properties section..." );
+      if ( this.properties.length > 0 )
+      {
+         this.actionMessage( "Generating Properties section..." );
 
-      if ( this.properties.length <= 0 )
-         throw new ParseError( "No property sections have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "Properties", "properties" ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "properties" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Properties</h3>\n\n" );
+         for ( let j = 0; j < this.properties.length; ++j )
+            this.addXhtmlSource( this.properties[j].toXhtml() );
 
-      for ( var j = 0; j < this.properties.length; ++j )
-         this.addXhtmlSource( this.properties[j].toXhtml() );
-
-      this.addXhtmlSource( "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.makeStaticProperties = function( tokens, index )
    {
-      this.actionMessage( "Generating Static Properties section..." );
+      if ( this.staticProperties.length > 0 )
+      {
+         this.actionMessage( "Generating Static Properties section..." );
 
-      if ( this.staticProperties.length <= 0 )
-         throw new ParseError( "No static property sections have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "Static Properties", "static_properties" ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "static_properties" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Static Properties</h3>\n\n" );
+         for ( let j = 0; j < this.staticProperties.length; ++j )
+            this.addXhtmlSource( this.staticProperties[j].toXhtml() );
 
-      for ( var j = 0; j < this.staticProperties.length; ++j )
-         this.addXhtmlSource( this.staticProperties[j].toXhtml() );
-
-      this.addXhtmlSource( "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.makeEventHandlers = function( tokens, index )
    {
-      this.actionMessage( "Generating Event Handlers section..." );
+      if ( this.eventHandlers.length > 0 )
+      {
+         this.actionMessage( "Generating Event Handlers section..." );
 
-      if ( this.eventHandlers.length <= 0 )
-         throw new ParseError( "No event handler sections have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "Event Handlers", "event_handlers" ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "event_handlers" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Event Handlers</h3>\n\n" );
+         for ( let j = 0; j < this.eventHandlers.length; ++j )
+            this.addXhtmlSource( this.eventHandlers[j].toXhtml() );
 
-      for ( var j = 0; j < this.eventHandlers.length; ++j )
-         this.addXhtmlSource( this.eventHandlers[j].toXhtml() );
-
-      this.addXhtmlSource( "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.makeConstructors = function( tokens, index )
    {
-      this.actionMessage( "Generating Constructors section..." );
+      if ( this.constructors.length > 0 )
+      {
+         this.actionMessage( "Generating Constructors section..." );
 
-      if ( this.constructors.length <= 0 )
-         throw new ParseError( "No constructor sections have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "Constructors", "constructors" ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "constructors" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Constructors</h3>\n\n" );
+         for ( let j = 0; j < this.constructors.length; ++j )
+            this.addXhtmlSource( this.constructors[j].toXhtml() );
 
-      for ( var j = 0; j < this.constructors.length; ++j )
-         this.addXhtmlSource( this.constructors[j].toXhtml() );
-
-      this.addXhtmlSource( "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.makeMethods = function( tokens, index )
    {
-      this.actionMessage( "Generating Methods section..." );
+      if ( this.methods.length > 0 )
+      {
+         this.actionMessage( "Generating Methods section..." );
 
-      if ( this.methods.length <= 0 )
-         throw new ParseError( "No method sections have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "Methods", "methods" ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "methods" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Methods</h3>\n\n" );
+         for ( let j = 0; j < this.methods.length; ++j )
+            this.addXhtmlSource( this.methods[j].toXhtml() );
 
-      for ( var j = 0; j < this.methods.length; ++j )
-         this.addXhtmlSource( this.methods[j].toXhtml() );
-
-      this.addXhtmlSource( "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.makeStaticMethods = function( tokens, index )
    {
-      this.actionMessage( "Generating Static Methods section..." );
+      if ( this.staticMethods.length > 0 )
+      {
+         this.actionMessage( "Generating Static Methods section..." );
 
-      if ( this.staticMethods.length <= 0 )
-         throw new ParseError( "No static method sections have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "Static Methods", "static_methods" ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "static_methods" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Static Methods</h3>\n\n" );
+         for ( let j = 0; j < this.staticMethods.length; ++j )
+            this.addXhtmlSource( this.staticMethods[j].toXhtml() );
 
-      for ( var j = 0; j < this.staticMethods.length; ++j )
-         this.addXhtmlSource( this.staticMethods[j].toXhtml() );
-
-      this.addXhtmlSource( "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.makeConstants = function( tokens, index )
    {
-      this.actionMessage( "Generating Constants section..." );
+      if ( this.constants.length > 0 )
+      {
+         this.actionMessage( "Generating Constants section..." );
 
-      if ( this.constants.length <= 0 )
-         throw new ParseError( "No method sections have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "Constants", "constants" ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "constants" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Constants</h3>\n\n" );
+         for ( let j = 0; j < this.constants.length; ++j )
+            this.addXhtmlSource( this.constants[j].toXhtml() );
 
-      for ( var j = 0; j < this.constants.length; ++j )
-         this.addXhtmlSource( this.constants[j].toXhtml() );
-
-      this.addXhtmlSource( "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.makeDefines = function( tokens, index )
    {
-      this.actionMessage( "Generating Predefined Constants section..." );
+      if ( this.defines.length > 0 )
+      {
+         this.actionMessage( "Generating Predefined Constants section..." );
 
-      if ( this.defines.length <= 0 )
-         throw new ParseError( "No #define sections have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "Predefined Constants", "defines" ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "defines" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Predefined Constants</h3>\n\n" );
+         for ( let j = 0; j < this.defines.length; ++j )
+            this.addXhtmlSource( this.defines[j].toXhtml() );
 
-      for ( var j = 0; j < this.defines.length; ++j )
-         this.addXhtmlSource( this.defines[j].toXhtml() );
-
-      this.addXhtmlSource( "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.makeMethodology = function()
    {
-      this.actionMessage( "Generating Methods section..." );
-
-      if ( this.methodology.isEmpty() )
-         throw new ParseError( "No Methods section has been defined.", tokens, index );
-
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "methods" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Methods</h3>\n\n" );
-
-      this.addXhtmlSource( this.methodology );
-
-      this.addXhtmlSource( "</div>\n\n" );
+      if ( this.methodology )
+      {
+         this.actionMessage( "Generating Methods section..." );
+         this.addXhtmlSource( this.methodology.toXhtml() );
+      }
    };
 
    this.makeResults = function()
    {
-      this.actionMessage( "Generating Results section..." );
-
-      if ( this.results.isEmpty() )
-         throw new ParseError( "No Results section has been defined.", tokens, index );
-
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "results" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Results</h3>\n\n" );
-
-      this.addXhtmlSource( this.results );
-
-      this.addXhtmlSource( "</div>\n\n" );
+      if ( this.results )
+      {
+         this.actionMessage( "Generating Results section..." );
+         this.addXhtmlSource( this.results.toXhtml() );
+      }
    };
 
    this.makeDiscussion = function()
    {
-      this.actionMessage( "Generating Discussion section..." );
-
-      if ( this.discussion.isEmpty() )
-         throw new ParseError( "No Discussion section has been defined.", tokens, index );
-
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "discussion" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Discussion</h3>\n\n" );
-
-      this.addXhtmlSource( this.discussion );
-
-      this.addXhtmlSource( "</div>\n\n" );
+      if ( this.discussion )
+      {
+         this.actionMessage( "Generating Discussion section..." );
+         this.addXhtmlSource( this.discussion.toXhtml() );
+      }
    };
 
    this.makeSections = function( tokens, index )
    {
-      if ( this.sections.length <= 0 )
-         throw new ParseError( "No custom sections have been defined.", tokens, index );
-
-      this.actionMessage( "Generating " + this.sections.length.toString() + " custom section(s)..." );
-
-      for ( var j = 0; j < this.sections.length; ++j )
-         this.addXhtmlSource( this.sections[j].toXhtml() );
-
-      this.addXhtmlSource( "\n" );
+      if ( this.sections.length > 0 )
+      {
+         this.actionMessage( "Generating " + this.sections.length.toString() + " custom section(s)..." );
+         for ( let j = 0; j < this.sections.length; ++j )
+            this.addXhtmlSource( this.sections[j].toXhtml() );
+      }
    };
 
    this.makeAcknowledgments = function()
    {
-      this.actionMessage( "Generating Acknowledgments section..." );
-
-      if ( this.acknowledgments.isEmpty() )
-         throw new ParseError( "No Acknowledgments section has been defined.", tokens, index );
-
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "acknowledgments" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">Acknowledgments</h3>\n\n" );
-
-      this.addXhtmlSource( this.acknowledgments );
-
-      this.addXhtmlSource( "</div>\n\n" );
+      if ( this.acknowledgments )
+      {
+         this.actionMessage( "Generating Acknowledgments section..." );
+         this.addXhtmlSource( this.acknowledgments.toXhtml() );
+      }
    };
 
    this.makeReferences = function( tokens, index )
    {
-      this.actionMessage( "Generating References section..." );
+      if ( this.references.length > 0 )
+      {
+         this.actionMessage( "Generating References section..." );
 
-      if ( this.references.length <= 0 )
-         throw new ParseError( "No references have been defined.", tokens, index );
+         this.addXhtmlSource( Section.startXhtml( "References", "references", false/*toggle*/ ) );
 
-      this.addXhtmlSource( "<a name=\"" + this.internalLabel( "references" ) + "\"></a>\n" +
-                           "<div class=\"pidoc_section\">\n" +
-                           "   <h3 class=\"pidoc_sectionTitle\">References</h3>\n" +
-                           "   <div id=\"references\">\n" );
+         for ( let j = 0; j < this.references.length; ++j )
+            this.addXhtmlSource( "      <p id=\"" + this.internalNumberedLabel( "reference", j+1 )
+                               + "\"><strong>[" + (j+1).toString() + "]</strong> "
+                               + this.references[j].toXhtml() + "</p>\n" );
 
-      for ( var j = 0; j < this.references.length; ++j )
-         this.addXhtmlSource( "      <a name=\"" + this.internalNumberedLabel( "reference", j+1 ) + "\"></a>\n" +
-                              "      <p><strong>[" + (j+1).toString() + "]</strong> " + this.references[j].toXhtml() + "</p>\n" );
-
-      this.addXhtmlSource( "   </div>\n" +
-                           "</div>\n\n" );
+         this.addXhtmlSource( Section.endXhtml() );
+      }
    };
 
    this.genericDocumentExists = function( docId )
@@ -2546,114 +2514,90 @@ header
 
    this.makeRelated = function( tokens, index )
    {
-      if ( this.relatedTools.length <= 0 && this.relatedScripts.length <= 0 && this.relatedObjects.length <= 0 &&
-           this.relatedDocuments.length <= 0 && this.relatedResources.length <= 0 )
-         throw new ParseError( "No related items have been defined.", tokens, index );
-
       if ( this.relatedTools.length > 0 )
       {
          this.actionMessage( "Generating Related Tools section..." );
 
-         this.addXhtmlSource( "<a name=\"" + this.internalLabel( "relatedTools" ) + "\"></a>\n" +
-                              "<div class=\"pidoc_section\">\n" +
-                              "   <h3 class=\"pidoc_sectionTitle\">Related Tools</h3>\n" +
-                              "   <div id=\"relatedTools\">\n" +
-                              "      <p>" );
+         this.addXhtmlSource( Section.startXhtml( "Related Tools", "related_tools", false/*toggle*/ ) );
+         this.addXhtmlSource( "<p>" );
 
-         for ( var j = 0; j < this.relatedTools.length; ++j )
+         for ( let j = 0; j < this.relatedTools.length; ++j )
          {
             if ( j > 0 )
                this.addXhtmlSource( ", " );
             this.addXhtmlSource( this.relatedTools[j].toXhtml() );
          }
 
-         this.addXhtmlSource( "</p>\n" +
-                              "   </div>\n" +
-                              "</div>\n\n" );
+         this.addXhtmlSource( "</p>\n" );
+         this.addXhtmlSource( Section.endXhtml() );
       }
 
       if ( this.relatedScripts.length > 0 )
       {
          this.actionMessage( "Generating Related Scripts section..." );
 
-         this.addXhtmlSource( "<a name=\"" + this.internalLabel( "relatedScripts" ) + "\"></a>\n" +
-                              "<div class=\"pidoc_section\">\n" +
-                              "   <h3 class=\"pidoc_sectionTitle\">Related Scripts</h3>\n" +
-                              "   <div id=\"relatedScripts\">\n" +
-                              "      <p>" );
+         this.addXhtmlSource( Section.startXhtml( "Related Scripts", "related_scripts", false/*toggle*/ ) );
+         this.addXhtmlSource( "<p>" );
 
-         for ( var j = 0; j < this.relatedScripts.length; ++j )
+         for ( let j = 0; j < this.relatedScripts.length; ++j )
          {
             if ( j > 0 )
                this.addXhtmlSource( ", " );
             this.addXhtmlSource( this.relatedScripts[j].toXhtml() );
          }
 
-         this.addXhtmlSource( "</p>\n" +
-                              "   </div>\n" +
-                              "</div>\n\n" );
+         this.addXhtmlSource( "</p>\n" );
+         this.addXhtmlSource( Section.endXhtml() );
       }
 
       if ( this.relatedObjects.length > 0 )
       {
          this.actionMessage( "Generating Related Objects section..." );
 
-         this.addXhtmlSource( "<a name=\"" + this.internalLabel( "relatedObjects" ) + "\"></a>\n" +
-                              "<div class=\"pidoc_section\">\n" +
-                              "   <h3 class=\"pidoc_sectionTitle\">Related Objects</h3>\n" +
-                              "   <div id=\"relatedObjects\">\n" +
-                              "      <p>" );
+         this.addXhtmlSource( Section.startXhtml( "Related Objects", "related_objects", false/*toggle*/ ) );
+         this.addXhtmlSource( "<p>" );
 
-         for ( var j = 0; j < this.relatedObjects.length; ++j )
+         for ( let j = 0; j < this.relatedObjects.length; ++j )
          {
             if ( j > 0 )
                this.addXhtmlSource( ", " );
             this.addXhtmlSource( this.relatedObjects[j].toXhtml() );
          }
 
-         this.addXhtmlSource( "</p>\n" +
-                              "   </div>\n" +
-                              "</div>\n\n" );
+         this.addXhtmlSource( "</p>\n" );
+         this.addXhtmlSource( Section.endXhtml() );
       }
 
       if ( this.relatedDocuments.length > 0 )
       {
          this.actionMessage( "Generating Related Documents section..." );
 
-         this.addXhtmlSource( "<a name=\"" + this.internalLabel( "relatedDocuments" ) + "\"></a>\n" +
-                              "<div class=\"pidoc_section\">\n" +
-                              "   <h3 class=\"pidoc_sectionTitle\">Related Documents</h3>\n" +
-                              "   <div id=\"relatedDocuments\">\n" +
-                              "      <p>" );
+         this.addXhtmlSource( Section.startXhtml( "Related Documents", "related_documents", false/*toggle*/ ) );
+         this.addXhtmlSource( "<p>" );
 
-         for ( var j = 0; j < this.relatedDocuments.length; ++j )
+         for ( let j = 0; j < this.relatedDocuments.length; ++j )
          {
             if ( j > 0 )
                this.addXhtmlSource( ", " );
             this.addXhtmlSource( this.relatedDocuments[j].toXhtml() );
          }
 
-         this.addXhtmlSource( "</p>\n" +
-                              "   </div>\n" +
-                              "</div>\n\n" );
+         this.addXhtmlSource( "</p>\n" );
+         this.addXhtmlSource( Section.endXhtml() );
       }
 
       if ( this.relatedResources.length > 0 )
       {
          this.actionMessage( "Generating Related Resources section..." );
 
-         this.addXhtmlSource( "<a name=\"" + this.internalLabel( "relatedResources" ) + "\"></a>\n" +
-                              "<div class=\"pidoc_section\">\n" +
-                              "   <h3 class=\"pidoc_sectionTitle\">Related Resources</h3>\n" +
-                              "   <div id=\"relatedResources\">\n" +
-                              "      <ul>\n" );
+         this.addXhtmlSource( Section.startXhtml( "Related Resources", "related_resources", false/*toggle*/ ) );
+         this.addXhtmlSource( "<ul>\n" );
 
-         for ( var j = 0; j < this.relatedResources.length; ++j )
-            this.addXhtmlSource( "         <li>" + this.relatedResources[j].toXhtml() + "</li>\n" );
+         for ( let j = 0; j < this.relatedResources.length; ++j )
+            this.addXhtmlSource( "   <li>" + this.relatedResources[j].toXhtml() + "</li>\n" );
 
-         this.addXhtmlSource( "      </ul>\n" +
-                              "   </div>\n" +
-                              "</div>\n\n" );
+         this.addXhtmlSource( "</ul>\n" );
+         this.addXhtmlSource( Section.endXhtml() );
       }
    };
 
@@ -2691,41 +2635,41 @@ header
 
       this.actionMessage( "Solving enumerated references..." );
 
-      var refMark = String.fromCharCode( REFMARK );
-      var sepMark = String.fromCharCode( SEPMARK );
+      let refMark = String.fromCharCode( REFMARK );
+      let sepMark = String.fromCharCode( SEPMARK );
 
       function solveRecursively( xhtmlSource )
       {
-         var i = xhtmlSource.indexOf( refMark );
+         let i = xhtmlSource.indexOf( refMark );
          if ( i < 0 )
             return xhtmlSource;
-         var j = xhtmlSource.indexOf( refMark, i+1 );
+         let j = xhtmlSource.indexOf( refMark, i+1 );
          if ( j < 0 )
             throw new Error( "*** Internal error: symbolic reference: missing termination mark." );
-         //var r = xhtmlSource.substring( i+1, j );
-         var p1 = xhtmlSource.indexOf( sepMark, i+1 );
+         //let r = xhtmlSource.substring( i+1, j );
+         let p1 = xhtmlSource.indexOf( sepMark, i+1 );
          if ( p1 < 0 || p1 > j )
             throw new Error( "*** Internal error: symbolic reference: missing separator." );
-         var p2 = xhtmlSource.indexOf( sepMark, p1+1 );
+         let p2 = xhtmlSource.indexOf( sepMark, p1+1 );
          if ( p2 < 0 || p2 > j )
             throw new Error( "*** Internal error: symbolic reference: missing separator." );
-         var p3 = xhtmlSource.indexOf( sepMark, p2+1 );
+         let p3 = xhtmlSource.indexOf( sepMark, p2+1 );
          if ( p3 < 0 || p3 > j )
             throw new Error( "*** Internal error: symbolic reference: missing separator." );
-         var type = xhtmlSource.substring( i+1, p1 );
-         var name = xhtmlSource.substring( p1+1, p2 );
-         var file = xhtmlSource.substring( p2+1, p3 );
-         var line = xhtmlSource.substring( p3+1 );
-         var location = file + ':' + line;
+         let type = xhtmlSource.substring( i+1, p1 );
+         let name = xhtmlSource.substring( p1+1, p2 );
+         let file = xhtmlSource.substring( p2+1, p3 );
+         let line = xhtmlSource.substring( p3+1 );
+         let location = file + ':' + line;
          if ( type.isEmpty() )
             throw new ParseError( "Internal error: symbolic reference: missing reference type.", location );
          if ( name.isEmpty() )
             throw new ParseError( "Internal error: symbolic reference: missing reference name.", location );
 
-         var number = -1;
-         var text = "";
-         var link = true;
-         var sup = false;
+         let number = -1;
+         let text = "";
+         let link = true;
+         let sup = false;
          switch ( type )
          {
          case "reference" :
@@ -2736,7 +2680,7 @@ header
             break;
          case "equation" :
             {
-               var a = document.equationNumberAndFileNameForName( name );
+               let a = document.equationNumberAndFileNameForName( name );
                if ( a != undefined )
                {
                   number = a[0];
@@ -2775,14 +2719,14 @@ header
          if ( number < 0 )
             throw new ParseError( "Undefined " + type + " \'" + name + "\'.", location );
 
-         var source = xhtmlSource.substring( 0, i );
+         let source = xhtmlSource.substring( 0, i );
 
          if ( sup )
             source += "<sup>";
 
          if ( link )
          {
-            var capType = type[0].toUpperCase() + type.substring( 1 );
+            let capType = type[0].toUpperCase() + type.substring( 1 );
             source += "<a href=\"#" + document.internalNumberedLabel( type, number ) + "\""
                    +  " class=\"pidoc_referenceTooltip\""
                    +  " onmouseover=\"pidoc_showReferenceToolTip( this );\""
@@ -2805,22 +2749,30 @@ header
 
       this.xhtmlSource = solveRecursively( this.xhtmlSource );
 
-      for ( var i = 0; i < this.references.length; ++i )
+      for ( let i = 0; i < this.references.length; ++i )
          if ( this.references[i].count == 0 )
             this.warning( "Unreferenced bibliographic reference \'" +
                           this.references[i].name + "\' (= Reference " + i.toString() + ")" );
-      for ( var i = 0; i < this.equationNames.length; ++i )
+      for ( let i = 0; i < this.equationNames.length; ++i )
          if ( this.equationNames[i].count == 0 )
             this.warning( "Unreferenced numbered equation \'" +
                           this.equationNames[i].name + "\' (= Equation " + this.equationNames[i].number.toString() + ")." );
-      for ( var i = 0; i < this.figureNames.length; ++i )
+      for ( let i = 0; i < this.figureNames.length; ++i )
          if ( this.figureNames[i].count == 0 )
             this.warning( "Unreferenced numbered figure \'" +
                           this.figureNames[i].name + "\' (= Figure " + this.figureNames[i].number.toString() + ")." );
-      for ( var i = 0; i < this.tableNames.length; ++i )
+      for ( let i = 0; i < this.tableNames.length; ++i )
          if ( this.tableNames[i].count == 0 )
             this.warning( "Unreferenced numbered table \'" +
                           this.tableNames[i].name + "\' (= Table " + this.tableNames[i].number.toString() + ")." );
+   };
+
+   this.cleanupMarkup = function()
+   {
+      this.xhtmlSource = this.xhtmlSource.replace( "<p><div", "<div", "g"
+                                        ).replace( "</div></p>", "</div>", "g"
+                                        ).replace( "<p><table", "<table", "g"
+                                        ).replace( "</table></p>", "</table>", "g" );
    };
 }
 
@@ -2832,4 +2784,4 @@ PIDocDocument.prototype = new Object;
 var document = new PIDocDocument;
 
 // ****************************************************************************
-// EOF PIDocDocument.js - Released 2014/12/09 21:37:52 UTC
+// EOF PIDocDocument.js - Released 2015/01/18 20:22:19 UTC
