@@ -1,13 +1,16 @@
-// ****************************************************************************
-// PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// pjsr/SectionBar.jsh - Released 2014/10/29 08:14:02 UTC
-// ****************************************************************************
+//     ____       __ _____  ____
+//    / __ \     / // ___/ / __ \
+//   / /_/ /__  / / \__ \ / /_/ /
+//  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
+// /_/     \____/ /____//_/ |_|    PJSR Version 1.0
+// ----------------------------------------------------------------------------
+// pjsr/SectionBar.jsh - Released 2015/07/23 10:07:13 UTC
+// ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +48,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #ifndef __PJSR_SectionBar_jsh
 #define __PJSR_SectionBar_jsh
@@ -108,8 +111,8 @@ function SectionBar( parent, title, collapsible )
    if ( this.collapsible )
    {
       this.button = new ToolButton( this );
-      this.button.icon = collapse_icon;
-      this.button.setFixedSize( 17, 17 );
+      this.button.icon = this.scaledResource( collapse_icon );
+      this.button.setScaledFixedSize( 17, 17 );
       this.button.focusStyle = FocusStyle_NoFocus;
       this.button.onClick = function()
       {
@@ -117,7 +120,7 @@ function SectionBar( parent, title, collapsible )
       };
    }
    else
-      this.setMinHeight( 19 );
+      this.setScaledMinHeight( 19 );
 
    this.hSizer = new HorizontalSizer;
    this.hSizer.addSpacing( 4 );
@@ -327,7 +330,7 @@ function SectionBar( parent, title, collapsible )
    this.updateIcon = function()
    {
       if ( this.collapsible )
-         this.button.icon = this.isExpanded() ? collapse_icon : expand_icon;
+         this.button.icon = this.scaledResource( this.isExpanded() ? collapse_icon : expand_icon );
    };
 
 #undef collapse_icon
@@ -340,5 +343,5 @@ SectionBar.prototype = new Control;
 
 #endif   // __PJSR_SectionBar_jsh
 
-// ****************************************************************************
-// EOF pjsr/SectionBar.jsh - Released 2014/10/29 08:14:02 UTC
+// ----------------------------------------------------------------------------
+// EOF pjsr/SectionBar.jsh - Released 2015/07/23 10:07:13 UTC

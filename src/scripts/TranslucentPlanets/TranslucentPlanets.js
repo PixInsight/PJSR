@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// TranslucentPlanets.js - Released 2014/11/04 18:39:23 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// TranslucentPlanets.js - Released 2015/07/23 07:51:42 UTC
+// ----------------------------------------------------------------------------
 //
 // This file is part of TranslucentPlanets Script version 1.2
 //
-// Copyright (C) 2005-2014 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2005-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 // Written by Juan Conejero, PTeam.
 //
 // Redistribution and use in both source and binary forms, with or without
@@ -45,7 +45,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * TranslucentPlanets
@@ -53,7 +53,7 @@
  * Generates a 3D network graphic over a background populated with random
  * translucent spheres.
  *
- * Copyright (C) 2005-2014 Pleiades Astrophoto S.L.
+ * Copyright (C) 2005-2015 Pleiades Astrophoto S.L.
  * Written by Juan Conejero (PTeam)
  */
 
@@ -452,7 +452,8 @@ function TranslucentPlanetsDialog()
    //
 
    this.newInstance_Button = new ToolButton( this );
-   this.newInstance_Button.icon = ":/process-interface/new-instance.png";
+   this.newInstance_Button.icon = this.scaledResource( ":/process-interface/new-instance.png" );
+   this.newInstance_Button.setScaledFixedSize( 24, 24 );
    this.newInstance_Button.toolTip = "New Instance";
    this.newInstance_Button.onMousePress = function()
    {
@@ -464,8 +465,7 @@ function TranslucentPlanetsDialog()
 
    this.exec_Button = new PushButton( this );
    this.exec_Button.text = "New Rendition";
-   this.exec_Button.icon = ":/icons/execute.png";
-   this.exec_Button.cursor = new Cursor( StdCursor_Checkmark );
+   this.exec_Button.icon = this.scaledResource( ":/icons/execute.png" );
    this.exec_Button.onClick = function()
    {
       this.dialog.ok();
@@ -473,8 +473,7 @@ function TranslucentPlanetsDialog()
 
    this.close_Button = new PushButton( this );
    this.close_Button.text = "Close";
-   this.close_Button.icon = ":/icons/close.png";
-   this.close_Button.cursor = new Cursor( StdCursor_Crossmark );
+   this.close_Button.icon = this.scaledResource( ":/icons/close.png" );
    this.close_Button.onClick = function()
    {
       this.dialog.cancel();
@@ -528,5 +527,5 @@ function main()
 
 main();
 
-// ****************************************************************************
-// EOF TranslucentPlanets.js - Released 2014/11/04 18:39:23 UTC
+// ----------------------------------------------------------------------------
+// EOF TranslucentPlanets.js - Released 2015/07/23 07:51:42 UTC

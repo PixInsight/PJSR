@@ -3,6 +3,12 @@ PixInsight Benchmark Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2015.07.22 - v1.02
+
+- Use the new ElapsedTime PJSR object for accurate time interval measurements.
+- Automatic UI scaling on PixInsight 1.8.4.
+
+-------------------------------------------------------------------------------
 2014.05.14 - v1.01
 
 - Bugfix: On FreeBSD, the sysctl program is at "/sbin/sysctl", not "sysctl"

@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// benchmark.js - Released 2014/06/23 12:17:38 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// benchmark.js - Released 2015/07/22 17:01:02 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Benchmark Script version 1.01
+// This file is part of PixInsight Benchmark Script version 1.02
 //
-// Copyright (C) 2014 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2014-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 // Written by Juan Conejero, PTeam.
 //
 // Redistribution and use in both source and binary forms, with or without
@@ -45,14 +45,14 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #feature-id    Benchmarks > PixInsight Benchmark
 
 #feature-info  A script to evaluate the performance of your machine for \
                execution of intermediate and advanced image processing tasks \
                with PixInsight.<br/>\
-               Copyright (C) 2014 Pleiades Astrophoto S.L. All Rights Reserved.<br/>\
+               Copyright (C) 2014-2015 Pleiades Astrophoto S.L. All Rights Reserved.<br/>\
                Written by Juan Conejero, PTeam
 
 #include <pjsr/CryptographicHash.jsh>
@@ -62,11 +62,11 @@
 #include <pjsr/StdIcon.jsh>
 #include <pjsr/TextAlign.jsh>
 
-#define VERSION "1.01"
+#define VERSION "1.02"
 #define TITLE   "PixInsight Benchmark"
 
-if ( coreVersionBuild < 1092 )
-   throw new Error( "The " + TITLE + " script requires PixInsight 1.8.1.1092 or higher." );
+if ( coreVersionBuild < 1157 )
+   throw new Error( "The " + TITLE + " script requires PixInsight 1.8.4.1157 or higher." );
 
 // ----------------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ function CPUId()
       this.id( 0x80000000 );
       if ( this.eax < 0x80000004 )
          throw "Unsupported function";
-      var s;
+      let s;
       this.id( 0x80000002 );
       s =  this.registerToASCII( this.eax ) +
            this.registerToASCII( this.ebx ) +
@@ -117,7 +117,7 @@ function CPUId()
 
    this.id = function( eax )
    {
-      var r = cpuId( eax );
+      let r = cpuId( eax );
       this.eax = r[0];
       this.ebx = r[1];
       this.ecx = r[2];
@@ -126,10 +126,10 @@ function CPUId()
 
    this.registerToASCII = function( r )
    {
-      var s = "";
-      for ( var i = 0, n = 0; i < 4; ++i, n += 8 )
+      let s = "";
+      for ( let i = 0, n = 0; i < 4; ++i, n += 8 )
       {
-         var c = (r & (0x000000ff << n)) >> n;
+         let c = (r & (0x000000ff << n)) >> n;
          if ( c != 0 )
             s += String.fromCharCode( c );
       }
@@ -156,14 +156,14 @@ function SystemId()
 
       if ( corePlatform == "Linux" )
       {
-         var p = new ExternalProcess( "lsb_release -a" );
+         let p = new ExternalProcess( "lsb_release -a" );
          p.waitForFinished();
          if ( p.exitCode == 0 )
          {
-            var t = p.stdout.utf8ToString().trim();
-            var l = t.split( '\n' );
-            var d = "";
-            for ( var i = 0; i < l.length; ++i )
+            let t = p.stdout.utf8ToString().trim();
+            let l = t.split( '\n' );
+            let d = "";
+            for ( let i = 0; i < l.length; ++i )
                if ( l[i].indexOf( "Description" ) >= 0 )
                {
                   d = l[i].substring( l[i].indexOf( ':' )+1 ).trim();
@@ -175,7 +175,7 @@ function SystemId()
       }
       else if ( corePlatform == "FreeBSD" )
       {
-         var p = new ExternalProcess( "cat /etc/version" );
+         let p = new ExternalProcess( "cat /etc/version" );
          p.waitForFinished();
          if ( p.exitCode == 0 )
             return "FreeBSD " + p.stdout.utf8ToString().trim();
@@ -200,36 +200,36 @@ function SystemId()
    {
       if ( corePlatform == "MSWindows" )
       {
-         var p = new ExternalProcess( "wmic os get Caption /value" );
+         let p = new ExternalProcess( "wmic os get Caption /value" );
          p.waitForFinished();
-         var t = this.windowsDataToText( p.stdout );
+         let t = this.windowsDataToText( p.stdout );
          return t.substring( t.indexOf( '=' )+1 ).trim();
       }
       else if ( corePlatform == "Linux" )
       {
-         var p = new ExternalProcess( "uname -rvo" );
+         let p = new ExternalProcess( "uname -rvo" );
          p.waitForFinished();
          return p.stdout.utf8ToString().trim();
       }
       else if ( corePlatform == "FreeBSD" )
       {
-         var p = new ExternalProcess( "/sbin/sysctl kern.version" );
+         let p = new ExternalProcess( "/sbin/sysctl kern.version" );
          p.waitForFinished();
-         var t = p.stdout.utf8ToString().trim();
-         var i = t.indexOf( ':' );
-         var j = t.indexOf( '\n' );
+         let t = p.stdout.utf8ToString().trim();
+         let i = t.indexOf( ':' );
+         let j = t.indexOf( '\n' );
          if ( i >= 0 && j >= 0 )
             return t.substring( i+1, j ).trim();
          return t;
       }
       else if ( corePlatform == "MacOSX" )
       {
-         var p = new ExternalProcess( "sw_vers" );
+         let p = new ExternalProcess( "sw_vers" );
          p.waitForFinished();
-         var t = p.stdout.utf8ToString().trim();
-         var l = t.split( '\n' );
-         var n = "", v = "", b = "";
-         for ( var i = 0; i < l.length; ++i )
+         let t = p.stdout.utf8ToString().trim();
+         let l = t.split( '\n' );
+         let n = "", v = "", b = "";
+         for ( let i = 0; i < l.length; ++i )
             if ( l[i].indexOf( "ProductName" ) >= 0 )
                n = l[i].substring( l[i].indexOf( ':' )+1 ).trim();
             else if ( l[i].indexOf( "ProductVersion" ) >= 0 )
@@ -245,29 +245,29 @@ function SystemId()
    {
       if ( corePlatform == "MSWindows" )
       {
-         var p = new ExternalProcess( "wmic cpu get NumberOfLogicalProcessors /value" );
+         let p = new ExternalProcess( "wmic cpu get NumberOfLogicalProcessors /value" );
          p.waitForFinished();
-         var t = this.windowsDataToText( p.stdout );
+         let t = this.windowsDataToText( p.stdout );
          return parseInt( t.substring( t.indexOf( '=' )+1 ).trim() );
       }
       else if ( corePlatform == "Linux" )
       {
-         var p = new ExternalProcess( "nproc" );
+         let p = new ExternalProcess( "nproc" );
          p.waitForFinished();
          return parseInt( p.stdout.utf8ToString().trim() );
       }
       else if ( corePlatform == "FreeBSD" )
       {
-         var p = new ExternalProcess( "/sbin/sysctl hw.ncpu" );
+         let p = new ExternalProcess( "/sbin/sysctl hw.ncpu" );
          p.waitForFinished();
-         var t = p.stdout.utf8ToString();
+         let t = p.stdout.utf8ToString();
          return parseInt( t.substring( t.indexOf( ':' )+1 ).trim() );
       }
       else if ( corePlatform == "MacOSX" )
       {
-         var p = new ExternalProcess( "sysctl hw.ncpu" );
+         let p = new ExternalProcess( "sysctl hw.ncpu" );
          p.waitForFinished();
-         var t = p.stdout.utf8ToString();
+         let t = p.stdout.utf8ToString();
          return parseInt( t.substring( t.indexOf( ':' )+1 ).trim() );
       }
       return 0; // !?
@@ -277,34 +277,34 @@ function SystemId()
    {
       if ( corePlatform == "MSWindows" )
       {
-         var p = new ExternalProcess( "wmic os get TotalVisibleMemorySize /value" );
+         let p = new ExternalProcess( "wmic os get TotalVisibleMemorySize /value" );
          p.waitForFinished();
-         var t = this.windowsDataToText( p.stdout );
+         let t = this.windowsDataToText( p.stdout );
          return parseInt( t.substring( t.indexOf( '=' )+1 ).trim() );
       }
       else if ( corePlatform == "Linux" )
       {
-         var p = new ExternalProcess( "cat /proc/meminfo" );
+         let p = new ExternalProcess( "cat /proc/meminfo" );
          p.waitForFinished();
-         var s = p.stdout.utf8ToString();
-         var l = s.split( '\n' );
-         for ( var i = 0; i < l.length; ++i )
+         let s = p.stdout.utf8ToString();
+         let l = s.split( '\n' );
+         for ( let i = 0; i < l.length; ++i )
             if ( l[i].indexOf( "MemTotal" ) >= 0 )
                return parseInt( l[i].split( ' ' ).filter( function( x ){ return x.trim().length > 0; } )[1].trim() );
          return 0; // !?
       }
       else if ( corePlatform == "FreeBSD" )
       {
-         var p = new ExternalProcess( "/sbin/sysctl hw.physmem" );
+         let p = new ExternalProcess( "/sbin/sysctl hw.physmem" );
          p.waitForFinished();
-         var t = p.stdout.utf8ToString();
+         let t = p.stdout.utf8ToString();
          return parseInt( t.substring( t.indexOf( ':' )+1 ).trim() )/1024;
       }
       else if ( corePlatform == "MacOSX" )
       {
-         var p = new ExternalProcess( "sysctl hw.memsize" );
+         let p = new ExternalProcess( "sysctl hw.memsize" );
          p.waitForFinished();
-         var t = p.stdout.utf8ToString();
+         let t = p.stdout.utf8ToString();
          return parseInt( t.substring( t.indexOf( ':' )+1 ).trim() )/1024;
       }
       return 0; // !?
@@ -312,10 +312,10 @@ function SystemId()
 
    this.windowsDataToText = function( data )
    {
-      var B = new ByteArray;
-      for ( var i = 0; i < data.length; ++i )
+      let B = new ByteArray;
+      for ( let i = 0; i < data.length; ++i )
       {
-         var b = data.at( i );
+         let b = data.at( i );
          if ( b != 0x0D )
             B.add( b );
       }
@@ -332,7 +332,7 @@ SystemId.prototype = new Object;
  */
 
 #define BENCHMARK_VERSION_BIG "1.0"
-#define BENCHMARK_VERSION     "1.00.07"
+#define BENCHMARK_VERSION     "1.00.08"
 #define INPUT_CHECKSUM        "2cd72b67e12fff2812ef5b5da054ab2a70a25e23"
 #define TOTAL_SWAP_SIZE       5520.92728805542 // MiB
 
@@ -367,12 +367,12 @@ function Benchmark()
          console.writeln( "<end><cbr><br>",
                           "*******************************************************************************" );
          console.writeln( "<b>The Official PixInsight Benchmark version ", BENCHMARK_VERSION_BIG, "</b>" );
-         console.writeln( "Copyright (C) 2014 Pleiades Astrophoto. All Rights Reserved." );
+         console.writeln( "Copyright (C) 2014-2015 Pleiades Astrophoto. All Rights Reserved." );
          console.writeln( "*******************************************************************************" );
 
          this.progress = new BenchmarkProgressDialog;
 
-         var filePath = this.download();
+         let filePath = this.download();
          if ( filePath.length == 0 )
          {
             if ( this.progress.canceled )
@@ -388,53 +388,53 @@ function Benchmark()
          this.reset();
          this.window = this.load( filePath );
 
-         var t0 = new Date;
+         let t0 = new ElapsedTime;
 
-         var P = this.instances();
+         let P = this.instances();
 
          this.progress.setText( "Performing benchmark, please wait." );
          this.progress.setRange( 0, 3*P.length );
          this.progress.show();
 
-         var view = this.window.mainView;
+         let view = this.window.mainView;
 
-         for ( var i = 0; i < P.length; ++i )
+         for ( let i = 0; i < P.length; ++i )
          {
             if ( this.progress.canceled )
             {
                this.cancel();
                return false;
             }
-            var t1 = new Date;
+            let t1 = new ElapsedTime;
             P[i].executeOn( view );
-            this.swapTime += this.elapsedTime( t1 ) - P[i].executionTime();
+            this.swapTime += t1.value - P[i].executionTime();
             this.cpuTime += P[i].executionTime();
             this.progress.increment();
          }
 
-         for ( var i = 0; i < P.length; ++i )
+         for ( let i = 0; i < P.length; ++i )
          {
             if ( this.progress.canceled )
             {
                this.cancel();
                return false;
             }
-            var t1 = new Date;
+            let t1 = new ElapsedTime;
             view.historyIndex--;
-            this.swapTime += this.elapsedTime( t1 );
+            this.swapTime += t1.value;
             this.progress.increment();
          }
 
-         for ( var i = 0; i < P.length; ++i )
+         for ( let i = 0; i < P.length; ++i )
          {
             if ( this.progress.canceled )
             {
                this.cancel();
                return false;
             }
-            var t1 = new Date;
+            let t1 = new ElapsedTime;
             P[i].executeOn( view );
-            this.swapTime += this.elapsedTime( t1 ) - P[i].executionTime();
+            this.swapTime += t1.value - P[i].executionTime();
             this.cpuTime += P[i].executionTime();
             this.progress.increment();
          }
@@ -443,17 +443,17 @@ function Benchmark()
          this.progress = undefined;
 
          {
-            var t1 = new Date;
+            let t1 = new ElapsedTime;
             view.beginProcess();
-            var t2 = new Date;
+            let t2 = new ElapsedTime;
             this.cosmetics( view.image );
-            var dt2 = this.elapsedTime( t2 );
+            let dt2 = t2.value;
             this.cpuTime += dt2;
             view.endProcess();
-            this.swapTime += this.elapsedTime( t1 ) - dt2;
+            this.swapTime += t1.value - dt2;
          }
 
-         this.totalTime = this.elapsedTime( t0 );
+         this.totalTime = t0.value;
 
          this.totalIndex = 10000*REFERENCE_TOTAL/this.totalTime;
          this.cpuIndex = 10000*REFERENCE_CPU/this.cpuTime;
@@ -464,11 +464,11 @@ function Benchmark()
          this.watermark( view.image );
          view.endProcess();
 
-         var cpu = new CPUId;
+         let cpu = new CPUId;
          this.cpuVendor = cpu.vendor();
          this.cpuModel = cpu.model();
 
-         var sys = new SystemId;
+         let sys = new SystemId;
          this.numberOfProcessors = sys.numberOfProcessors();
          this.totalMemorySizeKiB = sys.totalMemorySizeKiB();
          this.platform = sys.platform();
@@ -478,13 +478,13 @@ function Benchmark()
 
          this.serialNumber = this.randomId( 32 );
 
-         var s = this.report();
+         let s = this.report();
          console.writeln( "<end><cbr><br>",
                           "*******************************************************************************" );
          console.writeln( "<b>Benchmark Results</b>" );
          console.writeln( "*******************************************************************************" );
          console.writeln( "" );
-         for ( var i = 0; i < s.length; ++i )
+         for ( let i = 0; i < s.length; ++i )
             console.writeln( s[i] );
 
          if ( this.showImage )
@@ -576,8 +576,8 @@ function Benchmark()
     */
    this.report = function()
    {
-      var n = Math.trunc( Math.log10( Math.max( this.totalIndex, this.cpuIndex, this.swapIndex ) ) ) + 1;
-      var items = [
+      let n = Math.trunc( Math.log10( Math.max( this.totalIndex, this.cpuIndex, this.swapIndex ) ) ) + 1;
+      let items = [
          "Benchmark version ...... " + BENCHMARK_VERSION                                        ,
          "Input checksum ......... " + INPUT_CHECKSUM                                           ,
          "Serial number .......... " + this.serialNumber                                        ,
@@ -632,7 +632,7 @@ function Benchmark()
          if ( this.serialNumber.length <= 0 )
             throw new Error( "Attempt to send an invalid benchmark." );
 
-         var url = (this.secureConnections ? "https" : "http") + "://pixinsight.com/benchmark/cgi-bin/v1/benchmark-submit.php";
+         let url = (this.secureConnections ? "https" : "http") + "://pixinsight.com/benchmark/cgi-bin/v1/benchmark-submit.php";
          url += "?serialNumber="          + this.serialNumber;
          url += "&version="               + this.toPercentEncoding( BENCHMARK_VERSION );
          url += "&cpuVendor="             + this.toPercentEncoding( this.cpuVendor );
@@ -655,7 +655,7 @@ function Benchmark()
          url += "&diskInfo="              + this.toPercentEncoding( this.diskInfo );
          url += "&comments="              + this.toPercentEncoding( this.comments );
 
-         var responseFilePath = File.systemTempDirectory + "/benchmark-sr.txt";
+         let responseFilePath = File.systemTempDirectory + "/benchmark-sr.txt";
 
          console.writeln( "<end><cbr><br><b>Sending benchmark data to server...</b>" );
          //console.writeln( "<raw>" + url + "</raw>" );
@@ -663,7 +663,7 @@ function Benchmark()
 
          (new FileDownload( url, responseFilePath )).perform();
 
-         var response = File.readFile( responseFilePath ).toString();
+         let response = File.readFile( responseFilePath ).toString();
          if ( response.indexOf( "<* OK *>" ) == 0 )
          {
             this.serverResponse = response.substring( 8 ).trim();
@@ -689,10 +689,10 @@ function Benchmark()
    this.download = function()
    {
       console.writeln( "<end><cbr><br><b>Downloading benchmark input image:</b>" );
-      var localPath = File.systemTempDirectory + "/pixinsight_benchmark_v1.fit";
+      let localPath = File.systemTempDirectory + "/pixinsight_benchmark_v1.fit";
       if ( this.forceDownload || !File.exists( localPath ) )
       {
-         var remoteURL = (this.secureConnections ? "https" : "http") + "://pixinsight.com/benchmark/data/v1/RGB.fit";
+         let remoteURL = (this.secureConnections ? "https" : "http") + "://pixinsight.com/benchmark/data/v1/RGB.fit";
          console.writeln( remoteURL );
          try
          {
@@ -701,7 +701,7 @@ function Benchmark()
                this.progress.setText( "Downloading benchmark input image..." );
                this.progress.show();
             }
-            var download = new BenchmarkFileDownload( localPath, this.progress );
+            let download = new BenchmarkFileDownload( localPath, this.progress );
             download.setURL( remoteURL );
             download.download();
             download.flush();
@@ -713,7 +713,7 @@ function Benchmark()
          {
             if ( File.exists( localPath ) )
                File.remove( localPath );
-            var t = e.toString();
+            let t = e.toString();
             if ( t.length > 0 )
                console.criticalln( "<end><cbr>", t );
             return "";
@@ -734,7 +734,7 @@ function Benchmark()
    {
       console.writeln( "<end><cbr><br><b>Validating benchmark input file:</b>" );
       console.writeln( filePath );
-      var sha1 = (new CryptographicHash( CryptographicHash_SHA1 )).hash( File.readFile( filePath ) ).toHex();
+      let sha1 = (new CryptographicHash( CryptographicHash_SHA1 )).hash( File.readFile( filePath ) ).toHex();
       if ( sha1 == INPUT_CHECKSUM )
       {
          console.writeln( "Valid file, SHA1 = ", sha1 );
@@ -760,20 +760,20 @@ function Benchmark()
       function fixColumn( image, x )
       {
          if ( x > 0 && x < image.width-1 )
-            for ( var i = 0; i < image.numberOfChannels; ++i )
-               for ( var y = 0; y < image.height; ++y )
+            for ( let i = 0; i < image.numberOfChannels; ++i )
+               for ( let y = 0; y < image.height; ++y )
                   image.setSample( (image.sample( x-1, y, i ) + image.sample( x+1, y, i ))/2, x, y, i );
       }
 
       function fixRow( image, y )
       {
          if ( y > 0 && y < image.height-1 )
-            for ( var i = 0; i < image.numberOfChannels; ++i )
-               for ( var x = 0; x < image.width; ++x )
+            for ( let i = 0; i < image.numberOfChannels; ++i )
+               for ( let x = 0; x < image.width; ++x )
                   image.setSample( (image.sample( x, y-1, i ) + image.sample( x, y+1, i ))/2, x, y, i );
       }
 
-      for ( var i = 0; i < 2; ++i )
+      for ( let i = 0; i < 2; ++i )
       {
          fixColumn( image, 332 );
          fixColumn( image, 333 );
@@ -795,17 +795,17 @@ function Benchmark()
          format( ": TOTAL=%.0f CPU=%.0f SWAP=%.0f", this.totalIndex, this.cpuIndex, this.swapIndex );
 
       // Create the font
-      var font = new Font( "Open Sans" );
+      let font = new Font( "Open Sans" );
       font.pixelSize = 26;
 
-      var innerMargin = Math.round( font.pixelSize/5 );
-      var width = font.width( text ) + 2*innerMargin;
-      var height = font.ascent + font.descent + 2*innerMargin;
+      let innerMargin = Math.round( font.pixelSize/5 );
+      let width = font.width( text ) + 2*innerMargin;
+      let height = font.ascent + font.descent + 2*innerMargin;
 
-      var bmp = new Bitmap( width, height );
+      let bmp = new Bitmap( width, height );
       bmp.fill( 0x80000000 );
 
-      var G = new Graphics( bmp );
+      let G = new Graphics( bmp );
       G.font = font;
       G.pen = new Pen( 0xffff7f00 );
       G.transparentBackground = true; // draw text with transparent bkg
@@ -839,27 +839,19 @@ function Benchmark()
    this.randomId = function( n )
    {
       const chars = "A9B0CD8E1F7G2H6I3J4K5L4MN5OP3Q6R2S7TU1V8W0X9YZ";
-      var scale = chars.length - 1;
-      var id = "";
-      for ( var i = 0; i < n; ++i )
+      let scale = chars.length - 1;
+      let id = "";
+      for ( let i = 0; i < n; ++i )
          id += chars[Math.round( scale*Math.random() )];
       return id;
    };
 
    /*
-    * Elapsed time in seconds.
-    */
-   this.elapsedTime = function( t )
-   {
-      return ((new Date).getTime() - t.getTime())/1000;
-   };
-
-   /*
-    * Elapsed time represented as mm:ss
+    * Elapsed time represented as mm:ss.ss
     */
    this.timeAsString = function( seconds )
    {
-      var minutes = seconds/60;
+      let minutes = seconds/60;
       return format( "%02.0f:%05.2f", Math.trunc( minutes ), 60*Math.frac( minutes ) );
    };
 
@@ -873,10 +865,10 @@ function Benchmark()
          return "0123456789ABCDEF"[n & 0xf];
       }
 
-      var e = new String;
-      for ( var i = 0, n = s.length; i < n; ++i )
+      let e = new String;
+      for ( let i = 0, n = s.length; i < n; ++i )
       {
-         var c = s.charCodeAt( i );
+         let c = s.charCodeAt( i );
          if ( c > 0 )
             if (   c >= 0x61 && c <= 0x7A  // a ... z
                 || c >= 0x41 && c <= 0x5A  // A ... Z
@@ -912,12 +904,12 @@ function Benchmark()
     */
    this.instances = function()
    {
-      var P = [];
+      let P = [];
 
       /*
        * 0.040 s
        */
-      var P01 = new BackgroundNeutralization;
+      let P01 = new BackgroundNeutralization;
       P01.backgroundReferenceViewId = "";
       P01.backgroundLow = 0.0000000;
       P01.backgroundHigh = 0.1000000;
@@ -933,7 +925,7 @@ function Benchmark()
       /*
        * 0.079 s
        */
-      var P02 = new ColorCalibration;
+      let P02 = new ColorCalibration;
       P02.whiteReferenceViewId = "";
       P02.whiteLow = 0.0000000;
       P02.whiteHigh = 0.9000000;
@@ -964,7 +956,7 @@ function Benchmark()
       /*
        * 0.016 s
        */
-      var P03 = new DynamicCrop;
+      let P03 = new DynamicCrop;
       P03.centerX = 0.50052;
       P03.centerY = 0.49018;
       P03.width = 0.93264;
@@ -985,7 +977,7 @@ function Benchmark()
       /*
        * 4.676 s
        */
-      var P04 = new MultiscaleMedianTransform;
+      let P04 = new MultiscaleMedianTransform;
       P04.layers = [ // enabled, biasEnabled, bias, noiseReductionEnabled, noiseReductionThreshold, noiseReductionAmount, noiseReductionAdaptive
          [true, true, 0.000, false, 1.0000, 1.00, 0.0000],
          [true, true, 0.000, true, 4.0000, 0.80, 0.2000],
@@ -1013,7 +1005,7 @@ function Benchmark()
       /*
        * 0.108 s
        */
-      var P05 = new HistogramTransformation;
+      let P05 = new HistogramTransformation;
       P05.H = [ // c0, m, c1, r0, r1
          [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
          [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
@@ -1026,7 +1018,7 @@ function Benchmark()
       /*
        * 0.952 s
        */
-      var P06 = new HDRMultiscaleTransform;
+      let P06 = new HDRMultiscaleTransform;
       P06.numberOfLayers = 5;
       P06.numberOfIterations = 1;
       P06.invertedIterations = true;
@@ -1064,7 +1056,7 @@ function Benchmark()
       /*
        * 0.046 s
        */
-      var P07 = new CurvesTransformation;
+      let P07 = new CurvesTransformation;
       P07.R = [ // x, y
          [0.00000, 0.00000],
          [1.00000, 1.00000]
@@ -1122,7 +1114,7 @@ function Benchmark()
       /*
        * 0.101 s
        */
-      var P08 = new CurvesTransformation;
+      let P08 = new CurvesTransformation;
       P08.R = [ // x, y
          [0.00000, 0.00000],
          [1.00000, 1.00000]
@@ -1180,7 +1172,7 @@ function Benchmark()
       /*
        * 0.098 s
        */
-      var P09 = new SCNR;
+      let P09 = new SCNR;
       P09.amount = 1.00;
       P09.protectionMethod = SCNR.prototype.AverageNeutral;
       P09.colorToRemove = SCNR.prototype.Green;
@@ -1190,7 +1182,7 @@ function Benchmark()
       /*
        * 0.886 s
        */
-      var P10 = new Resample;
+      let P10 = new Resample;
       P10.xSize = 9.1022;
       P10.ySize = 9.1022;
       P10.mode = Resample.prototype.RelativeDimensions;
@@ -1207,7 +1199,7 @@ function Benchmark()
       /*
        * 0.735 s
        */
-      var P11 = new Resample;
+      let P11 = new Resample;
       P11.xSize = 0.2500;
       P11.ySize = 0.2500;
       P11.mode = Resample.prototype.RelativeDimensions;
@@ -1224,7 +1216,7 @@ function Benchmark()
       /*
        * 2.856 s
        */
-      var P12 = new Resample;
+      let P12 = new Resample;
       P12.xSize = 8.0000;
       P12.ySize = 8.0000;
       P12.mode = Resample.prototype.RelativeDimensions;
@@ -1241,7 +1233,7 @@ function Benchmark()
       /*
        * 3.698 s
        */
-      var P13 = new Resample;
+      let P13 = new Resample;
       P13.xSize = 0.5000;
       P13.ySize = 0.5000;
       P13.mode = Resample.prototype.RelativeDimensions;
@@ -1258,7 +1250,7 @@ function Benchmark()
       /*
        * 4.004 s
        */
-      var P14 = new UnsharpMask;
+      let P14 = new UnsharpMask;
       P14.sigma = 8.00;
       P14.amount = 0.80;
       P14.useLuminance = false;
@@ -1274,7 +1266,7 @@ function Benchmark()
       /*
        * 0.500 s
        */
-      var P15 = new Resample;
+      let P15 = new Resample;
       P15.xSize = 0.1250;
       P15.ySize = 0.1250;
       P15.mode = Resample.prototype.RelativeDimensions;
@@ -1306,37 +1298,29 @@ function BenchmarkFrontPageDialog()
    //
 
    this.title_Label = new Label( this );
-   this.title_Label.margin = 4;
    this.title_Label.useRichText = true;
-   this.title_Label.styleSheet =
+   this.title_Label.styleSheet = this.scaledStyleSheet(
       "QWidget {"
-#ifeq __PI_PLATFORM__ MACOSX
-   +     "font-size: 20pt;"
-#else
+   +     "font-family: Open Sans, DejaVu Sans, sans-serif;"
    +     "font-size: 18pt;"
-#endif
-   +     "font-family: Open Sans,DejaVu Sans,Helvetica,Arial,sans-serif;"
    +     "font-weight: 200;"
    +     "color: #0066ff;"
-   +  "}";
+   +     "padding: 4px;"
+   +  "}" );
    this.title_Label.text =
    "<p>" +
       "Welcome to PixInsight Benchmark version " + BENCHMARK_VERSION_BIG +
    "</p>";
 
    this.info_Label = new Label( this );
-   this.info_Label.margin = 4;
    this.info_Label.wordWrapping = true;
    this.info_Label.useRichText = true;
-   this.info_Label.styleSheet =
+   this.info_Label.styleSheet = this.scaledStyleSheet(
       "QWidget {"
-#ifeq __PI_PLATFORM__ MACOSX
-   +     "font-size: 12pt;"
-#else
+   +     "font-family: Open Sans, DejaVu Sans, sans-serif;"
    +     "font-size: 10pt;"
-#endif
-   +     "font-family: Open Sans,DejaVu Sans,Helvetica,Arial,sans-serif;"
-   +  "}";
+   +     "padding: 4px;"
+   +  "}" );
    this.info_Label.text =
    "<p>" +
       "This script will evaluate the performance of your machine for execution " +
@@ -1372,7 +1356,7 @@ function BenchmarkFrontPageDialog()
 
    this.enter_Button = new PushButton( this );
    this.enter_Button.text = "Enter";
-   this.enter_Button.icon = ":/icons/next.png";
+   this.enter_Button.icon = this.scaledResource( ":/icons/next.png" );
    this.enter_Button.onClick = function()
    {
       this.dialog.ok();
@@ -1380,7 +1364,7 @@ function BenchmarkFrontPageDialog()
 
    this.close_Button = new PushButton( this );
    this.close_Button.text = "Close";
-   this.close_Button.icon = ":/icons/close.png";
+   this.close_Button.icon = this.scaledResource( ":/icons/close.png" );
    this.close_Button.onClick = function()
    {
       this.dialog.cancel();
@@ -1401,7 +1385,7 @@ function BenchmarkFrontPageDialog()
    this.sizer.add( this.info_Label );
    this.sizer.addSpacing( 8 );
    this.sizer.add( this.buttons_Sizer );
-   this.setFixedWidth( 600 );
+   this.scaledMinWidth = 600;
    this.adjustToContents();
    this.setFixedSize();
 
@@ -1428,14 +1412,14 @@ function BenchmarkDialog()
 
    this.run_Button = new PushButton( this );
    this.run_Button.text = "Run Benchmark";
-   this.run_Button.icon = ":/icons/play.png";
+   this.run_Button.icon = this.scaledResource( ":/icons/play.png" );
    this.run_Button.toolTip =
       "<p>Run a new benchmark and add it to the list.</p>";
    this.run_Button.onClick = function()
    {
       this.dialog.enabled = false;
       processEvents();
-      var B = new Benchmark;
+      let B = new Benchmark;
       B.secureConnections = this.dialog.secureConnections_CheckBox.checked;
       B.forceDownload = this.dialog.forceDownload_CheckBox.checked;
       B.showImage = this.dialog.showImages_CheckBox.checked;
@@ -1451,7 +1435,7 @@ function BenchmarkDialog()
 
    this.report_Button = new PushButton( this );
    this.report_Button.text = "Report";
-   this.report_Button.icon = ":/icons/window-text.png";
+   this.report_Button.icon = this.scaledResource( ":/icons/window-text.png" );
    this.report_Button.toolTip =
       "<p>View a text report of the selected benchmarks.</p>";
    this.report_Button.onClick = function()
@@ -1462,14 +1446,14 @@ function BenchmarkDialog()
          return;
       }
 
-      var text = this.dialog.reportHeader();
-      var selection = this.dialog.hasSelection();
-      for ( var i = 0; i < this.dialog.benchmarks.length; ++i )
+      let text = this.dialog.reportHeader();
+      let selection = this.dialog.hasSelection();
+      for ( let i = 0; i < this.dialog.benchmarks.length; ++i )
          if ( !selection || this.dialog.benchmarks_TreeBox.child( i ).selected )
          {
             text += '\n';
-            var s = this.dialog.benchmarks[i].report();
-            for ( var j = 0; j < s.length; ++j )
+            let s = this.dialog.benchmarks[i].report();
+            for ( let j = 0; j < s.length; ++j )
                text += s[j] + '\n';
             text += this.dialog.reportSeparator();
          }
@@ -1478,7 +1462,7 @@ function BenchmarkDialog()
 
    this.delete_Button = new PushButton( this );
    this.delete_Button.text = "Delete";
-   this.delete_Button.icon = ":/icons/delete.png";
+   this.delete_Button.icon = this.scaledResource( ":/icons/delete.png" );
    this.delete_Button.toolTip =
       "<p>Delete selected benchmarks.</p>";
    this.delete_Button.onClick = function()
@@ -1489,9 +1473,9 @@ function BenchmarkDialog()
          return;
       }
 
-      var newBenchmarks = new Array;
+      let newBenchmarks = new Array;
       if ( this.dialog.hasSelection() )
-         for ( var i = 0; i < this.dialog.benchmarks.length; ++i )
+         for ( let i = 0; i < this.dialog.benchmarks.length; ++i )
             if ( !this.dialog.benchmarks_TreeBox.child( i ).selected )
                newBenchmarks.push( this.dialog.benchmarks[i] );
       if ( (new MessageBox( (newBenchmarks.length > 0) ? "Delete selected benchmarks?" : "Delete all benchmarks?",
@@ -1504,14 +1488,14 @@ function BenchmarkDialog()
 
    this.closeWindows_Button = new PushButton( this );
    this.closeWindows_Button.text = "Close Images";
-   this.closeWindows_Button.icon = ":/icons/window-close-all.png";
+   this.closeWindows_Button.icon = this.scaledResource( ":/icons/window-close-all.png" );
    this.closeWindows_Button.toolTip =
       "<p>Close benchmark output images.</p>" +
       "<p>Note: Image windows generated by deleted benchmarks won't be closed.</p>";
    this.closeWindows_Button.onClick = function()
    {
-      var n = 0;
-      for ( var i = 0; i < this.dialog.benchmarks.length; ++i )
+      let n = 0;
+      for ( let i = 0; i < this.dialog.benchmarks.length; ++i )
          if ( this.dialog.benchmarks[i].closeWindow() )
             ++n;
       (new MessageBox( "<p>" + ((n == 1) ? "One image has" : n.toString() + " images have") + " been closed.</p>",
@@ -1520,7 +1504,7 @@ function BenchmarkDialog()
 
    this.submit_Button = new PushButton( this );
    this.submit_Button.text = "Submit";
-   this.submit_Button.icon = ":/icons/upload.png";
+   this.submit_Button.icon = this.scaledResource( ":/icons/upload.png" );
    this.submit_Button.toolTip =
       "<p>Upload the best benchmark to the server. The best benchmark is the one " +
       "with the higher total performance index, which corresponds to the first row " +
@@ -1540,12 +1524,12 @@ function BenchmarkDialog()
          return;
       }
 
-      var d = new BenchmarkSubmissionDialog;
+      let d = new BenchmarkSubmissionDialog;
       if ( d.execute() )
       {
          this.dialog.enabled = false;
          processEvents();
-         var B = this.dialog.benchmarks[0];
+         let B = this.dialog.benchmarks[0];
          B.secureConnections = this.dialog.secureConnections_CheckBox.checked;
          B.machineInfo = d.machineInfo;
          B.motherboardInfo = d.motherboardInfo;
@@ -1556,10 +1540,10 @@ function BenchmarkDialog()
             this.enabled = false;
             this.toolTip = "<p>You already have submitted your benchmark data. Thank you!</p>";
 
-            var text = this.dialog.reportHeader();
+            let text = this.dialog.reportHeader();
             text += '\n';
-            var s = B.report();
-            for ( var j = 0; j < s.length; ++j )
+            let s = B.report();
+            for ( let j = 0; j < s.length; ++j )
                text += s[j] + '\n';
             text += this.dialog.reportSeparator();
             text += '\n';
@@ -1591,7 +1575,7 @@ function BenchmarkDialog()
    this.benchmarks_TreeBox.multipleSelection = true;
    this.benchmarks_TreeBox.rootDecoration = false;
    this.benchmarks_TreeBox.alternateRowColor = true;
-   this.benchmarks_TreeBox.setMinSize( 600, 200 );
+   this.benchmarks_TreeBox.setScaledMinSize( 600, 200 );
    this.benchmarks_TreeBox.numberOfColumns = 6;
    this.benchmarks_TreeBox.headerVisible = true;
    this.benchmarks_TreeBox.setHeaderText( 0, "#" );
@@ -1600,16 +1584,16 @@ function BenchmarkDialog()
    this.benchmarks_TreeBox.setHeaderText( 3, "CPU" );
    this.benchmarks_TreeBox.setHeaderText( 4, "Swap" );
    this.benchmarks_TreeBox.setHeaderText( 5, "Transfer MiB/s" );
-   this.benchmarks_TreeBox.styleSheet =
+   this.benchmarks_TreeBox.styleSheet = this.scaledStyleSheet(
         "QTreeView {"
-      + "   font-family: DejaVu Sans Mono, Courier, Monospace;"
+      +    "font-family: DejaVu Sans Mono, monospace;"
       + "}"
       + "QTreeView::item {"
-      + "   padding: 4px;"
+      +    "padding: 4px;"
       + "}"
       + "QHeaderView::section {"
-      + "   padding: 2px 4px;"
-      + "}";
+      +    "padding: 2px 4px;"
+      + "}" );
 
    //
 
@@ -1621,7 +1605,7 @@ function BenchmarkDialog()
       "(recommended).</p>";
    this.secureConnections_CheckBox.onClick = function( checked )
    {
-      for ( var i = 0; i < this.benchmarks; ++i )
+      for ( let i = 0; i < this.benchmarks; ++i )
          this.benchmarks[i].secureConnections = checked;
    };
 
@@ -1635,7 +1619,7 @@ function BenchmarkDialog()
       "benchmark results.</p>";
    this.showImages_CheckBox.onClick = function( checked )
    {
-      for ( var i = 0; i < this.benchmarks; ++i )
+      for ( let i = 0; i < this.benchmarks; ++i )
          this.benchmarks[i].showImage = checked;
    };
 
@@ -1650,7 +1634,7 @@ function BenchmarkDialog()
       "Enable this option to force download of the benchmark input image.</p>";
    this.forceDownload_CheckBox.onClick = function( checked )
    {
-      for ( var i = 0; i < this.benchmarks; ++i )
+      for ( let i = 0; i < this.benchmarks; ++i )
          this.benchmarks[i].forceDownload = checked;
    };
 
@@ -1667,7 +1651,7 @@ function BenchmarkDialog()
 
    this.close_Button = new PushButton( this );
    this.close_Button.text = "Close";
-   this.close_Button.icon = ":/icons/close.png";
+   this.close_Button.icon = this.scaledResource( ":/icons/close.png" );
    this.close_Button.onClick = function()
    {
       this.dialog.cancel();
@@ -1689,7 +1673,7 @@ function BenchmarkDialog()
    this.sizer.add( this.buttons_Sizer );
 
    this.windowTitle = TITLE + " Script v" + VERSION;
-   this.minWidth = 600;
+   this.scaledMinWidth = 600;
    this.adjustToContents();
    this.setFixedWidth();
 
@@ -1711,10 +1695,10 @@ function BenchmarkDialog()
    this.regenerate = function()
    {
       this.benchmarks_TreeBox.clear();
-      for ( var i = 0; i < this.benchmarks.length; ++i )
+      for ( let i = 0; i < this.benchmarks.length; ++i )
       {
-         var b = this.benchmarks[i];
-         var node = new TreeBoxNode;
+         let b = this.benchmarks[i];
+         let node = new TreeBoxNode;
          this.benchmarks_TreeBox.add( node );
          node.setText( 0, format( "%3d", b.sequenceIndex ) );
          node.setText( 1, b.serialNumber );
@@ -1723,13 +1707,13 @@ function BenchmarkDialog()
          node.setText( 4, format( "%5.0f", b.swapIndex ) );
          node.setText( 5, format( "%9.3f", b.swapTransferRate ) );
       }
-      for ( var i = 0; i < this.benchmarks_TreeBox.numberOfColumns; ++i )
+      for ( let i = 0; i < this.benchmarks_TreeBox.numberOfColumns; ++i )
          this.benchmarks_TreeBox.adjustColumnWidthToContents( i );
    };
 
    this.hasSelection = function()
    {
-      for ( var i = 0; i < this.benchmarks.length; ++i )
+      for ( let i = 0; i < this.benchmarks.length; ++i )
          if ( this.benchmarks_TreeBox.child( i ).selected )
             return true;
       return false;
@@ -1739,7 +1723,7 @@ function BenchmarkDialog()
    {
       return "*******************************************************************************\n" +
              "The Official PixInsight Benchmark version " + BENCHMARK_VERSION_BIG + '\n' +
-             "Copyright (C) 2014 Pleiades Astrophoto. All Rights Reserved.\n" +
+             "Copyright (C) 2014-2015 Pleiades Astrophoto. All Rights Reserved.\n" +
              "*******************************************************************************\n";
    };
 
@@ -1769,33 +1753,29 @@ function BenchmarkReportDialog( text )
    this.text = text;
 
    this.report_TextBox = new TextBox( this );
-   this.report_TextBox.setMinSize( 600, 500 );
+   this.report_TextBox.setScaledMinSize( 600, 500 );
    this.report_TextBox.readOnly = true;
-   this.report_TextBox.styleSheet =
+   this.report_TextBox.styleSheet = this.scaledStyleSheet(
       "QWidget {"
-#ifeq __PI_PLATFORM__ MACOSX
-   +     "font-size: 11pt;"
-#else
+   +     "font-family: DejaVu Sans Mono, monospace;"
    +     "font-size: 9pt;"
-#endif
-   +     "font-family: DejaVu Sans Mono,Courier,monospace;"
-   +  "}";
+   +  "}" );
    this.report_TextBox.text = this.text;
 
    //
 
    this.save_Button = new PushButton( this );
    this.save_Button.text = "Save";
-   this.save_Button.icon = ":/icons/save.png";
+   this.save_Button.icon = this.scaledResource( ":/icons/save.png" );
    this.save_Button.onClick = function()
    {
-      var saveDialog = new SaveFileDialog;
+      let saveDialog = new SaveFileDialog;
       saveDialog.caption = "Save Benchmark Report";
       saveDialog.overwritePrompt = true;
       saveDialog.filters = [["Plain Text Files", "*.txt"], ["Any Files", "*"]];
       if ( saveDialog.execute() )
       {
-         var file = new File;
+         let file = new File;
          file.createForWriting( saveDialog.fileName );
          file.write( ByteArray.stringToUTF8( text ) );
          file.close();
@@ -1806,7 +1786,7 @@ function BenchmarkReportDialog( text )
 
    this.close_Button = new PushButton( this );
    this.close_Button.text = "Close";
-   this.close_Button.icon = ":/icons/close.png";
+   this.close_Button.icon = this.scaledResource( ":/icons/close.png" );
    this.close_Button.onClick = function()
    {
       this.dialog.cancel();
@@ -1842,17 +1822,13 @@ function MyDescriptionTextBox( parent )
    else
       this.__base__();
 
-   this.styleSheet =
+   this.styleSheet = this.scaledStyleSheet(
       "QWidget {"
-#ifeq __PI_PLATFORM__ MACOSX
-   +     "font-size: 11pt;"
-#else
+   +     "font-family: DejaVu Sans Mono, monospace;"
    +     "font-size: 9pt;"
-#endif
-   +     "font-family: DejaVu Sans Mono,Courier,monospace;"
-   +  "}";
+   +  "}" );
 
-   this.setFixedSize( 500, 60 );
+   this.setScaledFixedSize( 500, 60 );
 }
 
 MyDescriptionTextBox.prototype = new TextBox;
@@ -1918,7 +1894,7 @@ function BenchmarkSubmissionDialog()
 
    this.submit_Button = new PushButton( this );
    this.submit_Button.text = "Submit";
-   this.submit_Button.icon = ":/icons/upload.png";
+   this.submit_Button.icon = this.scaledResource( ":/icons/upload.png" );
    this.submit_Button.onClick = function()
    {
       this.dialog.ok();
@@ -1926,7 +1902,7 @@ function BenchmarkSubmissionDialog()
 
    this.cancel_Button = new PushButton( this );
    this.cancel_Button.text = "Cancel";
-   this.cancel_Button.icon = ":/icons/cancel.png";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
    this.cancel_Button.onClick = function()
    {
       this.dialog.cancel();
@@ -1997,25 +1973,26 @@ function MyProgressBar( parent )
 
    this.onPaint = function()
    {
-      var text = format( "%d%%", Math.round( this.value*100 ) );
-      var G = new Graphics( this );
+      let d = this.logicalPixelsToPhysical( 1 );
+      let d2 = d >> 1;
+      let G = new Graphics( this );
       G.transparentBackground = true;
       G.textAntialiasing = true;
-      G.pen = new Pen( 0xff505050 );
+      G.pen = new Pen( 0xff505050, d );
       G.brush = new Brush( 0xfff0f0f0 );
-      G.drawRect( this.boundsRect );
+      G.drawRect( this.boundsRect.deflatedBy( d2 ) );
       G.brush = new Brush( 0xffffa858 );
       if ( this.bounded )
       {
-         G.fillRect( 1, 1, Math.round( this.value*(this.width-1) ), this.height-1 );
+         G.fillRect( d, d, Math.round( this.value*(this.width-d-d2) ), this.height-d-d2 );
          G.pen = new Pen( 0xff000000 );
-         G.drawTextRect( this.boundsRect, text, TextAlign_Center );
+         G.drawTextRect( this.boundsRect, format( "%d%%", Math.round( this.value*100 ) ), TextAlign_Center );
       }
       else
       {
          if ( this.value >= this.width )
             this.value = 0;
-         G.fillRect( this.value, 1, Math.min( this.value + (this.width >> 2), this.width-1 ), this.height-1 );
+         G.fillRect( Math.max( d, this.value ), d, Math.min( this.value + (this.width >> 2), this.width-d-d2 ), this.height-d-d2 );
       }
       G.end();
    };
@@ -2033,16 +2010,15 @@ function BenchmarkProgressDialog()
    //
 
    this.info_Label = new Label( this );
-   this.info_Label.margin = 4;
 
    this.progress = new MyProgressBar( this );
-   this.progress.setFixedSize( 400, 20 );
+   this.progress.setScaledFixedSize( 400, 20 );
 
    //
 
    this.cancel_Button = new PushButton( this );
    this.cancel_Button.text = "Cancel";
-   this.cancel_Button.icon = ":/icons/cancel.png";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
    this.cancel_Button.onClick = function()
    {
       this.dialog.canceled = true;
@@ -2082,7 +2058,7 @@ function BenchmarkProgressDialog()
       maximum |= 0;
       if ( maximum < minimum )
       {
-         var t = minimum;
+         let t = minimum;
          minimum = maximum;
          maximum = t;
       }
@@ -2189,7 +2165,7 @@ BenchmarkFileDownload.prototype = new NetworkTransfer;
 
 function main()
 {
-   var memSizeGiB = (new SystemId).totalMemorySizeKiB()/1024/1024;
+   let memSizeGiB = (new SystemId).totalMemorySizeKiB()/1024/1024;
    if ( memSizeGiB < 6 )
    {
       if ( (new MessageBox( "<p>This machine has only " + format( "%.3f GiB", memSizeGiB ) + " of physical RAM.</p>" +
@@ -2204,10 +2180,10 @@ function main()
    }
 
    console.hide();
-   var frontPage = new BenchmarkFrontPageDialog;
+   let frontPage = new BenchmarkFrontPageDialog;
    if ( frontPage.execute() )
    {
-      var dialog = new BenchmarkDialog;
+      let dialog = new BenchmarkDialog;
       for ( ;; )
          if ( !dialog.execute() )
          {
@@ -2222,5 +2198,5 @@ function main()
 
 main();
 
-// ****************************************************************************
-// EOF benchmark.js - Released 2014/06/23 12:17:38 UTC
+// ----------------------------------------------------------------------------
+// EOF benchmark.js - Released 2015/07/22 17:01:02 UTC

@@ -1,13 +1,13 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// BatchPreprocessing-engine.js - Released 2014/11/30 11:42:43 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// BatchPreprocessing-engine.js - Released 2015/07/22 16:32:44 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.38
+// This file is part of Batch Preprocessing Script version 1.41
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #include <pjsr/UndoFlag.jsh>
 #include <pjsr/StdDialogCode.jsh>
@@ -374,16 +374,14 @@ function DiagnosticInformationDialog( messages, cancelButton )
 
    this.infoBox = new TextBox( this );
    this.infoBox.readOnly = true;
-   this.infoBox.styleSheet = "QWidget { font-family: DejaVu Sans Mono,Courier New,Courier,monospace; font-size: 10pt; }";
-   this.infoBox.setMinSize( 800, 300 );
+   this.infoBox.styleSheet = this.scaledStyleSheet( "QWidget { font-family: DejaVu Sans Mono, monospace; font-size: 10pt; }" );
+   this.infoBox.setScaledMinSize( 800, 300 );
    this.infoBox.text = info;
 
    this.okButton = new PushButton( this );
    this.okButton.defaultButton = true;
    this.okButton.text = cancelButton ? "Continue" : "OK";
-#ifneq __PI_PLATFORM__ MACOSX
-   this.okButton.icon = ":/icons/ok.png";
-#endif
+   this.okButton.icon = this.scaledResource( ":/icons/ok.png" );
    this.okButton.onClick = function()
    {
       this.dialog.ok();
@@ -394,9 +392,7 @@ function DiagnosticInformationDialog( messages, cancelButton )
       this.cancelButton = new PushButton( this );
       this.cancelButton.defaultButton = true;
       this.cancelButton.text = "Cancel";
-#ifneq __PI_PLATFORM__ MACOSX
-      this.cancelButton.icon = ":/icons/cancel.png";
-#endif
+      this.cancelButton.icon = this.scaledResource( ":/icons/cancel.png" );
       this.cancelButton.onClick = function()
       {
          this.dialog.cancel();
@@ -469,18 +465,10 @@ function IntegrationWarningDialog()
    this.__base__();
 
    this.infoLabel = new Label( this );
-   this.infoLabel.minWidth = 550;
+   this.infoLabel.scaledMinWidth = 550;
    this.infoLabel.useRichText = true;
    this.infoLabel.wordWrapping = true;
-   this.infoLabel.styleSheet =
-      "QWidget {"
-#ifeq __PI_PLATFORM__ MACOSX
-   +     "font-size: 12pt;"
-#else
-   +     "font-size: 10pt;"
-#endif
-   +     "font-family: DejaVu Sans,Helvetica,Arial,sans-serif;"
-   +  "}";
+   this.infoLabel.styleSheet = this.scaledStyleSheet( "QWidget { font-size: 10pt; }" );
    this.infoLabel.text =
       "<p>You have selected to perform an integration of light frames with this script.</p>"
    +  "<p>Please keep in mind that the light frames integration functionality of this script is just "
@@ -500,9 +488,7 @@ function IntegrationWarningDialog()
    this.okButton = new PushButton( this );
    this.okButton.defaultButton = true;
    this.okButton.text = "Continue";
-#ifneq __PI_PLATFORM__ MACOSX
-   this.okButton.icon = ":/icons/ok.png";
-#endif
+   this.okButton.icon = this.scaledResource( ":/icons/ok.png" );
    this.okButton.onClick = function()
    {
       this.dialog.ok();
@@ -511,9 +497,7 @@ function IntegrationWarningDialog()
    this.cancelButton = new PushButton( this );
    this.cancelButton.defaultButton = true;
    this.cancelButton.text = "Cancel";
-#ifneq __PI_PLATFORM__ MACOSX
-   this.cancelButton.icon = ":/icons/cancel.png";
-#endif
+   this.cancelButton.icon = this.scaledResource( ":/icons/cancel.png" );
    this.cancelButton.onClick = function()
    {
       this.dialog.cancel();
@@ -620,60 +604,60 @@ StackEngine.prototype.addFile = function( filePath, imageType, filter, binning, 
    if ( !forcedType || !forcedFilter || !forcedBinning || !forcedExposureTime )
    {
       var ext = File.extractExtension( filePath ).toLowerCase();
+      var F = new FileFormat( ext, true/*toRead*/, false/*toWrite*/ );
+      if ( F.isNull )
+         throw new Error( "No installed file format can read \'" + ext + "\' files." ); // shouldn't happen
+      var f = new FileFormatInstance( F );
+      if ( f.isNull )
+         throw new Error( "Unable to instantiate file format: " + F.name );
 
-      if ( ext == ".fit" || ext == ".fits" || ext == ".fts" )
+      var info = f.open( filePath, "verbosity 0" ); // do not fill the console with useless messages
+      if ( info.length <= 0 )
+         throw new Error( "Unable to open input file: " + filePath );
+
+      var keywords = [];
+      if ( F.canStoreKeywords )
+         keywords = f.keywords;
+
+      f.close();
+
+      for ( var i = 0; i < keywords.length; ++i )
       {
-         // FITS format: Use FITS header keywords.
-         var keywords = File.loadFITSKeywords( filePath );
-         for ( var i = 0; i < keywords.length; ++i )
+         var value = keywords[i].strippedValue.trim();
+         switch ( keywords[i].name )
          {
-            var value = keywords[i].strippedValue.trim();
-            switch ( keywords[i].name )
-            {
-            case "IMAGETYP":
-               if ( !forcedType )
-                  imageType = StackEngine.imageTypeFromKeyword( value );
-               break;
-            case "FILTER":
-            case "INSFLNAM":
-               if ( !forcedFilter )
-                  filter = value;
-               break;
-            case "XBINNING":
-            case "BINNING":
-            case "CCDBINX":
-               if ( !forcedBinning )
-                  binning = parseInt( value );
-               break;
-            case "EXPTIME":
-            case "EXPOSURE":
-               if ( !forcedExposureTime )
-                  exposureTime = parseFloat( value );
-               break;
-            }
+         case "IMAGETYP":
+            if ( !forcedType )
+               imageType = StackEngine.imageTypeFromKeyword( value );
+            break;
+         case "FILTER":
+         case "INSFLNAM":
+            if ( !forcedFilter )
+               filter = value;
+            break;
+         case "XBINNING":
+         case "BINNING":
+         case "CCDBINX":
+            if ( !forcedBinning )
+               binning = parseInt( value );
+            break;
+         case "EXPTIME":
+         case "EXPOSURE":
+            if ( !forcedExposureTime )
+               exposureTime = parseFloat( value );
+            break;
          }
       }
-      else if ( !forcedExposureTime )
-      {
-         // Other formats: Try to use EXIF data to acquire exposure times.
-         var F = new FileFormat( ext, true/*toRead*/, false/*toWrite*/ );
-         if ( F.isNull )
-            throw new Error( "No installed file format can read \'" + ext + "\' files." ); // shouldn't happen
-         var f = new FileFormatInstance( F );
-         if ( f.isNull )
-            throw new Error( "Unable to instantiate file format: " + F.name );
-         var info = f.open( filePath );
-         f.close();
-         if ( info.length <= 0 )
-            throw new Error( "Unable to open input file: " + filePath );
-         if ( typeof( info[0].exposure ) == "number" && info[0].exposure > 0 )
-            exposureTime = info[0].exposure;
-      }
+
+      if ( !forcedExposureTime )
+         if ( exposureTime <= 0 )
+            if ( typeof( info[0].exposure ) == "number" && info[0].exposure > 0 )
+               exposureTime = info[0].exposure;
    }
 
    if ( imageType == ImageType.UNKNOWN )
    {
-      // If the image type still unknown, try to infer it from the file name.
+      // If the image type still is unknown, try to infer it from the file name.
       var fileName = File.extractName( filePath ).toLowerCase();
       if ( fileName.has( "bias" ) )
          imageType = ImageType.BIAS;
@@ -1057,12 +1041,13 @@ StackEngine.prototype.doLight = function()
 
             var cosmetizedDirectory = File.existingDirectory( this.outputDirectory + "/calibrated/light/cosmetized" );
 
-            CC.targetFrames = images.enableTargetFrames( 2 );
-            CC.outputDir    = cosmetizedDirectory;
-            CC.prefix       = "";
-            CC.postfix      = "_cc";
-            CC.overwrite    = true;
-            CC.cfa          = this.cfaImages;
+            CC.targetFrames    = images.enableTargetFrames( 2 );
+            CC.outputDir       = cosmetizedDirectory;
+            CC.outputExtension = this.outputSuffix;
+            CC.prefix          = "";
+            CC.postfix         = "_cc";
+            CC.overwrite       = true;
+            CC.cfa             = this.cfaImages;
 
             CC.executeGlobal();
 
@@ -2429,5 +2414,5 @@ StackEngine.prototype.getPath = function( filePath, imageType )
    return "";
 };
 
-// ****************************************************************************
-// EOF BatchPreprocessing-engine.js - Released 2014/11/30 11:42:43 UTC
+// ----------------------------------------------------------------------------
+// EOF BatchPreprocessing-engine.js - Released 2015/07/22 16:32:44 UTC

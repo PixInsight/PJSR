@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// MakGenParameters.js - Released 2014/10/15 17:07:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// MakGenParameters.js - Released 2015/07/29 23:22:54 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.93
+// This file is part of PixInsight Makefile Generator Script version 1.95
 //
-// Copyright (c) 2009-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Makefile Generator
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Project generation parameters.
@@ -73,7 +73,7 @@ function GeneratorParameters()
 
    /*
     * Project platform
-    * One of: "FreeBSD" "Linux" "MacOSX" "MacOSX106" "Windows"
+    * One of: "FreeBSD" "Linux" "MacOSX" "Windows"
     */
    this.platform = "";
 
@@ -83,6 +83,15 @@ function GeneratorParameters()
     * For GNU/GCC only; ignored for Windows projects.
     */
    this.architecture = "";
+
+   /*
+    * If true, we are generating makefiles for an official PixInsight
+    * distribution.
+    * In an official distribution, the PixInsight Core application and all
+    * modules and auxiliary executables are digitally signed with our corporate
+    * code signing certificates.
+    */
+   this.official = false;
 
    /*
     * Remove existing build directories before generating new makefiles.
@@ -100,7 +109,7 @@ function GeneratorParameters()
     * One of: "0", "1", "2", "3", "s"
     * For GNU/GCC only; ignored for Windows projects.
     */
-   this.gccOptimization = "2"; // -O2
+   this.gccOptimization = OPTIMIZATION_DEFAULT_STR;
 
    /*
     * GCC C++ compiler executable suffix for Linux builds.
@@ -169,9 +178,19 @@ function GeneratorParameters()
       return this.type == "Module";
    };
 
+   this.isOfficialModule = function()
+   {
+      return this.official && this.isModule();
+   };
+
    this.isDynamicLibrary = function()
    {
       return this.type == "DynamicLibrary";
+   };
+
+   this.isOfficialDynamicLibrary = function()
+   {
+      return this.official && this.isDynamicLibrary();
    };
 
    this.isStaticLibrary = function()
@@ -182,6 +201,11 @@ function GeneratorParameters()
    this.isExecutable = function()
    {
       return this.type == "Executable";
+   };
+
+   this.isOfficialExecutable = function()
+   {
+      return this.official && this.isExecutable();
    };
 
    this.isCore = function()
@@ -216,12 +240,7 @@ function GeneratorParameters()
 
    this.isMacOSXPlatform = function()
    {
-      return this.platform == "MacOSX" || this.platform == "MacOSX106";
-   };
-
-   this.isMacOSX106Platform = function()
-   {
-      return this.platform == "MacOSX106";
+      return this.platform == "MacOSX";
    };
 
    this.isWindowsPlatform = function()
@@ -343,14 +362,21 @@ function GeneratorParameters()
       if ( this.isLinuxPlatform() )
          return baseDirectory + (this.isHostPlatform() ? "/host" : "/linux");
       if ( this.isMacOSXPlatform() )
-         if ( this.isMacOSX106Platform() )
-            return baseDirectory + "/macosx10.6";
-         else
-            return baseDirectory + "/macosx";
+         return baseDirectory + "/macosx";
       if ( this.isWindowsPlatform() )
          return baseDirectory + "/windows";
 
       return null;
+   };
+
+   this.dependsOnQt = function()
+   {
+      if ( this.isCore() || this.isCoreAux() )
+         return true;
+      for ( let i = 0; i < this.extraLibraries.length; ++i )
+         if ( this.extraLibraries[i].startsWith( "Qt" ) )
+            return true;
+      return false;
    };
 
    this.validateGnuCxxBuild = function()
@@ -372,6 +398,18 @@ function GeneratorParameters()
       if ( this.isWindowsPlatform() )
          return null;
       return this.platformBuildDirectory( baseDirectory ) + "/g++";
+   };
+
+   this.gccQtMkspecsDirectory = function()
+   {
+      let s = this.qtDirectory() + "/qtbase/mkspecs/";
+      if ( this.isMacOSXPlatform() )
+         s += "macx-g++";
+      else if ( this.isFreeBSDPlatform() )
+         s += "freebsd-g++";
+      else // Linux
+         s += this.is64BitProject() ? "linux-g++-64" : "linux-g++-32";
+      return s;
    };
 
    this.gccMakefile = function()
@@ -397,71 +435,70 @@ function GeneratorParameters()
    this.gccCxxCompiler = function()
    {
       if ( this.isMacOSXPlatform() || this.isFreeBSDPlatform() )
-      {
-         if ( this.isMacOSX106Platform() )
-            return "clang++-mp-3.2 ";
-         return "clang++ ";
-      }
-
-      return "g++" + this.gccSuffixLinux + ' ';
+         return "clang++";
+      return "g++" + this.gccSuffixLinux;
    };
 
    this.gccCCompiler = function()
    {
       if ( this.isMacOSXPlatform() || this.isFreeBSDPlatform() )
-      {
-         if ( this.isMacOSX106Platform() )
-            return "clang-mp-3.2 ";
-         return "clang ";
-      }
-
-      return "gcc" + this.gccSuffixLinux + ' ';
+         return "clang";
+      return "gcc" + this.gccSuffixLinux;
    };
 
    this.gccArchFlags = function()
    {
-      if ( this.isMacOSXPlatform() )
-      {
-         var s = (this.is64BitProject() ? (this.osxArchOptions ? "-arch x86_64 -Xarch_x86_64" : "-m64") :
-                                          (this.osxArchOptions ? "-arch i386 -Xarch_i386"     : "-m32"));
-         return s + (this.isMacOSX106Platform() ? " -mmacosx-version-min=10.6" : " -mmacosx-version-min=10.8");
-      }
-      return this.is64BitProject() ? "-m64" : "-m32";
+      if ( this.isMacOSXPlatform() && this.osxArchOptions )
+         return this.is64BitProject() ? " -arch x86_64" : " -arch i386";
+      return this.is64BitProject() ? " -m64" : " -m32";
    };
 
    this.gccPICFlags = function()
    {
-      // PIC is always enabled for Mac OS X. Enabled only for x64 Linux and FreeBSD builds.
+      // PIC is always enabled for OS X. On Linux and FreeBSD, it is enabled only for 64-bit builds.
       return (this.isMacOSXPlatform() || (this.isLinuxPlatform() || this.isFreeBSDPlatform()) && this.is64BitProject()) ? " -fPIC" : "";
    };
 
-   this.gccCompileArgs = function()
+   this.gccCompileArgs = function( isCpp )
    {
-      var s = "-c -pipe " + this.gccArchFlags() + this.gccPICFlags();
+      if ( isCpp == undefined ) // assume C++ compilation by default
+         isCpp = true;
+
+      let s = "-c -pipe" + this.gccArchFlags() + this.gccPICFlags();
+
+      if ( this.isMacOSXPlatform() )
+      {
+         s += " -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk";
+         s += " -mmacosx-version-min=10.7";
+      }
 
       s += " -D_REENTRANT -D" + this.platformMacroId();
       if ( this.isCore() )
       {
-         if ( this.isMacOSX106Platform() ) // Control some platform-specific conditional compilations for OSX 10.6/10.7
-            s += " -D__PCL_MACOSX106";
          s += " -D__PCL_BUILDING_PIXINSIGHT_APPLICATION -D__PCL_QT_INTERFACE" + // PCL
               " -DXP_UNIX" + // SpiderMonkey
-              " -DQT_EDITION=QT_EDITION_OPENSOURCE -DQT_SHARED" + // Qt/LGPL
-              " -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_XML_LIB -DQT_SVG_LIB -DQT_WEBKIT_LIB -DQT_NETWORK_LIB" +
-              " -DQT_NO_QT_INCLUDE_WARN" +
-              " -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE";
-         // On Mac OS X, all 64-bit core builds must use the Cocoa-based version of Qt.
-         if ( this.isMacOSXPlatform() && this.is64BitProject() )
-            s += " -DQT_MAC_USE_COCOA";
+              " -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" +
+              " -DQT_EDITION=QT_EDITION_OPENSOURCE" + // Qt/LGPL
+              " -DQT_NO_MTDEV -DQT_NO_LIBUDEV ";
+         if ( this.isMacOSXPlatform() )
+            s += " -DQT_NO_EVDEV";
+         s += " -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_SHARED" +
+              " -DQT_UITOOLS_LIB -DQT_WEBKITWIDGETS_LIB -DQT_WEBKIT_LIB -DQT_PRINTSUPPORT_LIB" +
+              " -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_XML_LIB -DQT_SVG_LIB";
       }
       else
       {
          if ( this.isCoreAux() )
+         {
             s += " -D__PCL_QT_INTERFACE" + // PCL
-                 " -DQT_EDITION=QT_EDITION_OPENSOURCE -DQT_SHARED" + // Qt/LGPL
-                 " -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB" +
-                 " -DQT_NO_QT_INCLUDE_WARN" +
-                 " -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE";
+                 " -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" +
+                 " -DQT_EDITION=QT_EDITION_OPENSOURCE" + // Qt/LGPL
+                 " -DQT_NO_MTDEV -DQT_NO_LIBUDEV ";
+            if ( this.isMacOSXPlatform() )
+               s += " -DQT_NO_EVDEV";
+            s += " -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_SHARED" +
+                 " -DQT_UITOOLS_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB";
+         }
 
          for ( var i = 0; i < this.extraDefinitions.length; ++i )
             s += " -D\"" + this.extraDefinitions[i] + "\"";
@@ -473,16 +510,15 @@ function GeneratorParameters()
       s += " -I\"$(PCLINCDIR)\"";
       if ( this.isCore() || this.isCoreAux() )
       {
-         s += " -I\"" + this.qtDirectory() + "/include\"";
-         s += " -I\"" + this.qtDirectory() + "/include/Qt\"";
-         s += " -I\"" + this.qtDirectory() + "/mkspecs/";
+         s += " -I\"" + this.qtDirectory() + "/qtbase/include\"";
+         s += " -I\"" + this.qtDirectory() + "/qtsvg/include\"";
+         if ( this.isCore() )
+            s += " -I\"" + this.qtDirectory() + "/qtwebkit/include\"";
+         if ( this.isLinuxPlatform() || this.isFreeBSDPlatform() )
+            s += " -I\"" + this.qtDirectory() + "/qtx11extras/include\"";
          if ( this.isMacOSXPlatform() )
-            s += "macx-g++";
-         else if ( this.isFreeBSDPlatform() )
-            s += "freebsd-g++";
-         else
-            s += this.is64BitProject() ? "mkspecs/linux-g++-64" : "mkspecs/linux-g++-32";
-         s += "\"";
+            s += " -I\"" + this.qtDirectory() + "/qtmacextras/include\"";
+         s += " -I\"" + this.gccQtMkspecsDirectory() + "\"";
 
          if ( this.isCore() )
          {
@@ -505,69 +541,91 @@ function GeneratorParameters()
             s += " -I/usr/local/include -I/usr/X11R6/include";
       }
 
+      if ( this.isModule() || this.isDynamicLibrary() || this.isExecutable() )
+         if ( this.dependsOnQt() )
+         {
+            s += " -I\"" + this.qtDirectory() + "/qtbase/include\"";
+            s += " -I\"" + this.gccQtMkspecsDirectory() + "\"";
+         }
+
       if ( !this.isCore() )
-         for ( var i = 0; i < this.extraIncludeDirs.length; ++i )
+         for ( let i = 0; i < this.extraIncludeDirs.length; ++i )
             s += " -I\"" + this.extraIncludeDirs[i] + "\"";
 
       if ( this.gccDebug )
          s += " -O0 -g";
       else
       {
-         // -Ofast not supported by GCC 4.2.x on Mac OS X
-         // ### FIXME: Unimportant, but is this still true for Clang?
-         var optimization = this.gccOptimization;
+         // -Ofast not supported by GCC 4.2.x and Clang on OS X
+         let optimization = this.gccOptimization;
          if ( this.isMacOSXPlatform() )
             if ( optimization == "fast" )
                optimization = "3";
 
-         // All Mac OS X builds require SSSE3 support
-         // 64-bit and 32-bit FreeBSD, Linux and Windows builds require SSE3 support
-         s += " -O" + optimization + " -mtune=generic";
-         if ( this.isMacOSXPlatform() )
-            s += " -mssse3";
-         else
-         {
-            if ( this.isLinuxPlatform() )
-               s += " -mfpmath=sse"; // clang does not have this one
-            s += " -msse3"; // no SSSE3 for compatibility with vintage AMD processors
-         }
+         // All builds require SSSE3 support
+         s += " -mtune=generic -mssse3 -O" + optimization;
 
          if ( !this.isMacOSXPlatform() && !this.isFreeBSDPlatform() )
             s += " -minline-all-stringops -ffunction-sections -fdata-sections"; // clang does not have these ones
 
-         // On Mac OS X, omitting frame pointers is not *allowed* and leads to a nightmare of crashes.
+         // On OS X, omitting frame pointers is not *allowed* and leads to a nightmare of crashes.
          if ( !this.isMacOSXPlatform() )
             s += " -fomit-frame-pointer"; // this may not be enabled by default on x64
 
          if ( optimization != "fast" )
          {
             s += " -ffast-math";
-            if ( optimization != "3" )
-               if ( !this.isMacOSX106Platform() ) // clang 3.x does not support vectorization
-                  s += " -ftree-vectorize";
+            if ( optimization == "2" || optimization == "3" )
+            {
+               s += " -ftree-vectorize";
+               if ( !this.isMacOSXPlatform() )
+               {
+                  // ### FIXME: These are experimental flags that seem to
+                  // improve vectorization on GCC. It is unclear if they
+                  // actually work well enough as to justify their inclusion.
+                  s += " --param vect-max-version-for-alias-checks=1000";
+                  s += " --param vect-max-version-for-alignment-checks=1000";
+               }
+            }
          }
-
-         // Whole program optimization enabled for modules on GCC >= 4.6.x
-         if ( !this.isMacOSXPlatform() && !this.isFreeBSDPlatform() )
-            if ( !(this.isCore() || this.isCoreAux()) )
-               s += " -flto -fwhole-program";
       }
 
-      // GCC 4.2 on Mac OS X requires hidden visibility enabled also for executables
-      // ### FIXME: Doesn't hurt, but is this still true for Clang?
+      // GCC 4.2 on OS X requires hidden visibility enabled also for executables
+      // ### FIXME: Doesn't hurt, but, is this still true for Clang?
       if ( this.hidden || this.isModule() || (this.isCore() || this.isCoreAux() || this.isExecutable()) && this.isMacOSXPlatform() )
-         s += " -fvisibility=hidden -fvisibility-inlines-hidden";
+      {
+         s += " -fvisibility=hidden";
+         if ( isCpp )
+            s += " -fvisibility-inlines-hidden";
+      }
 
       if ( !this.isMacOSXPlatform() && !this.isFreeBSDPlatform() )
          s += " -fnon-call-exceptions"; // clang does not have this one
 
+      // Since Core version 1.8.3 we require C++11 support.
+      if ( isCpp )
+      {
+         s += " -std=c++11";
+         if ( this.isMacOSXPlatform() )
+            s += " -stdlib=libc++"; // ?! - required since Xcode 6 - hmmm...
+      }
+
+      // - Enable all warnings.
+      // - Suppress some useless warnings related to parentheses.
       s += " -Wall -Wno-parentheses";
 
-      // SpiderMonkey 24 on GCC generates warnings about applying offsetof() to
-      // non-POD types.
-      if ( this.isCore() )
-         if ( this.isLinuxPlatform() )
+      if ( isCpp )
+      {
+         // Clang generates *really* useless and nasty warnings about different
+         // representations of empty structures on C and C++.
+         if ( this.isMacOSXPlatform() )
+            s += " -Wno-extern-c-compat";
+
+         // SpiderMonkey 24 on g++ and clang generates warnings about applying
+         // offsetof() to non-POD types.
+         if ( this.isCore() )
             s += " -Wno-invalid-offsetof";
+      }
 
       s += " -MMD -MP -MF\"$(@:%.o=%.d)\" -o\"$@\" \"$<\"";
 
@@ -579,7 +637,7 @@ function GeneratorParameters()
       if ( this.isStaticLibrary() )
          return "ar r $(OBJ_DIR)/" + this.mainTarget() + " $(OBJ_FILES)";
 
-      var s = this.gccCxxCompiler() + this.gccArchFlags() + this.gccPICFlags();
+      let s = this.gccCxxCompiler() + this.gccArchFlags() + this.gccPICFlags();
 
       if ( this.isMacOSXPlatform() )
       {
@@ -590,13 +648,16 @@ function GeneratorParameters()
          // See: http://stackoverflow.com/questions/2092378/
          //             macosx-how-to-collect-dependencies-into-a-local-bundle
          s += " -headerpad_max_install_names";
+         s += " -Wl,-syslibroot,/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk";
+         s += " -mmacosx-version-min=10.7";
+         s += " -stdlib=libc++";
       }
       else
       {
          // On Linux and FreeBSD, mark all executables and shared objects as
          // not requiring an executable stack.
          s += " -Wl,-z,noexecstack";
-         // GCC on Darwin doesn't support linker optimizations.
+         // GCC and Clang on Darwin don't support linker optimizations.
          s += " -Wl,-O1";
       }
 
@@ -607,19 +668,21 @@ function GeneratorParameters()
       s += " -L\"" + this.libDirectory() + "\"";
       s += " -L\"" + this.binDirectory() + "\"";
 
-      if ( this.isCore() || this.isCoreAux() )
+      if ( this.isCore() || this.isCoreAux() ||
+           (this.isModule() || this.isDynamicLibrary() || this.isExecutable()) && this.dependsOnQt() )
       {
          if ( this.isLinuxPlatform() || this.isFreeBSDPlatform() )
             s += " -L\"" + this.binDirectory() + "/lib\"";
-         s += " -L\"" + this.qtDirectory() + "/lib\"";
+         s += " -L\"" + this.qtDirectory() + "/qtbase/lib\"";
          if ( this.isMacOSXPlatform() )
-            s += " -L\"" + this.destinationDirectory() + "\" -F\"" + this.qtDirectory() + "/lib\"";
+            s += " -F\"" + this.qtDirectory() + "/qtbase/lib\"";
          if ( this.isFreeBSDPlatform() )
-            s += " -L/usr/local/lib -L/usr/X11R6/lib";
+            if ( this.isCore() || this.isCoreAux() )
+               s += " -L/usr/local/lib -L/usr/X11R6/lib";
       }
 
       if ( this.isModule() || this.isDynamicLibrary() || this.isExecutable() || this.isCoreAux() )
-         for ( var i = 0; i < this.extraLibDirs.length; ++i )
+         for ( let i = 0; i < this.extraLibDirs.length; ++i )
             s += " -L\"" + this.extraLibDirs[i] + (this.is64BitProject() ? "/x64" : "/x86") + "\"";
 
       s += " -o $(OBJ_DIR)/" + this.mainTarget() + " $(OBJ_FILES)";
@@ -628,7 +691,7 @@ function GeneratorParameters()
       {
          if ( this.isMacOSXPlatform() )
             s += " -framework CoreFoundation"; // required since PI 1.8.0
-         for ( var i = 0; i < this.extraLibraries.length; ++i )
+         for ( let i = 0; i < this.extraLibraries.length; ++i )
             s += " -l" + this.extraLibraries[i];
          if ( this.isModule() )
             s += " -lpthread -lPCL-pxi";
@@ -637,9 +700,7 @@ function GeneratorParameters()
       if ( this.isExecutable() || this.isX11Installer() )
       {
          if ( this.isMacOSXPlatform() )
-            s += " -framework Carbon -framework AppKit -framework ApplicationServices";
-         for ( var i = 0; i < this.extraLibraries.length; ++i )
-            s += " -l" + this.extraLibraries[i];
+            s += " -framework AppKit -framework ApplicationServices";
          s += " -lpthread -lPCL-pxi";
       }
 
@@ -648,13 +709,18 @@ function GeneratorParameters()
          // System and Qt libraries.
          if ( this.isMacOSXPlatform() )
          {
-            // Carbon-based and Cocoa-based core application, Qt/Mac >= 4.5.3
+            // Cocoa-based core application, Qt/Mac >= 5.4
             s += " -lz -framework Carbon -framework AppKit -framework ApplicationServices -framework Security" +
-                 " -framework QtGui -framework QtSvg -framework QtXml -framework QtWebKit -framework QtNetwork -framework QtCore";
+                 " -framework DiskArbitration -framework IOKit -framework OpenGL -framework AGL" +
+                 " -lQt5UiTools -framework QtSensors -framework QtPositioning -framework QtMultimediaWidgets" +
+                 " -framework QtMultimedia -framework QtOpenGL -framework QtSql -framework QtWebChannel" +
+                 " -framework QtQml -framework QtQuick -framework QtWebKitWidgets -framework QtWebKit" +
+                 " -framework QtPrintSupport -framework QtWidgets -framework QtGui -framework QtSvg" +
+                 " -framework QtXml -framework QtNetwork -framework QtCore";
          }
          else
          {
-            // X11-Linux/FreeBSD core application, Qt/X11 >= 4.5.3
+            // X11-Linux/FreeBSD core application, Qt/X11 >= 5.4
             s += " -lSM -lICE -lXi -lXrender -lXrandr -lfreetype -lfontconfig -lXext -lX11" +
                  " -lm -lgthread-2.0 -lgobject-2.0 -lrt -lglib-2.0 -lpthread";
             if ( !this.isFreeBSDPlatform() )
@@ -662,12 +728,15 @@ function GeneratorParameters()
             s += " -lcom_err -lidn -lz";
             if ( !this.isFreeBSDPlatform() )
                s += " -lssh2";
-            s += " -lQtGui -lQtSvg -lQtXml -lQtWebKit -lQtNetwork -lQtCore";
+            s += " -lQt5UiTools -lQt5Sensors -lQt5Positioning -lQt5MultimediaWidgets -lQt5Multimedia" +
+                 " -lQt5OpenGL -lQt5Sql -lQt5WebChannel -lQt5Qml -lQt5Quick -lQt5WebKitWidgets -lQt5WebKit" +
+                 " -lQt5PrintSupport -lQt5X11Extras -lQt5Widgets -lQt5Gui -lQt5Svg -lQt5Xml -lQt5Network -lQt5Core";
          }
 
          // SpiderMonkey >= 1.8.7 since PI version 1.8.0.853
+         // Zlib
          // cURL
-         s += " -lmozjs" + CORE_JS_ENGINE_VERSION + " -lcurl-pxi";
+         s += " -lmozjs" + CORE_JS_ENGINE_VERSION + " -lzlib-pxi -lcurl-pxi";
 
          // OpenSSL required on FreeBSD and Linux
          if ( !this.isMacOSXPlatform() )
@@ -682,19 +751,20 @@ function GeneratorParameters()
       {
          if ( this.isMacOSXPlatform() )
          {
-            s += " -framework Carbon -framework AppKit -framework ApplicationServices" +
-                 " -framework QtGui -framework QtCore";
+            s += " -framework AppKit -framework ApplicationServices" +
+                 " -framework DiskArbitration -framework IOKit -framework OpenGL -framework AGL" +
+                 " -framework QtWidgets -framework QtGui -framework QtCore";
          }
          else
          {
             s += " -lSM -lICE -lXext -lX11 -lm -lpthread";
             if ( !this.isFreeBSDPlatform() )
                s += " -ldl -lresolv";
-            s += " -lQtGui -lQtCore";
+            s += " -lQt5Widgets -lQt5Gui -lQt5Core";
          }
 
          s += " -lPCL-pxi";
-         for ( var i = 0; i < this.extraLibraries.length; ++i )
+         for ( let i = 0; i < this.extraLibraries.length; ++i )
             s += " -l" + this.extraLibraries[i];
       }
 
@@ -736,5 +806,5 @@ function GeneratorParameters()
    };
 }
 
-// ****************************************************************************
-// EOF MakGenParameters.js - Released 2014/10/15 17:07:00 UTC
+// ----------------------------------------------------------------------------
+// EOF MakGenParameters.js - Released 2015/07/29 23:22:54 UTC

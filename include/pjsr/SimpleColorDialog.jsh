@@ -1,13 +1,16 @@
-// ****************************************************************************
-// PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// pjsr/SimpleColorDialog.jsh - Released 2014/10/29 08:14:02 UTC
-// ****************************************************************************
+//     ____       __ _____  ____
+//    / __ \     / // ___/ / __ \
+//   / /_/ /__  / / \__ \ / /_/ /
+//  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
+// /_/     \____/ /____//_/ |_|    PJSR Version 1.0
+// ----------------------------------------------------------------------------
+// pjsr/SimpleColorDialog.jsh - Released 2015/07/23 10:07:13 UTC
+// ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +48,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #ifndef __PJSR_SimpleColorDialog_jsh
 #define __PJSR_SimpleColorDialog_jsh
@@ -70,6 +73,9 @@
 
 /*
  * SimpleColorDialog
+ *
+ * A modal dialog with three edit/slider compound controls and a color sample,
+ * useful for selection of 32-bit ARGB colors.
  */
 function SimpleColorDialog( color )
 {
@@ -90,7 +96,7 @@ function SimpleColorDialog( color )
    this.V0.label.minWidth = labelWidth1;
    this.V0.setRange( 0, 255 );
    this.V0.slider.setRange( 0, 255 );
-   this.V0.slider.minWidth = 300;
+   this.V0.slider.scaledMinWidth = 300;
    this.V0.setValue( Color.red( this.color ) );
    this.V0.onValueUpdated = function( value )
    {
@@ -104,7 +110,7 @@ function SimpleColorDialog( color )
    this.V1.label.minWidth = labelWidth1;
    this.V1.setRange( 0, 255 );
    this.V1.slider.setRange( 0, 255 );
-   this.V1.slider.minWidth = 300;
+   this.V1.slider.scaledMinWidth = 300;
    this.V1.setValue( Color.green( this.color ) );
    this.V1.onValueUpdated = function( value )
    {
@@ -118,7 +124,7 @@ function SimpleColorDialog( color )
    this.V2.label.minWidth = labelWidth1;
    this.V2.setRange( 0, 255 );
    this.V2.slider.setRange( 0, 255 );
-   this.V2.slider.minWidth = 300;
+   this.V2.slider.scaledMinWidth = 300;
    this.V2.setValue( Color.blue( this.color ) );
    this.V2.onValueUpdated = function( value )
    {
@@ -132,7 +138,7 @@ function SimpleColorDialog( color )
    this.V3.label.minWidth = labelWidth1;
    this.V3.setRange( 0, 255 );
    this.V3.slider.setRange( 0, 255 );
-   this.V3.slider.minWidth = 300;
+   this.V3.slider.scaledMinWidth = 300;
    this.V3.setValue( Color.alpha( this.color ) );
    this.V3.onValueUpdated = function( value )
    {
@@ -141,12 +147,12 @@ function SimpleColorDialog( color )
    };
 
    this.sample_Control = new Control( this );
-   this.sample_Control.minWidth = 100;
+   this.sample_Control.scaledMinWidth = 100;
    this.sample_Control.onPaint = function()
    {
       var g = new Graphics( this );
       if ( Color.alpha( this.dialog.color ) != 0xff )
-         g.drawTiledBitmap( this.boundsRect, new Bitmap( ":/image-window/transparent-small.png" ) );
+         g.drawTiledBitmap( this.boundsRect, new Bitmap( this.scaledResource( ":/image-window/transparent-small.png" ) ) );
       g.pen = new Pen( 0xff000000 );
       g.brush = new Brush( this.dialog.color|0 );
       g.drawRect( this.boundsRect );
@@ -162,12 +168,12 @@ function SimpleColorDialog( color )
 
    this.ok_Button = new PushButton( this );
    this.ok_Button.text = "OK";
-   this.ok_Button.cursor = new Cursor( StdCursor_Checkmark );
+   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
    this.ok_Button.onClick = function() { this.dialog.ok(); };
 
    this.cancel_Button = new PushButton( this );
    this.cancel_Button.text = "Cancel";
-   this.cancel_Button.cursor = new Cursor( StdCursor_Crossmark );
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
    this.cancel_Button.onClick = function() { this.dialog.cancel(); };
 
    this.buttons_Sizer = new HorizontalSizer;
@@ -233,5 +239,5 @@ SimpleColorDialog.prototype = new Dialog;
 
 #endif   // __PJSR_SimpleColorDialog_jsh
 
-// ****************************************************************************
-// EOF pjsr/SimpleColorDialog.jsh - Released 2014/10/29 08:14:02 UTC
+// ----------------------------------------------------------------------------
+// EOF pjsr/SimpleColorDialog.jsh - Released 2015/07/23 10:07:13 UTC

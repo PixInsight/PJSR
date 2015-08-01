@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// MakGenMSVC1xProjects.js - Released 2014/10/15 17:07:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// MakGenMSVC1xProjects.js - Released 2015/07/29 23:22:54 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.93
+// This file is part of PixInsight Makefile Generator Script version 1.95
 //
-// Copyright (c) 2009-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Makefile Generator
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Generation of project files for Microsoft Visual C++ 2010, 2012 and 2013
@@ -190,36 +190,42 @@ function MSVCxx( F, P, vcVersion )
    var includeDirectories = "$(PCLINCDIR)";
    var includeDirectories32 = "";
    var includeDirectories64 = "";
-   if ( P.isCore() || P.isCoreAux() )
-      includeDirectories += ";$(QTDIR)/include;$(QTDIR)/include/Qt;$(QTDIR)/mkspecs/win32-msvc" + vcYear;
+   if ( P.isCore() || P.isCoreAux() ||
+        (P.isModule() || P.isDynamicLibrary() || P.isExecutable()) && P.dependsOnQt() )
+   {
+      includeDirectories += ";$(QTDIR)/qtbase/include;$(QTDIR)/qtbase/mkspecs/win32-msvc" + vcYear;
+      includeDirectories += ";$(QTDIR)/qtbase/include/QtANGLE;$(QTDIR)/qtwinextras/include";
+   }
    if ( P.isCore() )
    {
+      includeDirectories += ";$(QTDIR)/qtsvg/include;$(QTDIR)/qtwebkit/include";
       includeDirectories += ";$(PCLSRCDIR)/core/Components;$(PCLSRCDIR)/core";
       includeDirectories32 = ";$(PCLINCDIR)/js/windows/x86"; // SpiderMonkey
       includeDirectories64 = ";$(PCLINCDIR)/js/windows/x64"; // ..
    }
    else
+   {
       for ( var i = 0; i < P.extraIncludeDirs.length; ++i )
          includeDirectories += ";" + P.extraIncludeDirs[i];
+   }
    includeDirectories = File.unixPathToWindows( includeDirectories );
 
-   var preprocessorDefinitions = "WIN32;_WINDOWS;__PCL_WINDOWS";
+   var preprocessorDefinitions = "WIN32;WIN64;_WINDOWS;UNICODE;__PCL_WINDOWS;__PCL_NO_WIN32_MINIMUM_VERSIONS";
    if ( P.isCore() )
    {
-      preprocessorDefinitions += ";__PCL_BUILDING_PIXINSIGHT_APPLICATION;__PCL_QT_INTERFACE;" +
-                  "XP_WIN;" + // SpiderMonkey
-                  "CMS_DLL;CURL_STATICLIB;" +
-                  "QT_EDITION=QT_EDITION_OPENSOURCE;QT_SHARED;QT_NO_DEBUG;" +
-                  "QT_GUI_LIB;QT_CORE_LIB;QT_XML_LIB;QT_SVG_LIB;QT_WEBKIT_LIB;QT_NETWORK_LIB;" +
-                  "QT_NO_QT_INCLUDE_WARN";
+      preprocessorDefinitions += ";__PCL_BUILDING_PIXINSIGHT_APPLICATION;__PCL_QT_INTERFACE" +
+                  ";XP_WIN" + // SpiderMonkey
+                  ";CMS_DLL;CURL_STATICLIB" +
+                  ";QT_EDITION=QT_EDITION_OPENSOURCE;QT_SHARED;QT_NO_EXCEPTIONS;QT_NO_DEBUG" +
+                  ";QT_UITOOLS_LIB;QT_WEBKITWIDGETS_LIB;QT_WEBKIT_LIB;QT_PRINTSUPPORT_LIB" +
+                  ";QT_WIDGETS_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_CORE_LIB;QT_XML_LIB;QT_SVG_LIB";
    }
    else
    {
       if ( P.isCoreAux() )
-         preprocessorDefinitions += ";__PCL_QT_INTERFACE;" +
-                     "QT_EDITION=QT_EDITION_OPENSOURCE;QT_SHARED;QT_NO_DEBUG;" +
-                     "QT_GUI_LIB;QT_CORE_LIB;" +
-                     "QT_NO_QT_INCLUDE_WARN";
+         preprocessorDefinitions += ";__PCL_QT_INTERFACE" +
+                  ";QT_EDITION=QT_EDITION_OPENSOURCE;QT_SHARED;QT_NO_EXCEPTIONS;QT_NO_DEBUG" +
+                  ";QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB";
 
       for ( var i = 0; i < P.extraDefinitions.length; ++i )
          preprocessorDefinitions += ";" + P.extraDefinitions[i];
@@ -231,11 +237,10 @@ function MSVCxx( F, P, vcVersion )
 
    var libraryDirectories32 = "$(PCLLIBDIR32)";
    var libraryDirectories64 = "$(PCLLIBDIR64)";
-   if ( P.isCore() || P.isCoreAux() )
+   if ( P.isCore() || P.isCoreAux() || P.dependsOnQt() )
    {
-      // On Windows, we have all Qt libraries on PCL lib directories
-      libraryDirectories32 += ";$(PCLLIBDIR32)/Qt";
-      libraryDirectories64 += ";$(PCLLIBDIR64)/Qt";
+      libraryDirectories32 += ";$(QTDIR32)/qtbase/lib";
+      libraryDirectories64 += ";$(QTDIR64)/qtbase/lib";
    }
    if ( !P.isCore() )
       for ( var i = 0; i < P.extraLibDirs.length; ++i )
@@ -248,14 +253,17 @@ function MSVCxx( F, P, vcVersion )
 
    var libraries = "";
    if ( P.isCore() )
-      libraries = "qtmain.lib;QtCore4.lib;QtGui4.lib;QtXml4.lib;QtSvg4.lib;QtWebKit4.lib;QtNetwork4.lib;"
-                + "mozjs" + CORE_JS_ENGINE_VERSION + ".lib;curl-pxi.lib;lcms-pxi.lib;PCL-pxi.lib;"
-                + "imm32.lib;shlwapi.lib;Ws2_32.lib;wldap32.lib;Mscms.lib;Winmm.lib";
+      libraries = "qtmain.lib;Qt5UiTools.lib;Qt5Sensors.lib;Qt5Positioning.lib;Qt5MultimediaWidgets.lib;" +
+                  "Qt5Multimedia.lib;Qt5OpenGL.lib;Qt5Sql.lib;Qt5WebChannel.lib;Qt5Qml.lib;Qt5Quick.lib;" +
+                  "Qt5WebKitWidgets.lib;Qt5WebKit.lib;Qt5PrintSupport.lib;Qt5WinExtras.lib;Qt5Widgets.lib;" +
+                  "Qt5Gui.lib;Qt5Svg.lib;Qt5Xml.lib;Qt5Network.lib;Qt5Core.lib;libEGL.lib;libGLESv2.lib;" +
+                  "mozjs" + CORE_JS_ENGINE_VERSION + ".lib;zlib-pxi.lib;curl-pxi.lib;lcms-pxi.lib;PCL-pxi.lib;" +
+                  "shell32.lib;gdi32.lib;user32.lib;imm32.lib;shlwapi.lib;Ws2_32.lib;wldap32.lib;Mscms.lib;Winmm.lib";
    else
    {
       if ( P.isCoreAux() )
-         libraries = "qtmain.lib;QtCore4.lib;QtGui4.lib;PCL-pxi.lib;"
-                   + "imm32.lib;shlwapi.lib;Ws2_32.lib;wldap32.lib;Winmm.lib";
+         libraries = "qtmain.lib;Qt5Widgets.lib;Qt5Gui.lib;Qt5Core.lib;libEGL.lib;libGLESv2.lib;PCL-pxi.lib;" +
+                  "shell32.lib;gdi32.lib;user32.lib;imm32.lib;shlwapi.lib;Ws2_32.lib;wldap32.lib;Winmm.lib";
       if ( P.isModule() || P.isExecutable() )
          libraries = "PCL-pxi.lib";
       for ( var i = 0; i < P.extraLibraries.length; ++i )
@@ -433,7 +441,7 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isExecutable() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -499,7 +507,7 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isExecutable() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -557,7 +565,7 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isExecutable() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -612,7 +620,7 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isExecutable() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -846,5 +854,5 @@ function MSVCxx( F, P, vcVersion )
    f.close();
 }
 
-// ****************************************************************************
-// EOF MakGenMSVC1xProjects.js - Released 2014/10/15 17:07:00 UTC
+// ----------------------------------------------------------------------------
+// EOF MakGenMSVC1xProjects.js - Released 2015/07/29 23:22:54 UTC

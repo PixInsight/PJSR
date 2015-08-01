@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// MakGenGCCMakefiles.js - Released 2014/10/15 17:07:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// MakGenGCCMakefiles.js - Released 2015/07/29 23:22:54 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.93
+// This file is part of PixInsight Makefile Generator Script version 1.95
 //
-// Copyright (c) 2009-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Makefile Generator
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Generation of makefiles for GCC and Clang compilers.
@@ -66,35 +66,35 @@ function GnuCxxAll( F, P )
    P.validate();
    P.validateGnuCxxBuild();
 
-   var buildDirectory = P.gccBuildDirectory( F.baseDirectory );
+   let buildDirectory = P.gccBuildDirectory( F.baseDirectory );
 
-   var makefilePath = buildDirectory + "/Makefile";
+   let makefilePath = buildDirectory + "/Makefile";
 
    console.writeln( "<end><cbr><br>==> Generating makefile:" );
    console.writeln( makefilePath );
    console.flush();
 
-   var tmp = P.architecture;
+   let tmp = P.architecture;
    P.architecture = "x86";
-   var makefile32 = P.gccMakefile();
+   let makefile32 = P.gccMakefile();
    P.architecture = "x64";
-   var makefile64 = P.gccMakefile();
+   let makefile64 = P.gccMakefile();
    P.architecture = tmp;
 
-   var hasMakefile32 = File.exists( buildDirectory + '/' + makefile32 );
-   var hasMakefile64 = File.exists( buildDirectory + '/' + makefile64 );
+   let hasMakefile32 = File.exists( buildDirectory + '/' + makefile32 );
+   let hasMakefile64 = File.exists( buildDirectory + '/' + makefile64 );
 
    if ( !(hasMakefile32 || hasMakefile64) )
       throw new Error( "Internal: No makefile has been generated before calling GnuCxxAll()" );
 
-   var f = new File;
+   let f = new File;
    f.createForWriting( makefilePath );
 
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# PixInsight Makefile Generator Script v" + VERSION );
-   f.outTextLn( "# Copyright (C) 2009-2014 Pleiades Astrophoto" );
+   f.outTextLn( "# Copyright (C) 2009-2015 Pleiades Astrophoto" );
    f.outTextLn( "######################################################################" );
-   f.outTextLn( "# Automatically generated on " + new Date( Date.now() ).toUTCString() );
+   f.outTextLn( "# Automatically generated on " + (new Date( Date.now() )).toUTCString() );
    f.outTextLn( "# Project id ...... " + P.id );
    f.outTextLn( "# Project type .... " + P.type );
    f.outTextLn( "# Platform ........ " + P.platform + "/g++" );
@@ -133,32 +133,32 @@ function GnuCxx( F, P )
    P.validate();
    P.validateGnuCxxBuild();
 
-   var buildDirectory = P.gccBuildDirectory( F.baseDirectory );
-   if ( P.cleanUpPreviousBuilds && !P.gccDebug )
+   let buildDirectory = P.gccBuildDirectory( F.baseDirectory );
+   if ( P.cleanUpPreviousBuilds )
       if ( File.directoryExists( buildDirectory ) )
          removeDirectory( buildDirectory );
 
-   var makefilePath = buildDirectory + '/' + P.gccMakefile();
+   let makefilePath = buildDirectory + '/' + P.gccMakefile();
 
    console.writeln( "<end><cbr><br>==> Generating makefile:" );
    console.writeln( makefilePath );
    console.flush();
 
-   var objectPrefix = P.architecture + (P.gccDebug ? "/Debug" : "/Release");
-   var objectDirectory = buildDirectory + '/' + objectPrefix;
+   let objectPrefix = P.architecture + (P.gccDebug ? "/Debug" : "/Release");
+   let objectDirectory = buildDirectory + '/' + objectPrefix;
 
-   var target = "$(OBJ_DIR)/" + P.mainTarget();
+   let target = "$(OBJ_DIR)/" + P.mainTarget();
 
-   var sources = new Array;
-   var objects = new Array;
-   var dependencies = new Array;
-   for ( var i = 0; i < F.sources.length; ++i )
+   let sources = new Array;
+   let objects = new Array;
+   let dependencies = new Array;
+   for ( let i = 0; i < F.sources.length; ++i )
    {
-      var s = F.sources[i];
+      let s = F.sources[i];
       if ( s.hasSourceFiles() )
       {
-         var prefix = s.directory;
-         var objDir = objectDirectory;
+         let prefix = s.directory;
+         let objDir = objectDirectory;
          if ( s.directory.length > 0 )
          {
             prefix += '/';
@@ -166,25 +166,25 @@ function GnuCxx( F, P )
          }
          createDirectoryIfNotExists( objDir, true );
 
-         for ( var j = 0; j < s.files.length; ++j )
+         for ( let j = 0; j < s.files.length; ++j )
             if ( P.isSourceFile( s.files[j] ) )
             {
                sources.push( "../../" + prefix + s.files[j] );
-               var n = "./" + objectPrefix + '/' + prefix + File.extractName( s.files[j] );
+               let n = "./" + objectPrefix + '/' + prefix + File.extractName( s.files[j] );
                objects.push( n + ".o" );
                dependencies.push( n + ".d" );
             }
       }
    }
 
-   var f = new File;
+   let f = new File;
    f.createForWriting( makefilePath );
 
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# PixInsight Makefile Generator Script v" + VERSION );
-   f.outTextLn( "# Copyright (C) 2009-2014 Pleiades Astrophoto" );
+   f.outTextLn( "# Copyright (C) 2009-2015 Pleiades Astrophoto" );
    f.outTextLn( "######################################################################" );
-   f.outTextLn( "# Automatically generated on " + new Date( Date.now() ).toUTCString() );
+   f.outTextLn( "# Automatically generated on " + (new Date( Date.now() )).toUTCString() );
    f.outTextLn( "# Project id ...... " + P.id );
    f.outTextLn( "# Project type .... " + P.type );
    f.outTextLn( "# Platform ........ " + P.platform + "/g++" );
@@ -193,40 +193,41 @@ function GnuCxx( F, P )
    {
       f.outTextLn( "# --------------------------------------------------------------------" );
       f.outTextLn( "# Additional preprocessor definitions:" );
-      for ( var i = 0; i < P.extraDefinitions.length; ++i )
+      for ( let i = 0; i < P.extraDefinitions.length; ++i )
          f.outTextLn( "# " + P.extraDefinitions[i] );
    }
    if ( P.extraIncludeDirs.length > 0 )
    {
       f.outTextLn( "# --------------------------------------------------------------------" );
       f.outTextLn( "# Additional include search directories:" );
-      for ( var i = 0; i < P.extraIncludeDirs.length; ++i )
+      for ( let i = 0; i < P.extraIncludeDirs.length; ++i )
          f.outTextLn( "# " + P.extraIncludeDirs[i] );
    }
    if ( P.extraLibDirs.length > 0 )
    {
       f.outTextLn( "# --------------------------------------------------------------------" );
       f.outTextLn( "# Additional library search directories:" );
-      for ( var i = 0; i < P.extraLibDirs.length; ++i )
+      for ( let i = 0; i < P.extraLibDirs.length; ++i )
          f.outTextLn( "# " + P.extraLibDirs[i] + (P.is64BitProject() ? "/x64" : "/x86") );
    }
    if ( P.extraLibraries.length > 0 )
    {
       f.outTextLn( "# --------------------------------------------------------------------" );
       f.outTextLn( "# Additional libraries:" );
-      for ( var i = 0; i < P.extraLibraries.length; ++i )
+      for ( let i = 0; i < P.extraLibraries.length; ++i )
          f.outTextLn( "# " + P.extraLibraries[i] );
    }
    f.outTextLn( "######################################################################" );
    f.outTextLn( '' );
 
    /*
-    * Perform a greedy replacement of relevant environment variables in the OBJ_DIR value.
-    * Without this, we'd be propagating our own build directories everywhere!
+    * Perform a greedy replacement of relevant environment variables in the
+    * OBJ_DIR value. Without this, we would be propagating our own build
+    * directories everywhere!
     */
    f.outTextLn( "OBJ_DIR=\"" + objectDirectory.replace(
-                                 RegExp( '^' + escapeForRegExp(PCLSRCDIR) ), "$(PCLSRCDIR)" ).replace(
-                                    RegExp( '^' + escapeForRegExp(PCLDIR) ), "$(PCLDIR)" ) + "\"" );
+                                 RegExp( '^' + PCLSRCDIR ), "$(PCLSRCDIR)" ).replace(
+                                    RegExp( '^' + PCLDIR ), "$(PCLDIR)" ) + "\"" );
    f.outTextLn( '' );
 
    f.outTextLn( ".PHONY: all" );
@@ -238,7 +239,7 @@ function GnuCxx( F, P )
    f.outTextLn( "#" );
    f.outTextLn( '' );
    f.outTextLn( "SRC_FILES= \\" );
-   for ( var i = 0; ; )
+   for ( let i = 0; ; )
    {
       f.outText( sources[i] );
       if ( ++i == sources.length )
@@ -253,7 +254,7 @@ function GnuCxx( F, P )
    f.outTextLn( "#" );
    f.outTextLn( '' );
    f.outTextLn( "OBJ_FILES= \\" );
-   for ( var i = 0; ; )
+   for ( let i = 0; ; )
    {
       f.outText( objects[i] );
       if ( ++i == objects.length )
@@ -268,7 +269,7 @@ function GnuCxx( F, P )
    f.outTextLn( "#" );
    f.outTextLn( '' );
    f.outTextLn( "DEP_FILES= \\" );
-   for ( var i = 0; ; )
+   for ( let i = 0; ; )
    {
       f.outText( dependencies[i] );
       if ( ++i == dependencies.length )
@@ -297,145 +298,193 @@ function GnuCxx( F, P )
 	f.outTextLn( "\tcp " + target + ' ' + P.destinationDirectory() );
    if ( P.isMacOSXPlatform() )
    {
-      var appDir = "$(PCLDIR)/dist/" + P.architecture;
-      var appBundle = appDir + "/PixInsight/" + P.macOSXAppName();
+      let appDir = "$(PCLDIR)/dist/" + P.architecture;
+      let appBundle = appDir + "/PixInsight/" + P.macOSXAppName();
 
       if ( P.isCore() )
       {
-         f.outTextLn( "\trm -rf " + appBundle + "/Contents/Frameworks" );
+         /*
+          * Since OS X 10.9.5, all shared objects must be on the Frameworks
+          * application bundle directory.
+          */
+         f.outTextLn( "\tinstall_name_tool" +
+                      " -change @executable_path/liblcms-pxi.dylib" +
+                      " @executable_path/../Frameworks/liblcms-pxi.dylib " +
+                      appBundle + "/Contents/MacOS/PixInsight" );
+         f.outTextLn( "\tinstall_name_tool" +
+                      " -change @executable_path/libmozjs-24.dylib" +
+                      " @executable_path/../Frameworks/libmozjs-24.dylib " +
+                      appBundle + "/Contents/MacOS/PixInsight" );
+
+         /*
+          * Regenerate Qt frameworks and resources.
+          */
+         f.outTextLn( "\trm -rf " + appBundle + "/Contents/Frameworks/Qt*" );
          f.outTextLn( "\trm -rf " + appBundle + "/Contents/PlugIns" );
          f.outTextLn( "\trm -f " + appBundle + "/Contents/Resources/qt.conf" );
+         f.outTextLn( "\texport DYLD_FRAMEWORK_PATH=$QTDIR/qtbase/lib" );
          f.outTextLn( "\tmacdeployqt " + appBundle );
 
          /*
-          * Fix macdeployqt bug on Mac OS X >= 10.9.5. See:
+          * Fix macdeployqt bug on OS X >= 10.9.5. See:
           *    http://stackoverflow.com/questions/19637131/sign-a-framework-for-osx-10-9
           */
+         /*
+          * This bug has been fixed as of Qt 5.4.1.
+          *
       	f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtCore.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtCore.framework/Resources" );
 	      f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtGui.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtGui.framework/Resources" );
 	      f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtNetwork.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtNetwork.framework/Resources" );
       	f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtSvg.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtSvg.framework/Resources" );
       	f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtWebKit.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtWebKit.framework/Resources" );
       	f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtXml.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtXml.framework/Resources" );
+          */
 
+         /*
+          * Fix Qt framework distribution on OS X >= 10.9.5. See:
+          *    http://blog.qt.digia.com/blog/2014/10/29/an-update-on-os-x-code-signing/
+          */
+         /*
+          * This bug has been fixed as of Qt 5.4.1.
+          *
+         f.outTextLn( "\tpython " + "$(PCLSRCDIR)/core/scripts/macfixqt.py $(QTDIR64) " + appBundle );
+          */
+
+         /*
+          * Update core application bundle creation time.
+          * ### NB: This must be done *before* signing, as file times are part
+          * of the code signature.
+          */
          f.outTextLn( "\ttouch " + appBundle );
 
-         if ( !P.isMacOSX106Platform() )
-         {
-            // Compatibility Mac OS X versions are not digitally signed.
+         /*
+          * _Unfortunately_, since OS X 10.9.5, the --resource-rules argument
+          * to codesign is no longer supported. From now on every file inside
+          * an application bundle has to be signed without exceptions---even
+          * plain text files have to be part of signed code. The --deep
+          * argument works fine by doing this recursively.
+          */
+         f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + appBundle );
 
-            /*
-             * _Unfortunately_, since Mac OS X 10.9.5, the --resource-rules
-             * argument to codesign is no longer supported. From now on every
-             * file inside an application bundle has to be signed without
-             * exceptions - even plain text files have to be part of signed
-             * code. The --deep argument does this recursively.
-             */
-            f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + appBundle );
+         /*
+          * Signing commands for OS X < 10.9.5
+          *
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtCore.framework/Versions/4/QtCore" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtGui.framework/Versions/4/QtGui" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtNetwork.framework/Versions/4/QtNetwork" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtSvg.framework/Versions/4/QtSvg" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtWebKit.framework/Versions/4/QtWebKit" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtXml.framework/Versions/4/QtXml" );
 
-            /*
-             * Signing commands for Mac OS X < 10.9.5
-             *
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtCore.framework/Versions/4/QtCore" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtGui.framework/Versions/4/QtGui" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtNetwork.framework/Versions/4/QtNetwork" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtSvg.framework/Versions/4/QtSvg" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtWebKit.framework/Versions/4/QtWebKit" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtXml.framework/Versions/4/QtXml" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/bearer/libqcorewlanbearer.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/bearer/libqgenericbearer.dylib" );
 
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/bearer/libqcorewlanbearer.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/bearer/libqgenericbearer.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqcncodecs.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqjpcodecs.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqkrcodecs.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqtwcodecs.dylib" );
 
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqcncodecs.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqjpcodecs.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqkrcodecs.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqtwcodecs.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/iconengines/libqsvgicon.dylib" );
 
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/iconengines/libqsvgicon.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqgif.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqico.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqjpeg.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqmng.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqsvg.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqtga.dylib" );
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqtiff.dylib" );
 
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqgif.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqico.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqjpeg.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqmng.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqsvg.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqtga.dylib" );
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqtiff.dylib" );
-
-            f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp --resource-rules " + appDir + "/CoreSignRules.plist " + appBundle );
-             */
-         }
+         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp --resource-rules " + appDir + "/CoreSignRules.plist " + appBundle );
+          */
       }
       else if ( P.isCoreAux() )
       {
-         f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/lib/QtCore.framework/Versions/4/QtCore" +
-                      " @executable_path/../Frameworks/QtCore.framework/Versions/4/QtCore" +
+         f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/qtbase/lib/QtCore.framework/Versions/5/QtCore" +
+                      " @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" +
                       " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
-         f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/lib/QtGui.framework/Versions/4/QtGui" +
-                      " @executable_path/../Frameworks/QtGui.framework/Versions/4/QtGui" +
+         f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/qtbase/lib/QtWidgets.framework/Versions/5/QtWidgets" +
+                      " @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets" +
+                      " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
+         f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/qtbase/lib/QtGui.framework/Versions/5/QtGui" +
+                      " @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui" +
                       " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
       }
       else if ( P.isModule() || P.isDynamicLibrary() || P.isExecutable() )
       {
-         for ( var i = 0; i < P.extraLibraries.length; ++i )
-            f.outTextLn( "\tinstall_name_tool -change @executable_path/lib" + P.extraLibraries[i] + ".dylib" +
-                         " @loader_path/lib" + P.extraLibraries[i] + ".dylib" +
-                         " " + P.destinationDirectory() + "/" + P.mainTarget() );
+         for ( let i = 0; i < P.extraLibraries.length; ++i )
+            if ( P.extraLibraries[i].startsWith( "Qt" ) )
+               f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/qtbase/lib/" + P.extraLibraries[i] + ".framework/Versions/5/" + P.extraLibraries[i] +
+                            " " + "@executable_path/../Frameworks/" + P.extraLibraries[i] + ".framework/Versions/5/" + P.extraLibraries[i] +
+                            " " + P.destinationDirectory() + "/" + P.mainTarget() );
+            else
+               f.outTextLn( "\tinstall_name_tool -change @executable_path/lib" + P.extraLibraries[i] + ".dylib" +
+                            " " + "@loader_path/lib" + P.extraLibraries[i] + ".dylib" +
+                            " " + P.destinationDirectory() + "/" + P.mainTarget() );
+         /*
+          * In official distributions, all modules and executables are
+          * digitally signed on OS X and Windows platforms.
+          * ### N.B.: Updater executables are already signed within the core
+          * application bundle on OS X.
+          */
+         if ( P.isOfficialModule() || P.isOfficialDynamicLibrary() )
+            if ( P.isMacOSXPlatform() )
+               f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + P.destinationDirectory() + "/" + P.mainTarget() );
       }
    }
    f.outTextLn( '' );
    if ( F.cppFileCount > 0 )
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.cppFileCount > 0 )
          {
-            var prefix = s.directory;
+            let prefix = s.directory;
             if ( s.directory.length > 0 )
                prefix += '/';
             f.outTextLn( "./" + objectPrefix + '/' + prefix + "%.o: " + "../../" + prefix + "%.cpp" );
-            f.outTextLn( "\t" + P.gccCxxCompiler() + P.gccCompileArgs() );
+            f.outTextLn( "\t" + P.gccCxxCompiler() + ' ' + P.gccCompileArgs() );
             f.outTextLn( "\t@echo \' \'" );
          }
       }
    if ( F.cxxFileCount > 0 )
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.cxxFileCount > 0 )
          {
-            var prefix = s.directory;
+            let prefix = s.directory;
             if ( s.directory.length > 0 )
                prefix += '/';
             f.outTextLn( "./" + objectPrefix + '/' + prefix + "%.o: " + "../../" + prefix + "%.cxx" );
-            f.outTextLn( "\t" + P.gccCxxCompiler() + P.gccCompileArgs() );
+            f.outTextLn( "\t" + P.gccCxxCompiler() + ' ' + P.gccCompileArgs() );
             f.outTextLn( "\t@echo \' \'" );
          }
       }
    if ( F.cFileCount > 0 )
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.cFileCount > 0 )
          {
-            var prefix = s.directory;
+            let prefix = s.directory;
             if ( s.directory.length > 0 )
                prefix += '/';
             f.outTextLn( "./" + objectPrefix + '/' + prefix + "%.o: " + "../../" + prefix + "%.c" );
-            f.outTextLn( "\t" + P.gccCCompiler() + P.gccCompileArgs() );
+            f.outTextLn( "\t" + P.gccCCompiler() + ' ' + P.gccCompileArgs( false/*isCpp*/ ) );
             f.outTextLn( "\t@echo \' \'" );
          }
       }
    if ( F.mmFileCount > 0 )
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.mmFileCount > 0 )
          {
-            var prefix = s.directory;
+            let prefix = s.directory;
             if ( s.directory.length > 0 )
                prefix += '/';
             f.outTextLn( "./" + objectPrefix + '/' + prefix + "%.o: " + "../../" + prefix + "%.mm" );
-            f.outTextLn( "\t" + P.gccCxxCompiler() + P.gccCompileArgs() );
+            f.outTextLn( "\t" + P.gccCxxCompiler() + ' ' + P.gccCompileArgs() );
             f.outTextLn( "\t@echo \' \'" );
          }
       }
@@ -445,5 +494,5 @@ function GnuCxx( F, P )
    f.close();
 }
 
-// ****************************************************************************
-// EOF MakGenGCCMakefiles.js - Released 2014/10/15 17:07:00 UTC
+// ----------------------------------------------------------------------------
+// EOF MakGenGCCMakefiles.js - Released 2015/07/29 23:22:54 UTC

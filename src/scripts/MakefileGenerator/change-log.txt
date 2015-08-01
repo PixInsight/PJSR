@@ -2,6 +2,29 @@
 Makefile Generator Script Changelog
 ===============================================================================
 
+1.95 - Released with PI 1.8.4.1167 Ripley
+
+   - Minimum core version required is now 1.8.4.
+   - Support for PCL version 2.1.
+   - Core builds adapted to Qt5 on all platforms.
+   - New optimization parameters on FreeBSD and Linux builds.
+   - Support for the current Xcode 6.4 toolset on OS X 10.10
+   - Definitely removed support for OS X < 10.8
+   - Automatic UI scaling.
+
+-------------------------------------------------------------------------------
+1.94 - Released with PI 1.8.3.1123 Ripley
+
+   - Add the -std=c++11 compiler argument to all GCC and Clang builds. This is
+     to suppress useless warnings since we are starting to use C++11 language
+     features in the core (and plan to use them also in incoming PCL versions).
+   - All executables, dynamic libraries and modules are now digitally signed
+     with our corporate code signing certificates in official PixInsight
+     distributions.
+   - Fix core builds on Mac OS X >= 10.9.5. For more information, see:
+      http://blog.qt.digia.com/blog/2014/10/29/an-update-on-os-x-code-signing/
+   - Fix some outdated tooltips in the main script dialog.
+
 -------------------------------------------------------------------------------
 1.93 - Released with PI 1.8.3.1115 Ripley
 
@@ -21,7 +44,7 @@ Makefile Generator Script Changelog
    - New TGV standard module that supersedes the previous TGVDenoise module.
 
 -------------------------------------------------------------------------------
-1.90 -
+1.90 - Unreleased (internal).
 
    - Added an option to control generation of host Linux makefiles.
    - Fix undeclared variable assignment warning in MakGenMSVC1xProjects.js

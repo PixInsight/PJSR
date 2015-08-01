@@ -1,13 +1,16 @@
-// ****************************************************************************
-// PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// pjsr/NumericControl.jsh - Released 2014/10/29 08:14:02 UTC
-// ****************************************************************************
+//     ____       __ _____  ____
+//    / __ \     / // ___/ / __ \
+//   / /_/ /__  / / \__ \ / /_/ /
+//  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
+// /_/     \____/ /____//_/ |_|    PJSR Version 1.0
+// ----------------------------------------------------------------------------
+// pjsr/NumericControl.jsh - Released 2015/07/23 10:07:13 UTC
+// ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +48,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #ifndef __PJSR_NumericControl_jsh
 #define __PJSR_NumericControl_jsh
@@ -81,7 +84,6 @@
  *
  * A label/edit compound control to edit numeric parameters.
  */
-
 function NumericEdit( parent )
 {
    this.__base__ = Control;
@@ -100,9 +102,12 @@ function NumericEdit( parent )
    this.autoEditWidth = true;
    this.onValueUpdated = null;
 
-   this.actualPrecision = function( precision, value )
+   this.precisionForValue = function( precision, value )
    {
-      return Math.max( 0, precision - Math.max( 0, Math.trunc( Math.log10( Math.abs( value ) ) ) ) );
+      value = Math.abs( value );
+      if ( value < 10 )
+         return precision;
+      return Math.max( 0, precision - Math.max( 0, Math.trunc( Math.log10( value ) ) ) )|0;
    };
 
    this.label = new Label( this );
@@ -127,8 +132,8 @@ function NumericEdit( parent )
 
    this.edit.onGetFocus = function()
    {
-      if ( !this.readOnly )
-         this.selectAll();
+      //if ( !this.readOnly )
+      //   this.selectAll();
    };
 
    this.edit.onLoseFocus = function()
@@ -168,12 +173,12 @@ function NumericEdit( parent )
          if ( this.scientific )
             if ( this.sciTriggerExp < 0 || v != 0 && (Math.abs( v ) > Math.pow10( +this.sciTriggerExp ) ||
                                                       Math.abs( v ) < Math.pow10( -this.sciTriggerExp )) )
-               return format( "%.*e", this.precision, v );
+               return format( "%.*le", this.precision, v );
 
-         return format( "%.*f", this.actualPrecision( this.precision, v ), v );
+         return format( "%.*lf", this.precisionForValue( this.precision, v ), v );
       }
 
-      return format( "%.0f", v );
+      return format( "%.0lf", v );
    };
 
    this.minEditWidth = function()
@@ -183,7 +188,7 @@ function NumericEdit( parent )
       var s = '';
       for ( var i = 0; i <= n; ++i )
          s += '0';
-      return this.edit.font.width( s ) + 1+2+2+1;
+      return this.edit.font.width( s ) + this.logicalPixelsToPhysical( 1+2+2+1 );
    };
 
    this.adjustEditWidth = function()
@@ -240,35 +245,32 @@ function NumericEdit( parent )
 
    this.evaluate = function()
    {
-      if ( this.edit.readOnly )
+      if ( this.edit.readOnly ) // ?!
          return;
 
       try
       {
-         var newValue;
-         var hasChanged;
+         let newValue;
          if ( this.real )
          {
-            var tolerance = Math.pow10( -(this.precision + 1) );
-            newValue = Math.parseReal( this.edit.text, this.lowerBound, this.upperBound, tolerance );
-            newValue = Math.roundTo( newValue, this.actualPrecision( this.precision, newValue ) );
-            hasChanged = Math.sign( newValue ) != Math.sign( this.value ) || Math.abs( newValue - this.value ) > tolerance;
+            newValue = parseFloat( this.edit.text );
+            newValue = Math.roundTo( newValue, this.precisionForValue( this.precision, newValue ) );
          }
          else
-         {
-            newValue = Math.parseInteger( this.edit.text, this.lowerBound, this.upperBound );
-            hasChanged = newValue != this.value;
-         }
+            newValue = parseInt( this.edit.text );
 
-         if ( hasChanged )
-         {
+         if ( this.lowerBound < this.upperBound )
+            if ( newValue < this.lowerBound || newValue > this.upperBound )
+               throw new Error( format( "Numeric value out of range: %.16lg - valid range is [%.16lg,%.16lg]",
+                                        newValue, this.lowerBound, this.upperBound ) );
+         let changed = newValue != this.value;
+         if ( changed )
             this.value = newValue;
-            this.updateControls();
+         this.updateControls();
+         if ( changed )
             if ( this.onValueUpdated )
                this.onValueUpdated( this.value );
-         }
-         else
-            this.updateControls();
+         return;
       }
       catch ( x )
       {
@@ -287,7 +289,6 @@ NumericEdit.prototype = new Control;
  *
  * A label/edit/slider compound control to edit numeric parameters.
  */
-
 function NumericControl( parent )
 {
    this.__base_1__ = NumericEdit;
@@ -295,8 +296,8 @@ function NumericControl( parent )
 
    this.slider = new HorizontalSlider( this );
    this.slider.setRange( 0, 50 );
+   this.slider.setScaledMinWidth( 50+16 );
    this.slider.setFixedHeight( this.edit.height );
-   this.slider.minWidth = 50+16;
    this.slider.pageSize = 5;
    this.slider.tickInterval = 5;
    this.slider.tickStyle = TickStyle_NoTicks;
@@ -313,8 +314,8 @@ function NumericControl( parent )
 
    this.slider.onValueUpdated = function( val )
    {
-      var d = this.maxValue - this.minValue;
-      var newValue = Math.roundTo(
+      let d = this.maxValue - this.minValue;
+      let newValue = Math.roundTo(
          this.parent.lowerBound + (this.parent.upperBound - this.parent.lowerBound)*((val - this.minValue)/d),
          this.parent.real ? Math.max( 0, Math.trunc( Math.log10( d ) ) ) : 0 );
 
@@ -346,5 +347,5 @@ NumericControl.prototype = new NumericEdit;
 
 #endif   // __PJSR_NumericControl_jsh
 
-// ****************************************************************************
-// EOF pjsr/NumericControl.jsh - Released 2014/10/29 08:14:02 UTC
+// ----------------------------------------------------------------------------
+// EOF pjsr/NumericControl.jsh - Released 2015/07/23 10:07:13 UTC

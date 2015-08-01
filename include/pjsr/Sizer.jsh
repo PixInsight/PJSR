@@ -1,13 +1,16 @@
-// ****************************************************************************
-// PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// pjsr/Sizer.jsh - Released 2014/10/29 08:14:02 UTC
-// ****************************************************************************
+//     ____       __ _____  ____
+//    / __ \     / // ___/ / __ \
+//   / /_/ /__  / / \__ \ / /_/ /
+//  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
+// /_/     \____/ /____//_/ |_|    PJSR Version 1.0
+// ----------------------------------------------------------------------------
+// pjsr/Sizer.jsh - Released 2015/07/23 10:07:13 UTC
+// ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +48,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #ifndef __PJSR_Sizer_jsh
 #define __PJSR_Sizer_jsh
@@ -73,15 +76,15 @@ VerticalSizer.prototype = new Sizer;
 /*
  * Sizer item alignment
  */
-#define Align_Expand    0              // The item can be expanded to occupy the available space
-#define Align_Left      1              // The item aligns to the left side of the available space
-#define Align_Top       Align_Left     // The item aligns to the top side of the available space
-#define Align_Right     2              // The item aligns to the right side of the available space
-#define Align_Bottom    Align_Right    // The item aligns to the bottom side of the available space
-#define Align_Center    3              // The item aligns centered within the available space
-#define Align_Default   Align_Expand   // Default alignment
+#define Align_Expand    0            // The item can be expanded to occupy the available space
+#define Align_Left      1            // The item aligns to the left side of the available space
+#define Align_Top       Align_Left   // The item aligns to the top side of the available space
+#define Align_Right     2            // The item aligns to the right side of the available space
+#define Align_Bottom    Align_Right  // The item aligns to the bottom side of the available space
+#define Align_Center    3            // The item aligns centered within the available space
+#define Align_Default   Align_Expand // Default alignment = expand
 
 #endif   // __PJSR_Sizer_jsh
 
-// ****************************************************************************
-// EOF pjsr/Sizer.jsh - Released 2014/10/29 08:14:02 UTC
+// ----------------------------------------------------------------------------
+// EOF pjsr/Sizer.jsh - Released 2015/07/23 10:07:13 UTC

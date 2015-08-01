@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// MakGenGlobal.js - Released 2014/10/15 17:07:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// MakGenGlobal.js - Released 2015/07/29 23:22:54 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.93
+// This file is part of PixInsight Makefile Generator Script version 1.95
 //
-// Copyright (c) 2009-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Makefile Generator
@@ -52,20 +52,20 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Global variables and definitions.
  */
 
-#define VERSION "1.93"
+#define VERSION "1.95"
 #define TITLE   "Makefile Generator"
 
 /*
  * Default GCC version
  * Set to an empty string to use the system GCC version
  */
-#define DEFAULT_GCC_VERSION_SUFFIX_LINUX  "-4.8.2"
+#define DEFAULT_GCC_VERSION_SUFFIX_LINUX "" //"-4.8.2"
 
 /*
  * - PixInsight Core 1.7.x Starbuck uses the SpiderMonkey engine version 1.8.5
@@ -117,35 +117,36 @@ var imageFileExtensions =
  */
 
 // Project types
-#define TYPE_MODULE           0
-#define TYPE_DYNAMIC_LIBRARY  1
-#define TYPE_STATIC_LIBRARY   2
-#define TYPE_EXECUTABLE       3
-#define TYPE_PCL              4
-#define TYPE_CORE             5
-#define TYPE_CORE_AUX         6
-#define TYPE_STANDARD_MODULES 7
-#define TYPE_PLATFORM         8
+#define TYPE_MODULE              0
+#define TYPE_DYNAMIC_LIBRARY     1
+#define TYPE_STATIC_LIBRARY      2
+#define TYPE_EXECUTABLE          3
+#define TYPE_PCL                 4
+#define TYPE_CORE                5
+#define TYPE_CORE_AUX            6
+#define TYPE_STANDARD_MODULES    7
+#define TYPE_PLATFORM            8
 
 // Platforms
-#define PLATFORM_FREEBSD      0
-#define PLATFORM_LINUX        1
-#define PLATFORM_MACOSX       2
-#define PLATFORM_WINDOWS      3
-#define PLATFORM_HOST         4
+#define PLATFORM_FREEBSD         0
+#define PLATFORM_LINUX           1
+#define PLATFORM_MACOSX          2
+#define PLATFORM_WINDOWS         3
+#define PLATFORM_HOST            4
 
 // Architectures
-#define ARCH_X86              0
-#define ARCH_X64              1
+#define ARCH_X86                 0
+#define ARCH_X64                 1
 
 // GCC optimizations
-#define OPTIMIZATION_O0       0
-#define OPTIMIZATION_O1       1
-#define OPTIMIZATION_O2       2
-#define OPTIMIZATION_O3       3
-#define OPTIMIZATION_Os       4
-#define OPTIMIZATION_Ofast    5
-#define OPTIMIZATION_DEFAULT  OPTIMIZATION_O3
+#define OPTIMIZATION_O0          0
+#define OPTIMIZATION_O1          1
+#define OPTIMIZATION_O2          2
+#define OPTIMIZATION_O3          3
+#define OPTIMIZATION_Os          4
+#define OPTIMIZATION_Ofast       5
+#define OPTIMIZATION_DEFAULT     OPTIMIZATION_O3
+#define OPTIMIZATION_DEFAULT_STR "3"
 
-// ****************************************************************************
-// EOF MakGenGlobal.js - Released 2014/10/15 17:07:00 UTC
+// ----------------------------------------------------------------------------
+// EOF MakGenGlobal.js - Released 2015/07/29 23:22:54 UTC

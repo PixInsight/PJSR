@@ -1,13 +1,13 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// pjsr/FFTRegistration.js - Released 2011/01/27 15:27:33 UTC
-// ****************************************************************************
-// This file is part of the PixInsight JavaScript Runtime (PJSR).
-// PJSR is an ECMA-262 compliant framework for development of scripts on the
-// PixInsight platform.
+// ----------------------------------------------------------------------------
+// FFTRegistration.js - Released 2015/07/22 16:35:26 UTC
+// ----------------------------------------------------------------------------
 //
-// Copyright (c) 2003-2010, Pleiades Astrophoto S.L. All Rights Reserved.
+// This file is part of FFTRegistration Script version 1.20
+//
+// Copyright (c) 2005-2015 Pleiades Astrophoto S.L.
+// Written by Juan Conejero (PTeam)
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,14 +45,14 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * FFTRegistration v1.20
  *
  * Fourier-based image registration.
  *
- * Copyright (C) 2005-2013 Pleiades Astrophoto S.L.
+ * Copyright (C) 2005-2015 Pleiades Astrophoto S.L.
  * Written by Juan Conejero (PTeam)
  *
  * References:
@@ -103,7 +103,7 @@ References:<br>\
   images using finite Fourier transforms. IEEE Transactions on Pattern \
   Analysis and Machine Intelligence 95, 700-703.<br>\
 <br>\
-Copyright &copy; 2005-2013 Pleiades Astrophoto S.L.
+Copyright &copy; 2005-2015 Pleiades Astrophoto S.L.
 
 #feature-icon  FFTRegistration.xpm
 
@@ -867,7 +867,7 @@ function FFTRegistrationDialog()
    this.helpLabel.useRichText = true;
    this.helpLabel.text = "<b>" + TITLE + " v" + VERSION + "</b> &mdash; A script for Fourier-based image registration.<br>" +
              "Written by Juan Conejero (PTeam). See the script source code for references.<br>" +
-             "Copyright &copy; 2005-2013 Pleiades Astrophoto";
+             "Copyright &copy; 2005-2015 Pleiades Astrophoto";
 
    //
 
@@ -906,7 +906,7 @@ function FFTRegistrationDialog()
 
    this.target_List = new TreeBox( this );
    this.target_List.alternateRowColor = true;
-   this.target_List.setMinSize( 500, 200 );
+   this.target_List.setScaledMinSize( 500, 200 );
    this.target_List.numberOfColumns = 1;
    this.target_List.headerVisible = false;
 
@@ -1089,7 +1089,7 @@ function FFTRegistrationDialog()
    this.cutOff_NumericControl = new NumericControl( this );
    this.cutOff_NumericControl.label.text = "Low-frequency cutoff:";
    this.cutOff_NumericControl.slider.setRange( 0, 100 );
-   this.cutOff_NumericControl.slider.minWidth = 150;
+   this.cutOff_NumericControl.slider.scaledMinWidth = 150;
    this.cutOff_NumericControl.setRange( 0.0, 0.5 );
    this.cutOff_NumericControl.setPrecision( 3 );
    this.cutOff_NumericControl.setValue( engine.rotationAndScaling.lowFrequencyCutoff );
@@ -1198,7 +1198,7 @@ function main()
 
       console.writeln( "<end><cbr><br>*****************************************"    );
       console.writeln(               "FFT Image Registration Script"                );
-      console.writeln(               "Copyright &copy; 2005-2013 Pleiades Astrophoto" );
+      console.writeln(               "Copyright &copy; 2005-2015 Pleiades Astrophoto" );
       console.writeln(               "*****************************************"    );
 
       // Perform the image registration procedure.
@@ -1211,5 +1211,5 @@ function main()
 
 main();
 
-// ****************************************************************************
-// EOF pjsr/FFTRegistration.js - Released 2011/01/27 15:27:33 UTC
+// ----------------------------------------------------------------------------
+// EOF FFTRegistration.js - Released 2015/07/22 16:35:26 UTC

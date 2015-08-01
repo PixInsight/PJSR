@@ -1,13 +1,13 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// BatchPreprocessing-GUI.js - Released 2014/11/30 11:42:43 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// BatchPreprocessing-GUI.js - Released 2015/07/22 16:32:44 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.38
+// This file is part of Batch Preprocessing Script version 1.41
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * Graphical user interface
@@ -109,8 +109,8 @@ function ParametersControl( title, parent, expand )
    if ( this.expand )
    {
       this.closeButton = new ToolButton( this );
-      this.closeButton.icon = ":/icons/close.png";
-      this.closeButton.setFixedSize( 17, 17 );
+      this.closeButton.icon = this.scaledResource( ":/icons/close.png" );
+      this.closeButton.setScaledFixedSize( 20, 20 );
       this.closeButton.toolTip = "Back";
       this.closeButton.onClick = function()
       {
@@ -121,7 +121,7 @@ function ParametersControl( title, parent, expand )
       this.closeButton = null;
 
    this.titleBar = new Control( this );
-   this.titleBar.styleSheet =
+   this.titleBar.styleSheet = this.scaledStyleSheet(
       "QWidget#" + this.titleBar.uniqueId + " {"
    +     "border: 1px solid gray;"
    +     "border-bottom: none;"
@@ -135,7 +135,7 @@ function ParametersControl( title, parent, expand )
    +  "}"
    +  "QLabel:disabled {"
    +     "color: gray;"
-   +  "}";
+   +  "}" );
    this.titleBar.sizer = new HorizontalSizer;
    this.titleBar.sizer.add( this.titleLabel );
    this.titleBar.sizer.addStretch();
@@ -146,10 +146,10 @@ function ParametersControl( title, parent, expand )
    }
 
    this.contents = new Control( this );
-   this.contents.styleSheet =
+   this.contents.styleSheet = this.scaledStyleSheet(
       "QWidget#" + this.contents.uniqueId + " {"
    +     "border: 1px solid gray;"
-   +  "}";
+   +  "}" );
 
    this.contents.sizer = new VerticalSizer;
    this.contents.sizer.margin = 6;
@@ -330,7 +330,7 @@ function OverscanRegionControl( parent, overscan )
       };
 
       this.applySizer = new HorizontalSizer;
-      this.applySizer.addSpacing( this.dialog.labelWidth1 + 4 );
+      this.applySizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
       this.applySizer.add( this.applyCheckBox );
       this.applySizer.addStretch();
 
@@ -428,7 +428,7 @@ function BiasOverscanControl( parent )
    };
 
    this.applySizer = new HorizontalSizer;
-   this.applySizer.addSpacing( this.dialog.labelWidth1 + 4 );
+   this.applySizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.applySizer.add( this.applyCheckBox );
    this.applySizer.addStretch();
 
@@ -436,7 +436,7 @@ function BiasOverscanControl( parent )
 
    this.editButton = new PushButton( this );
    this.editButton.text = "Overscan parameters...";
-   this.editButton.icon = ":/icons/arrow-right.png";
+   this.editButton.icon = this.scaledResource( ":/icons/arrow-right.png" );
    this.editButton.toolTip = "<p>Edit overscan parameters.</p>";
    this.editButton.onClick = function()
    {
@@ -445,7 +445,7 @@ function BiasOverscanControl( parent )
    };
 
    this.editSizer = new HorizontalSizer;
-   this.editSizer.addSpacing( this.dialog.labelWidth1 + 4 );
+   this.editSizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.editSizer.add( this.editButton );
    this.editSizer.addStretch();
 
@@ -560,7 +560,7 @@ function ImageIntegrationControl( parent, imageType, expand )
    this.minMaxLowSpinBox = new SpinBox( this );
    this.minMaxLowSpinBox.minValue = 0;
    this.minMaxLowSpinBox.maxValue = 100;
-   this.minMaxLowSpinBox.setFixedWidth( this.dialog.numericEditWidth + 16 );
+   this.minMaxLowSpinBox.setFixedWidth( this.dialog.numericEditWidth + this.logicalPixelsToPhysical( 16 ) );
    this.minMaxLowSpinBox.toolTip = "<p>Number of low (dark) pixels to be rejected by the min/max algorithm.</p>";
    this.minMaxLowSpinBox.onValueUpdated = function( value )
    {
@@ -586,7 +586,7 @@ function ImageIntegrationControl( parent, imageType, expand )
    this.minMaxHighSpinBox = new SpinBox( this );
    this.minMaxHighSpinBox.minValue = 0;
    this.minMaxHighSpinBox.maxValue = 100;
-   this.minMaxHighSpinBox.setFixedWidth( this.dialog.numericEditWidth + 16 );
+   this.minMaxHighSpinBox.setFixedWidth( this.dialog.numericEditWidth + this.logicalPixelsToPhysical( 16 ) );
    this.minMaxHighSpinBox.toolTip = "<p>Number of high (bright) pixels to be rejected by the min/max algorithm.</p>";
    this.minMaxHighSpinBox.onValueUpdated = function( value )
    {
@@ -609,7 +609,7 @@ function ImageIntegrationControl( parent, imageType, expand )
    this.percentileLowControl.label.minWidth = this.dialog.labelWidth1;
    this.percentileLowControl.setRange( 0, 1 );
    this.percentileLowControl.slider.setRange( 0, 1000 );
-   this.percentileLowControl.slider.minWidth = 200;
+   this.percentileLowControl.slider.scaledMinWidth = 200;
    this.percentileLowControl.setPrecision( 2 );
    this.percentileLowControl.edit.setFixedWidth( this.dialog.numericEditWidth );
    this.percentileLowControl.toolTip = "<p>Low clipping factor for the percentile clipping rejection algorithm.</p>";
@@ -625,7 +625,7 @@ function ImageIntegrationControl( parent, imageType, expand )
    this.percentileHighControl.label.minWidth = this.dialog.labelWidth1;
    this.percentileHighControl.setRange( 0, 1 );
    this.percentileHighControl.slider.setRange( 0, 1000 );
-   this.percentileHighControl.slider.minWidth = 200;
+   this.percentileHighControl.slider.scaledMinWidth = 200;
    this.percentileHighControl.setPrecision( 2 );
    this.percentileHighControl.edit.setFixedWidth( this.dialog.numericEditWidth );
    this.percentileHighControl.toolTip = "<p>High clipping factor for the percentile clipping rejection algorithm.</p>";
@@ -641,7 +641,7 @@ function ImageIntegrationControl( parent, imageType, expand )
    this.sigmaLowControl.label.minWidth = this.dialog.labelWidth1;
    this.sigmaLowControl.setRange( 0, 10 );
    this.sigmaLowControl.slider.setRange( 0, 1000 );
-   this.sigmaLowControl.slider.minWidth = 200;
+   this.sigmaLowControl.slider.scaledMinWidth = 200;
    this.sigmaLowControl.setPrecision( 2 );
    this.sigmaLowControl.setValue( 4.0 );
    this.sigmaLowControl.edit.setFixedWidth( this.dialog.numericEditWidth );
@@ -658,7 +658,7 @@ function ImageIntegrationControl( parent, imageType, expand )
    this.sigmaHighControl.label.minWidth = this.dialog.labelWidth1;
    this.sigmaHighControl.setRange ( 0, 10 );
    this.sigmaHighControl.slider.setRange( 0, 1000 );
-   this.sigmaHighControl.slider.minWidth = 200;
+   this.sigmaHighControl.slider.scaledMinWidth = 200;
    this.sigmaHighControl.setPrecision( 2 );
    this.sigmaHighControl.setValue( 2.0 );
    this.sigmaHighControl.edit.setFixedWidth( this.dialog.numericEditWidth );
@@ -675,7 +675,7 @@ function ImageIntegrationControl( parent, imageType, expand )
    this.linearFitLowControl.label.minWidth = this.dialog.labelWidth1;
    this.linearFitLowControl.setRange( 0, 10 );
    this.linearFitLowControl.slider.setRange( 0, 1000 );
-   this.linearFitLowControl.slider.minWidth = 200;
+   this.linearFitLowControl.slider.scaledMinWidth = 200;
    this.linearFitLowControl.setPrecision( 2 );
    this.linearFitLowControl.setValue( 5.0 );
    this.linearFitLowControl.edit.setFixedWidth( this.dialog.numericEditWidth );
@@ -692,7 +692,7 @@ function ImageIntegrationControl( parent, imageType, expand )
    this.linearFitHighControl.label.minWidth = this.dialog.labelWidth1;
    this.linearFitHighControl.setRange( 0, 10 );
    this.linearFitHighControl.slider.setRange( 0, 1000 );
-   this.linearFitHighControl.slider.minWidth = 200;
+   this.linearFitHighControl.slider.scaledMinWidth = 200;
    this.linearFitHighControl.setPrecision( 2 );
    this.linearFitHighControl.setValue( 2.5 );
    this.linearFitHighControl.edit.setFixedWidth( this.dialog.numericEditWidth );
@@ -792,7 +792,7 @@ function CosmeticCorrectionControl( parent )
    };
 
    this.applySizer = new HorizontalSizer;
-   this.applySizer.addSpacing( this.dialog.labelWidth1 + 4 );
+   this.applySizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.applySizer.add( this.applyCheckBox );
    this.applySizer.addStretch();
 
@@ -870,7 +870,7 @@ function DeBayerControl( parent )
    };
 
    this.bayerDrizzleSizer = new HorizontalSizer;
-   this.bayerDrizzleSizer.addSpacing( this.dialog.labelWidth1 + 4 );
+   this.bayerDrizzleSizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.bayerDrizzleSizer.add( this.bayerDrizzleCheckBox );
    this.bayerDrizzleSizer.addStretch();
 
@@ -977,7 +977,7 @@ function ImageRegistrationControl( parent, expand )
    this.clampingThresholdControl.label.minWidth = this.dialog.labelWidth1;
    this.clampingThresholdControl.setRange( 0, 1 );
    this.clampingThresholdControl.slider.setRange( 0, 1000 );
-   this.clampingThresholdControl.slider.minWidth = 200;
+   this.clampingThresholdControl.slider.scaledMinWidth = 200;
    this.clampingThresholdControl.setPrecision( 2 );
    this.clampingThresholdControl.setValue( engine.clampingThreshold );
    this.clampingThresholdControl.edit.setFixedWidth( this.dialog.numericEditWidth );
@@ -1060,7 +1060,7 @@ function ImageRegistrationControl( parent, expand )
    };
 
    this.useTriangleSimilaritySizer = new HorizontalSizer;
-   this.useTriangleSimilaritySizer.addSpacing( this.dialog.labelWidth1 + 4 );
+   this.useTriangleSimilaritySizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.useTriangleSimilaritySizer.add( this.useTriangleSimilarityCheckBox );
    this.useTriangleSimilaritySizer.addStretch();
 
@@ -1105,7 +1105,7 @@ function LightsIntegrationControl( parent )
    };
 
    this.applySizer = new HorizontalSizer;
-   this.applySizer.addSpacing( this.dialog.labelWidth1 + 4 );
+   this.applySizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.applySizer.add( this.applyCheckBox );
    this.applySizer.addStretch();
 
@@ -1113,7 +1113,7 @@ function LightsIntegrationControl( parent )
 
    this.editButton = new PushButton( this );
    this.editButton.text = "Integration parameters...";
-   this.editButton.icon = ":/icons/arrow-right.png";
+   this.editButton.icon = this.scaledResource( ":/icons/arrow-right.png" );
    this.editButton.toolTip = "<p>Edit image integration parameters.</p>";
    this.editButton.onClick = function()
    {
@@ -1122,7 +1122,7 @@ function LightsIntegrationControl( parent )
    };
 
    this.editSizer = new HorizontalSizer;
-   this.editSizer.addSpacing( this.dialog.labelWidth1 + 4 );
+   this.editSizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.editSizer.add( this.editButton, 100 );
 
    //
@@ -1162,7 +1162,7 @@ function LightsRegistrationControl( parent )
    };
 
    this.generateDrizzleDataSizer = new HorizontalSizer;
-   this.generateDrizzleDataSizer.addSpacing( this.dialog.labelWidth1 + 4 );
+   this.generateDrizzleDataSizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.generateDrizzleDataSizer.add( this.generateDrizzleDataCheckBox );
    this.generateDrizzleDataSizer.addStretch();
 
@@ -1170,7 +1170,7 @@ function LightsRegistrationControl( parent )
 
    this.editButton = new PushButton( this );
    this.editButton.text = "Registration parameters...";
-   this.editButton.icon = ":/icons/arrow-right.png";
+   this.editButton.icon = this.scaledResource( ":/icons/arrow-right.png" );
    this.editButton.toolTip = "<p>Edit image registration parameters.</p>";
    this.editButton.onClick = function()
    {
@@ -1179,7 +1179,7 @@ function LightsRegistrationControl( parent )
    };
 
    this.editSizer = new HorizontalSizer;
-   this.editSizer.addSpacing( this.dialog.labelWidth1 + 4 );
+   this.editSizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.editSizer.add( this.editButton, 100 );
 
    //
@@ -1210,13 +1210,13 @@ function FileControl( parent, imageType )
    this.treeBox.multipleSelection = true;
    this.treeBox.numberOfColumns = 1;
    this.treeBox.headerVisible = false;
-   this.treeBox.setMinWidth( 250 );
+   this.treeBox.setScaledMinWidth( 250 );
 
    //
 
    this.clearButton = new PushButton( this );
    this.clearButton.text = "Clear";
-   this.clearButton.icon = ":/icons/clear.png";
+   this.clearButton.icon = this.scaledResource( ":/icons/clear.png" );
    this.clearButton.toolTip = "<p>Clear the current list of input files.</p>";
    this.clearButton.onClick = function()
    {
@@ -1225,7 +1225,7 @@ function FileControl( parent, imageType )
 
    this.removeSelectedButton = new PushButton( this );
    this.removeSelectedButton.text = "Remove Selected";
-   this.removeSelectedButton.icon = ":/icons/clear.png";
+   this.removeSelectedButton.icon = this.scaledResource( ":/icons/clear.png" );
    this.removeSelectedButton.toolTip = "<p>Remove selected items in the current list of input files.</p>";
    this.removeSelectedButton.onClick = function()
    {
@@ -1252,7 +1252,7 @@ function FileControl( parent, imageType )
 
    this.invertSelectionButton = new PushButton( this );
    this.invertSelectionButton.text = "Invert Selection";
-   this.invertSelectionButton.icon = ":/icons/select-invert.png";
+   this.invertSelectionButton.icon = this.scaledResource( ":/icons/select-invert.png" );
    this.invertSelectionButton.toolTip = "<p>Invert selected items in the current list of input files.</p>";
    this.invertSelectionButton.onClick = function()
    {
@@ -1303,10 +1303,11 @@ function FileControl( parent, imageType )
 
       this.darkOptimizationThresholdControl = new NumericControl( this );
       this.darkOptimizationThresholdControl.label.text = "Optimization threshold:";
-      this.darkOptimizationThresholdControl.label.minWidth = this.dialog.labelWidth1 + 6; // + integration control margin
+      this.darkOptimizationThresholdControl.label.minWidth = this.dialog.labelWidth1
+                                          + this.dialog.logicalPixelsToPhysical( 6 ); // + integration control margin
       this.darkOptimizationThresholdControl.setRange( 0, 0.5 );
       this.darkOptimizationThresholdControl.slider.setRange( 0, 250 );
-      //this.darkOptimizationThresholdControl.slider.minWidth = 200;
+      //this.darkOptimizationThresholdControl.slider.scaledMinWidth = 200;
       this.darkOptimizationThresholdControl.setPrecision( 5 );
       this.darkOptimizationThresholdControl.toolTip = "<p>Lower bound for the subset of dark optimization pixels. " +
          "Set to zero (the default value) to optimize for the whole master dark frame. Set to a value greater than " +
@@ -1324,13 +1325,14 @@ function FileControl( parent, imageType )
 
       this.darkOptimizationWindowLabel = new Label( this );
       this.darkOptimizationWindowLabel.text = "Optimization window:";
-      this.darkOptimizationWindowLabel.minWidth = this.dialog.labelWidth1 + 6; // + integration control margin
+      this.darkOptimizationWindowLabel.minWidth = this.dialog.labelWidth1
+                                          + this.dialog.logicalPixelsToPhysical( 6 ); // + integration control margin
       this.darkOptimizationWindowLabel.textAlignment = TextAlign_Right|TextAlign_VertCenter;
 
       this.darkOptimizationWindowSpinBox = new SpinBox( this );
       this.darkOptimizationWindowSpinBox.minValue = 0;
       this.darkOptimizationWindowSpinBox.maxValue = 65536;
-      this.darkOptimizationWindowSpinBox.setFixedWidth( this.dialog.numericEditWidth + 16 );
+      this.darkOptimizationWindowSpinBox.setFixedWidth( this.dialog.numericEditWidth + this.logicalPixelsToPhysical( 16 ) );
       this.darkOptimizationWindowSpinBox.toolTip = "<p>This parameter is the size in pixels of a square region " +
          "used to compute noise estimates during the dark optimization procedure. The square region is centered " +
          "on each target image. By default, a <i>window</i> of one megapixel (1024x1024 pixels) is used.</p>" +
@@ -1358,13 +1360,14 @@ function FileControl( parent, imageType )
 
       this.darkExposureToleranceLabel = new Label( this );
       this.darkExposureToleranceLabel.text = "Exposure tolerance:";
-      this.darkExposureToleranceLabel.minWidth = this.dialog.labelWidth1 + 6; // + integration control margin
+      this.darkExposureToleranceLabel.minWidth = this.dialog.labelWidth1
+                                          + this.dialog.logicalPixelsToPhysical( 6 ); // + integration control margin
       this.darkExposureToleranceLabel.textAlignment = TextAlign_Right|TextAlign_VertCenter;
 
       this.darkExposureToleranceSpinBox = new SpinBox( this );
       this.darkExposureToleranceSpinBox.minValue = 0;
       this.darkExposureToleranceSpinBox.maxValue = 600;
-      this.darkExposureToleranceSpinBox.setFixedWidth( this.dialog.numericEditWidth + 16 );
+      this.darkExposureToleranceSpinBox.setFixedWidth( this.dialog.numericEditWidth + this.logicalPixelsToPhysical( 16 ) );
       this.darkExposureToleranceSpinBox.toolTip = "<p>Dark frames with exposure times differing less than this value " +
          "(in seconds) will be grouped together.</p>";
       this.darkExposureToleranceSpinBox.onValueUpdated = function( value )
@@ -1413,7 +1416,7 @@ function FileControl( parent, imageType )
       };
 
       this.calibrateOnlySizer = new HorizontalSizer;
-      this.calibrateOnlySizer.addSpacing( this.dialog.labelWidth1 + 4 + 6 ); // + spacing + integration control margin
+      this.calibrateOnlySizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4+6 ) ); // + spacing + integration control margin
       this.calibrateOnlySizer.add( this.calibrateOnlyCheckBox );
       this.calibrateOnlySizer.addStretch();
 
@@ -1449,8 +1452,6 @@ function FileControl( parent, imageType )
    this.sizer.add( this.treeBox, 100 );
    this.sizer.addSpacing( 12 );
    this.sizer.add( this.rightPanelSizer );
-
-   this.adjustToContents();
 }
 
 FileControl.prototype = new Control;
@@ -1480,7 +1481,7 @@ function ResetDialog()
    this.okButton = new PushButton( this );
    this.okButton.defaultButton = true;
    this.okButton.text = "OK";
-   this.okButton.icon = ":/icons/ok.png";
+   this.okButton.icon = this.scaledResource( ":/icons/ok.png" );
    this.okButton.onClick = function()
    {
       this.dialog.ok();
@@ -1488,7 +1489,7 @@ function ResetDialog()
 
    this.cancelButton = new PushButton( this );
    this.cancelButton.text = "Cancel";
-   this.cancelButton.icon = ":/icons/cancel.png";
+   this.cancelButton.icon = this.scaledResource( ":/icons/cancel.png" );
    this.cancelButton.onClick = function()
    {
       this.dialog.cancel();
@@ -1541,11 +1542,11 @@ function SelectCustomFilesDialog()
    this.fileList = new StyledTreeBox( this );
    this.fileList.numberOfColumns = 1;
    this.fileList.headerVisible = false;
-   this.fileList.setMinSize( 400, 250 );
+   this.fileList.setScaledMinSize( 400, 250 );
 
    this.addButton = new PushButton( this );
    this.addButton.text = "Add Files";
-   this.addButton.icon = ":/icons/add.png";
+   this.addButton.icon = this.scaledResource( ":/icons/add.png" );
    this.addButton.toolTip = "<p>Add files to the input files list.</p>";
    this.addButton.onClick = function()
    {
@@ -1563,7 +1564,7 @@ function SelectCustomFilesDialog()
 
    this.clearButton = new PushButton( this );
    this.clearButton.text = "Clear";
-   this.clearButton.icon = ":/icons/clear.png";
+   this.clearButton.icon = this.scaledResource( ":/icons/clear.png" );
    this.clearButton.toolTip = "<p>Clear the curent list of input files.</p>";
    this.clearButton.onClick = function()
    {
@@ -1572,7 +1573,7 @@ function SelectCustomFilesDialog()
    };
 
    this.fileButtonsSizer = new HorizontalSizer;
-   this.fileButtonsSizer.addSpacing( labelWidth1+4 );
+   this.fileButtonsSizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.fileButtonsSizer.add( this.addButton );
    this.fileButtonsSizer.addSpacing( 8 );
    this.fileButtonsSizer.add( this.clearButton );
@@ -1675,7 +1676,7 @@ function SelectCustomFilesDialog()
    this.okButton = new PushButton( this );
    this.okButton.defaultButton = true;
    this.okButton.text = "OK";
-   this.okButton.icon = ":/icons/ok.png";
+   this.okButton.icon = this.scaledResource( ":/icons/ok.png" );
    this.okButton.onClick = function()
    {
       this.dialog.ok();
@@ -1683,14 +1684,14 @@ function SelectCustomFilesDialog()
 
    this.cancelButton = new PushButton( this );
    this.cancelButton.text = "Cancel";
-   this.cancelButton.icon = ":/icons/cancel.png";
+   this.cancelButton.icon = this.scaledResource( ":/icons/cancel.png" );
    this.cancelButton.onClick = function()
    {
       this.dialog.cancel();
    };
 
    this.buttonsSizer = new HorizontalSizer;
-   this.buttonsSizer.addStretch();
+   this.buttonsSizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.buttonsSizer.add( this.okButton );
    this.buttonsSizer.addSpacing( 8 );
    this.buttonsSizer.add( this.cancelButton );
@@ -1741,7 +1742,7 @@ function StackDialog()
    this.numericEditWidth = 6 * this.font.width( "0" );
    this.suffixEditWidth = 10 * this.font.width( "M" );
 
-   this.setMinHeight( 500 );
+   this.setScaledMinHeight( 500 );
 
    // Force an update of all dialog styling properties (fonts, colors, margins,
    // etc.). This is necessary in this case to ensure proper styling of complex
@@ -1757,12 +1758,13 @@ function StackDialog()
    this.helpLabel.text =
       "<p>A script for calibration and alignment of light frames<br/>"
     + "Copyright (c) 2012 Kai Wiechen.<br/>"
-    + "Copyright (c) 2012-2014 Pleiades Astrophoto.</p>";
+    + "Copyright (c) 2012-2015 Pleiades Astrophoto.</p>";
 
    //
 
    this.helpButton = new ToolButton( this );
-   this.helpButton.icon = ":/icons/comment.png";
+   this.helpButton.icon = this.scaledResource( ":/icons/comment.png" );
+   this.helpButton.setScaledFixedSize( 20, 20 );
    this.helpButton.toolTip =
      "<p><b>1.</b> Select the Bias tab and load either raw bias frames or a master bias (check <i>Use master bias</i> if so).</p>"
    + "<p><b>2.</b> Select the Darks tab and repeat the process in step 1.</p>"
@@ -1781,6 +1783,7 @@ function StackDialog()
    this.tabBox.addPage( new FileControl( this, ImageType.DARK ),  "Darks" );
    this.tabBox.addPage( new FileControl( this, ImageType.FLAT ),  "Flats" );
    this.tabBox.addPage( new FileControl( this, ImageType.LIGHT ), "Lights" );
+   this.tabBox.currentPageIndex = 3;
 
    // Handle click on file name -> set registration reference image
    this.tabBox.pageControlByIndex( ImageType.LIGHT ).treeBox.onNodeDoubleClicked = function( node, column )
@@ -1799,7 +1802,8 @@ function StackDialog()
    //
 
    this.newInstanceButton = new ToolButton( this );
-   this.newInstanceButton.icon = ":/process-interface/new-instance.png";
+   this.newInstanceButton.icon = this.scaledResource( ":/process-interface/new-instance.png" );
+   this.newInstanceButton.setScaledFixedSize( 24, 24 );
    this.newInstanceButton.toolTip = "New Instance";
    this.newInstanceButton.onMousePress = function()
    {
@@ -1813,7 +1817,7 @@ function StackDialog()
 
    this.fileAddButton = new PushButton( this );
    this.fileAddButton.text = "Add Files";
-   this.fileAddButton.icon = ":/icons/add.png";
+   this.fileAddButton.icon = this.scaledResource( ":/icons/add.png" );
    this.fileAddButton.toolTip = "<p>Add files to the input files list.</p>" +
          "<p>Image types will be selected automatically based on FITS keywords.</p>";
    this.fileAddButton.onClick = function()
@@ -1841,7 +1845,7 @@ function StackDialog()
 
    this.biasAddButton = new PushButton( this );
    this.biasAddButton.text = "Add Bias";
-   this.biasAddButton.icon = ":/icons/add.png";
+   this.biasAddButton.icon = this.scaledResource( ":/icons/add.png" );
    this.biasAddButton.toolTip = "<p>Add files to the input bias frames list.</p>" +
          "<p>Files will be added as bias frames unconditionally - no keyword checks will be performed.</p>";
    this.biasAddButton.onClick = function()
@@ -1870,7 +1874,7 @@ function StackDialog()
 
    this.darkAddButton = new PushButton( this );
    this.darkAddButton.text = "Add Darks";
-   this.darkAddButton.icon = ":/icons/add.png";
+   this.darkAddButton.icon = this.scaledResource( ":/icons/add.png" );
    this.darkAddButton.toolTip = "<p>Add files to the input dark frames list.</p>" +
          "<p>Files will be added as dark frames unconditionally - no keyword checks will be performed.</p>";
    this.darkAddButton.onClick = function()
@@ -1899,7 +1903,7 @@ function StackDialog()
 
    this.flatAddButton = new PushButton( this );
    this.flatAddButton.text = "Add Flats";
-   this.flatAddButton.icon = ":/icons/add.png";
+   this.flatAddButton.icon = this.scaledResource( ":/icons/add.png" );
    this.flatAddButton.toolTip = "<p>Add files to the input flat frames list.</p>" +
          "<p>Files will be added as flat frames unconditionally - no keyword checks will be performed.</p>";
    this.flatAddButton.onClick = function()
@@ -1928,7 +1932,7 @@ function StackDialog()
 
    this.lightAddButton = new PushButton( this );
    this.lightAddButton.text = "Add Lights";
-   this.lightAddButton.icon = ":/icons/add.png";
+   this.lightAddButton.icon = this.scaledResource( ":/icons/add.png" );
    this.lightAddButton.toolTip = "<p>Add files to the input light frames list.</p>" +
          "<p>Files will be added as light frames unconditionally - no keyword checks will be performed.</p>";
    this.lightAddButton.onClick = function()
@@ -1957,7 +1961,7 @@ function StackDialog()
 
    this.customAddButton = new PushButton( this );
    this.customAddButton.text = "Add Custom";
-   this.customAddButton.icon = ":/icons/document-edit.png";
+   this.customAddButton.icon = this.scaledResource( ":/icons/document-edit.png" );
    this.customAddButton.toolTip = "<p>Add custom files to the input custom frames list.</p>";
    this.customAddButton.onClick = function()
    {
@@ -1984,7 +1988,7 @@ function StackDialog()
 
    this.resetButton = new PushButton( this );
    this.resetButton.text = "Reset";
-   this.resetButton.icon = ":/icons/reload.png";
+   this.resetButton.icon = this.scaledResource( ":/icons/reload.png" );
    this.resetButton.toolTip = "<p>Perform optional reset and clearing actions.</p>";
    this.resetButton.onClick = function()
    {
@@ -2006,7 +2010,7 @@ function StackDialog()
    this.diagnosticsButton = new PushButton( this );
    this.diagnosticsButton.defaultButton = true;
    this.diagnosticsButton.text = "Diagnostics";
-   this.diagnosticsButton.icon = ":/icons/gear.png";
+   this.diagnosticsButton.icon = this.scaledResource( ":/icons/gear.png" );
    this.diagnosticsButton.toolTip = "<p>Check validity of selected files and processes.</p>";
    this.diagnosticsButton.onClick = function()
    {
@@ -2024,7 +2028,7 @@ function StackDialog()
 
    this.runButton = new PushButton( this );
    this.runButton.text = "Run";
-   this.runButton.icon = ":/icons/power.png";
+   this.runButton.icon = this.scaledResource( ":/icons/power.png" );
    this.runButton.onClick = function()
    {
       this.dialog.ok();
@@ -2032,7 +2036,7 @@ function StackDialog()
 
    this.exitButton = new PushButton( this );
    this.exitButton.text = "Exit";
-   this.exitButton.icon = ":/icons/close.png";
+   this.exitButton.icon = this.scaledResource( ":/icons/close.png" );
    this.exitButton.onClick = function()
    {
       this.dialog.cancel();
@@ -2198,7 +2202,8 @@ function StackDialog()
    };
 
    this.referenceImageSelectButton = new ToolButton( this );
-   this.referenceImageSelectButton.icon = ":/icons/select-file.png";
+   this.referenceImageSelectButton.icon = this.scaledResource( ":/icons/select-file.png" );
+   this.referenceImageSelectButton.setScaledFixedSize( 20, 20 );
    this.referenceImageSelectButton.toolTip = "<p>Select the image registration reference image file.</p>";
    this.referenceImageSelectButton.onClick = function()
    {
@@ -2240,7 +2245,8 @@ function StackDialog()
    };
 
    this.outputDirSelectButton = new ToolButton( this );
-   this.outputDirSelectButton.icon = ":/icons/select-file.png";
+   this.outputDirSelectButton.icon = this.scaledResource( ":/icons/select-file.png" );
+   this.outputDirSelectButton.setScaledFixedSize( 20, 20 );
    this.outputDirSelectButton.toolTip = "<p>Select the output root directory.</p>";
    this.outputDirSelectButton.onClick = function()
    {
@@ -2321,7 +2327,7 @@ function StackDialog()
 
    this.windowTitle = TITLE + " v" + VERSION;
    this.adjustToContents();
-   this.setMinSize( this.width, this.height+8 );
+   this.setMinSize( this.width, this.height + this.logicalPixelsToPhysical( 8 ) );
 }
 
 StackDialog.prototype = new Dialog;
@@ -2475,7 +2481,7 @@ StackDialog.prototype.refreshTreeBoxes = function()
                break;
             }
          if ( !icon.isEmpty() )
-            node.setIcon( 0, new Bitmap( icon ) );
+            node.setIcon( 0, this.scaledResource( icon ) );
 
          node.nodeData_type = "FileItem";
          node.nodeData_index = j;
@@ -2484,5 +2490,5 @@ StackDialog.prototype.refreshTreeBoxes = function()
    }
 };
 
-// ****************************************************************************
-// EOF BatchPreprocessing-GUI.js - Released 2014/11/30 11:42:43 UTC
+// ----------------------------------------------------------------------------
+// EOF BatchPreprocessing-GUI.js - Released 2015/07/22 16:32:44 UTC

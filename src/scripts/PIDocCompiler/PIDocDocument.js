@@ -1,8 +1,8 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// PIDocDocument.js - Released 2015/01/18 20:22:19 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// PIDocDocument.js - Released 2015/07/22 16:40:31 UTC
+// ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Documentation Compiler
@@ -2783,5 +2783,5 @@ PIDocDocument.prototype = new Object;
  */
 var document = new PIDocDocument;
 
-// ****************************************************************************
-// EOF PIDocDocument.js - Released 2015/01/18 20:22:19 UTC
+// ----------------------------------------------------------------------------
+// EOF PIDocDocument.js - Released 2015/07/22 16:40:31 UTC

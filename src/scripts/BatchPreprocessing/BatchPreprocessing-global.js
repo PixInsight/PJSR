@@ -1,13 +1,13 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// BatchPreprocessing-global.js - Released 2014/11/30 11:42:43 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// BatchPreprocessing-global.js - Released 2015/07/22 16:32:44 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.38
+// This file is part of Batch Preprocessing Script version 1.41
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * Global declarations and variables
@@ -53,7 +53,7 @@
 
 // ----------------------------------------------------------------------------
 
-#define VERSION   "1.38"
+#define VERSION   "1.41"
 
 #define TITLE     "Batch Preprocessing Script"
 
@@ -61,5 +61,5 @@
 
 var ImageType = { UNKNOWN : -1, BIAS : 0, DARK : 1, FLAT : 2, LIGHT : 3 };
 
-// ****************************************************************************
-// EOF BatchPreprocessing-global.js - Released 2014/11/30 11:42:43 UTC
+// ----------------------------------------------------------------------------
+// EOF BatchPreprocessing-global.js - Released 2015/07/22 16:32:44 UTC

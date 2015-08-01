@@ -1,13 +1,16 @@
-// ****************************************************************************
-// PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// pjsr/Color.jsh - Released 2014/10/29 08:14:02 UTC
-// ****************************************************************************
+//     ____       __ _____  ____
+//    / __ \     / // ___/ / __ \
+//   / /_/ /__  / / \__ \ / /_/ /
+//  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
+// /_/     \____/ /____//_/ |_|    PJSR Version 1.0
+// ----------------------------------------------------------------------------
+// pjsr/Color.jsh - Released 2015/07/23 10:07:13 UTC
+// ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,11 +48,16 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #ifndef __PJSR_Color_jsh
 #define __PJSR_Color_jsh
 
+/*
+ * Color
+ *
+ * Provides static methods and constants for dealing with 32-bit ARGB colors.
+ */
 function Color()
 {
    this.__base__ = Object;
@@ -203,5 +211,5 @@ Color.BLUE        = 0xff0000ff;
 
 #endif   // __PJSR_Color_jsh
 
-// ****************************************************************************
-// EOF pjsr/Color.jsh - Released 2014/10/29 08:14:02 UTC
+// ----------------------------------------------------------------------------
+// EOF pjsr/Color.jsh - Released 2015/07/23 10:07:13 UTC

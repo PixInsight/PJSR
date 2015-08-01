@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// MathTranClient.js - Released 2013/01/21 19:40:44 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// MathTranClient.js - Released 2015/07/22 16:37:17 UTC
+// ----------------------------------------------------------------------------
 //
 // This file is part of MathTran Client Script version 1.2
 //
-// Copyright (c) 2009-2013 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * MathTranClient v1.2
@@ -53,7 +53,7 @@
  * public web service. MathTran is funded by the Joint Information Systems
  * Committee (JISC) and is run by the Open University in the United Kingdom.
  *
- * Copyright (C) 2009-2013 Pleiades Astrophoto S.L.
+ * Copyright (C) 2009-2015 Pleiades Astrophoto S.L.
  * Written by Juan Conejero (PTeam)
  *
  * ****************************************************************************
@@ -77,7 +77,7 @@
    rendition into an image window.<br/>\
    <br/>\
    Written by Juan Conejero (PTeam)<br/>\
-   Copyright &copy; 2009-2013 Pleiades Astrophoto S.L.
+   Copyright &copy; 2009-2015 Pleiades Astrophoto S.L.
 
 #feature-icon  MathTranClient.xpm
 
@@ -284,7 +284,7 @@ function TeXRenderControl( parent )
    {
       this.initScrollBars();
       this.viewport.repaint();
-   }
+   };
 
    this.initScrollBars = function()
    {
@@ -337,10 +337,10 @@ function MathTranClientDialog()
          "script to render " + TeXAsCSS( this.help_Label ) + " content as images through " +
          "the MathTran public web service. MathTran is funded by the Joint Information " +
          "Systems Committee (JISC) and run by the Open University in the United Kingdom.</p>" +
-         "<p>Copyright &copy; 2009-2013 Pleiades Astrophoto</p>";
+         "<p>Copyright &copy; 2009-2015 Pleiades Astrophoto</p>";
 
    this.texRender_Control = new TeXRenderControl( this );
-   this.texRender_Control.setMinSize( 450, 200 );
+   this.texRender_Control.setScaledMinSize( 450, 200 );
 
    this.new_Button = new PushButton( this );
    this.new_Button.text = "New Image";
@@ -358,7 +358,7 @@ function MathTranClientDialog()
    };
 
    this.imageId_Label = new Label( this );
-   this.imageId_Label.text = "View ID:";
+   this.imageId_Label.text = "View identifier:";
    this.imageId_Label.toolTip = "<p>Identifier of the TeX rendition image.</p>";
    this.imageId_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
 
@@ -366,12 +366,12 @@ function MathTranClientDialog()
    this.imageId_Edit.onGetFocus = function()
    {
       var s = this.text.trim();
-      text = (s == "<Auto>") ? "" : validViewId( s );
+      this.text = (s == "<Auto>") ? "" : validViewId( s );
    };
    this.imageId_Edit.onLoseFocus = function()
    {
       var s = this.text.trim();
-      text = (s.length == 0) ? "<Auto>" : validViewId( s );
+      this.text = (s.length == 0) ? "<Auto>" : validViewId( s );
    };
    this.imageId_Edit.onEditCompleted = function()
    {
@@ -410,17 +410,13 @@ function MathTranClientDialog()
 
    this.texEditor_TextBox = new TextBox( this );
    this.texEditor_TextBox.text = engine.TeX;
-   this.texEditor_TextBox.setMinSize( 450, 200 );
-   this.texEditor_TextBox.font = new Font( FontFamily_Monospace,
-#ifeq __PI_PLATFORM__ MACOSX
-                                           12
-#else
-                                           10
-#endif
-                                         );
+   this.texEditor_TextBox.setScaledMinSize( 450, 200 );
+   this.texEditor_TextBox.styleSheet = this.scaledStyleSheet(
+      "QWidget { font-family: DejaVu Sans Mono, monospace; font-size: 10pt; }" );
 
    this.newInstance_Button = new ToolButton( this );
-   this.newInstance_Button.icon = new Bitmap( ":/process-interface/new-instance.png" );
+   this.newInstance_Button.icon = this.scaledResource( ":/process-interface/new-instance.png" );
+   this.newInstance_Button.setScaledFixedSize( 24, 24 );
    this.newInstance_Button.toolTip = "New Instance";
    this.newInstance_Button.onMousePress = function()
    {
@@ -433,7 +429,6 @@ function MathTranClientDialog()
 
    this.render_Button = new PushButton( this );
    this.render_Button.text = "Render";
-   this.render_Button.cursor = new Cursor( StdCursor_Checkmark );
    this.render_Button.toolTip = "<p>Render the current TeX source code by sending a " +
       "request to the MathTran public web service.</p>"
    this.render_Button.defaultButton = true;
@@ -446,8 +441,7 @@ function MathTranClientDialog()
       // Check for empty TeX source code
       if ( engine.TeX.length == 0 )
       {
-         (new MessageBox( "Empty TeX source code.",
-                          TITLE, StdIcon_Error, StdButton_Ok )).execute();
+         (new MessageBox( "Empty TeX source code.", TITLE, StdIcon_Error, StdButton_Ok )).execute();
          return;
       }
 
@@ -487,7 +481,6 @@ function MathTranClientDialog()
 
    this.exit_Button = new PushButton( this );
    this.exit_Button.text = "Exit";
-   this.exit_Button.cursor = new Cursor( StdCursor_Crossmark );
    this.exit_Button.onClick = function()
    {
       this.dialog.ok();
@@ -539,5 +532,5 @@ function main()
 
 main();
 
-// ****************************************************************************
-// EOF MathTranClient.js - Released 2013/01/21 19:40:44 UTC
+// ----------------------------------------------------------------------------
+// EOF MathTranClient.js - Released 2015/07/22 16:37:17 UTC

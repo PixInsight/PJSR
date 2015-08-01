@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// MakGenGenerators.js - Released 2014/10/15 17:07:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// MakGenGenerators.js - Released 2015/07/29 23:22:54 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.93
+// This file is part of PixInsight Makefile Generator Script version 1.95
 //
-// Copyright (c) 2009-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Makefile Generator
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Makefile generation
@@ -105,14 +105,6 @@ function GenerateAll( files, parameters, with32Bit/*optional, undefined by defau
    }
    GnuCxxAll( files, parameters );
 
-   // Mac OS X <= 10.8 no longer supported.
-   parameters.platform = "MacOSX106";
-   if ( parameters.cleanUpPreviousBuilds )
-   {
-      var d = parameters.platformBuildDirectory( files.baseDirectory );
-      if ( File.directoryExists( d ) )
-         removeDirectory( d );
-   }
    /*
    parameters.architecture = "x64";
    GnuCxx( files, parameters );
@@ -162,6 +154,7 @@ function GenerateCoreMakefiles()
    var parameters = new GeneratorParameters();
    parameters.id = "PixInsight";
    parameters.type = "Core";
+   parameters.official = true;
    parameters.gccOptimization = "3";
 
    GenerateAll( files, parameters );
@@ -181,6 +174,7 @@ function GenerateUpdater1Makefiles()
    var parameters = new GeneratorParameters();
    parameters.id = "PixInsightUpdater";
    parameters.type = "Executable";
+   parameters.official = true;
    parameters.gccOptimization = "s";
    parameters.uacAdmin = true;  // updater1 requires administrative privileges on Windows
 
@@ -201,6 +195,7 @@ function GenerateUpdater2Makefiles()
    var parameters = new GeneratorParameters();
    parameters.id = "updater2";
    parameters.type = "Executable";
+   parameters.official = true;
    parameters.gccOptimization = "s";
 
    GenerateAll( files, parameters );
@@ -220,6 +215,7 @@ function GenerateUpdater3Makefiles()
    var parameters = new GeneratorParameters();
    parameters.id = "updater3";
    parameters.type = "CoreAux";
+   parameters.official = true;
    parameters.gccOptimization = "s";
 
    GenerateAll( files, parameters );
@@ -249,6 +245,7 @@ function GenerateX11InstallerMakefiles()
    var parameters = new GeneratorParameters();
    parameters.id = "installer";
    parameters.type = "X11Installer";
+   parameters.official = true;
    parameters.gccOptimization = "s";
    parameters.architecture = "x64";
 
@@ -279,6 +276,7 @@ function GeneratePCLHMakefiles()
    var parameters = new GeneratorParameters();
    parameters.id = "pclh";
    parameters.type = "Executable";
+   parameters.official = true;
    parameters.gccOptimization = "2";
 
    GenerateAll( files, parameters );
@@ -299,6 +297,7 @@ function GenerateStandardModuleMakefiles( module,
    var parameters = new GeneratorParameters();
    parameters.id = File.extractName( module );
    parameters.type = "Module";
+   parameters.official = true;
    parameters.gccOptimization = "3";
    for ( var i = 0; i < extraDefinitions.length; ++i )
       parameters.extraDefinitions.push( extraDefinitions[i] );
@@ -317,7 +316,7 @@ function GenerateStandardModuleMakefiles( module,
 /*
  * Makefiles and projects for a standard PixInsight dynamic library
  */
-function GenerateDynamicLibraryMakefiles( library,
+function GenerateStandardDynamicLibraryMakefiles( library,
    winDefFile, extraDefinitions, winExtraDefinitions, extraIncludeDirs, extraLibDirs, extraLibraries )
 {
    writeSeparator();
@@ -329,6 +328,7 @@ function GenerateDynamicLibraryMakefiles( library,
    var parameters = new GeneratorParameters();
    parameters.id = File.extractName( library );
    parameters.type = "DynamicLibrary";
+   parameters.official = true;
    parameters.winDefFile = winDefFile;
    for ( var i = 0; i < extraDefinitions.length; ++i )
       parameters.extraDefinitions.push( extraDefinitions[i] );
@@ -347,7 +347,7 @@ function GenerateDynamicLibraryMakefiles( library,
 /*
  * Makefiles and projects for a standard PixInsight static library
  */
-function GenerateStaticLibraryMakefiles( library, extraDefinitions, winExtraDefinitions, extraIncludeDirs )
+function GenerateStandardStaticLibraryMakefiles( library, extraDefinitions, winExtraDefinitions, extraIncludeDirs )
 {
    writeSeparator();
    console.writeln( "Generating makefiles for static library: " + library );
@@ -376,11 +376,11 @@ function GenerateStandardFileFormatModuleMakefiles()
 
    GenerateStandardModuleMakefiles( "file-formats/FITS",     [], ["_CRT_SECURE_NO_WARNINGS"],
                                                 ["../../cfitsio/include"],
-                                                ["../../cfitsio/lib"], ["cfitsio-pxi"] );
+                                                [], ["cfitsio-pxi"] );
 
    GenerateStandardModuleMakefiles( "file-formats/JPEG",     [], ["_CRT_SECURE_NO_WARNINGS"],
                                                 ["../../jpeglib/include"],
-                                                ["../../jpeglib/lib"], ["jpeg-pxi"] );
+                                                [], ["jpeg-pxi"] );
 
    GenerateStandardModuleMakefiles( "file-formats/JPEG2000", ["EXCLUDE_JPG_SUPPORT",
                                                               "EXCLUDE_MIF_SUPPORT",
@@ -390,11 +390,22 @@ function GenerateStandardFileFormatModuleMakefiles()
                                                               "EXCLUDE_PGX_SUPPORT"],
                                                 ["JAS_WIN_MSVC_BUILD", "_CRT_SECURE_NO_WARNINGS"],
                                                 ["../../libjasper/include"],
-                                                ["../../libjasper/lib"], ["jasper-pxi"] );
+                                                [], ["jasper-pxi"] );
 
    GenerateStandardModuleMakefiles( "file-formats/TIFF",     [], ["_CRT_SECURE_NO_WARNINGS"],
                                                 ["../../libtiff/include"],
-                                                ["../../libtiff/lib"], ["libtiff-pxi"] );
+                                                [], ["libtiff-pxi"] );
+
+   GenerateStandardModuleMakefiles( "file-formats/XISF", ["__PCL_QT_INTERFACE",
+                                                          "_LARGEFILE64_SOURCE",
+                                                          "_LARGEFILE_SOURCE",
+                                                          "QT_EDITION=QT_EDITION_OPENSOURCE",
+                                                          "QT_NO_EXCEPTIONS",
+                                                          "QT_NO_DEBUG",
+                                                          "QT_SHARED",
+                                                          "QT_CORE_LIB",
+                                                          "QT_XML_LIB"], [],
+                                                [], [], ["Qt5Core", "Qt5Xml"] );
 }
 
 function GenerateStandardProcessModuleMakefiles()
@@ -443,14 +454,14 @@ function GenerateStandardProcessModuleMakefiles()
 function GeneratePixInsightPlatformMakefiles()
 {
    // CFITSIO FITS support library - version >= 3.37
-   GenerateDynamicLibraryMakefiles( "cfitsio", "", [],
+   GenerateStandardDynamicLibraryMakefiles( "cfitsio", "", [],
       ["_MBCS", "_USRDLL", "cfitsio_EXPORTS", "FF_NO_UNISTD_H", "_CRT_SECURE_NO_WARNINGS"], [], [], [] );
 
    // CMINPACK static library
-   GenerateStaticLibraryMakefiles( "cminpack", [], ["CMINPACK_NO_DLL"], [] );
+   GenerateStandardStaticLibraryMakefiles( "cminpack", [], ["CMINPACK_NO_DLL"], [] );
 
    // JasPer JPEG2000 support library
-   GenerateDynamicLibraryMakefiles( "jasper", "../../jasper.def",
+   GenerateStandardDynamicLibraryMakefiles( "jasper", "../../jasper.def",
       ["EXCLUDE_JPG_SUPPORT", /* JasPer: disable all formats but JP2 and JPC */
        "EXCLUDE_MIF_SUPPORT",
        "EXCLUDE_PNM_SUPPORT",
@@ -459,18 +470,18 @@ function GeneratePixInsightPlatformMakefiles()
        "EXCLUDE_PGX_SUPPORT"], ["JAS_WIN_MSVC_BUILD", "_CRT_SECURE_NO_WARNINGS"], ["../../include"], [], [] );
 
    // JPEG library
-   GenerateDynamicLibraryMakefiles( "jpeg", "../../jpeg.def", [], ["_CRT_SECURE_NO_WARNINGS"], [], [], [] );
+   GenerateStandardDynamicLibraryMakefiles( "jpeg", "../../jpeg.def", [], ["_CRT_SECURE_NO_WARNINGS"], [], [], [] );
 
    // Little CMS engine v2
-   GenerateDynamicLibraryMakefiles( "lcms", "../../lcms2.def",
+   GenerateStandardDynamicLibraryMakefiles( "lcms", "../../lcms2.def",
       [], ["CMS_DLL", "CMS_DLL_BUILD", "_CRT_SECURE_NO_WARNINGS"], [], [], [] );
 
    // LIBTIFF library
-   GenerateDynamicLibraryMakefiles( "libtiff", "../../libtiff.def",
+   GenerateStandardDynamicLibraryMakefiles( "libtiff", "../../libtiff.def",
       ["ZIP_SUPPORT"], ["__WIN32__", "_CRT_SECURE_NO_WARNINGS"], ["$(PCLSRCDIR)/jpeg", "$(PCLSRCDIR)/zlib"], [], ["jpeg-pxi", "zlib-pxi"] );
 
    // ZLIB 1.2.3
-   GenerateDynamicLibraryMakefiles( "zlib", "../../zlib.def", [], ["_CRT_SECURE_NO_WARNINGS"], [], [], [] );
+   GenerateStandardDynamicLibraryMakefiles( "zlib", "../../zlib.def", [], ["_CRT_SECURE_NO_WARNINGS"], [], [], [] );
 
    // PixInsight Class Library
    GeneratePCLMakefiles();
@@ -494,5 +505,5 @@ function GeneratePixInsightPlatformMakefiles()
    GenerateStandardProcessModuleMakefiles();
 }
 
-// ****************************************************************************
-// EOF MakGenGenerators.js - Released 2014/10/15 17:07:00 UTC
+// ----------------------------------------------------------------------------
+// EOF MakGenGenerators.js - Released 2015/07/29 23:22:54 UTC

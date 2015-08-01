@@ -1,13 +1,16 @@
-// ****************************************************************************
-// PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// pjsr/ColorComboBox.jsh - Released 2014/10/29 08:14:02 UTC
-// ****************************************************************************
+//     ____       __ _____  ____
+//    / __ \     / // ___/ / __ \
+//   / /_/ /__  / / \__ \ / /_/ /
+//  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
+// /_/     \____/ /____//_/ |_|    PJSR Version 1.0
+// ----------------------------------------------------------------------------
+// pjsr/ColorComboBox.jsh - Released 2015/07/23 10:07:13 UTC
+// ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +48,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #ifndef __PJSR_ColorComboBox_jsh
 #define __PJSR_ColorComboBox_jsh
@@ -54,29 +57,13 @@
 #include <pjsr/Color.jsh>
 #endif
 
+// Icon metrics in logical pixels
 #define ICONSIZE   16
 #define ICONMARGIN  2
 
-/**
- * ColorComboBox is a utility class that provides a simple list with the full
- * set of CSS3 standard colors. This includes 143 ComboBox items that are
- * automatically shared by all existing ColorComboBox objects. Thanks to this
- * implicit sharing mechanism, a script can define a large number of
- * ColorComboBox controls without consuming too much resources on any
- * supported platform.
- *
- * The list of items corresponding to CSS3 colors is sorted by hue value (in
- * the HSV or HSI color ordering systems). This makes it much easier the task
- * of selecting colors since similar hues are grouped visually.
- *
- * In addition to CSS3 standard colors, a single custom color item can be
- * defined for a ColorComboBox object. The custom color item is automatically
- * managed by ColorComboBox and appended to the end of standard items.
- */
-
 // ----------------------------------------------------------------------------
 
-/**
+/*
  * ComboColor - A collection of CSS3 color/name items sorted by hue/value.
  */
 function ComboColor( value, name )
@@ -85,27 +72,35 @@ function ComboColor( value, name )
 
    this.value = value;
    this.name = name;
-   this.icon = new Bitmap( ICONSIZE, ICONSIZE );
 
-   this.icon.fill( 0 ); // transparent
-
-   var p = new Graphics( this.icon );
-   p.pen = new Pen( 0xff000000 ); // black
-
-   if ( this.value != 0 )
+   this.icon = function( size, margin )
    {
-      p.brush = new Brush( this.value );
-      p.drawRect( ICONMARGIN, ICONMARGIN, ICONSIZE-ICONMARGIN-1, ICONSIZE-ICONMARGIN-1 );
-   }
-   else
-   {
-      p.brush = new Brush( 0xffffffff ); // white
-      p.drawRect( ICONMARGIN, ICONMARGIN, ICONSIZE-ICONMARGIN-1, ICONSIZE-ICONMARGIN-1 );
-      p.drawLine( ICONMARGIN, ICONMARGIN, ICONSIZE-ICONMARGIN, ICONSIZE-ICONMARGIN );
-      p.drawLine( ICONSIZE-ICONMARGIN+1, ICONMARGIN, ICONMARGIN+1, ICONSIZE-ICONMARGIN );
-   }
+      let icon = new Bitmap( size, size );
+      icon.fill( 0 ); // transparent
+      let g = new Graphics( icon );
+      g.antialiasing = true;
+      g.pen = new Pen( 0xFF000000, margin/2 ); // opaque black pen
+      if ( this.value != 0 )
+      {
+         g.brush = new Brush( this.value );
+         g.drawRect( margin, margin, size-margin-1, size-margin-1 );
+      }
+      else
+      {
+         g.brush = new Brush( 0xFFFFFFFF );
+         g.drawRect( margin, margin, size-margin-1, size-margin-1 );
+         g.drawLine( margin, margin, size-margin, size-margin );
+         g.drawLine( size-margin+1, margin, margin+1, size-margin );
+      }
+      g.end();
+      return icon;
+   };
 
-   p.end();
+   this.title = function()
+   {
+      return this.name;
+      // + format( " (%d,%d,%d)", Color.red( this.value ), Color.green( this.value ), Color.blue( this.value ) );
+   };
 
    function myHue( rgb )
    {
@@ -130,7 +125,7 @@ function ComboColor( value, name )
          h += 360;
 
       return h;
-   };
+   }
 
    function myValue( rgb )
    {
@@ -360,6 +355,20 @@ ComboColor.searchColor = function( rgba )
 
 /*
  * ColorComboBox
+ *
+ * A utility class that provides a simple list with the full set of standard
+ * CSS3 colors. This includes 143 ComboBox items that are automatically shared
+ * by all existing ColorComboBox objects. Thanks to this implicit sharing
+ * mechanism, a script can define a large number of ColorComboBox controls
+ * without consuming too much resources on any supported platform.
+ *
+ * The list of items corresponding to CSS3 colors is sorted by hue value (in
+ * the HSV or HSI color ordering systems). This makes it much easier the task
+ * of selecting colors, since similar hues are grouped visually.
+ *
+ * In addition to standard CSS3 colors, a single custom color item can be
+ * defined for each ColorComboBox object. The custom color item is managed
+ * automatically by the object and appended after the list of standard items.
  */
 function ColorComboBox( parent )
 {
@@ -376,16 +385,17 @@ function ColorComboBox( parent )
    if ( !ComboColor.isInitialized() )
       ComboColor.initColors();
 
+   let iconSize = this.logicalPixelsToPhysical( ICONSIZE );
+   let iconMargin = this.logicalPixelsToPhysical( ICONMARGIN );
    for ( var i = 0; i < ComboColor.colors.length; ++i )
-      this.addItem( ComboColor.colors[i].name, ComboColor.colors[i].icon );
+      this.addItem( ComboColor.colors[i].title(), ComboColor.colors[i].icon( iconSize, iconMargin ) );
 
-   this.setMinWidth( this.font.width( "Custom (255,255,255)" ) + 60 );
+   this.setMinWidth( this.font.width( "Custom (255,255,255)" ) + this.logicalPixelsToPhysical( 60 ) );
 
    this.colorForIndex = function( index )
    {
-      return (index < ComboColor.colors.length) ?
-               ComboColor.colors[index].value : this.customRGBA;
-   }
+      return (index < ComboColor.colors.length) ? ComboColor.colors[index].value : this.customRGBA;
+   };
 
    this.currentColor = function()
    {
@@ -398,8 +408,7 @@ function ColorComboBox( parent )
 
       rgba |= 0xff000000; // we only deal with opaque colors
 
-      var i = ComboColor.searchColor( rgba );
-
+      let i = ComboColor.searchColor( rgba );
       if ( i < 0 )
       {
          if ( rgba != this.customRGBA )
@@ -407,9 +416,11 @@ function ColorComboBox( parent )
             if ( this.numberOfItems > ComboColor.colors.length )
                this.removeItem( this.numberOfItems - 1 );
             this.customRGBA = rgba;
-            var item = new ComboColor( rgba, format( "Custom (%3d,%3d,%3d)",
+            let item = new ComboColor( rgba, format( "Custom (%3d,%3d,%3d)",
                                        Color.red( rgba ), Color.green( rgba ), Color.blue( rgba ) ) );
-            this.addItem( item.name, item.icon );
+            let iconSize = this.logicalPixelsToPhysical( ICONSIZE );
+            let iconMargin = this.logicalPixelsToPhysical( ICONMARGIN );
+            this.addItem( item.title(), item.icon( iconSize, iconMargin ) );
          }
 
          i = this.numberOfItems - 1;
@@ -423,8 +434,6 @@ function ColorComboBox( parent )
    this.onItemHighlighted = function( index )
    {
       var rgba = this.colorForIndex( index );
-      this.popupToolTip = format( "%3d,%3d,%3d",
-                  Color.red( rgba ), Color.green( rgba ), Color.blue( rgba ) );
       if ( this.onCurrentColorChanged )
          this.onCurrentColorChanged( rgba );
    };
@@ -445,5 +454,5 @@ ColorComboBox.prototype = new ComboBox;
 
 #endif   // __PJSR_ColorComboBox_jsh
 
-// ****************************************************************************
-// EOF pjsr/ColorComboBox.jsh - Released 2014/10/29 08:14:02 UTC
+// ----------------------------------------------------------------------------
+// EOF pjsr/ColorComboBox.jsh - Released 2015/07/23 10:07:13 UTC

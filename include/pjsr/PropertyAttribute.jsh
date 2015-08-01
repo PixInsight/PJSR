@@ -1,13 +1,16 @@
-// ****************************************************************************
-// PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// pjsr/PropertyAttribute.jsh - Released 2014/10/29 08:14:02 UTC
-// ****************************************************************************
+//     ____       __ _____  ____
+//    / __ \     / // ___/ / __ \
+//   / /_/ /__  / / \__ \ / /_/ /
+//  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
+// /_/     \____/ /____//_/ |_|    PJSR Version 1.0
+// ----------------------------------------------------------------------------
+// pjsr/PropertyAttribute.jsh - Released 2015/07/23 10:07:13 UTC
+// ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +48,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #ifndef __PJSR_PropertyAttribute_jsh
 #define __PJSR_PropertyAttribute_jsh
@@ -54,16 +57,38 @@
  * Property attributes recognized by View.setPropertyValue() and
  * View.propertyAttributes().
  */
-#define PropertyAttribute_WriteProtected  0x00000001 // Only the module that has created the property can modify it.
-#define PropertyAttribute_ReadProtected   0x00000002 // Only the module that has created the property can read its value (implies write protection).
-#define PropertyAttribute_Volatile        0x00000010 // Volatile properties are not stored in processing histories, so they get lost across undo/redo operations.
-#define PropertyAttribute_Permanent       0x00000020 // Permanent properties are not stored in processing histories, but unlike volatile properties, they are preserved across undo/redo operations.
-#define PropertyAttribute_NotSerializable 0x00000040 // The property will not be stored in projects.
-#define PropertyAttribute_Storable        0x00000080 // The property can be stored in image files (when using image formats able to store data properties).
-#define PropertyAttribute_Reserved        0x10000000 // The property has been reserved by the PixInsight Core application.
-#define PropertyAttribute_NoChange        0x80000000 // Special flag used to preserve the existing property attributes in function calls.
+
+// Write-protected: Only the module that created the property can modify it.
+#define PropertyAttribute_WriteProtected  0x00000001
+
+// Read-protected: Only the module that created the property can read its value
+// (implies write protection).
+#define PropertyAttribute_ReadProtected   0x00000002
+
+// Volatile properties are not stored in processing histories, so they get lost
+// across undo/redo operations.
+#define PropertyAttribute_Volatile        0x00000010
+
+// Permanent properties are not stored in processing histories, but unlike
+// volatile properties, they are preserved across undo/redo operations.
+#define PropertyAttribute_Permanent       0x00000020
+
+// Not serializable: The property will not be stored in projects.
+#define PropertyAttribute_NotSerializable 0x00000040
+
+// Storable: The property can be stored in image files (when using file formats
+// able to store data properties).
+#define PropertyAttribute_Storable        0x00000080
+
+// Reserved: The property has been reserved by the PixInsight Core application.
+// A module or script can request it, but cannot set its value or attributes.
+#define PropertyAttribute_Reserved        0x10000000
+
+// Special flag used to preserve the existing property attributes across
+// function calls.
+#define PropertyAttribute_NoChange        0x80000000
 
 #endif   // __PJSR_PropertyAttribute_jsh
 
-// ****************************************************************************
-// EOF pjsr/PropertyAttribute.jsh - Released 2014/10/29 08:14:02 UTC
+// ----------------------------------------------------------------------------
+// EOF pjsr/PropertyAttribute.jsh - Released 2015/07/23 10:07:13 UTC

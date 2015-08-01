@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// MakGenMain.js - Released 2014/10/15 17:07:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// MakGenMain.js - Released 2015/07/29 23:22:54 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.93
+// This file is part of PixInsight Makefile Generator Script version 1.95
 //
-// Copyright (c) 2009-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Makefile Generator
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Script entry point.
@@ -114,7 +114,7 @@ function main()
          console.writeln( "<end><cbr>" );
          writeSeparator();
          console.writeln( "PixInsight Makefile Generator Script v" + VERSION );
-         console.writeln( "Copyright (C) 2009-2014 Pleiades Astrophoto" );
+         console.writeln( "Copyright (C) 2009-2015 Pleiades Astrophoto" );
          writeSeparator();
          console.flush();
 
@@ -261,7 +261,6 @@ function main()
 
          var F = new FileLists( projectDirectory );
 
-
          for ( var step = 0; ; )
          {
             if ( dialog.hostMakefiles_CheckBox.checked )
@@ -274,7 +273,8 @@ function main()
                }
                P.architecture = "x64";
                GnuCxx( F, P );
-               GnuCxxAll( F, P );
+               if ( step == 0 )
+                  GnuCxxAll( F, P );
             }
 
             if ( dialog.allPlatforms_CheckBox.checked )
@@ -286,35 +286,41 @@ function main()
                   GnuCxx( F, P );
                   P.architecture = "x64";
                   GnuCxx( F, P );
-                  GnuCxxAll( F, P );
+                  if ( step == 0 )
+                     GnuCxxAll( F, P );
 
                   P.platform = "Linux";
                   P.architecture = "x86";
                   GnuCxx( F, P );
                   P.architecture = "x64";
                   GnuCxx( F, P );
-                  GnuCxxAll( F, P );
+                  if ( step == 0 )
+                     GnuCxxAll( F, P );
 
                   P.platform = "MacOSX";
                   P.architecture = "x86";
                   GnuCxx( F, P );
                   P.architecture = "x64";
                   GnuCxx( F, P );
-                  GnuCxxAll( F, P );
+                  if ( step == 0 )
+                     GnuCxxAll( F, P );
                }
                else
                {
                   P.platform = "FreeBSD";
                   GnuCxx( F, P );
-                  GnuCxxAll( F, P );
+                  if ( step == 0 )
+                     GnuCxxAll( F, P );
 
                   P.platform = "Linux";
                   GnuCxx( F, P );
-                  GnuCxxAll( F, P );
+                  if ( step == 0 )
+                     GnuCxxAll( F, P );
 
                   P.platform = "MacOSX";
                   GnuCxx( F, P );
-                  GnuCxxAll( F, P );
+                  if ( step == 0 )
+                     GnuCxxAll( F, P );
                }
 
                if ( step == 0 )
@@ -337,7 +343,8 @@ function main()
                   else
                      GnuCxx( F, P );
 
-                  GnuCxxAll( F, P );
+                  if ( step == 0 )
+                     GnuCxxAll( F, P );
                }
                else if ( P.platform == "Windows" )
                {
@@ -369,5 +376,5 @@ function main()
    console.hide();
 }
 
-// ****************************************************************************
-// EOF MakGenMain.js - Released 2014/10/15 17:07:00 UTC
+// ----------------------------------------------------------------------------
+// EOF MakGenMain.js - Released 2015/07/29 23:22:54 UTC

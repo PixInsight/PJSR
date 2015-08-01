@@ -1,8 +1,8 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// PIDocGUI.js - Released 2015/01/18 20:22:19 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// PIDocGUI.js - Released 2015/07/22 16:40:31 UTC
+// ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Documentation Compiler
@@ -79,11 +79,11 @@ function PIDocCompilerDialog()
    //
 
    this.helpLabel = new Label( this );
-   this.helpLabel.styleSheet =
+   this.helpLabel.styleSheet = this.scaledStyleSheet(
       "QWidget#" + this.helpLabel.uniqueId + " {"
    +     "border: 1px solid gray;"
    +     "padding: 0.25em;"
-   +  "}";
+   +  "}" );
    this.helpLabel.wordWrapping = true;
    this.helpLabel.useRichText = true;
    this.helpLabel.text = "<p><strong>" + TITLE + " version " + VERSION + "</strong><br/>" +
@@ -94,7 +94,7 @@ function PIDocCompilerDialog()
    this.files_TreeBox.multipleSelection = true;
    this.files_TreeBox.rootDecoration = false;
    this.files_TreeBox.alternateRowColor = true;
-   this.files_TreeBox.setMinSize( 600, 120 );
+   this.files_TreeBox.setScaledMinSize( 600, 120 );
    this.files_TreeBox.numberOfColumns = 1;
    this.files_TreeBox.headerVisible = false;
 
@@ -106,7 +106,7 @@ function PIDocCompilerDialog()
 
    this.filesAdd_Button = new PushButton( this );
    this.filesAdd_Button.text = "Add Files";
-   this.filesAdd_Button.icon = ":/icons/add.png";
+   this.filesAdd_Button.icon = this.scaledResource( ":/icons/add.png" );
    this.filesAdd_Button.toolTip = "<p>Add pidoc source files to the list.</p>";
 
    this.filesAdd_Button.onClick = function()
@@ -144,7 +144,7 @@ function PIDocCompilerDialog()
 
    this.filesAddDirectory_Button = new PushButton( this );
    this.filesAddDirectory_Button.text = "Add Directory";
-   this.filesAddDirectory_Button.icon = ":/icons/add.png";
+   this.filesAddDirectory_Button.icon = this.scaledResource( ":/icons/add.png" );
    this.filesAddDirectory_Button.toolTip = "<p>Recursively search a directory tree and add all pidoc source files found to the list.</p>";
 
    this.filesAddDirectory_Button.onClick = function()
@@ -192,7 +192,7 @@ function PIDocCompilerDialog()
 
    this.filesClear_Button = new PushButton( this );
    this.filesClear_Button.text = "Clear";
-   this.filesClear_Button.icon = ":/icons/clear.png";
+   this.filesClear_Button.icon = this.scaledResource( ":/icons/clear.png" );
    this.filesClear_Button.toolTip = "<p>Clear the list of input source files.</p>";
 
    this.filesClear_Button.onClick = function()
@@ -203,7 +203,7 @@ function PIDocCompilerDialog()
 
    this.filesInvert_Button = new PushButton( this );
    this.filesInvert_Button.text = "Invert Selection";
-   this.filesInvert_Button.icon = ":/icons/select-invert.png";
+   this.filesInvert_Button.icon = this.scaledResource( ":/icons/select-invert.png" );
    this.filesInvert_Button.toolTip = "<p>Invert the current selection of input files.</p>";
 
    this.filesInvert_Button.onClick = function()
@@ -215,7 +215,7 @@ function PIDocCompilerDialog()
 
    this.filesRemove_Button = new PushButton( this );
    this.filesRemove_Button.text = "Remove Selected";
-   this.filesRemove_Button.icon = ":/icons/delete.png";
+   this.filesRemove_Button.icon = this.scaledResource( ":/icons/delete.png" );
    this.filesRemove_Button.toolTip = "<p>Remove all selected files from the list.</p>";
 
    this.filesRemove_Button.onClick = function()
@@ -284,8 +284,19 @@ function PIDocCompilerDialog()
          this.text = DEFAULT_BASE_DIR_TEXT;
    };
 
+   this.baseDirClear_Button = new ToolButton( this );
+   this.baseDirClear_Button.icon = this.scaledResource( ":/icons/clear.png" );
+   this.baseDirClear_Button.setScaledFixedSize( 20, 20 );
+   this.baseDirClear_Button.toolTip = "<p>Clear target system directory.</p>";
+   this.baseDirClear_Button.onClick = function()
+   {
+      this.dialog.baseDir_Edit.clear();
+      this.dialog.baseDir_Edit.onEditCompleted();
+   };
+
    this.baseDirSelect_Button = new ToolButton( this );
-   this.baseDirSelect_Button.icon = ":/icons/select-file.png";
+   this.baseDirSelect_Button.icon = this.scaledResource( ":/icons/select-file.png" );
+   this.baseDirSelect_Button.setScaledFixedSize( 20, 20 );
    this.baseDirSelect_Button.toolTip = "<p>Select the target PIDoc system directory.</p>";
    this.baseDirSelect_Button.onClick = function()
    {
@@ -299,15 +310,6 @@ function PIDocCompilerDialog()
             dir = dir.substring( 0, dir.length-1 );
          this.dialog.baseDir_Edit.text = workingData.baseDirectory = dir;
       }
-   };
-
-   this.baseDirClear_Button = new ToolButton( this );
-   this.baseDirClear_Button.icon = ":/icons/clear.png";
-   this.baseDirClear_Button.toolTip = "<p>Clear target system directory.</p>";
-   this.baseDirClear_Button.onClick = function()
-   {
-      this.dialog.baseDir_Edit.clear();
-      this.dialog.baseDir_Edit.onEditCompleted();
    };
 
    this.baseDir_Sizer = new HorizontalSizer;
@@ -333,7 +335,7 @@ function PIDocCompilerDialog()
    };
 
    this.generateNewSystem_Sizer = new HorizontalSizer;
-   this.generateNewSystem_Sizer.addSpacing( labelWidth1 + 4 );
+   this.generateNewSystem_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.generateNewSystem_Sizer.add( this.generateNewSystem_CheckBox );
    this.generateNewSystem_Sizer.addStretch();
 
@@ -389,7 +391,7 @@ function PIDocCompilerDialog()
    };
 
    this.generateOutput_Sizer = new HorizontalSizer;
-   this.generateOutput_Sizer.addSpacing( labelWidth1 + 4 );
+   this.generateOutput_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.generateOutput_Sizer.add( this.generateOutput_CheckBox );
    this.generateOutput_Sizer.addStretch();
 
@@ -409,7 +411,7 @@ function PIDocCompilerDialog()
    };
 
    this.renderEquations_Sizer = new HorizontalSizer;
-   this.renderEquations_Sizer.addSpacing( labelWidth1 + 4 );
+   this.renderEquations_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.renderEquations_Sizer.add( this.renderEquations_CheckBox );
    this.renderEquations_Sizer.addStretch();
 
@@ -429,7 +431,7 @@ function PIDocCompilerDialog()
    };
 
    this.highlightCode_Sizer = new HorizontalSizer;
-   this.highlightCode_Sizer.addSpacing( labelWidth1 + 4 );
+   this.highlightCode_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.highlightCode_Sizer.add( this.highlightCode_CheckBox );
    this.highlightCode_Sizer.addStretch();
 
@@ -450,7 +452,7 @@ function PIDocCompilerDialog()
    };
 
    this.numberAllEquations_Sizer = new HorizontalSizer;
-   //this.numberAllEquations_Sizer.addSpacing( labelWidth1 + 4 );
+   //this.numberAllEquations_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.numberAllEquations_Sizer.add( this.numberAllEquations_CheckBox );
    this.numberAllEquations_Sizer.addStretch();
 
@@ -471,7 +473,7 @@ function PIDocCompilerDialog()
    };
 
    this.numberAllFigures_Sizer = new HorizontalSizer;
-   //this.numberAllFigures_Sizer.addSpacing( labelWidth1 + 4 );
+   //this.numberAllFigures_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.numberAllFigures_Sizer.add( this.numberAllFigures_CheckBox );
    this.numberAllFigures_Sizer.addStretch();
 
@@ -492,7 +494,7 @@ function PIDocCompilerDialog()
    };
 
    this.numberAllTables_Sizer = new HorizontalSizer;
-   //this.numberAllTables_Sizer.addSpacing( labelWidth1 + 4 );
+   //this.numberAllTables_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.numberAllTables_Sizer.add( this.numberAllTables_CheckBox );
    this.numberAllTables_Sizer.addStretch();
 
@@ -512,7 +514,7 @@ function PIDocCompilerDialog()
    };
 
    this.backupExistingFiles_Sizer = new HorizontalSizer;
-   //this.backupExistingFiles_Sizer.addSpacing( labelWidth1 + 4 );
+   //this.backupExistingFiles_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.backupExistingFiles_Sizer.add( this.backupExistingFiles_CheckBox );
    this.backupExistingFiles_Sizer.addStretch();
 
@@ -532,7 +534,7 @@ function PIDocCompilerDialog()
    };
 
    this.treatWarningsAsErrors_Sizer = new HorizontalSizer;
-   //this.treatWarningsAsErrors_Sizer.addSpacing( labelWidth1 + 4 );
+   //this.treatWarningsAsErrors_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.treatWarningsAsErrors_Sizer.add( this.treatWarningsAsErrors_CheckBox );
    this.treatWarningsAsErrors_Sizer.addStretch();
 
@@ -568,7 +570,7 @@ function PIDocCompilerDialog()
 
    this.reset_Button = new PushButton( this );
    this.reset_Button.text = "Reset";
-   this.reset_Button.icon = ":/icons/reload.png";
+   this.reset_Button.icon = this.scaledResource( ":/icons/reload.png" );
    this.reset_Button.toolTip = "<p>Reset all compiler options to factory-default settings.</p>";
    this.reset_Button.onClick = function()
    {
@@ -578,7 +580,7 @@ function PIDocCompilerDialog()
 
    this.run_Button = new PushButton( this );
    this.run_Button.text = "Run";
-   this.run_Button.icon = ":/icons/power.png";
+   this.run_Button.icon = this.scaledResource( ":/icons/power.png" );
    this.run_Button.onClick = function()
    {
       this.dialog.ok();
@@ -586,7 +588,7 @@ function PIDocCompilerDialog()
 
    this.exit_Button = new PushButton( this );
    this.exit_Button.text = "Exit";
-   this.exit_Button.icon = ":/icons/close.png";
+   this.exit_Button.icon = this.scaledResource( ":/icons/close.png" );
    this.exit_Button.onClick = function()
    {
       this.dialog.cancel();
@@ -637,5 +639,5 @@ function PIDocCompilerDialog()
 
 PIDocCompilerDialog.prototype = new Dialog;
 
-// ****************************************************************************
-// EOF PIDocGUI.js - Released 2015/01/18 20:22:19 UTC
+// ----------------------------------------------------------------------------
+// EOF PIDocGUI.js - Released 2015/07/22 16:40:31 UTC

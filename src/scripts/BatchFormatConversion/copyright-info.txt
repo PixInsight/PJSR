@@ -1,2 +1,2 @@
-Copyright (c) 2009-2013 Pleiades Astrophoto S.L.
+Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 Written by Juan Conejero (PTeam)

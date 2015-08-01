@@ -3,6 +3,24 @@ Batch Preprocessing Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2015.07.14 - v1.41
+
+- Several updates for PixInsight 1.8.4, including UI scaling and new file
+format features.
+
+-------------------------------------------------------------------------------
+2014.12.10 - v1.40
+
+- Fixed a bug where BINNING keywords stored in master calibration XISF files
+  were not being recognized.
+
+-------------------------------------------------------------------------------
+2014.12.02 - v1.39
+
+- Fixed a regression in the application of CosmeticCorrection: The output file
+  extension was not being set in the CC template instance.
+
+-------------------------------------------------------------------------------
 2014.11.30 - v1.38
 
 - Added support for the XISF format, which is now used for output by default.

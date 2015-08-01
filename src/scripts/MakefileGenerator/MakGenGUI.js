@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// MakGenGUI.js - Released 2014/10/15 17:07:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// MakGenGUI.js - Released 2015/07/29 23:22:54 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.93
+// This file is part of PixInsight Makefile Generator Script version 1.95
 //
-// Copyright (c) 2009-2014 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Makefile Generator
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2014, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Graphical user interface.
@@ -101,8 +101,8 @@ function MakefileGeneratorDialog()
    this.directory_Edit.toolTip = TOOLTIP_DIR;
 
    this.selectDirectory_Button = new ToolButton( this );
-   this.selectDirectory_Button.icon = ":/browser/select-file.png";
-   this.selectDirectory_Button.setFixedSize( 20, 20 );
+   this.selectDirectory_Button.icon = this.scaledResource( ":/browser/select-file.png" );
+   this.selectDirectory_Button.setScaledFixedSize( 20, 20 );
    this.selectDirectory_Button.toolTip = "<p>Select the project directory.</p>";
    this.selectDirectory_Button.onClick = function()
    {
@@ -208,10 +208,10 @@ function MakefileGeneratorDialog()
 
 #define TOOLTIP_PLATFORM \
 "<p>Select a platform to generate makefiles / project files:</p>" + \
-"<p><b>X11 on FreeBSD</b> with the GNU Compiler Collection version 4.7.2 or higher.</p>" + \
+"<p><b>X11 on FreeBSD</b> with the system Clang compiler.</p>" + \
 "<p><b>X11 on Linux</b> with the GNU Compiler Collection version 4.7.2 or higher.</p>" + \
-"<p><b>Mac OS X 10.8 and 10.9</b> with the Clang compiler - XCode 5.0.0 or later.</p>" + \
-"<p><b>Windows</b> with Microsoft Visual C++ 2008, 2010 and 2012 (.vcproj and .vcxproj project files)</p>" + \
+"<p><b>Mac OS X 10.8 or later</b> with the Clang compiler - XCode 5.0.0 or later.</p>" + \
+"<p><b>Windows</b> with Microsoft Visual C++ 2010, 2012 and 2013 (.vcproj and .vcxproj project files)</p>" + \
 "<p><b>Host development machine</b> is a Linux physical development workstation. <b>* for internal PTeam use *</b></p>"
 
    this.platform_Label = new Label( this );
@@ -221,11 +221,11 @@ function MakefileGeneratorDialog()
    this.platform_Label.toolTip = TOOLTIP_PLATFORM;
 
    this.platform_ComboBox = new ComboBox( this );
-   this.platform_ComboBox.addItem( "FreeBSD/X11 with GCC >= 4.7.2" );
+   this.platform_ComboBox.addItem( "FreeBSD/X11 with system Clang compiler" );
    this.platform_ComboBox.addItem( "Linux/X11 with GCC >= 4.7.2" );
-   this.platform_ComboBox.addItem( "Mac OS X 10.8 and 10.9 with Clang / Xcode >= 5.0.0" );
-   this.platform_ComboBox.addItem( "Windows with MS Visual C++ 2008/2010/2012" );
-   this.platform_ComboBox.addItem( "Host Linux development machine" );
+   this.platform_ComboBox.addItem( "Mac OS X 10.8 or later with Clang / Xcode >= 5.0.0" );
+   this.platform_ComboBox.addItem( "Windows with MS Visual C++ 2010/2012/2013" );
+   this.platform_ComboBox.addItem( "Host physical Linux development machine" );
    this.platform_ComboBox.toolTip = TOOLTIP_PLATFORM;
    this.platform_ComboBox.setMinWidth( 40*emWidth );
 
@@ -236,7 +236,7 @@ function MakefileGeneratorDialog()
 
 #define TOOLTIP_ALLPLATF \
 "<p>Generate makefiles and project files for all supported platforms: " + \
-"X11/FreeBSD, X11/Linux, Mac OS X 10.6.x, and Windows.</p>"
+"X11/FreeBSD, X11/Linux, Mac OS X, and Windows.</p>"
 
    this.allPlatforms_CheckBox = new CheckBox( this );
    this.allPlatforms_CheckBox.text = "All platforms";
@@ -320,7 +320,7 @@ function MakefileGeneratorDialog()
    this.hostMakefiles_CheckBox.toolTip = TOOLTIP_HOST_MAKEFILES;
 
    this.hostMakefiles_Sizer = new HorizontalSizer;
-   this.hostMakefiles_Sizer.addSpacing( labelWidth1+4 );
+   this.hostMakefiles_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.hostMakefiles_Sizer.add( this.hostMakefiles_CheckBox );
    this.hostMakefiles_Sizer.addStretch();
 
@@ -336,7 +336,7 @@ function MakefileGeneratorDialog()
    this.osxArchOptions_CheckBox.toolTip = TOOLTIP_OSX_ARCH_OPTIONS;
 
    this.osxArchOptions_Sizer = new HorizontalSizer;
-   this.osxArchOptions_Sizer.addSpacing( labelWidth1+4 );
+   this.osxArchOptions_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.osxArchOptions_Sizer.add( this.osxArchOptions_CheckBox );
    this.osxArchOptions_Sizer.addStretch();
 
@@ -355,7 +355,7 @@ function MakefileGeneratorDialog()
    this.gccDebug_CheckBox.toolTip = TOOLTIP_DEBUG;
 
    this.gccDebug_Sizer = new HorizontalSizer;
-   this.gccDebug_Sizer.addSpacing( labelWidth1+4 );
+   this.gccDebug_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.gccDebug_Sizer.add( this.gccDebug_CheckBox );
    this.gccDebug_Sizer.addStretch();
 
@@ -479,12 +479,12 @@ function MakefileGeneratorDialog()
    this.extraDefinitions_Label.text = "Preprocessor definitions:";
    this.extraDefinitions_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
    this.extraDefinitions_Label.minWidth = labelWidth1 - 1;
-   this.extraDefinitions_Label.minHeight = 60;
+   this.extraDefinitions_Label.scaledMinHeight = 60;
    this.extraDefinitions_Label.toolTip = TOOLTIP_EXTRADEFS;
 
    this.extraDefinitions_TextBox = new TextBox( this );
    this.extraDefinitions_TextBox.toolTip = TOOLTIP_EXTRADEFS;
-   this.extraDefinitions_TextBox.setFixedHeight( 60 );
+   this.extraDefinitions_TextBox.setScaledFixedHeight( 60 );
 
    this.extraDefinitions_Sizer = new HorizontalSizer;
    this.extraDefinitions_Sizer.spacing = 4;
@@ -506,16 +506,16 @@ function MakefileGeneratorDialog()
    this.extraIncludeDirs_Label.text = "Include directories:";
    this.extraIncludeDirs_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
    this.extraIncludeDirs_Label.minWidth = labelWidth1 - 1;
-   this.extraIncludeDirs_Label.minHeight = 60;
+   this.extraIncludeDirs_Label.scaledMinHeight = 60;
    this.extraIncludeDirs_Label.toolTip = TOOLTIP_EXTRAINCDIRS;
 
    this.extraIncludeDirs_TextBox = new TextBox( this );
    this.extraIncludeDirs_TextBox.toolTip = TOOLTIP_EXTRAINCDIRS;
-   this.extraIncludeDirs_TextBox.setFixedHeight( 60 );
+   this.extraIncludeDirs_TextBox.setScaledFixedHeight( 60 );
 
    this.addIncludeDir_Button = new ToolButton( this );
-   this.addIncludeDir_Button.icon = ":/icons/add.png";
-   this.addIncludeDir_Button.setFixedSize( 32, 32 );
+   this.addIncludeDir_Button.icon = this.scaledResource( ":/icons/add.png" );
+   this.addIncludeDir_Button.setScaledFixedSize( 32, 32 );
    this.addIncludeDir_Button.toolTip = "<p>Add an include search directory.</p>";
 
    this.addIncludeDir_Button.onClick = function()
@@ -551,16 +551,16 @@ function MakefileGeneratorDialog()
    this.extraLibraryDirs_Label.text = "Library directories:";
    this.extraLibraryDirs_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
    this.extraLibraryDirs_Label.minWidth = labelWidth1 - 1;
-   this.extraLibraryDirs_Label.minHeight = 60;
+   this.extraLibraryDirs_Label.scaledMinHeight = 60;
    this.extraLibraryDirs_Label.toolTip = TOOLTIP_EXTRALIBDIRS;
 
    this.extraLibraryDirs_TextBox = new TextBox( this );
    this.extraLibraryDirs_TextBox.toolTip = TOOLTIP_EXTRALIBDIRS;
-   this.extraLibraryDirs_TextBox.setFixedHeight( 60 );
+   this.extraLibraryDirs_TextBox.setScaledFixedHeight( 60 );
 
    this.addLibraryDir_Button = new ToolButton( this );
-   this.addLibraryDir_Button.icon = ":/icons/add.png";
-   this.addLibraryDir_Button.setFixedSize( 32, 32 );
+   this.addLibraryDir_Button.icon = this.scaledResource( ":/icons/add.png" );
+   this.addLibraryDir_Button.setScaledFixedSize( 32, 32 );
    this.addLibraryDir_Button.toolTip = "<p>Add a library search directory.</p>";
 
    this.addLibraryDir_Button.onClick = function()
@@ -596,16 +596,16 @@ function MakefileGeneratorDialog()
    this.extraLibraries_Label.text = "Libraries:";
    this.extraLibraries_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
    this.extraLibraries_Label.minWidth = labelWidth1 - 1;
-   this.extraLibraries_Label.minHeight = 60;
+   this.extraLibraries_Label.scaledMinHeight = 60;
    this.extraLibraries_Label.toolTip = TOOLTIP_EXTRALIBS;
 
    this.extraLibraries_TextBox = new TextBox( this );
    this.extraLibraries_TextBox.toolTip = TOOLTIP_EXTRALIBS;
-   this.extraLibraries_TextBox.setFixedHeight( 60 );
+   this.extraLibraries_TextBox.setScaledFixedHeight( 60 );
 
    this.addLibraries_Button = new ToolButton( this );
-   this.addLibraries_Button.icon = ":/icons/add.png";
-   this.addLibraries_Button.setFixedSize( 32, 32 );
+   this.addLibraries_Button.icon = this.scaledResource( ":/icons/add.png" );
+   this.addLibraries_Button.setScaledFixedSize( 32, 32 );
    this.addLibraries_Button.toolTip = "<p>Add a set of libraries.</p>";
 
    this.addLibraries_Button.onClick = function()
@@ -633,7 +633,8 @@ function MakefileGeneratorDialog()
    //
 
    this.newInstance_Button = new ToolButton( this );
-   this.newInstance_Button.icon = ":/process-interface/new-instance.png";
+   this.newInstance_Button.icon = this.scaledResource( ":/process-interface/new-instance.png" );
+   this.newInstance_Button.setScaledFixedSize( 24, 24 );
    this.newInstance_Button.toolTip = "New Instance";
    this.newInstance_Button.onMousePress = function()
    {
@@ -649,7 +650,7 @@ function MakefileGeneratorDialog()
 
    this.reset_Button = new PushButton( this );
    this.reset_Button.text = "Reset";
-   this.reset_Button.icon = ":/icons/reload.png";
+   this.reset_Button.icon = this.scaledResource( ":/icons/reload.png" );
    this.reset_Button.toolTip = "<p>Clear all additional definitions, search directories and libraries.</p>"
    this.reset_Button.onClick = function()
    {
@@ -661,7 +662,7 @@ function MakefileGeneratorDialog()
 
    this.ok_Button = new PushButton( this );
    this.ok_Button.text = "Run";
-   this.ok_Button.icon = ":/icons/power.png";
+   this.ok_Button.icon = this.scaledResource( ":/icons/power.png" );
    this.ok_Button.onClick = function()
    {
       this.dialog.ok();
@@ -669,7 +670,7 @@ function MakefileGeneratorDialog()
 
    this.cancel_Button = new PushButton( this );
    this.cancel_Button.text = "Cancel";
-   this.cancel_Button.icon = ":/icons/cancel.png";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
    this.cancel_Button.onClick = function()
    {
       this.dialog.cancel();
@@ -678,7 +679,7 @@ function MakefileGeneratorDialog()
    this.buttons_Sizer = new HorizontalSizer;
    this.buttons_Sizer.spacing = 6;
    this.buttons_Sizer.add( this.newInstance_Button );
-   this.buttons_Sizer.addSpacing( labelWidth1+4-this.newInstance_Button.width );
+   this.buttons_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4-6 ) - this.newInstance_Button.width );
    this.buttons_Sizer.add( this.reset_Button );
    this.buttons_Sizer.addStretch();
    this.buttons_Sizer.add( this.ok_Button );
@@ -861,5 +862,5 @@ function MakefileGeneratorDialog()
 
 MakefileGeneratorDialog.prototype = new Dialog;
 
-// ****************************************************************************
-// EOF MakGenGUI.js - Released 2014/10/15 17:07:00 UTC
+// ----------------------------------------------------------------------------
+// EOF MakGenGUI.js - Released 2015/07/29 23:22:54 UTC

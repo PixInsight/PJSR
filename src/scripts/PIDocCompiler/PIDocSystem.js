@@ -1,8 +1,8 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// PIDocSystem.js - Released 2015/01/18 20:22:19 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// PIDocSystem.js - Released 2015/07/22 16:40:31 UTC
+// ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Documentation Compiler Script version 1.6.1
 //
@@ -44,7 +44,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
  * PixInsight Documentation Compiler
@@ -166,5 +166,5 @@ PIDocSystem.generateNewSystem = function( baseDir )
    document.message( "New PIDoc system generated: " + baseDir );
 };
 
-// ****************************************************************************
-// EOF PIDocSystem.js - Released 2015/01/18 20:22:19 UTC
+// ----------------------------------------------------------------------------
+// EOF PIDocSystem.js - Released 2015/07/22 16:40:31 UTC

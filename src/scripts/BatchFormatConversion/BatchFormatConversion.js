@@ -1,12 +1,12 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// BatchFormatConversion.js - Released 2013/07/30 20:16:05 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// BatchFormatConversion.js - Released 2015/07/22 16:23:31 UTC
+// ----------------------------------------------------------------------------
 //
-// This file is part of BatchFormatConversion Script version 1.3.1
+// This file is part of BatchFormatConversion Script version 1.3.2
 //
-// Copyright (c) 2009-2013 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 // Written by Juan Conejero (PTeam)
 //
 // Redistribution and use in both source and binary forms, with or without
@@ -45,10 +45,10 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 /*
- * BatchFormatConversion v1.3.1
+ * BatchFormatConversion v1.3.2
  *
  * A batch image format conversion utility.
  *
@@ -58,7 +58,7 @@
  * format if necessary, and saving it on the output directory with the
  * specified output file format.
  *
- * Copyright (C) 2009-2013 Pleiades Astrophoto S.L.
+ * Copyright (C) 2009-2015 Pleiades Astrophoto S.L.
  * Written by Juan Conejero (PTeam)
  *
  * Thanks to Rob Pfile for encouraging us to add the format hints feature, and
@@ -79,7 +79,7 @@
    It saves you the work of opening and saving each file manually one at a time.<br/>\
    <br/> \
    Written by Juan Conejero (PTeam)<br/>\
-   Copyright &copy; 2009-2013 Pleiades Astrophoto S.L.<br/>\
+   Copyright &copy; 2009-2015 Pleiades Astrophoto S.L.<br/>\
    <br/>\
    Thanks to Rob Pfile for encouraging us to add the format hints feature, and for \
    helping us to find bugs in FileFormat and other related PJSR objects.
@@ -96,11 +96,11 @@
 
 #define DEFAULT_INPUT_HINTS      "raw cfa"
 #define DEFAULT_OUTPUT_HINTS     "up-bottom unsigned"
-#define DEFAULT_OUTPUT_EXTENSION ".fit"
+#define DEFAULT_OUTPUT_EXTENSION ".xisf"
 
 #define WARN_ON_NO_OUTPUT_DIRECTORY 1
 
-#define VERSION "1.3.1"
+#define VERSION "1.3.2"
 #define TITLE   "BatchFormatConversion"
 
 /*
@@ -304,19 +304,19 @@ function BatchFormatConversionDialog()
 
    this.helpLabel = new Label( this );
    this.helpLabel.frameStyle = FrameStyle_Box;
-   this.helpLabel.margin = 4;
+   this.helpLabel.margin = this.logicalPixelsToPhysical( 4 );
    this.helpLabel.wordWrapping = true;
    this.helpLabel.useRichText = true;
    this.helpLabel.text = "<p><b>" + TITLE + " v" + VERSION + "</b> &mdash; " +
                          "A batch image format conversion utility.</p>" +
-                         "<p>Copyright &copy; 2009-2013 Pleiades Astrophoto</p>";
+                         "<p>Copyright &copy; 2009-2015 Pleiades Astrophoto</p>";
    //
 
    this.files_TreeBox = new TreeBox( this );
    this.files_TreeBox.multipleSelection = true;
    this.files_TreeBox.rootDecoration = false;
    this.files_TreeBox.alternateRowColor = true;
-   this.files_TreeBox.setMinSize( 500, 200 );
+   this.files_TreeBox.setScaledMinSize( 500, 200 );
    this.files_TreeBox.numberOfColumns = 1;
    this.files_TreeBox.headerVisible = false;
 
@@ -328,8 +328,8 @@ function BatchFormatConversionDialog()
 
    this.filesAdd_Button = new PushButton( this );
    this.filesAdd_Button.text = "Add";
+   this.filesAdd_Button.icon = this.scaledResource( ":/icons/add.png" );
    this.filesAdd_Button.toolTip = "<p>Add image files to the input images list.</p>";
-
    this.filesAdd_Button.onClick = function()
    {
       var ofd = new OpenFileDialog;
@@ -352,8 +352,8 @@ function BatchFormatConversionDialog()
 
    this.filesClear_Button = new PushButton( this );
    this.filesClear_Button.text = "Clear";
+   this.filesClear_Button.icon = this.scaledResource( ":/icons/clear.png" );
    this.filesClear_Button.toolTip = "<p>Clear the list of input images.</p>";
-
    this.filesClear_Button.onClick = function()
    {
       this.dialog.files_TreeBox.clear();
@@ -362,8 +362,8 @@ function BatchFormatConversionDialog()
 
    this.filesInvert_Button = new PushButton( this );
    this.filesInvert_Button.text = "Invert Selection";
+   this.filesInvert_Button.icon = this.scaledResource( ":/icons/select-invert.png" );
    this.filesInvert_Button.toolTip = "<p>Invert the current selection of input images.</p>";
-
    this.filesInvert_Button.onClick = function()
    {
       for ( var i = 0; i < this.dialog.files_TreeBox.numberOfChildren; ++i )
@@ -373,8 +373,8 @@ function BatchFormatConversionDialog()
 
    this.filesRemove_Button = new PushButton( this );
    this.filesRemove_Button.text = "Remove Selected";
+   this.filesRemove_Button.icon = this.scaledResource( ":/icons/delete.png" );
    this.filesRemove_Button.toolTip = "<p>Remove all selected images from the input images list.</p>";
-
    this.filesRemove_Button.onClick = function()
    {
       engine.inputFiles.length = 0;
@@ -423,7 +423,6 @@ function BatchFormatConversionDialog()
    this.inputHints_Edit = new Edit( this );
    this.inputHints_Edit.text = engine.inputHints;
    this.inputHints_Edit.toolTip = fmtHintToolTip;
-
    this.inputHints_Edit.onEditCompleted = function()
    {
        // Format hints are case-sensitive.
@@ -455,7 +454,8 @@ function BatchFormatConversionDialog()
 
 
    this.outputDirSelect_Button = new ToolButton( this );
-   this.outputDirSelect_Button.icon = new Bitmap( ":/browser/select-file.png" );
+   this.outputDirSelect_Button.icon = this.scaledResource( ":/browser/select-file.png" );
+   this.outputDirSelect_Button.setScaledFixedSize( 20, 20 );
    this.outputDirSelect_Button.toolTip = "<p>Select the output directory.</p>";
    this.outputDirSelect_Button.onClick = function()
    {
@@ -496,7 +496,6 @@ function BatchFormatConversionDialog()
    this.outputExt_Edit.text = engine.outputExtension;
    this.outputExt_Edit.setFixedWidth( this.font.width( "MMMMMM" ) );
    this.outputExt_Edit.toolTip = outExtToolTip;
-
    this.outputExt_Edit.onEditCompleted = function()
    {
       // Image extensions are always lowercase in PI/PCL.
@@ -534,13 +533,12 @@ function BatchFormatConversionDialog()
 
    this.sampleFormat_ComboBox = new ComboBox( this );
    this.sampleFormat_ComboBox.addItem( "Same as input images" );
-   this.sampleFormat_ComboBox.addItem( "8-bit integer" );
-   this.sampleFormat_ComboBox.addItem( "16-bit integer" );
-   this.sampleFormat_ComboBox.addItem( "32-bit integer" );
+   this.sampleFormat_ComboBox.addItem( "8-bit unsigned integer" );
+   this.sampleFormat_ComboBox.addItem( "16-bit unsigned integer" );
+   this.sampleFormat_ComboBox.addItem( "32-bit unsigned integer" );
    this.sampleFormat_ComboBox.addItem( "32-bit IEEE 754 floating point" );
    this.sampleFormat_ComboBox.addItem( "64-bit IEEE 754 floating point" );
    this.sampleFormat_ComboBox.toolTip = bpsToolTip;
-
    this.sampleFormat_ComboBox.onItemSelected = function( index )
    {
       switch ( index )
@@ -590,7 +588,6 @@ function BatchFormatConversionDialog()
    this.outputHints_Edit = new Edit( this );
    this.outputHints_Edit.text = engine.outputHints;
    this.outputHints_Edit.toolTip = fmtHintToolTip;
-
    this.outputHints_Edit.onEditCompleted = function()
    {
        // Format hints are case-sensitive.
@@ -611,14 +608,13 @@ function BatchFormatConversionDialog()
    this.overwriteExisting_CheckBox.toolTip =
       "<p>Allow overwriting of existing image files.</p>" +
       "<p><b>* Warning *</b> This option may lead to irreversible data loss - enable it at your own risk.</p>";
-
    this.overwriteExisting_CheckBox.onClick = function( checked )
    {
       engine.overwriteExisting = checked;
    };
 
    this.overwriteExisting_Sizer = new HorizontalSizer;
-   this.overwriteExisting_Sizer.addSpacing( labelWidth1 + 4 );
+   this.overwriteExisting_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.overwriteExisting_Sizer.add( this.overwriteExisting_CheckBox );
    this.overwriteExisting_Sizer.addStretch();
 
@@ -638,7 +634,7 @@ function BatchFormatConversionDialog()
 
    this.ok_Button = new PushButton( this );
    this.ok_Button.text = "OK";
-
+   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
    this.ok_Button.onClick = function()
    {
       this.dialog.ok();
@@ -646,7 +642,7 @@ function BatchFormatConversionDialog()
 
    this.cancel_Button = new PushButton( this );
    this.cancel_Button.text = "Cancel";
-
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
    this.cancel_Button.onClick = function()
    {
       this.dialog.cancel();
@@ -661,8 +657,8 @@ function BatchFormatConversionDialog()
    //
 
    this.sizer = new VerticalSizer;
-   this.sizer.margin = 6;
-   this.sizer.spacing = 6;
+   this.sizer.margin = 8;
+   this.sizer.spacing = 8;
    this.sizer.add( this.helpLabel );
    this.sizer.addSpacing( 4 );
    this.sizer.add( this.files_GroupBox, 100 );
@@ -723,5 +719,5 @@ function main()
 
 main();
 
-// ****************************************************************************
-// EOF BatchFormatConversion.js - Released 2013/07/30 20:16:05 UTC
+// ----------------------------------------------------------------------------
+// EOF BatchFormatConversion.js - Released 2015/07/22 16:23:31 UTC
