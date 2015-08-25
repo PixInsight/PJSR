@@ -155,9 +155,15 @@ function LocalFileCatalog(name, filename)
       if( !file.isOpen )
          return false;
 
-      var s = file.read( DataType_ByteArray,file.size );
+      var s = file.read(DataType_ByteArray, file.size);
       file.close();
-      this.catalogLines = s.toString().split("\r\n");
+      var str = s.toString();
+      if (str.indexOf("\r\n") >= 0)
+         this.catalogLines = str.split("\r\n");
+      else if (str.indexOf("\r") >= 0)
+         this.catalogLines = str.split("\r");
+      else
+         this.catalogLines = str.split("\n");
 
       this.objects = new Array;
       for( var i=1; i<this.catalogLines.length; i++ )
@@ -2185,7 +2191,7 @@ function CustomCatalog()
       var path_Button = new ToolButton( parent );
       path_Button.icon = this.scaledResource( ":/icons/select-file.png" );
       path_Button.setScaledFixedSize( 20, 20 );
-      path_Button.toolTip = "<p>Select the NGC/IC catalog file.</p>";
+      path_Button.toolTip = "<p>Select the custom catalog file.</p>";
       path_Button.onClick = function()
       {
          var gdd = new OpenFileDialog;
