@@ -155,9 +155,15 @@ function LocalFileCatalog(name, filename)
       if( !file.isOpen )
          return false;
 
-      var s = file.read( DataType_ByteArray,file.size );
+      var s = file.read(DataType_ByteArray, file.size);
       file.close();
-      this.catalogLines = s.toString().split("\r\n");
+      var str = s.toString();
+      if (str.indexOf("\r\n") >= 0)
+         this.catalogLines = str.split("\r\n");
+      else if (str.indexOf("\r") >= 0)
+         this.catalogLines = str.split("\r");
+      else
+         this.catalogLines = str.split("\n");
 
       this.objects = new Array;
       for( var i=1; i<this.catalogLines.length; i++ )
@@ -194,41 +200,6 @@ function LocalFileCatalog(name, filename)
    this.GetEditControls = function( parent )
    {
       return [];
-
-/*      // Catalog path
-      var path_Label = new Label( parent );
-      path_Label.text = "Catalog path:";
-      path_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
-
-      var path_Edit = new Edit(parent);
-      path_Edit.text = this.catalogPath ? this.catalogPath : "";
-      path_Edit.onTextUpdated = function( value ) { this.dialog.activeFrame.object.catalog.catalogPath = value; };
-
-      var path_Button = new ToolButton( parent );
-      path_Button.icon = this.scaledResource( ":/icons/select-file.png" );
-      path_Button.setScaledFixedSize( 20, 20 );
-      path_Button.toolTip = "<p>Select the NGC/IC catalog file.</p>";
-      path_Button.onClick = function()
-      {
-         var gdd = new OpenFileDialog;
-         if ( this.dialog.activeFrame.object.catalog.catalogPath )
-            gdd.initialPath = this.dialog.activeFrame.object.catalog.catalogPath;
-         gdd.caption = "Select NGC/IC Catalog Path";
-         gdd.filters = [["Text files", "*.txt"]];
-         if ( gdd.execute() )
-         {
-            this.dialog.activeFrame.object.catalog.catalogPath = gdd.fileName;
-            path_Edit.text = gdd.fileName;
-         }
-      };
-
-      var pathSizer = new HorizontalSizer;
-      pathSizer.spacing = 4;
-      pathSizer.add(path_Label);
-      pathSizer.add(path_Edit,100);
-      pathSizer.add(path_Button);
-
-      return [pathSizer];*/
    };
 
    this.GetDefaultLabels = function()
@@ -2183,9 +2154,9 @@ function CustomCatalog()
       path_Edit.onTextUpdated = function( value ) { this.dialog.activeFrame.object.catalog.catalogPath = value; };
 
       var path_Button = new ToolButton( parent );
-      path_Button.icon = this.scaledResource( ":/icons/select-file.png" );
+      path_Button.icon = parent.scaledResource(":/icons/select-file.png");
       path_Button.setScaledFixedSize( 20, 20 );
-      path_Button.toolTip = "<p>Select the NGC/IC catalog file.</p>";
+      path_Button.toolTip = "<p>Select the custom catalog file.</p>";
       path_Button.onClick = function()
       {
          var gdd = new OpenFileDialog;
