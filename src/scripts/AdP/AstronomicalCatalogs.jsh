@@ -584,7 +584,7 @@ function VizierCatalog(name)
          magnitudeSeparator_Label.text = " - ";
 
          var magnitudeSizer = new HorizontalSizer;
-         magnitudeSizer.spacing = 4;
+         magnitudeSizer.scaledSpacing = 4;
          magnitudeSizer.add( magnitude_Label );
          if( filter_combo )
             magnitudeSizer.add( filter_combo );
@@ -611,9 +611,11 @@ VizierCatalog.mirrors = [
    {name:"CADC (vizier.hia.nrc.ca) Victoria, Canada ", address:"http://vizier.hia.nrc.ca/"},
    {name:"Cambridge (vizier.ast.cam.ac.uk) UK", address:"http://vizier.ast.cam.ac.uk/"},
    {name:"IUCAA (vizier.iucaa.ernet.in) Pune, India", address:"http://vizier.iucaa.ernet.in/"},
+   {name:"NAOC (VizieR.china-vo.org) Beijing, China", address:"http://VizieR.china-vo.org/"},
    {name:"INASAN (vizier.inasan.ru) Moscow, Russia", address:"http://vizier.inasan.ru/"},
    {name:"CFA Harvard (vizier.cfa.harvard.edu) Cambridge, USA", address:"http://vizier.cfa.harvard.edu/"},
-   {name:"JAC (www.ukirt.jach.hawaii.edu) Hilo, Hawaii, USA", address:"http://www.ukirt.jach.hawaii.edu/"}
+   {name:"JAC (www.ukirt.hawaii.edu) Hilo, Hawaii, USA", address:"http://www.ukirt.hawaii.edu/"},
+   {name:"SAAO (viziersaao.chpc.ac.za) SAAO, South Africa", address:"http://viziersaao.chpc.ac.za/"}
    ];
 
 
@@ -1515,7 +1517,7 @@ function BVCatalog()
 
 
       var bvSizer = new HorizontalSizer;
-      bvSizer.spacing = 4;
+      bvSizer.scaledSpacing = 4;
       bvSizer.add( this.bv_Label );
       bvSizer.add( this.bvMin_Edit );
       bvSizer.add( this.bvSeparator_Label );
@@ -1667,7 +1669,7 @@ function SDSSCatalog()
       this.class_combo = class_combo;
 
       var classSizer = new HorizontalSizer;
-      classSizer.spacing = 4;
+      classSizer.scaledSpacing = 4;
       classSizer.add(class_Label);
       classSizer.add(class_combo);
       classSizer.addStretch();
@@ -1797,7 +1799,7 @@ function GSCCatalog()
       this.class_combo = class_combo;
 
       var classSizer = new HorizontalSizer;
-      classSizer.spacing = 4;
+      classSizer.scaledSpacing = 4;
       classSizer.add(class_Label);
       classSizer.add(class_combo);
       classSizer.addStretch();
@@ -2172,7 +2174,7 @@ function CustomCatalog()
       };
 
       var pathSizer = new HorizontalSizer;
-      pathSizer.spacing = 4;
+      pathSizer.scaledSpacing = 4;
       pathSizer.add(path_Label);
       pathSizer.add(path_Edit,100);
       pathSizer.add(path_Button);
@@ -2183,3 +2185,86 @@ function CustomCatalog()
 
 CustomCatalog.prototype = new Catalog;
 __catalogRegister__.Register( new CustomCatalog );
+
+// ******************************************************************
+// VizierMirrorDialog: Selects a mirror of VizieR
+// ******************************************************************
+function VizierMirrorDialog(serverAddress)
+{
+   this.__base__ = Dialog;
+   this.__base__();
+
+   this.helpLabel = new Label(this);
+   this.helpLabel.text = "Select one of the catalog servers:"
+
+   this.server_List = new TreeBox(this);
+   this.server_List.alternateRowColor = false;
+   this.server_List.multipleSelection = false;
+   this.server_List.headerVisible = false;
+   this.server_List.numberOfColumns = 1;
+   this.server_List.setHeaderText(0, "Description");
+   //this.server_List.setHeaderText(1, "Address");
+   this.server_List.rootDecoration = false;
+
+   for (var m = 0; m < VizierCatalog.mirrors.length; m++)
+   {
+      var node = new TreeBoxNode(this.server_List);
+      node.checkable = false;
+      node.setText(0, VizierCatalog.mirrors[m].name);
+      //node.setText(1, VizierCatalog.mirrors[m].address);
+      node.address = VizierCatalog.mirrors[m].address;
+      if (VizierCatalog.mirrors[m].address == serverAddress)
+         node.selected=true;
+   }
+   this.server_List.adjustColumnWidthToContents(0);
+   //this.server_List.adjustColumnWidthToContents(1);
+   //this.server_List.setMinWidth(this.font.width("abc")*25);
+   this.server_List.setMinWidth(this.server_List.columnWidth(0)*1.1);
+
+   // Buttons
+
+   this.ok_Button = new PushButton(this);
+   this.ok_Button.defaultButton = true;
+   this.ok_Button.text = "OK";
+   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
+   this.ok_Button.onClick = function ()
+   {
+      if (this.dialog.server_List.selectedNodes == 0)
+      {
+         var msg = new MessageBox("There is not any selected server.",
+            TITLE, StdIcon_Error, StdButton_Ok);
+         msg.execute();
+         return;
+      }
+      this.dialog.server = this.dialog.server_List.selectedNodes[0].address;
+      this.dialog.ok();
+   };
+
+   this.cancel_Button = new PushButton(this);
+   this.cancel_Button.text = "Cancel";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
+   this.cancel_Button.onClick = function ()
+   {
+      this.dialog.cancel();
+   };
+
+   this.buttons_Sizer = new HorizontalSizer;
+   this.buttons_Sizer.scaledSpacing = 6;
+   this.buttons_Sizer.addStretch();
+   this.buttons_Sizer.add(this.ok_Button);
+   this.buttons_Sizer.add(this.cancel_Button);
+
+   // Global sizer
+   this.sizer = new VerticalSizer;
+   this.sizer.scaledMargin = 8;
+   this.sizer.scaledSpacing = 6;
+   this.sizer.add(this.helpLabel);
+   this.sizer.add(this.server_List);
+   this.sizer.addScaledSpacing(6);
+   this.sizer.add(this.buttons_Sizer);
+
+   this.windowTitle = "Select catalog server";
+   this.adjustToContents();
+}
+
+VizierMirrorDialog.prototype = new Dialog;

@@ -468,27 +468,6 @@ function ManualImageSolverEngine()
       return {metadata: metadata1, cpI: cpI1, cpRD: cpRD};
    }
 
-   this.ApplySTF = function(view, stf)
-   {
-      var low=(stf[0][1]+stf[1][1]+stf[2][1])/3;
-      var mtf=(stf[0][0]+stf[1][0]+stf[2][0])/3;
-      var hgh=(stf[0][2]+stf[1][2]+stf[2][2])/3;
-
-      if ( low > 0 || mtf != 0.5 || hgh != 1 ) // if not an identity transformation
-      {
-         console.writeln(format("<b>Applying STF to '%ls'</b>:\x1b[38;2;100;100;100m",view.id));
-         var HT = new HistogramTransformation;
-         HT.H = [[  0, 0.5,   1, 0, 1],
-            [  0, 0.5,   1, 0, 1],
-            [  0, 0.5,   1, 0, 1],
-            [low, mtf, hgh, 0, 1],
-            [  0, 0.5,   1, 0, 1]];
-
-         HT.executeOn( view, false ); // no swap file
-         console.write("\x1b[0m");
-      }
-   }
-
    this.DrawErrors = function (result)
    {
       // Draw errors in a new bitmap
@@ -504,7 +483,7 @@ function ManualImageSolverEngine()
       {
          tmpW.mainView.beginProcess(UndoFlag_NoSwapFile);
          tmpW.mainView.image.apply(imageL);
-         this.ApplySTF(tmpW.mainView, this.currentWindow.mainView.stf);
+         ApplySTF(tmpW.mainView, this.currentWindow.mainView.stf);
          tmpW.mainView.endProcess();
          bmp.assign(tmpW.mainView.image.render());
       } finally

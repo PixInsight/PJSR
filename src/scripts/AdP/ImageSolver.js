@@ -30,6 +30,10 @@
 /*
    Changelog:
 
+   4.1:   * Fixed layout for high DPI displays
+          * Use the new dialog for selecting the VizieR mirror
+          * Limited the maximum number of stars
+
    4.0:   * Improved the algorithm for distorted images
           * Added option for noise reduction
           * Selection of the projection of the image
@@ -170,7 +174,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.0"
+#define SOLVERVERSION "4.1"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -776,7 +780,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dbPath_Edit = new Edit( this );
    if ( this.solverCfg.databasePath )
       this.dbPath_Edit.text = this.solverCfg.databasePath;
-   this.dbPath_Edit.setScaledMinWidth( 300 );
+   this.dbPath_Edit.setScaledMinWidth(200);
    this.dbPath_Edit.enabled = this.solverCfg.catalogMode==0;
    this.dbPath_Edit.toolTip = "<p>Path to a star database file in StarGenerator format.<br />" +
       "The currently available star database files can be downloaded from: http://pixinsight.com/download/</p>";
@@ -819,7 +823,8 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.vizier_RadioButton.toolTip = "Use an online VizieR catalog server";
    this.vizier_RadioButton.onCheck = function( value )
    {
-      this.dialog.mirror_Combo.enabled = value;
+      //this.dialog.mirror_Combo.enabled = value;
+      this.dialog.server_Button.enabled = value;
       this.dialog.catalog_Combo.enabled = value;
       this.dialog.solverCfg.catalogMode = 1;
    }
@@ -827,6 +832,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.catalog_Combo = new ComboBox(this);
    this.catalog_Combo.enabled = this.solverCfg.catalogMode==1;
    this.catalog_Combo.editEnabled = false;
+   this.catalog_Combo.setFixedWidth(this.font.width("Bright StarsMMMMMM"));
    var toolTip = "<p>Available catalogs:</p><ul>";
    for(var i=0; i<this.solverCfg.availableCatalogs.length; i++){
       this.catalog_Combo.addItem(this.solverCfg.availableCatalogs[i].name);
@@ -842,10 +848,11 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
       this.dialog.solverCfg.catalog = this.dialog.solverCfg.availableCatalogs[this.dialog.catalog_Combo.currentItem].name;
    }
 
-   this.mirror_Combo = new ComboBox(this);
+/*   this.mirror_Combo = new ComboBox(this);
    this.mirror_Combo.enabled = this.solverCfg.catalogMode==1;
    this.mirror_Combo.editEnabled = false;
    this.mirror_Combo.toolTip = "<p>Select the best VizieR server for your location</p>";
+   this.mirror_Combo.setFixedWidth(this.font.width("CFA Harvard (vizier.cfa.harvard.edu) Cambridge, USAMMMM"));
    for ( var m = 0; m < VizierCatalog.mirrors.length; m++ )
    {
       this.mirror_Combo.addItem( VizierCatalog.mirrors[m].name );
@@ -855,13 +862,26 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.mirror_Combo.onItemSelected = function()
    {
       this.dialog.solverCfg.vizierServer = VizierCatalog.mirrors[this.dialog.mirror_Combo.currentItem].address;
+   };*/
+   this.server_Button = new ToolButton(this);
+   this.server_Button.icon = this.scaledResource(":/icons/network-database.png");
+   //this.server_Button.setScaledFixedSize(20, 20);
+   this.server_Button.toolTip = "<p>Select the best VizieR server for your location</p>";
+   this.server_Button.enabled = solverCfg.catalogMode==1;
+   this.server_Button.onClick = function ()
+   {
+      var dlg = new VizierMirrorDialog(solverCfg.vizierServer);
+      if (dlg.execute())
+         solverCfg.vizierServer = dlg.server;
    };
+
 
    this.vizierSizer = new HorizontalSizer;
    this.vizierSizer.spacing = 4;
    this.vizierSizer.add( this.vizier_RadioButton );
    this.vizierSizer.add( this.catalog_Combo );
-   this.vizierSizer.add( this.mirror_Combo );
+   //this.vizierSizer.add( this.mirror_Combo);
+   this.vizierSizer.add( this.server_Button);
    this.vizierSizer.addStretch();
 
    // Magnitude
@@ -1009,7 +1029,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.splineSmooth_Control.label.minWidth = labelWidth1;
    this.splineSmooth_Control.setRange( 0, 0.5 );
    this.splineSmooth_Control.slider.setRange( 0, 1000 );
-   this.splineSmooth_Control.slider.scaledMinWidth = 250;
+   this.splineSmooth_Control.slider.minWidth = 250;
    this.splineSmooth_Control.setPrecision(2);
    this.splineSmooth_Control.edit.minWidth = spinBoxWidth;
    this.splineSmooth_Control.setValue( this.solverCfg.splineSmoothing );
@@ -1075,7 +1095,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.distortion_Edit = new Edit(this);
    if (this.solverCfg.distortionModelPath)
       this.distortion_Edit.text = this.solverCfg.distortionModelPath;
-   this.distortion_Edit.setScaledMinWidth(300);
+   this.distortion_Edit.setScaledMinWidth(200);
    this.distortion_Edit.enabled = this.solverCfg.distortionCorrection && this.useDistortModel_Check.checked;
    this.distortion_Edit.toolTip = distortionToolTip;
    this.distortion_Edit.onTextUpdated = function (value)
@@ -1118,7 +1138,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.distortModel_Sizer = new HorizontalSizer;
    this.distortModel_Sizer.spacing = 4;
    this.distortModel_Sizer.add(this.useDistortModel_Check);
-   this.distortModel_Sizer.add(this.distortion_Edit, 100);
+   this.distortModel_Sizer.add(this.distortion_Edit);//, 100);
    this.distortModel_Sizer.add(this.distortClear_Button);
    this.distortModel_Sizer.add(this.distortPath_Button);
 
@@ -1129,7 +1149,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.sensitivity_Control.label.minWidth = labelWidth1;
    this.sensitivity_Control.setRange( -3, 3 );
    this.sensitivity_Control.slider.setRange( 0, 1000 );
-   this.sensitivity_Control.slider.scaledMinWidth = 250;
+   this.sensitivity_Control.slider.minWidth = 250;
    this.sensitivity_Control.setPrecision(2);
    this.sensitivity_Control.edit.minWidth = spinBoxWidth;
    this.sensitivity_Control.setValue( this.solverCfg.sensitivity );
@@ -1858,27 +1878,6 @@ function ImageSolver()
       return actualCoords;
    }
 
-   this.ApplySTF = function(view, stf)
-   {
-      var low=(stf[0][1]+stf[1][1]+stf[2][1])/3;
-      var mtf=(stf[0][0]+stf[1][0]+stf[2][0])/3;
-      var hgh=(stf[0][2]+stf[1][2]+stf[2][2])/3;
-
-      if ( low > 0 || mtf != 0.5 || hgh != 1 ) // if not an identity transformation
-      {
-         console.writeln(format("<b>Applying STF to '%ls'</b>:\x1b[38;2;100;100;100m",view.id));
-         var HT = new HistogramTransformation;
-         HT.H = [[  0, 0.5,   1, 0, 1],
-            [  0, 0.5,   1, 0, 1],
-            [  0, 0.5,   1, 0, 1],
-            [low, mtf, hgh, 0, 1],
-            [  0, 0.5,   1, 0, 1]];
-
-         HT.executeOn( view, false ); // no swap file
-         console.write("\x1b[0m");
-      }
-   }
-
    this.DrawErrors = function(targetWindow, metadata, stars)
    {
       if(!stars)
@@ -1893,7 +1892,7 @@ function ImageSolver()
       var tmpW = new ImageWindow(metadata.width, metadata.height, imageOrg.numberOfChannels, targetWindow.bitsPerSample, targetWindow.isFloatSample, imageOrg.isColor, targetWindow.mainView.id+ "_Errors");
       tmpW.mainView.beginProcess(UndoFlag_NoSwapFile);
       tmpW.mainView.image.apply(imageOrg);
-      this.ApplySTF(tmpW.mainView, targetWindow.mainView.stf);
+      ApplySTF(tmpW.mainView, targetWindow.mainView.stf);
       tmpW.mainView.endProcess();
       bmp.assign(tmpW.mainView.image.render());
       tmpW.close();
@@ -2147,12 +2146,12 @@ function ImageSolver()
       var predictedCoords = []; // Pixel coordinates of the catalog stars obtained using the current referentiation
       //result.projection = new Gnomonic(180 / Math.PI, metadata.ra, metadata.dec); // New projection using the new center
       result.projection = ProjectionFactory(this.solverCfg, metadata.ra, metadata.dec);
-      for (var i = 0; i < catalogObjects.length; i++)
+      for (var i = 0; i < Math.min(5000, catalogObjects.length); i++)
       {
          if (catalogObjects[i])
          {
             var posI = metadata.Convert_RD_I(catalogObjects[i].posRD);
-            if(posI && posI.x>=clipArea.left && posI.y>=clipArea.top && posI.x<=clipArea.right && posI.y<=clipArea.bottom)
+            if (posI && posI.x >= clipArea.left && posI.y >= clipArea.top && posI.x <= clipArea.right && posI.y <= clipArea.bottom)
             {
                predictedCoords.push(posI);
                result.coordsG.push(result.projection.Direct(catalogObjects[i].posRD));

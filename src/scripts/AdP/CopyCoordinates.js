@@ -78,8 +78,8 @@ function CopyCoordsDialog(engine)
 
    this.helpLabel = new Label(this);
    this.helpLabel.frameStyle = FrameStyle_Box;
-   this.helpLabel.scaledMinWidth = 45 * this.font.width('M');
-   this.helpLabel.margin = 6;
+   this.helpLabel.minWidth = 45 * this.font.width('M');
+   this.helpLabel.scaledMargin = 6;
    this.helpLabel.wordWrapping = true;
    this.helpLabel.useRichText = true;
    this.helpLabel.text =
@@ -115,7 +115,7 @@ function CopyCoordsDialog(engine)
    };
 
    this.reference_Sizer = new HorizontalSizer;
-   this.reference_Sizer.spacing = 6;
+   this.reference_Sizer.scaledSpacing = 6;
    this.reference_Sizer.add(this.reference_Label);
    this.reference_Sizer.add(this.reference_Combo);
    this.reference_Sizer.addStretch();
@@ -124,7 +124,7 @@ function CopyCoordsDialog(engine)
    this.simple_Radio = new RadioButton(this);
    this.simple_Radio.text = "Simple copy. The source must have the same geometry as the target.";
    this.simple_Radio.checked = engine.simple == true;
-   this.simple_Radio.scaledMinWidth = labelWidth;
+   this.simple_Radio.minWidth = labelWidth;
    this.simple_Radio.toolTip = "<p>The script copies the coordinates of the source image to the target image without any transformation.</p>" +
       "<p>This only works when both images have the same geometry so it typically can only be used between cloned images.</p>";
    this.simple_Radio.onCheck = function (value)
@@ -137,7 +137,7 @@ function CopyCoordsDialog(engine)
    this.align_Radio = new RadioButton(this);
    this.align_Radio.text = "Transform copy. There is a lineal transform between the source and target.";
    this.align_Radio.checked = engine.simple == false;
-   this.align_Radio.scaledMinWidth = labelWidth;
+   this.align_Radio.minWidth = labelWidth;
    this.align_Radio.toolTip = "<p>The script tries to register the target image against the source image. " +
       "If a transformation is found, the script applies it to the coordinates of the source image and" +
       " then sets the transformed coordinates on the target image.</p>" +
@@ -156,9 +156,9 @@ function CopyCoordsDialog(engine)
    //this.sensitivity_Control.label.minWidth = labelWidth;
    this.sensitivity_Control.setRange(-3, 3);
    this.sensitivity_Control.slider.setRange(0, 1000);
-   this.sensitivity_Control.slider.scaledMinWidth = 250;
+   this.sensitivity_Control.slider.minWidth = 250;
    this.sensitivity_Control.setPrecision(2);
-   this.sensitivity_Control.edit.minWidth = spinBoxWidth;
+   this.sensitivity_Control.edit.scaledMinWidth = spinBoxWidth;
    this.sensitivity_Control.setValue(engine.sensitivity);
    this.sensitivity_Control.toolTip = "<p>Star detection sensitivity. Increase the value to detect less stars.</p>";
    this.sensitivity_Control.onValueUpdated = function (value)
@@ -249,7 +249,7 @@ function CopyCoordsDialog(engine)
    };
 
    this.buttons_Sizer = new HorizontalSizer;
-   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.scaledSpacing = 6;
    this.buttons_Sizer.add(this.newInstanceButton);
    this.buttons_Sizer.add(this.reset_Button);
    this.buttons_Sizer.add(this.help_Button);
@@ -260,15 +260,15 @@ function CopyCoordsDialog(engine)
    // Global sizer
 
    this.sizer = new VerticalSizer;
-   this.sizer.margin = 8;
-   this.sizer.spacing = 6;
+   this.sizer.scaledMargin = 8;
+   this.sizer.scaledSpacing = 6;
    this.sizer.add(this.helpLabel);
-   this.sizer.addSpacing(4);
+   this.sizer.addScaledSpacing(4);
    this.sizer.add(this.reference_Sizer);
    this.sizer.add(this.simple_Radio);
    this.sizer.add(this.align_Radio);
    this.sizer.add(this.sensitivity_Sizer);
-   this.sizer.addSpacing(8);
+   this.sizer.addScaledSpacing(8);
    this.sizer.add(this.buttons_Sizer);
 
    this.windowTitle = TITLE;

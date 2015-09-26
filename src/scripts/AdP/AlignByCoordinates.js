@@ -87,7 +87,7 @@ function AlignByCoordsDialog(engine)
    this.helpLabel = new Label(this);
    this.helpLabel.frameStyle = FrameStyle_Box;
    this.helpLabel.minWidth = 45 * this.font.width('M');
-   this.helpLabel.margin = 6;
+   this.helpLabel.scaledMargin = 6;
    this.helpLabel.wordWrapping = true;
    this.helpLabel.useRichText = true;
    this.helpLabel.text =
@@ -119,7 +119,7 @@ function AlignByCoordsDialog(engine)
    };
 
    this.mode_Sizer = new HorizontalSizer;
-   this.mode_Sizer.spacing = 6;
+   this.mode_Sizer.scaledSpacing = 6;
    this.mode_Sizer.add(this.mode_Label);
    this.mode_Sizer.add(this.mode_Combo);
    this.mode_Sizer.addStretch();
@@ -164,7 +164,7 @@ function AlignByCoordsDialog(engine)
 
    this.referBrowse_Button = new ToolButton(this);
    this.referBrowse_Button.icon = this.scaledResource( ":/icons/select-file.png" );
-   this.referBrowse_Button.setScaledFixedSize( 20, 20 );
+   //this.referBrowse_Button.setScaledFixedSize( 20, 20 );
    this.referBrowse_Button.text = "Browse";
    this.referBrowse_Button.toolTip = "<p>Click to open the file dialog for selecting the path of the reference image.</p>";
    this.referBrowse_Button.enabled = engine.alignMode != AlignMode.prototype.Undistort;
@@ -187,7 +187,7 @@ function AlignByCoordsDialog(engine)
    };
 
    this.reference_Sizer = new HorizontalSizer;
-   this.reference_Sizer.spacing = 6;
+   this.reference_Sizer.scaledSpacing = 6;
    this.reference_Sizer.add(this.reference_Label);
    this.reference_Sizer.add(this.reference_Combo);
    this.reference_Sizer.add(this.referBrowse_Button);
@@ -196,8 +196,8 @@ function AlignByCoordsDialog(engine)
    this.target_Group = new GroupBox(this);
    this.target_Group.title = "Target images";
    this.target_Group.sizer = new VerticalSizer;
-   this.target_Group.sizer.margin = 8;
-   this.target_Group.sizer.spacing = 6;
+   this.target_Group.sizer.scaledMargin = 8;
+   this.target_Group.sizer.scaledSpacing = 6;
 
    // Active image
    this.active_Radio = new RadioButton(this);
@@ -336,7 +336,7 @@ function AlignByCoordsDialog(engine)
 
    // Buttons for managing the list of files
    this.files_Buttons = new HorizontalSizer;
-   this.files_Buttons.spacing = 6;
+   this.files_Buttons.scaledSpacing = 6;
    this.files_Buttons.add(this.addFile_Button);
    this.files_Buttons.add(this.addView_Button);
    this.files_Buttons.add(this.remove_Button);
@@ -345,7 +345,7 @@ function AlignByCoordsDialog(engine)
    this.files_Buttons.addStretch();
 
    this.files_Sizer = new VerticalSizer;
-   this.files_Sizer.spacing = 6;
+   this.files_Sizer.scaledSpacing = 6;
    this.files_Sizer.add(this.files_List);
    this.files_Sizer.add(this.files_Buttons);
    this.files_Sizer.addStretch();
@@ -366,7 +366,7 @@ function AlignByCoordsDialog(engine)
    this.options_Section = new SectionBar(this, "Options");
    this.options_Control = new Control(this);
    this.options_Control.sizer = new VerticalSizer;
-   this.options_Control.sizer.spacing = 4;
+   this.options_Control.sizer.scaledSpacing = 4;
    this.options_Section.setSection(this.options_Control);
    this.options_Control.hide();
    this.options_Control.onToggleSection = function (bar, toggleBegin)
@@ -409,7 +409,7 @@ function AlignByCoordsDialog(engine)
       engine.qualityHQ = true;
    };
    this.quality_Sizer = new HorizontalSizer;
-   this.quality_Sizer.spacing = 6;
+   this.quality_Sizer.scaledSpacing = 6;
    this.quality_Sizer.add(this.quality_Label);
    this.quality_Sizer.add(this.qualityFast_Radio);
    this.quality_Sizer.add(this.qualityHQ_Radio);
@@ -442,7 +442,7 @@ function AlignByCoordsDialog(engine)
    };
 
    this.interpol_Sizer = new HorizontalSizer;
-   this.interpol_Sizer.spacing = 6;
+   this.interpol_Sizer.scaledSpacing = 6;
    this.interpol_Sizer.add(this.interpol_Label);
    this.interpol_Sizer.add(this.interpol_Combo);
    this.interpol_Sizer.addStretch();
@@ -471,7 +471,7 @@ function AlignByCoordsDialog(engine)
    this.output_Section = new SectionBar(this, "Output Images");
    this.output_Control = new Control(this);
    this.output_Control.sizer = new VerticalSizer;
-   this.output_Control.sizer.spacing = 4;
+   this.output_Control.sizer.scaledSpacing = 4;
    this.output_Section.setSection(this.output_Control);
    this.output_Control.hide();
    this.output_Control.onToggleSection = function (bar, toggleBegin)
@@ -506,7 +506,7 @@ function AlignByCoordsDialog(engine)
 
    this.outDir_Button = new ToolButton(this);
    this.outDir_Button.icon = this.scaledResource( ":/icons/select-file.png" );
-   this.outDir_Button.setScaledFixedSize( 20, 20 );
+   //this.outDir_Button.setScaledFixedSize( 20, 20 );
    this.outDir_Button.toolTip = "<p>Select the output directory.</p>";
    this.outDir_Button.onClick = function ()
    {
@@ -522,7 +522,7 @@ function AlignByCoordsDialog(engine)
    };
 
    this.outDir_Sizer = new HorizontalSizer;
-   this.outDir_Sizer.spacing = 4;
+   this.outDir_Sizer.scaledSpacing = 4;
    this.outDir_Sizer.add(this.outDir_Label);
    this.outDir_Sizer.add(this.outDir_Edit, 100);
    this.outDir_Sizer.add(this.outDir_Button);
@@ -544,7 +544,7 @@ function AlignByCoordsDialog(engine)
    };
 
    this.suffix_Sizer = new HorizontalSizer;
-   this.suffix_Sizer.spacing = 4;
+   this.suffix_Sizer.scaledSpacing = 4;
    this.suffix_Sizer.add(this.suffix_Label);
    this.suffix_Sizer.add(this.suffix_Edit);
    this.suffix_Sizer.addStretch();
@@ -575,10 +575,10 @@ function AlignByCoordsDialog(engine)
    };
 
    this.suffix_Sizer = new HorizontalSizer;
-   this.suffix_Sizer.spacing = 4;
+   this.suffix_Sizer.scaledSpacing = 4;
    this.suffix_Sizer.addSpacing(this.labelWidth + 4);
    this.suffix_Sizer.add(this.overwrite_Check);
-   this.suffix_Sizer.addSpacing(20);
+   this.suffix_Sizer.addScaledSpacing(20);
    this.suffix_Sizer.add(this.errorPolicy_Label);
    this.suffix_Sizer.add(this.errorPolicy_Combo);
    this.suffix_Sizer.addStretch();
@@ -588,7 +588,7 @@ function AlignByCoordsDialog(engine)
 
    this.newInstanceButton = new ToolButton(this);
    this.newInstanceButton.icon = this.scaledResource( ":/process-interface/new-instance.png" );
-   this.newInstanceButton.setScaledFixedSize( 20, 20 );
+   //this.newInstanceButton.setScaledFixedSize( 20, 20 );
    this.newInstanceButton.toolTip = "New Instance";
    this.newInstanceButton.onMousePress = function ()
    {
@@ -602,7 +602,7 @@ function AlignByCoordsDialog(engine)
 
    this.reset_Button = new ToolButton(this);
    this.reset_Button.icon = this.scaledResource( ":/icons/reload.png" );
-   this.reset_Button.setScaledFixedSize( 20, 20 );
+   //this.reset_Button.setScaledFixedSize( 20, 20 );
    this.reset_Button.toolTip = "<p>Resets all settings to default values.<br />" +
       "This action closes the dialog, so the script has to be executed again for changes to take effect.</p>";
    this.reset_Button.onClick = function ()
@@ -620,7 +620,7 @@ function AlignByCoordsDialog(engine)
 
    this.help_Button = new ToolButton(this);
    this.help_Button.icon = this.scaledResource( ":/process-interface/browse-documentation.png" );
-   this.help_Button.setScaledFixedSize( 20, 20 );
+   //this.help_Button.setScaledFixedSize( 120, 120 );
    this.help_Button.toolTip = "<p>Browse Documentation</p>";
    this.help_Button.onClick = function ()
    {
@@ -665,7 +665,7 @@ function AlignByCoordsDialog(engine)
    };
 
    this.buttons_Sizer = new HorizontalSizer;
-   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.scaledSpacing = 6;
    this.buttons_Sizer.add(this.newInstanceButton);
    this.buttons_Sizer.add(this.reset_Button);
    this.buttons_Sizer.add(this.help_Button);
@@ -676,8 +676,8 @@ function AlignByCoordsDialog(engine)
    // Global sizer
 
    this.sizer = new VerticalSizer;
-   this.sizer.margin = 8;
-   this.sizer.spacing = 6;
+   this.sizer.scaledMargin = 8;
+   this.sizer.scaledSpacing = 6;
    this.sizer.add(this.helpLabel);
    this.sizer.addSpacing(4);
    this.sizer.add(this.mode_Sizer);
@@ -687,7 +687,7 @@ function AlignByCoordsDialog(engine)
    this.sizer.add(this.options_Control);
    this.sizer.add(this.output_Section);
    this.sizer.add(this.output_Control);
-   this.sizer.addSpacing(8);
+   this.sizer.addScaledSpacing(8);
    this.sizer.add(this.buttons_Sizer);
 
    this.windowTitle = TITLE;
