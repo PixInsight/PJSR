@@ -1098,7 +1098,16 @@ ImageMetadata.Distance = function(cp1, cp2)
       Math.sqrt(cosY2*sinX*cosY2*sinX + K*K),
       (sinY1*sinY2+cosY1*cosY2*cosX)
    );
-}
+};
+
+ImageMetadata.DistanceFast = function(cp1, cp2)
+{
+   if(!cp1 || !cp2)
+      return NaN;
+   return DMath.acos(
+      DMath.sin(cp1.y) * DMath.sin(cp2.y) +
+      DMath.cos(cp1.y) * DMath.cos(cp2.y) * DMath.cos(cp1.x - cp2.x));
+};
 
 
 // ******************************************************************

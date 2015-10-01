@@ -502,7 +502,9 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    var coordinatesTooltip = "<p>Initial equatorial coordinates. Must be inside the image.</p>";
 
    // CoordsEditor
-   this.coords_Editor = new CoordinatesEditor(this, new Point(metadata.ra, metadata.dec), labelWidth1, spinBoxWidth, coordinatesTooltip);
+   this.coords_Editor = new CoordinatesEditor(this,
+      new Point(metadata.ra !== null ? metadata.ra : 0, metadata.dec !== null ? metadata.dec : 0),
+      labelWidth1, spinBoxWidth, coordinatesTooltip);
 
    this.search_Button = new PushButton( this );
    this.search_Button.text = "Search";
