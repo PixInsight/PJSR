@@ -153,6 +153,11 @@ function PreviewControl(parent)
       this.viewport.update();
    }
 
+   this.forceRedraw = function()
+   {
+      this.scrollbox.viewport.update();
+   };
+
    this.scrollbox.viewport.onMouseWheel = function (x, y, delta, buttonState, modifiers)
    {
       var preview = this.parent.parent;
@@ -248,6 +253,7 @@ function PreviewControl(parent)
 
       if(preview.onCustomPaint)
       {
+         graphics.antialiasing = true;
          graphics.scaleTransformation(preview.scale,preview.scale);
          preview.onCustomPaint.call(preview.onCustomPaintScope, graphics, x0, y0, x1, y1);
       }

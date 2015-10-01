@@ -2377,28 +2377,6 @@ function PhotometryEngine(w)
       console.writeln(format("<end><clrbol>Found %d stars with invalid position", numBadPos));
    }
 
-   this.ApplySTF = function (view, stf, channels)
-   {
-      var low = (channels == 1) ? stf[0][1] : (stf[0][1] + stf[1][1] + stf[2][1]) / 3;
-      var mtf = (channels == 1) ? stf[0][0] : (stf[0][0] + stf[1][0] + stf[2][0]) / 3;
-      var hgh = (channels == 1) ? stf[0][2] : (stf[0][2] + stf[1][2] + stf[2][2]) / 3;
-      if (low > 0 || mtf != 0.5 || hgh != 1) // if not an identity transformation
-      {
-         console.writeln(format("<b>Applying STF to '%ls'</b>:\x1b[38;2;100;100;100m",view.id));
-         var HT = new HistogramTransformation;
-         HT.H = [
-            [  0, 0.5, 1, 0, 1],
-            [  0, 0.5, 1, 0, 1],
-            [  0, 0.5, 1, 0, 1],
-            [low, mtf, hgh, 0, 1],
-            [  0, 0.5, 1, 0, 1]
-         ];
-
-         HT.executeOn(view, false); // no swap file
-         console.write("\x1b[0m");
-      }
-   }
-
    this.DrawStars = function (window, imageStars, suffix, positionField)
    {
       console.writeln("Generating detected stars image");
@@ -2417,7 +2395,7 @@ function PhotometryEngine(w)
       tmpW.mainView.image.apply(window.mainView.image);
       tmpW.mainView.image.selectedChannel = 2;
       tmpW.mainView.image.apply(window.mainView.image);
-      this.ApplySTF(tmpW.mainView, window.mainView.stf, window.mainView.image.numberOfChannels);
+      ApplySTF(tmpW.mainView, window.mainView.stf);
       var conv = new SampleFormatConversion();
       conv.format = SampleFormatConversion.prototype.To8Bit;
       conv.executeOn(tmpW.mainView, false);

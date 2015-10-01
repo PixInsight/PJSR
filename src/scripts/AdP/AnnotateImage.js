@@ -3,7 +3,7 @@
 
    Annotation of astronomical images.
 
-   Copyright (C) 2012-2014, Andres del Pozo
+   Copyright (C) 2012-2015, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,9 @@
 
 /*
    Changelog:
+
+   1.8.2:* Fixed the configuration panel of Custom Catalog Layer
+         * The layers Messier and IC/NGC can now read files with any endline code
 
    1.8.1:* New Messier catalog
          * Improved NamedStars catalog.
@@ -151,7 +154,7 @@
 
 #feature-info  A script for annotating astronomical images.<br/>\
                <br/>\
-               Copyright &copy; 2012-2013 Andr&eacute;s del Pozo
+               Copyright &copy; 2012-2015 Andr&eacute;s del Pozo
 
 #include <pjsr/DataType.jsh>
 #include <pjsr/FontFamily.jsh>
@@ -168,7 +171,7 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.8.1"
+#define VERSION "1.8.2"
 #define TITLE "Annotate Image"
 #define SETTINGS_MODULE "ANNOT"
 
@@ -225,6 +228,7 @@ function TransparentColorControl( parent, initialValue, toolTip )
    this.transparency_SpinBox = new SpinBox( parent );
    this.transparency_SpinBox.minValue = 0;
    this.transparency_SpinBox.maxValue = 255;
+   this.transparency_SpinBox.setFixedWidth(parent.font.width("8888888"))
    this.transparency_SpinBox.value = Color.alpha( this.color );
    this.transparency_SpinBox.toolTip = toolTip + ": Alpha value (0=transparent, 255=opaque)";
    this.transparency_SpinBox.onValueUpdated = function( value )
@@ -254,7 +258,7 @@ function TransparentColorControl( parent, initialValue, toolTip )
    };
 
    this.sizer = new HorizontalSizer;
-   this.sizer.spacing = 4;
+   this.sizer.scaledSpacing = 4;
    this.sizer.add( this.color_ComboBox );
    this.sizer.add( this.transparency_SpinBox );
    this.sizer.add( this.color_Button );
@@ -329,7 +333,7 @@ function GraphicProperties( module, layer )
       marker_ColorControl.onColorChanged = function( color ) { this.dialog.activeFrame.object.gprops.lineColor = color; };
 
       var markerColor_Sizer = new HorizontalSizer;
-      markerColor_Sizer.spacing = 4;
+      markerColor_Sizer.scaledSpacing = 4;
       markerColor_Sizer.add( markerColor_Label );
       markerColor_Sizer.add( marker_ColorControl );
       markerColor_Sizer.addStretch( );
@@ -344,11 +348,12 @@ function GraphicProperties( module, layer )
       markerWidth_SpinBox.minValue = 0;
       markerWidth_SpinBox.maxValue = 20;
       markerWidth_SpinBox.value = this.lineWidth;
+      markerWidth_SpinBox.setFixedWidth(parent.spinWidth);
       markerWidth_SpinBox.toolTip = "<p>Line width of markers.</p>";
       markerWidth_SpinBox.onValueUpdated = function( value ) { this.dialog.activeFrame.object.gprops.lineWidth = value; };
 
       var markerWidth_Sizer = new HorizontalSizer;
-      markerWidth_Sizer.spacing = 4;
+      markerWidth_Sizer.scaledSpacing = 4;
       markerWidth_Sizer.add( markerWidth_Label );
       markerWidth_Sizer.add( markerWidth_SpinBox );
       markerWidth_Sizer.addStretch( );
@@ -363,8 +368,8 @@ function GraphicProperties( module, layer )
          this.dialog.activeFrame.object.gprops.showMarkers = checked;
       };
       showMarker_Frame.sizer = new VerticalSizer;
-      showMarker_Frame.sizer.margin=6;
-      showMarker_Frame.sizer.spacing=4;
+      showMarker_Frame.sizer.scaledMargin=6;
+      showMarker_Frame.sizer.scaledSpacing=4;
       showMarker_Frame.sizer.add(markerColor_Sizer);
       showMarker_Frame.sizer.add(markerWidth_Sizer);
       showMarker_Frame.frameStyle = FrameStyle_Box;
@@ -392,6 +397,7 @@ function GraphicProperties( module, layer )
       var labelSize_SpinBox = new SpinBox( parent );
       labelSize_SpinBox.minValue = 6;
       labelSize_SpinBox.maxValue = 72;
+      labelSize_SpinBox.setFixedWidth(parent.spinWidth);
       labelSize_SpinBox.value = this.labelSize;
       labelSize_SpinBox.toolTip = "<p>Font size of the labels.</p>";
       labelSize_SpinBox.onValueUpdated = function( value ) { this.dialog.activeFrame.object.gprops.labelSize = value; };
@@ -415,7 +421,7 @@ function GraphicProperties( module, layer )
       };
 
       var font_Sizer = new HorizontalSizer;
-      font_Sizer.spacing = 4;
+      font_Sizer.scaledSpacing = 4;
       //font_Sizer.addSpacing( 25 );
       font_Sizer.add( labelSize_Label );
       font_Sizer.add( labelFace_Combo );
@@ -434,7 +440,7 @@ function GraphicProperties( module, layer )
       label_ColorControl.onColorChanged = function( color ) { this.dialog.activeFrame.object.gprops.labelColor = color; };
 
       var labelColor_Sizer = new HorizontalSizer;
-      labelColor_Sizer.spacing = 4;
+      labelColor_Sizer.scaledSpacing = 4;
       labelColor_Sizer.add( labelColor_Label );
       labelColor_Sizer.add( label_ColorControl );
       labelColor_Sizer.addStretch( );
@@ -455,21 +461,23 @@ function GraphicProperties( module, layer )
          var combo7 = new LabelCombo(parent, fields, this.labelFields, 7, comboWidth);
 
          var row1 = new HorizontalSizer;
-         row1.spacing = 4;
+         row1.scaledSpacing = 4;
          row1.add( combo0 );
          row1.add( combo1 );
          row1.add( combo2 );
          row1.addStretch( );
 
+         this.spacerControl=new Control(parent);
+         this.spacerControl.setFixedWidth(comboWidth);
          var row2 = new HorizontalSizer;
-         row2.spacing = 4;
+         row2.scaledSpacing = 4;
          row2.add( combo3 );
-         row2.addSpacing( comboWidth+4 );
+         row2.add(this.spacerControl);
          row2.add( combo4 );
-         row2.addStretch( );
+         row2.addStretch();
 
          var row3 = new HorizontalSizer;
-         row3.spacing = 4;
+         row3.scaledSpacing = 4;
          row3.add( combo5 );
          row3.add( combo6 );
          row3.add( combo7 );
@@ -481,13 +489,13 @@ function GraphicProperties( module, layer )
          fields_Label.minWidth = parent.labelWidth2;
 
          var table_Sizer = new VerticalSizer;
-         table_Sizer.spacing = 4;
+         table_Sizer.scaledSpacing = 4;
          table_Sizer.add( row1 );
          table_Sizer.add( row2 );
          table_Sizer.add( row3 );
 
          fields_Sizer = new HorizontalSizer;
-         fields_Sizer.spacing = 4;
+         fields_Sizer.scaledSpacing = 4;
          fields_Sizer.add( fields_Label );
          fields_Sizer.add( table_Sizer );
          fields_Sizer.addStretch( );
@@ -503,8 +511,8 @@ function GraphicProperties( module, layer )
          this.dialog.activeFrame.object.gprops.showLabels = checked;
       };
       showLabel_Frame.sizer = new VerticalSizer;
-      showLabel_Frame.sizer.margin=6;
-      showLabel_Frame.sizer.spacing=4;
+      showLabel_Frame.sizer.scaledMargin=6;
+      showLabel_Frame.sizer.scaledSpacing=4;
       showLabel_Frame.sizer.add(font_Sizer);
       showLabel_Frame.sizer.add(labelColor_Sizer);
       if(fields_Sizer)
@@ -646,6 +654,7 @@ function GridLayer()
       density_Spin.minValue = 1;
       density_Spin.maxValue = 20;
       density_Spin.value = this.density;
+      density_Spin.setFixedWidth(parent.spinWidth);
       density_Spin.toolTip = "<p>Density of the grid.<br/>Higher values for a denser grid.</p>";
       density_Spin.onValueUpdated = function (value)
       {
@@ -654,7 +663,7 @@ function GridLayer()
       this.density_Spin = density_Spin;
 
       var densitySizer = new HorizontalSizer;
-      densitySizer.spacing = 4;
+      densitySizer.scaledSpacing = 4;
       densitySizer.add(density_Label);
       densitySizer.add(density_Spin);
       densitySizer.addStretch();
@@ -662,8 +671,8 @@ function GridLayer()
 
       var frame = new Frame(parent);
       frame.sizer = new VerticalSizer;
-      frame.sizer.margin = 6;
-      frame.sizer.spacing = 4;
+      frame.sizer.scaledMargin = 6;
+      frame.sizer.scaledSpacing = 4;
       frame.style = FrameStyle_Flat;
       for (var i = 0; i < this.gpropsControls.length; i++)
          frame.sizer.add(this.gpropsControls[i]);
@@ -821,7 +830,7 @@ function ConstLinesLayer()
       this.margin_Spin = margin_Spin;
 
       var marginSizer = new HorizontalSizer;
-      marginSizer.spacing = 4;
+      marginSizer.scaledSpacing = 4;
       marginSizer.add(margin_Label);
       marginSizer.add(margin_Spin);
       marginSizer.addStretch();
@@ -829,8 +838,8 @@ function ConstLinesLayer()
 
       var frame = new Frame(parent);
       frame.sizer = new VerticalSizer;
-      frame.sizer.margin = 6;
-      frame.sizer.spacing = 4;
+      frame.sizer.scaledMargin = 6;
+      frame.sizer.scaledSpacing = 4;
       frame.style = FrameStyle_Flat;
       for (var i = 0; i < this.gpropsControls.length; i++)
          frame.sizer.add(this.gpropsControls[i]);
@@ -970,8 +979,8 @@ function ConstBordersLayer()
 
       var frame = new Frame(parent);
       frame.sizer = new VerticalSizer;
-      frame.sizer.margin = 6;
-      frame.sizer.spacing = 4;
+      frame.sizer.scaledMargin = 6;
+      frame.sizer.scaledSpacing = 4;
       frame.style = FrameStyle_Flat;
       for (var i = 0; i < this.gpropsControls.length; i++)
          frame.sizer.add(this.gpropsControls[i]);
@@ -1092,8 +1101,8 @@ function CatalogLayer(catalog)
    {
       var frame = new Frame(parent);
       frame.sizer = new VerticalSizer;
-      frame.sizer.margin = 6;
-      frame.sizer.spacing = 4;
+      frame.sizer.scaledMargin = 6;
+      frame.sizer.scaledSpacing = 4;
       frame.style = FrameStyle_Flat;
 
       this.gpropsControls = this.gprops.GetEditControls(parent, this.catalog.fields);
@@ -1326,181 +1335,165 @@ function TextLayer()
    this.GetEditPanel = function (parent)
    {
       // Font
-      var labelSize_Label = new Label(parent);
-      labelSize_Label.text = "Font:";
-      labelSize_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-      labelSize_Label.minWidth = parent.labelWidth2;
-      this.labelSize_Label = labelSize_Label;
+      this.labelSize_Label = new Label(parent);
+      this.labelSize_Label.text = "Font:";
+      this.labelSize_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+      this.labelSize_Label.minWidth = parent.labelWidth2;
 
-      var labelFace_Combo = new ComboBox(parent);
-      labelFace_Combo.editEnabled = false;
-      labelFace_Combo.addItem("SansSerif");
-      labelFace_Combo.addItem("Serif");
-      labelFace_Combo.addItem("Script");
-      labelFace_Combo.addItem("TypeWriter");
-      labelFace_Combo.addItem("Decorative");
-      labelFace_Combo.addItem("Symbol");
-      labelFace_Combo.currentItem = this.gprops.labelFace - 1;
-      labelFace_Combo.onItemSelected = function ()
+      this.labelFace_Combo = new ComboBox(parent);
+      this.labelFace_Combo.editEnabled = false;
+      this.labelFace_Combo.addItem("SansSerif");
+      this.labelFace_Combo.addItem("Serif");
+      this.labelFace_Combo.addItem("Script");
+      this.labelFace_Combo.addItem("TypeWriter");
+      this.labelFace_Combo.addItem("Decorative");
+      this.labelFace_Combo.addItem("Symbol");
+      this.labelFace_Combo.currentItem = this.gprops.labelFace - 1;
+      this.labelFace_Combo.onItemSelected = function ()
       {
          this.dialog.activeFrame.object.gprops.labelFace = labelFace_Combo.currentItem + 1;
       }
-      this.labelFace_Combo = labelFace_Combo;
 
-      var labelSize_SpinBox = new SpinBox(parent);
-      labelSize_SpinBox.minValue = 6;
-      labelSize_SpinBox.maxValue = 72;
-      labelSize_SpinBox.value = this.gprops.labelSize;
-      labelSize_SpinBox.toolTip = "<p>Font size of the text.</p>";
-      labelSize_SpinBox.onValueUpdated = function (value)
+      this.labelSize_SpinBox = new SpinBox(parent);
+      this.labelSize_SpinBox.minValue = 6;
+      this.labelSize_SpinBox.maxValue = 72;
+      this.labelSize_SpinBox.value = this.gprops.labelSize;
+      this.labelSize_SpinBox.toolTip = "<p>Font size of the text.</p>";
+      this.labelSize_SpinBox.setFixedWidth(parent.spinWidth);
+      this.labelSize_SpinBox.onValueUpdated = function (value)
       {
          this.dialog.activeFrame.object.gprops.labelSize = value;
       };
 
-      var labelBold_Check = new CheckBox(parent);
-      labelBold_Check.checked = this.gprops.labelBold;
-      labelBold_Check.text = "Bold";
-      labelBold_Check.toolTip = "<p>Bold font.</p>";
-      labelBold_Check.onCheck = function (checked)
+      this.labelBold_Check = new CheckBox(parent);
+      this.labelBold_Check.checked = this.gprops.labelBold;
+      this.labelBold_Check.text = "Bold";
+      this.labelBold_Check.toolTip = "<p>Bold font.</p>";
+      this.labelBold_Check.onCheck = function (checked)
       {
          this.dialog.activeFrame.object.gprops.labelBold = checked;
       };
-      this.labelBold_Check = labelBold_Check;
 
-      var labelItalic_Check = new CheckBox(parent);
-      labelItalic_Check.checked = this.gprops.labelItalic;
-      labelItalic_Check.text = "Italic";
-      labelItalic_Check.toolTip = "<p>Italic font.</p>";
-      labelItalic_Check.onCheck = function (checked)
+      this.labelItalic_Check = new CheckBox(parent);
+      this.labelItalic_Check.checked = this.gprops.labelItalic;
+      this.labelItalic_Check.text = "Italic";
+      this.labelItalic_Check.toolTip = "<p>Italic font.</p>";
+      this.labelItalic_Check.onCheck = function (checked)
       {
          this.dialog.activeFrame.object.gprops.labelItalic = checked;
       };
-      this.labelItalic_Check = labelItalic_Check;
 
-      var font_Sizer = new HorizontalSizer;
-      font_Sizer.spacing = 4;
-      font_Sizer.add(labelSize_Label);
-      font_Sizer.add(labelFace_Combo);
-      font_Sizer.add(labelSize_SpinBox);
-      font_Sizer.add(labelBold_Check);
-      font_Sizer.add(labelItalic_Check);
-      font_Sizer.addStretch();
-      this.font_Sizer = font_Sizer;
+      this.font_Sizer = new HorizontalSizer;
+      this.font_Sizer.scaledSpacing = 4;
+      this.font_Sizer.add(this.labelSize_Label);
+      this.font_Sizer.add(this.labelFace_Combo);
+      this.font_Sizer.add(this.labelSize_SpinBox);
+      this.font_Sizer.add(this.labelBold_Check);
+      this.font_Sizer.add(this.labelItalic_Check);
+      this.font_Sizer.addStretch();
 
       // Foreground color
-      var fcolor_Label = new Label(parent);
-      fcolor_Label.text = "Text color:";
-      fcolor_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-      fcolor_Label.minWidth = parent.labelWidth2;
-      this.fcolor_Label = fcolor_Label;
+      this.fcolor_Label = new Label(parent);
+      this.fcolor_Label.text = "Text color:";
+      this.fcolor_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+      this.fcolor_Label.minWidth = parent.labelWidth2;
 
-      var fcolor_ColorControl = new TransparentColorControl(parent, this.gprops.labelColor, "Text color");
-      fcolor_ColorControl.onColorChanged = function (color)
+      this.fcolor_ColorControl = new TransparentColorControl(parent, this.gprops.labelColor, "Text color");
+      this.fcolor_ColorControl.onColorChanged = function (color)
       {
          this.dialog.activeFrame.object.gprops.labelColor = color;
       };
-      this.fcolor_ColorControl = fcolor_ColorControl;
 
-      var fcolor_Sizer = new HorizontalSizer;
-      fcolor_Sizer.spacing = 4;
-      fcolor_Sizer.add(fcolor_Label);
-      fcolor_Sizer.add(fcolor_ColorControl);
-      fcolor_Sizer.addStretch();
-      this.fcolor_Sizer = fcolor_Sizer;
+      this.fcolor_Sizer = new HorizontalSizer;
+      this.fcolor_Sizer.scaledSpacing = 4;
+      this.fcolor_Sizer.add(this.fcolor_Label);
+      this.fcolor_Sizer.add(this.fcolor_ColorControl);
+      this.fcolor_Sizer.addStretch();
 
       // Background color
-      var bcolor_Label = new Label(parent);
-      bcolor_Label.text = "Background:";
-      bcolor_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-      bcolor_Label.minWidth = parent.labelWidth2;
-      this.bcolor_Label = bcolor_Label;
+      this.bcolor_Label = new Label(parent);
+      this.bcolor_Label.text = "Background:";
+      this.bcolor_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+      this.bcolor_Label.minWidth = parent.labelWidth2;
 
-      var bcolor_ColorControl = new TransparentColorControl(parent, this.gprops.lineColor, "Background color");
-      bcolor_ColorControl.onColorChanged = function (color)
+      this.bcolor_ColorControl = new TransparentColorControl(parent, this.gprops.lineColor, "Background color");
+      this.bcolor_ColorControl.onColorChanged = function (color)
       {
          this.dialog.activeFrame.object.gprops.lineColor = color;
       };
-      this.bcolor_ColorControl = bcolor_ColorControl;
 
-      var bcolor_Sizer = new HorizontalSizer;
-      bcolor_Sizer.spacing = 4;
-      bcolor_Sizer.add(bcolor_Label);
-      bcolor_Sizer.add(bcolor_ColorControl);
-      bcolor_Sizer.addStretch();
-      this.bcolor_Sizer = bcolor_Sizer;
+      this.bcolor_Sizer = new HorizontalSizer;
+      this.bcolor_Sizer.scaledSpacing = 4;
+      this.bcolor_Sizer.add(this.bcolor_Label);
+      this.bcolor_Sizer.add(this.bcolor_ColorControl);
+      this.bcolor_Sizer.addStretch();
 
       // Position
-      var position_Label = new Label(parent);
-      position_Label.text = "Position:";
-      position_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-      position_Label.minWidth = parent.labelWidth2;
-      this.position_Label = position_Label;
+      this.position_Label = new Label(parent);
+      this.position_Label.text = "Position:";
+      this.position_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+      this.position_Label.minWidth = parent.labelWidth2;
 
-      var positionX_Label = new Label(parent);
-      positionX_Label.text = "X=";
-      positionX_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-      this.positionX_Label = positionX_Label;
+      this.positionX_Label = new Label(parent);
+      this.positionX_Label.text = "X=";
+      this.positionX_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
 
-      var positionX_Spin = new SpinBox(parent);
-      positionX_Spin.minValue = 0;
-      positionX_Spin.maxValue = 100;
-      positionX_Spin.suffix = "%";
-      positionX_Spin.value = this.positionX;
-      positionX_Spin.toolTip = "<p>Horizontal position of the text.<br/>" +
+      this.positionX_Spin = new SpinBox(parent);
+      this.positionX_Spin.minValue = 0;
+      this.positionX_Spin.maxValue = 100;
+      this.positionX_Spin.suffix = "%";
+      this.positionX_Spin.value = this.positionX;
+      this.positionX_Spin.setFixedWidth(parent.spinWidth*1.5);
+      this.positionX_Spin.toolTip = "<p>Horizontal position of the text.<br/>" +
          "Using 0% the text is drawn at the left of the image.<br/>" +
          "50% is the center of the image and 100% is the right.</p>";
-      positionX_Spin.onValueUpdated = function (value)
+      this.positionX_Spin.onValueUpdated = function (value)
       {
          this.dialog.activeFrame.object.positionX = value;
       };
-      this.positionX_Spin = positionX_Spin;
 
-      var positionY_Label = new Label(parent);
-      positionY_Label.text = "  Y=";
-      positionY_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-      this.positionY_Label = positionY_Label;
+      this.positionY_Label = new Label(parent);
+      this.positionY_Label.text = "  Y=";
+      this.positionY_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
 
-      var positionY_Spin = new SpinBox(parent);
-      positionY_Spin.minValue = 0;
-      positionY_Spin.maxValue = 100;
-      positionY_Spin.value = this.positionY;
-      positionY_Spin.suffix = "%";
-      positionY_Spin.toolTip = "<p>Vertical position of the text.<br/>" +
+      this.positionY_Spin = new SpinBox(parent);
+      this.positionY_Spin.minValue = 0;
+      this.positionY_Spin.maxValue = 100;
+      this.positionY_Spin.value = this.positionY;
+      this.positionY_Spin.suffix = "%";
+      this.positionY_Spin.setFixedWidth(parent.spinWidth*1.5);
+      this.positionY_Spin.toolTip = "<p>Vertical position of the text.<br/>" +
          "Using 0% the text is drawn at the top of the image.<br/>" +
          "50% is the center of the image and 100% is the bottom.</p>";
-      positionY_Spin.onValueUpdated = function (value)
+      this.positionY_Spin.onValueUpdated = function (value)
       {
          this.dialog.activeFrame.object.positionY = value;
       };
-      this.positionY_Spin = positionY_Spin;
 
-      var positionSizer = new HorizontalSizer;
-      positionSizer.spacing = 4;
-      positionSizer.add(position_Label);
-      positionSizer.add(positionX_Label);
-      positionSizer.add(positionX_Spin);
-      positionSizer.add(positionY_Label);
-      positionSizer.add(positionY_Spin);
-      positionSizer.addStretch();
-      this.positionSizer = positionSizer;
+      this.positionSizer = new HorizontalSizer;
+      this.positionSizer.scaledSpacing = 4;
+      this.positionSizer.add(this.position_Label);
+      this.positionSizer.add(this.positionX_Label);
+      this.positionSizer.add(this.positionX_Spin);
+      this.positionSizer.add(this.positionY_Label);
+      this.positionSizer.add(this.positionY_Spin);
+      this.positionSizer.addStretch();
 
       // Text
-      var text_Label = new Label(parent);
-      text_Label.text = "Text:";
-      text_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-      text_Label.minWidth = parent.labelWidth2;
-      this.text_Label = text_Label;
-      var textLabel_Sizer = new HorizontalSizer;
-      textLabel_Sizer.spacing = 4;
-      textLabel_Sizer.add(text_Label);
-      textLabel_Sizer.addStretch();
-      this.textLabel_Sizer = textLabel_Sizer;
+      this.text_Label = new Label(parent);
+      this.text_Label.text = "Text:";
+      this.text_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+      this.text_Label.minWidth = parent.labelWidth2;
+      this.textLabel_Sizer = new HorizontalSizer;
+      this.textLabel_Sizer.scaledSpacing = 4;
+      this.textLabel_Sizer.add(this.text_Label);
+      this.textLabel_Sizer.addStretch();
 
-      var text_TextBox = new TextBox(parent);
-      text_TextBox.text = this.text;
+      this.text_TextBox = new TextBox(parent);
+      this.text_TextBox.text = this.text;
       //text_TextBox.font = text_Label.font;
-      text_TextBox.styleSheet = "* { font-family: " + text_Label.font.face + "; font-size: " + text_Label.font.pointSize + "pt; }";
-      text_TextBox.toolTip = "<p>User defined text. It supports the expansion of the following variables:</p>" +
+      this.text_TextBox.styleSheet = "* { font-family: " + this.text_Label.font.face + "; font-size: " + this.text_Label.font.pointSize + "pt; }";
+      this.text_TextBox.toolTip = "<p>User defined text. It supports the expansion of the following variables:</p>" +
          "<ul><li>%RA: Right Ascension of the center of the image.</li>" +
          "<li>%DEC: Declination of the center of the image.</li>" +
          "<li>%RESOLUTION: Resolution of the image in arcseconds/pixel.</li>" +
@@ -1508,26 +1501,26 @@ function TextLayer()
          "<li>%PROJECTION: Name of the projection.</li>" +
          "<li>%KEY-XXXX: Prints the value of the FITS keyword XXXX.<br/>" +
          "i.e. %KEY-FOCALLEN is substituted by the value of the keyword FOCALLEN.</li></ul>";
-      text_TextBox.onTextUpdated = function ()
+      var text_TextBox = this.text_TextBox;
+      this.text_TextBox.onTextUpdated = function ()
       {
          this.dialog.activeFrame.object.text = text_TextBox.text;
       }
-      this.text_TextBox = text_TextBox;
 
-      var frame = new Frame(parent);
-      frame.sizer = new VerticalSizer;
-      frame.sizer.margin = 6;
-      frame.sizer.spacing = 4;
-      frame.style = FrameStyle_Flat;
-      frame.sizer.add(font_Sizer);
-      frame.sizer.add(fcolor_Sizer);
-      frame.sizer.add(bcolor_Sizer);
-      frame.sizer.add(positionSizer);
-      frame.sizer.add(textLabel_Sizer);
-      frame.sizer.add(text_TextBox);
-      frame.sizer.addStretch();
-      frame.object = this;
-      return frame;
+      this.frame = new Frame(parent);
+      this.frame.sizer = new VerticalSizer;
+      this.frame.sizer.scaledMargin = 6;
+      this.frame.sizer.scaledSpacing = 4;
+      this.frame.style = FrameStyle_Flat;
+      this.frame.sizer.add(this.font_Sizer);
+      this.frame.sizer.add(this.fcolor_Sizer);
+      this.frame.sizer.add(this.bcolor_Sizer);
+      this.frame.sizer.add(this.positionSizer);
+      this.frame.sizer.add(this.textLabel_Sizer);
+      this.frame.sizer.add(this.text_TextBox);
+      this.frame.sizer.addStretch();
+      this.frame.object = this;
+      return this.frame;
    };
 
    this.Draw = function (g, metadata, bounds, imageWnd, graphicsScale)
@@ -1665,8 +1658,8 @@ function AddLayerDialog()
       node.checkable = false;
       node.setText(0, node.layer.layerName);
       node.setText(1, node.layer.layerDescription);
-      this.addLayer_List.adjustColumnWidthToContents(1);
    }
+   this.addLayer_List.adjustColumnWidthToContents(0);
 
    // Buttons
 
@@ -1696,15 +1689,15 @@ function AddLayerDialog()
    };
 
    this.buttons_Sizer = new HorizontalSizer;
-   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.scaledSpacing = 6;
    this.buttons_Sizer.addStretch();
    this.buttons_Sizer.add(this.ok_Button);
    this.buttons_Sizer.add(this.cancel_Button);
 
    // Global sizer
    this.sizer = new VerticalSizer;
-   this.sizer.margin = 8;
-   this.sizer.spacing = 6;
+   this.sizer.scaledMargin = 8;
+   this.sizer.scaledSpacing = 6;
    this.sizer.add(this.helpLabel);
    this.sizer.add(this.addLayer_List);
    this.sizer.addSpacing(6);
@@ -1740,14 +1733,14 @@ function PreviewDialog(image, metadata)
    };
 
    this.buttons_Sizer = new HorizontalSizer;
-   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.scaledSpacing = 6;
    this.buttons_Sizer.addStretch();
    this.buttons_Sizer.add(this.ok_Button);
 
    // Global sizer
    this.sizer = new VerticalSizer;
-   this.sizer.margin = 8;
-   this.sizer.spacing = 6;
+   this.sizer.scaledMargin = 8;
+   this.sizer.scaledSpacing = 6;
    this.sizer.add(this.previewControl);
    this.sizer.addSpacing(2);
    this.sizer.add(this.buttons_Sizer);
@@ -1771,6 +1764,7 @@ function AnnotateDialog(engine)
    this.labelWidth2 = this.font.width("Background:");
    //var radioLabelWidth = this.font.width( "Resolution (arcsec/px):" );
    this.editWidth = this.font.width("12.888");
+   this.spinWidth = this.font.width("888888");
 
    this.engine = engine;
    this.layers = engine.layers;
@@ -1801,14 +1795,14 @@ function AnnotateDialog(engine)
       node.setText(1, layer.layerDescription);
       node.frame = layer.GetEditPanel(this);
       node.frame.visible = false;
-      this.layer_TreeBox.adjustColumnWidthToContents(1);
+      this.layer_TreeBox.adjustColumnWidthToContents(0);
       return node;
    }
 
    this.helpLabel = new Label(this);
    this.helpLabel.frameStyle = FrameStyle_Box;
    this.helpLabel.minWidth = 45 * this.font.width('M');
-   this.helpLabel.margin = 6;
+   this.helpLabel.scaledMargin = 6;
    this.helpLabel.wordWrapping = true;
    this.helpLabel.useRichText = true;
    this.helpLabel.text =
@@ -1817,7 +1811,7 @@ function AnnotateDialog(engine)
          "The script requires the image to have coordinates stored in FITS header keywords following the WCS convention.<br/>" +
          "The Image Plate Solver script can be used to generate these coordinates and keywords.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2012-2013 Andr&eacute;s del Pozo</p>";
+         "Copyright &copy; 2012-2015 Andr&eacute;s del Pozo</p>";
 
    // Layers
    this.layer_TreeBox = new TreeBox(this);
@@ -1945,7 +1939,7 @@ function AnnotateDialog(engine)
    }
 
    this.layerButtonsSizer = new HorizontalSizer;
-   this.layerButtonsSizer.spacing = 6;
+   this.layerButtonsSizer.scaledSpacing = 6;
    this.layerButtonsSizer.add(this.addLayer_Button);
    this.layerButtonsSizer.add(this.deleteLayer_Button);
    this.layerButtonsSizer.addSpacing(6);
@@ -1954,7 +1948,7 @@ function AnnotateDialog(engine)
    this.layerButtonsSizer.addStretch();
 
    this.layersSizer = new VerticalSizer;
-   this.layersSizer.spacing = 4;
+   this.layersSizer.scaledSpacing = 4;
    this.layersSizer.add(this.layer_TreeBox, 100);
    this.layersSizer.add(this.layerButtonsSizer);
 
@@ -1965,8 +1959,8 @@ function AnnotateDialog(engine)
    this.layerGroup = new GroupBox(this);
    this.layerGroup.title = "Layers";
    this.layerGroup.sizer = new HorizontalSizer;
-   this.layerGroup.sizer.margin = 8;
-   this.layerGroup.sizer.spacing = 8;
+   this.layerGroup.sizer.scaledMargin = 8;
+   this.layerGroup.sizer.scaledSpacing = 8;
    this.layerGroup.sizer.add(this.layersSizer, 100);
    this.layerGroup.sizer.add(this.paramsContainer);
 
@@ -1995,7 +1989,7 @@ function AnnotateDialog(engine)
    this.epoch_year_SpinBox.maxValue = 3000;
    this.epoch_year_SpinBox.value = epoch.getFullYear();
    this.epoch_year_SpinBox.toolTip = epochToolTip;
-   // this.epoch_year_SpinBox.setFixedWidth( this.editWidth );
+   this.epoch_year_SpinBox.setFixedWidth(this.spinWidth * 1.5);
    this.epoch_year_SpinBox.onValueUpdated = function (value)
    {
       epoch.setFullYear(value);
@@ -2006,7 +2000,7 @@ function AnnotateDialog(engine)
    this.epoch_mon_SpinBox.maxValue = 12;
    this.epoch_mon_SpinBox.value = epoch.getMonth() + 1;
    this.epoch_mon_SpinBox.toolTip = epochToolTip;
-   // this.epoch_mon_SpinBox.setFixedWidth( this.editWidth );
+   this.epoch_mon_SpinBox.setFixedWidth(this.spinWidth);
    this.epoch_mon_SpinBox.onValueUpdated = function (value)
    {
       epoch.setMonth(value - 1);
@@ -2017,14 +2011,14 @@ function AnnotateDialog(engine)
    this.epoch_day_SpinBox.maxValue = 31;
    this.epoch_day_SpinBox.value = epoch.getDate();
    this.epoch_day_SpinBox.toolTip = epochToolTip;
-   // this.epoch_day_SpinBox.setFixedWidth( this.editWidth );
+   this.epoch_day_SpinBox.setFixedWidth(this.spinWidth);
    this.epoch_day_SpinBox.onValueUpdated = function (value)
    {
       epoch.setDate(value);
    };
 
    this.epoch_Sizer = new HorizontalSizer;
-   this.epoch_Sizer.spacing = 4;
+   this.epoch_Sizer.scaledSpacing = 4;
    this.epoch_Sizer.add(this.epoch_Label);
    this.epoch_Sizer.add(this.epoch_year_SpinBox);
    this.epoch_Sizer.add(this.epoch_mon_SpinBox);
@@ -2062,7 +2056,7 @@ function AnnotateDialog(engine)
    }
 
    this.mirrorSizer = new HorizontalSizer;
-   this.mirrorSizer.spacing = 4;
+   this.mirrorSizer.scaledSpacing = 4;
    this.mirrorSizer.add(this.mirror_Label);
    this.mirrorSizer.add(this.mirror_Combo);
    this.mirrorSizer.add(this.clearCache);
@@ -2139,8 +2133,8 @@ function AnnotateDialog(engine)
 
    this.svgFile_Frame = new Frame(this);
    this.svgFile_Frame.sizer = new HorizontalSizer;
-   this.svgFile_Frame.sizer.margin = 0;
-   this.svgFile_Frame.sizer.spacing = 4;
+   this.svgFile_Frame.sizer.scaledMargin = 0;
+   this.svgFile_Frame.sizer.scaledSpacing = 4;
    this.svgFile_Frame.style = FrameStyle_Flat;
    this.svgFile_Frame.sizer.add(this.svgFile_Label);
    this.svgFile_Frame.sizer.add(this.svgFile_Edit);
@@ -2148,7 +2142,7 @@ function AnnotateDialog(engine)
    this.svgFile_Frame.visible = this.engine.outputMode == Output_SVG;
 
    this.outputSizer = new HorizontalSizer;
-   this.outputSizer.spacing = 4;
+   this.outputSizer.scaledSpacing = 4;
    this.outputSizer.add(this.output_Label);
    this.outputSizer.add(this.output_Combo);
    this.outputSizer.add(this.stf_Check);
@@ -2166,7 +2160,7 @@ function AnnotateDialog(engine)
    };
 
    this.duplicatesSizer = new HorizontalSizer;
-   this.duplicatesSizer.spacing = 4;
+   this.duplicatesSizer.scaledSpacing = 4;
    this.duplicatesSizer.addSpacing(this.labelWidth1 + 4);
    this.duplicatesSizer.add(this.duplicates_Check);
    this.duplicatesSizer.addStretch();
@@ -2184,7 +2178,7 @@ function AnnotateDialog(engine)
       this.dialog.engine.writeObjects = checked;
    };
    this.writeObjectsSizer = new HorizontalSizer;
-   this.writeObjectsSizer.spacing = 4;
+   this.writeObjectsSizer.scaledSpacing = 4;
    this.writeObjectsSizer.addSpacing(this.labelWidth1 + 4);
    this.writeObjectsSizer.add(this.writeObjects_Check);
    this.writeObjectsSizer.addStretch();
@@ -2209,7 +2203,7 @@ function AnnotateDialog(engine)
    };
 
    this.symbolScaleSizer = new HorizontalSizer;
-   this.symbolScaleSizer.spacing = 4;
+   this.symbolScaleSizer.scaledSpacing = 4;
    this.symbolScaleSizer.add(this.symbolScale_Control);
    this.symbolScaleSizer.addStretch();
 
@@ -2217,8 +2211,8 @@ function AnnotateDialog(engine)
    this.generalGroup = new GroupBox(this);
    this.generalGroup.title = "General Properties";
    this.generalGroup.sizer = new VerticalSizer;
-   this.generalGroup.sizer.spacing = 4;
-   this.generalGroup.sizer.margin = 6;
+   this.generalGroup.sizer.scaledSpacing = 4;
+   this.generalGroup.sizer.scaledMargin = 6;
    this.generalGroup.sizer.add(this.outputSizer);
    this.generalGroup.sizer.add(this.epoch_Sizer);
    this.generalGroup.sizer.add(this.mirrorSizer);
@@ -2275,7 +2269,7 @@ function AnnotateDialog(engine)
    this.preview_Button = new ToolButton(this);
    this.preview_Button.text = "Preview";
    this.preview_Button.icon = this.scaledResource( ":/icons/find.png" );
-   this.preview_Button.setScaledFixedSize( 20, 20 );
+   //this.preview_Button.setScaledFixedSize( 20, 20 );
    this.preview_Button.toolTip = "<p>Preview.</p>";
    this.preview_Button.onClick = function ()
    {
@@ -2333,7 +2327,7 @@ function AnnotateDialog(engine)
    };
 
    this.buttons_Sizer = new HorizontalSizer;
-   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.scaledSpacing = 6;
    this.buttons_Sizer.add(this.newInstanceButton);
    this.buttons_Sizer.add(this.reset_Button);
    this.buttons_Sizer.add(this.preview_Button);
@@ -2344,11 +2338,11 @@ function AnnotateDialog(engine)
    // Global sizer
 
    this.sizer = new VerticalSizer;
-   this.sizer.margin = 8;
-   this.sizer.spacing = 6;
+   this.sizer.scaledMargin = 8;
+   this.sizer.scaledSpacing = 6;
    this.sizer.add(this.helpLabel);
    this.sizer.addSpacing(4);
-   this.sizer.add(this.layerGroup);
+   this.sizer.add(this.layerGroup,100);
    this.sizer.add(this.generalGroup);
    this.sizer.add(this.buttons_Sizer);
 
@@ -2636,7 +2630,7 @@ function AnnotationEngine()
                var tmpW = new ImageWindow(width, height, imageOrg.numberOfChannels, this.window.bitsPerSample, this.window.isFloatSample, imageOrg.isColor, this.window.mainView.fullId + "_Annotated");
                tmpW.mainView.beginProcess(UndoFlag_NoSwapFile);
                tmpW.mainView.image.apply(imageOrg);
-               this.ApplySTF(tmpW.mainView, this.window.mainView.stf);
+               ApplySTF(tmpW.mainView, this.window.mainView.stf);
                tmpW.mainView.endProcess();
                bmp.assign(tmpW.mainView.image.render());
                tmpW.close();
@@ -2724,7 +2718,7 @@ function AnnotationEngine()
             var tmpW = new ImageWindow(width, height, imageOrg.numberOfChannels, this.window.bitsPerSample, this.window.isFloatSample, imageOrg.isColor, this.window.mainView.fullId + "_Annotated");
             tmpW.mainView.beginProcess(UndoFlag_NoSwapFile);
             tmpW.mainView.image.apply(imageOrg);
-            this.ApplySTF(tmpW.mainView, this.window.mainView.stf);
+            ApplySTF(tmpW.mainView, this.window.mainView.stf);
             tmpW.mainView.endProcess();
             bmp.assign(tmpW.mainView.image.render());
             tmpW.forceClose();
@@ -2768,29 +2762,6 @@ function AnnotationEngine()
          if (this.layers[c].visible && this.layers[c].ToFile)
             this.layers[c].ToFile(file, this.metadata);
       file.close();
-   }
-
-   this.ApplySTF = function (view, stf)
-   {
-      var low = (stf[0][1] + stf[1][1] + stf[2][1]) / 3;
-      var mtf = (stf[0][0] + stf[1][0] + stf[2][0]) / 3;
-      var hgh = (stf[0][2] + stf[1][2] + stf[2][2]) / 3;
-
-      if (low > 0 || mtf != 0.5 || hgh != 1) // if not an identity transformation
-      {
-         console.writeln(format("<b>Applying STF to '%ls'</b>:\x1b[38;2;100;100;100m",view.id));
-         var HT = new HistogramTransformation;
-         HT.H = [
-            [  0, 0.5, 1, 0, 1],
-            [  0, 0.5, 1, 0, 1],
-            [  0, 0.5, 1, 0, 1],
-            [low, mtf, hgh, 0, 1],
-            [  0, 0.5, 1, 0, 1]
-         ];
-
-         HT.executeOn(view, false); // no swap file
-         console.write("\x1b[0m");
-      }
    }
 
    this.RemoveDuplicates = function ()

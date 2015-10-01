@@ -80,13 +80,13 @@ function MosaicByCoordsDialog(engine)
    this.__base__();
    this.restyle();
 
-   this.labelWidth = this.font.width("Maximum magnitude:M");
-   this.editWidth = this.font.width("XXXXXXXXXXXXXXXXX");
+   this.labelWidth = this.font.width("Dimensions (pixels):MMM");
+   this.editWidth = this.font.width("888888888");
 
    this.helpLabel = new Label(this);
    this.helpLabel.frameStyle = FrameStyle_Box;
    this.helpLabel.minWidth = 45 * this.font.width('M');
-   this.helpLabel.margin = 6;
+   this.helpLabel.scaledMargin = 6;
    this.helpLabel.wordWrapping = true;
    this.helpLabel.useRichText = true;
    this.helpLabel.text =
@@ -100,8 +100,8 @@ function MosaicByCoordsDialog(engine)
       this.target_Group = new GroupBox(this);
       this.target_Group.title = "Tiles:";
       this.target_Group.sizer = new HorizontalSizer;
-      this.target_Group.sizer.margin = 8;
-      this.target_Group.sizer.spacing = 6;
+      this.target_Group.sizer.scaledMargin = 8;
+      this.target_Group.sizer.scaledSpacing = 6;
 
       // List of files
       this.files_List = new TreeBox(this);
@@ -226,7 +226,7 @@ function MosaicByCoordsDialog(engine)
 
       // Buttons for managing the list of files
       this.files_Buttons = new VerticalSizer;
-      this.files_Buttons.spacing = 6;
+      this.files_Buttons.scaledSpacing = 6;
       this.files_Buttons.add(this.addFile_Button);
       this.files_Buttons.add(this.addView_Button);
       this.files_Buttons.add(this.remove_Button);
@@ -252,11 +252,11 @@ function MosaicByCoordsDialog(engine)
       this.geometry_Group = new GroupBox(this);
       this.geometry_Group.title = "Mosaic geometry";
       this.geometry_Group.sizer = new HorizontalSizer;
-      this.geometry_Group.sizer.margin = 8;
-      this.geometry_Group.sizer.spacing = 6;
+      this.geometry_Group.sizer.scaledMargin = 8;
+      this.geometry_Group.sizer.scaledSpacing = 6;
 
       this.geometryParams_Sizer = new VerticalSizer;
-      this.geometryParams_Sizer.spacing = 6;
+      this.geometryParams_Sizer.scaledSpacing = 6;
       this.geometry_Group.sizer.add(this.geometryParams_Sizer);
       this.geometry_Group.sizer.addStretch();
 
@@ -291,8 +291,8 @@ function MosaicByCoordsDialog(engine)
 
             if (engine.dimensionsAuto)
             {
-               this.dialog.width_SpinBox.value = engine.width;
-               this.dialog.height_SpinBox.value = engine.height;
+               this.dialog.width_Edit.text = engine.width.toString();
+               this.dialog.height_Edit.text = engine.height.toString();
             }
          } catch (ex)
          {
@@ -319,7 +319,6 @@ function MosaicByCoordsDialog(engine)
       this.projection_Combo = new ComboBox(this);
       this.projection_Combo.enabled = this.projection_Check.checked;
       this.projection_Combo.toolTip = "<p>Projection used in the image.</p>";
-      //this.projection_Combo.minWidth = catalogComboWidth;
       this.projection_Combo.addItem("Gnomonic");
       this.projection_Combo.addItem("Stereographic");
       this.projection_Combo.addItem("Plate-carrée");
@@ -345,7 +344,7 @@ function MosaicByCoordsDialog(engine)
       }
 
       this.projection_Sizer = new HorizontalSizer;
-      this.projection_Sizer.spacing = 4;
+      this.projection_Sizer.scaledSpacing = 4;
       this.projection_Sizer.add(this.projection_Check);
       this.projection_Sizer.add(this.projection_Combo);
       this.projection_Sizer.add(this.projection_Button);
@@ -391,11 +390,16 @@ function MosaicByCoordsDialog(engine)
       this.resolution_Edit.enabled = this.resol_Check.checked;
       this.resolution_Edit.onTextUpdated = function (value)
       {
-         engine.resolution = parseFloat(value) / 3600;
+         if(value<=0)
+         {
+            new MessageBox("The resolution must be greater than 0", TITLE, StdIcon_Error, StdButton_Ok).execute();
+            this.dialog.resolution_Edit.text = format("%g", engine.resolution * 3600);
+         } else
+            engine.resolution = parseFloat(value) / 3600;
       };
 
       this.resolution_Sizer = new HorizontalSizer;
-      this.resolution_Sizer.spacing = 4;
+      this.resolution_Sizer.scaledSpacing = 4;
       this.resolution_Sizer.add(this.resol_Check);
       this.resolution_Sizer.add(this.resolution_Edit);
       this.resolution_Sizer.addStretch();
@@ -426,7 +430,7 @@ function MosaicByCoordsDialog(engine)
       };
 
       this.rotation_Sizer = new HorizontalSizer;
-      this.rotation_Sizer.spacing = 4;
+      this.rotation_Sizer.scaledSpacing = 4;
       this.rotation_Sizer.add(this.rotation_Check);
       this.rotation_Sizer.add(this.rotation_Edit);
       this.rotation_Sizer.addStretch();
@@ -442,37 +446,49 @@ function MosaicByCoordsDialog(engine)
       this.dimensions_Check.onCheck = function (checked)
       {
          engine.dimensionsAuto = !checked;
-         this.dialog.width_SpinBox.enabled = checked;
-         this.dialog.height_SpinBox.enabled = checked;
+         this.dialog.width_Edit.enabled = checked;
+         this.dialog.height_Edit.enabled = checked;
       };
 
-      this.width_SpinBox = coordSpinBox(this, engine.width, 20000, this.editWidth, this.dimensions_Check.toolTip,
-         function (value)
+      this.width_Edit = new Edit(this);
+      this.width_Edit.setFixedWidth(this.editWidth);
+      this.width_Edit.text = engine.width.toString();
+      this.width_Edit.toolTip = this.dimensions_Check.toolTip;
+      this.width_Edit.enabled = this.dimensions_Check.checked;
+      this.width_Edit.onTextUpdated = function (value)
+      {
+         if(value<=0)
          {
+            new MessageBox("The width must be greater than 0", TITLE, StdIcon_Error, StdButton_Ok).execute();
+            this.dialog.width_Edit.text = engine.width.toString();
+         }else
             engine.width = value;
-         }
-      );
-      this.width_SpinBox.enabled = this.dimensions_Check.checked;
-      this.width_SpinBox.minValue = 10;
+      };
 
       this.dimensionsX_Label = new Label(this);
       this.dimensionsX_Label.text = " x ";
 
-      this.height_SpinBox = coordSpinBox(this, engine.height, 20000, this.editWidth, this.dimensions_Check.toolTip,
-         function (value)
+      this.height_Edit = new Edit(this);
+      this.height_Edit.setFixedWidth(this.editWidth);
+      this.height_Edit.text = engine.height.toString();
+      this.height_Edit.toolTip = this.dimensions_Check.toolTip;
+      this.height_Edit.enabled = this.dimensions_Check.checked;
+      this.height_Edit.onTextUpdated = function (value)
+      {
+         if(value<=0)
          {
+            new MessageBox("The height must be greater than 0", TITLE, StdIcon_Error, StdButton_Ok).execute();
+            this.dialog.height_Edit.text = engine.height.toString();
+         }else
             engine.height = value;
-         }
-      );
-      this.height_SpinBox.enabled = this.dimensions_Check.checked;
-      this.height_SpinBox.minValue = 10;
+      };
 
       this.dimensions_Sizer = new HorizontalSizer;
-      this.dimensions_Sizer.spacing = 4;
+      this.dimensions_Sizer.scaledSpacing = 4;
       this.dimensions_Sizer.add(this.dimensions_Check);
-      this.dimensions_Sizer.add(this.width_SpinBox);
+      this.dimensions_Sizer.add(this.width_Edit);
       this.dimensions_Sizer.add(this.dimensionsX_Label);
-      this.dimensions_Sizer.add(this.height_SpinBox);
+      this.dimensions_Sizer.add(this.height_Edit);
       this.dimensions_Sizer.addStretch();
       this.geometryParams_Sizer.add(this.dimensions_Sizer);
    }
@@ -483,7 +499,7 @@ function MosaicByCoordsDialog(engine)
    this.options_Section = new SectionBar(this, "Options");
    this.options_Control = new Control(this);
    this.options_Control.sizer = new VerticalSizer;
-   this.options_Control.sizer.spacing = 4;
+   this.options_Control.sizer.scaledSpacing = 4;
    this.options_Section.setSection(this.options_Control);
    this.options_Control.hide();
    this.options_Control.onToggleSection = function (bar, toggleBegin)
@@ -526,7 +542,7 @@ function MosaicByCoordsDialog(engine)
        engine.qualityHQ = true;
     };
     this.quality_Sizer = new HorizontalSizer;
-    this.quality_Sizer.spacing = 6;
+    this.quality_Sizer.scaledSpacing = 6;
     this.quality_Sizer.add(this.quality_Label);
     this.quality_Sizer.add(this.qualityFast_Radio);
     this.quality_Sizer.add(this.qualityHQ_Radio);
@@ -559,7 +575,7 @@ function MosaicByCoordsDialog(engine)
    };
 
    this.interpol_Sizer = new HorizontalSizer;
-   this.interpol_Sizer.spacing = 6;
+   this.interpol_Sizer.scaledSpacing = 6;
    this.interpol_Sizer.add(this.interpol_Label);
    this.interpol_Sizer.add(this.interpol_Combo);
    this.interpol_Sizer.addStretch();
@@ -588,7 +604,7 @@ function MosaicByCoordsDialog(engine)
    this.output_Section = new SectionBar(this, "Output Images");
    this.output_Control = new Control(this);
    this.output_Control.sizer = new VerticalSizer;
-   this.output_Control.sizer.spacing = 4;
+   this.output_Control.sizer.scaledSpacing = 4;
    this.output_Section.setSection(this.output_Control);
    this.output_Control.hide();
    this.output_Control.onToggleSection = function (bar, toggleBegin)
@@ -639,7 +655,7 @@ function MosaicByCoordsDialog(engine)
    };
 
    this.outDir_Sizer = new HorizontalSizer;
-   this.outDir_Sizer.spacing = 4;
+   this.outDir_Sizer.scaledSpacing = 4;
    this.outDir_Sizer.add(this.outDir_Label);
    this.outDir_Sizer.add(this.outDir_Edit, 100);
    this.outDir_Sizer.add(this.outDir_Button);
@@ -653,7 +669,7 @@ function MosaicByCoordsDialog(engine)
 
    this.suffix_Edit = new Edit(this);
    this.suffix_Edit.text = engine.suffix ? engine.suffix : "";
-   this.suffix_Edit.minWidth = this.editWidth;
+   this.suffix_Edit.minWidth = this.font.width("_mosaicXXXXX");
    this.suffix_Edit.toolTip = "<p>This suffix will be appended to the filename when saving each image.</p>";
    this.suffix_Edit.onTextUpdated = function (value)
    {
@@ -661,7 +677,7 @@ function MosaicByCoordsDialog(engine)
    };
 
    this.suffix_Sizer = new HorizontalSizer;
-   this.suffix_Sizer.spacing = 4;
+   this.suffix_Sizer.scaledSpacing = 4;
    this.suffix_Sizer.add(this.suffix_Label);
    this.suffix_Sizer.add(this.suffix_Edit);
    this.suffix_Sizer.addStretch();
@@ -692,7 +708,7 @@ function MosaicByCoordsDialog(engine)
    };
 
    this.suffix_Sizer = new HorizontalSizer;
-   this.suffix_Sizer.spacing = 4;
+   this.suffix_Sizer.scaledSpacing = 4;
    this.suffix_Sizer.addSpacing(this.labelWidth + 4);
    this.suffix_Sizer.add(this.overwrite_Check);
    this.suffix_Sizer.addSpacing(20);
@@ -781,7 +797,7 @@ function MosaicByCoordsDialog(engine)
    };
 
    this.buttons_Sizer = new HorizontalSizer;
-   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.scaledSpacing = 6;
    this.buttons_Sizer.add(this.newInstanceButton);
    this.buttons_Sizer.add(this.reset_Button);
    this.buttons_Sizer.add(this.help_Button);
@@ -792,8 +808,8 @@ function MosaicByCoordsDialog(engine)
    // Global sizer
 
    this.sizer = new VerticalSizer;
-   this.sizer.margin = 8;
-   this.sizer.spacing = 6;
+   this.sizer.scaledMargin = 8;
+   this.sizer.scaledSpacing = 6;
    this.sizer.add(this.helpLabel);
    this.sizer.addSpacing(4);
    this.sizer.add(this.target_Group);

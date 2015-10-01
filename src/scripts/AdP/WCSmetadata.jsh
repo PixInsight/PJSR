@@ -70,7 +70,7 @@ function ObjectWithSettings( module, prefix, properties )
             else if( this.properties[i][1] == Ext_DataType_JSON )
             {
                var value = Settings.read( this.MakeSettingsKey( property ), DataType_UCString );
-               // console.writeln(Settings.lastReadOK, " ", value );
+               //console.writeln(Settings.lastReadOK, " ", value );
                if ( Settings.lastReadOK )
                   this[property] = JSON.parse(value);
             }
@@ -443,8 +443,8 @@ function ImageMetadata(module)
    this.xpixsz = 7.4;
    // this.ypixsz = 7.4;
    this.epoch = null; // 2451545.0; // J2000
-   this.ra = 0;
-   this.dec = 0;
+   this.ra = null;
+   this.dec = null;
 
    this.Clone = function()
    {
@@ -672,19 +672,24 @@ function ImageMetadata(module)
       return wcs;
    };
 
-   this.GetRotation = function()
+   this.GetRotation = function ()
    {
-      var ref = this.ref_I_G_lineal ? this.ref_I_G_lineal : this.ref_I_G;
-      var det = ref.at( 0, 1 )*ref.at( 1, 0 ) - ref.at( 0, 0 )*ref.at( 1, 1 );
-      var rot = Math.atan2( ref.at( 0, 0 ) + ref.at( 0, 1 ), ref.at( 1, 0 ) + ref.at( 1, 1 ) )*180/Math.PI + 135;
-      if ( det > 0 )
-         rot = -90 - rot;
-      if ( rot < -180 )
-         rot += 360;
-      if ( rot > 180 )
-         rot -= 360;
-      return [rot, det>0];
-   }
+      if (this.ref_I_G_lineal)
+      {
+         var ref = this.ref_I_G_lineal ? this.ref_I_G_lineal : this.ref_I_G;
+         var det = ref.at(0, 1) * ref.at(1, 0) - ref.at(0, 0) * ref.at(1, 1);
+         var rot = Math.atan2(ref.at(0, 0) + ref.at(0, 1), ref.at(1, 0) + ref.at(1, 1)) * 180 / Math.PI + 135;
+         if (det > 0)
+            rot = -90 - rot;
+         if (rot < -180)
+            rot += 360;
+         if (rot > 180)
+            rot -= 360;
+         return [rot, det > 0];
+      }
+      else
+         return null;
+   };
 
    this.Print = function()
    {
@@ -1142,22 +1147,24 @@ DMSangle.FromString = function( coordStr, mindeg, maxdeg )
    return coord;
 }
 
-DMSangle.FromAngle = function( angle )
+DMSangle.FromAngle = function (angle)
 {
    var coord = new DMSangle();
-   if ( angle < 0 )
+   if (angle < 0)
    {
       coord.sign = -1;
       angle = -angle;
    }
-   coord.deg = Math.floor( angle );
-   coord.min = Math.floor( (angle - coord.deg)*60 );
-   coord.sec = (angle - coord.deg - coord.min/60)*3600;
+   coord.deg = Math.floor(angle);
+   coord.min = Math.floor((angle - coord.deg) * 60);
+   coord.sec = (angle - coord.deg - coord.min / 60) * 3600;
 
-   if( coord.sec > 59.999 ){
+   if (coord.sec > 59.999)
+   {
       coord.sec = 0;
       coord.min++;
-      if( coord.min == 60 ){
+      if (coord.min == 60)
+      {
          coord.min = 0;
          coord.deg++;
       }
@@ -1499,3 +1506,36 @@ function MultipleLinearRegressionHelmert(coords1, coords2, ref1, ref2)
 
    return ref_1_2;
 };
+
+function ApplySTF(view, stf)
+{
+   var HT = new HistogramTransformation;
+   if(view.image.isColor){
+      var stfActive = false;
+      for(var i=0; i<3 && !stfActive; i++)
+         stfActive |= stf[i][1]!=0 || stf[i][0]!=0.5 || stf[i][2]!=1;
+      if(!stfActive)
+         return;
+      HT.H = [
+         [stf[0][1], stf[0][0], stf[0][2], 0, 1],
+         [stf[1][1], stf[1][0], stf[1][2], 0, 1],
+         [stf[2][1], stf[2][0], stf[2][2], 0, 1],
+         [  0, 0.5, 1, 0, 1],
+         [  0, 0.5, 1, 0, 1]
+      ];
+   } else {
+      if(stf[0][1]==0 && stf[0][0]==0.5 && stf[0][2]==1)
+         return;
+      HT.H = [
+         [  0, 0.5, 1, 0, 1],
+         [  0, 0.5, 1, 0, 1],
+         [  0, 0.5, 1, 0, 1],
+         [stf[0][1], stf[0][0], stf[0][2], 0, 1],
+         [  0, 0.5, 1, 0, 1]
+      ];
+   }
+
+   console.writeln(format("<b>Applying STF to '%ls'</b>:\x1b[38;2;100;100;100m",view.id));
+   HT.executeOn(view, false); // no swap file
+   console.write("\x1b[0m");
+}

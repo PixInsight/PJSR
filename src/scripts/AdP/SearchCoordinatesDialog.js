@@ -113,7 +113,7 @@ function SesameTab(parent, object)
    };
 
    this.id_Sizer = new HorizontalSizer;
-   this.id_Sizer.spacing = 4;
+   this.id_Sizer.scaledSpacing = 4;
    this.id_Sizer.add(this.id_Label);
    this.id_Sizer.add(this.id_Edit);
    this.id_Sizer.add(this.idSearch_Button);
@@ -128,7 +128,7 @@ function SesameTab(parent, object)
    this.mirror_Combo.addItem("http://vizier.cfa.harvard.edu/viz-bin/nph-sesame");
    this.mirror_Combo.currentItem = 0;
    this.mirror_Sizer = new HorizontalSizer;
-   this.mirror_Sizer.spacing = 4;
+   this.mirror_Sizer.scaledSpacing = 4;
    this.mirror_Sizer.add(this.mirror_Label);
    this.mirror_Sizer.add(this.mirror_Combo);
    this.mirror_Sizer.addStretch();
@@ -140,12 +140,6 @@ function SesameTab(parent, object)
    this.selected_Edit.setFixedWidth(parent.editWidth);
    this.selected_Edit.text = object && object.name ? object.name : "";
 
-   this.selected_Sizer = new HorizontalSizer;
-   this.selected_Sizer.spacing = 4;
-   this.selected_Sizer.add(this.selected_Label);
-   this.selected_Sizer.add(this.selected_Edit);
-   this.selected_Sizer.addStretch();
-
    this.coords_Edit = new Edit(this);
    this.coords_Edit.readOnly = true;
    this.coords_Edit.toolTip = "<p>Coordinates of the selected object.</p>"
@@ -154,11 +148,22 @@ function SesameTab(parent, object)
       this.coords_Edit.text = "RA:" + DMSangle.FromAngle(object.posEq.x / 15).ToString(true) +
          "  Dec:" + DMSangle.FromAngle(object.posEq.y).ToString();
 
-   this.coords_Sizer = new HorizontalSizer;
-   this.coords_Sizer.spacing = 4;
-   this.coords_Sizer.addSpacing(4 + this.selected_Label.width);
-   this.coords_Sizer.add(this.coords_Edit);
-   this.coords_Sizer.addStretch();
+   this.selected_Sizer1 = new VerticalSizer;
+   this.selected_Sizer1.scaledSpacing = 4;
+   this.selected_Sizer1.add(this.selected_Edit);
+   this.selected_Sizer1.add(this.coords_Edit);
+
+   this.selected_Sizer2 = new VerticalSizer;
+   this.selected_Sizer2.scaledSpacing = 4;
+   this.selected_Sizer2.addScaledSpacing(3);
+   this.selected_Sizer2.add(this.selected_Label);
+   this.selected_Sizer2.addStretch();
+
+   this.selected_Sizer = new HorizontalSizer;
+   this.selected_Sizer.scaledSpacing = 4;
+   this.selected_Sizer.add(this.selected_Sizer2);
+   this.selected_Sizer.add(this.selected_Sizer1);
+   this.selected_Sizer.addStretch();
 
    this.names_Label = new fieldLabel(this, "Names:", parent.labelWidth);
    this.names_Label.textAlignment = TextAlign_Right | TextAlign_Top;
@@ -198,19 +203,18 @@ function SesameTab(parent, object)
    }
 
    this.names_Sizer = new HorizontalSizer;
-   this.names_Sizer.spacing = 4;
+   this.names_Sizer.scaledSpacing = 4;
    this.names_Sizer.add(this.names_Label);
    this.names_Sizer.add(this.names_Tree);
    this.names_Sizer.addStretch();
 
    this.sizer = new VerticalSizer;
-   this.sizer.margin = 8;
-   this.sizer.spacing = 4;
+   this.sizer.scaledMargin = 8;
+   this.sizer.scaledSpacing = 4;
    this.sizer.add(this.id_Sizer);
    this.sizer.add(this.mirror_Sizer);
    this.sizer.add(this.names_Sizer);
    this.sizer.add(this.selected_Sizer);
-   this.sizer.add(this.coords_Sizer);
    this.sizer.addStretch();
 
    this.GetResult = function ()
@@ -323,7 +327,7 @@ function ManualTab(parent, object)
    this.id_Edit = new Edit(this);
    this.id_Edit.toolTip = "Name of the object.";
    this.id_Edit.text = object && object.name ? object.name : "";
-   this.id_Edit.setFixedWidth(parent.editWidth);
+   this.id_Edit.setScaledFixedWidth(parent.editWidth);
 
    this.id_Sizer = new HorizontalSizer;
    this.id_Sizer.spacing = 4;
@@ -512,31 +516,49 @@ function CoordinatesEditor(parent, coords, // Point in deg/deg
    this.__base__ = Control;
    this.__base__(parent);
 
+   var spinBoxWidth1,spinBoxWidth2;
    if (spinBoxWidth == null)
-      spinBoxWidth = 7 * this.font.width('M');
+   {
+      spinBoxWidth1 = parent.font.width("888888");
+      spinBoxWidth2 = parent.font.width("88888888");
+   } else {
+      spinBoxWidth1=spinBoxWidth2=spinBoxWidth;
+   }
 
-   // RA
+   var ra = (coords != null && coords.x != null) ? DMSangle.FromAngle(coords.x / 15) : new DMSangle;
+   var dec = (coords != null && coords.y != null) ? DMSangle.FromAngle(coords.y) : new DMSangle;
+   var thisObj = this;
+
+   var onChange = function()
+   {
+      if(thisObj.onChangeCallback)
+         thisObj.onChangeCallback.call(thisObj.onChangeCallbackScope, thisObj.GetCoords());
+   };
+
+      // RA
 
    this.ra_Label = new fieldLabel(this, "Right Ascension (hms):", labelWidth);
 
-   var ra = (coords != null && coords.x != null) ? DMSangle.FromAngle(coords.x / 15) : new DMSangle;
-   this.ra_h_SpinBox = new coordSpinBox(this, ra.deg, 23, spinBoxWidth, tooltip,
+   this.ra_h_SpinBox = new coordSpinBox(this, ra.deg, 23, spinBoxWidth1, tooltip,
       function (value)
       {
          ra.deg = value;
+         onChange();
       });
-   this.ra_min_SpinBox = new coordSpinBox(this, ra.min, 59, spinBoxWidth, tooltip,
+   this.ra_min_SpinBox = new coordSpinBox(this, ra.min, 59, spinBoxWidth1, tooltip,
       function (value)
       {
          ra.min = value;
+         onChange();
       });
    this.ra_sec_Edit = new Edit(this);
    this.ra_sec_Edit.text = format("%.3f", ra.sec);
    this.ra_sec_Edit.toolTip = tooltip;
-   this.ra_sec_Edit.setFixedWidth(spinBoxWidth);
+   this.ra_sec_Edit.setFixedWidth(spinBoxWidth2);
    this.ra_sec_Edit.onTextUpdated = function (value)
    {
       ra.sec = parseFloat(value);
+      onChange();
    };
 
    /*this.search_Button = new PushButton( this );
@@ -556,34 +578,37 @@ function CoordinatesEditor(parent, coords, // Point in deg/deg
 
    this.dec_Label = new fieldLabel(this, "Declination (dms):", labelWidth);
 
-   var dec = (coords != null && coords.y != null) ? DMSangle.FromAngle(coords.y) : new DMSangle;
-   this.dec_h_SpinBox = new coordSpinBox(this, dec.deg, 90, spinBoxWidth, tooltip,
+   this.dec_h_SpinBox = new coordSpinBox(this, dec.deg, 90, spinBoxWidth1, tooltip,
       function (value)
       {
          dec.deg = value;
+         onChange();
       });
-   this.dec_min_SpinBox = new coordSpinBox(this, dec.min, 59, spinBoxWidth, tooltip,
+   this.dec_min_SpinBox = new coordSpinBox(this, dec.min, 59, spinBoxWidth1, tooltip,
       function (value)
       {
          dec.min = value;
+         onChange();
       });
    this.dec_sec_Edit = new Edit(this);
    this.dec_sec_Edit.text = format("%.2f", dec.sec);
    this.dec_sec_Edit.toolTip = tooltip;
-   this.dec_sec_Edit.setFixedWidth(spinBoxWidth);
+   this.dec_sec_Edit.setFixedWidth(spinBoxWidth2);
    this.dec_sec_Edit.onTextUpdated = function (value)
    {
       dec.sec = parseFloat(value);
+      onChange();
    };
 
    this.isSouth_CheckBox = new CheckBox(this);
    this.isSouth_CheckBox.text = "S";
    this.isSouth_CheckBox.checked = dec.sign < 0;
    this.isSouth_CheckBox.toolTip = "<p>When checked, the declination is negative (Southern hemisphere).</p>";
-   this.isSouth_CheckBox.setScaledFixedWidth(40);
+   //this.isSouth_CheckBox.setScaledFixedWidth(40);
    this.isSouth_CheckBox.onCheck = function (checked)
    {
       dec.sign = checked ? -1 : 1;
+      onChange();
    };
 
    this.dec_Sizer = new HorizontalSizer;
@@ -634,8 +659,105 @@ function CoordinatesEditor(parent, coords, // Point in deg/deg
       return new Point(raVal * 15, decVal);
    }
 
+   this.setLabels = function(raText, decText)
+   {
+      this.ra_Label.text = raText;
+      this.dec_Label.text = decText;
+   };
+
+   this.setOnChange = function(callback, scope)
+   {
+      this.onChangeCallback = callback;
+      this.onChangeCallbackScope = scope;
+   }
 }
 CoordinatesEditor.prototype = new Control();
 
+// ******************************************************************
+// SelectImageWithCoordsDialog: Selects an image with coordinates
+// ******************************************************************
+function SelectImageWithCoordsDialog(serverAddress)
+{
+   this.__base__ = Dialog;
+   this.__base__();
+
+   this.helpLabel = new Label(this);
+   this.helpLabel.text = "Select one of the images:"
+
+   this.image_List = new TreeBox(this);
+   this.image_List.alternateRowColor = false;
+   this.image_List.multipleSelection = false;
+   this.image_List.headerVisible = false;
+   this.image_List.numberOfColumns = 1;
+   this.image_List.setHeaderText(0, "Description");
+   this.image_List.rootDecoration = false;
+
+   var windows = ImageWindow.windows;
+   for (var i = 0; i < windows.length; i++)
+   {
+      var metadata = new ImageMetadata();
+      metadata.ExtractMetadata(windows[i]);
+      if(metadata.ra !== null && metadata.dec !== null)
+      {
+         var node = new TreeBoxNode(this.image_List);
+         node.checkable = false;
+         node.setText(0, windows[i].mainView.id);
+         node.window = windows[i];
+         node.metadata = metadata;
+      }
+   }
+   this.image_List.adjustColumnWidthToContents(0);
+   //this.image_List.adjustColumnWidthToContents(1);
+   //this.image_List.setMinWidth(this.font.width("abc")*25);
+   this.image_List.setMinWidth(this.image_List.columnWidth(0)*1.1);
+
+   // Buttons
+
+   this.ok_Button = new PushButton(this);
+   this.ok_Button.defaultButton = true;
+   this.ok_Button.text = "OK";
+   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
+   this.ok_Button.onClick = function ()
+   {
+      if (this.dialog.image_List.selectedNodes == 0)
+      {
+         var msg = new MessageBox("There is not any selected image.",
+            TITLE, StdIcon_Error, StdButton_Ok);
+         msg.execute();
+         return;
+      }
+      this.dialog.selectedWindow = this.dialog.image_List.selectedNodes[0].window;
+      this.dialog.selectedMetadata = this.dialog.image_List.selectedNodes[0].metadata;
+      this.dialog.ok();
+   };
+
+   this.cancel_Button = new PushButton(this);
+   this.cancel_Button.text = "Cancel";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
+   this.cancel_Button.onClick = function ()
+   {
+      this.dialog.cancel();
+   };
+
+   this.buttons_Sizer = new HorizontalSizer;
+   this.buttons_Sizer.scaledSpacing = 6;
+   this.buttons_Sizer.addStretch();
+   this.buttons_Sizer.add(this.ok_Button);
+   this.buttons_Sizer.add(this.cancel_Button);
+
+   // Global sizer
+   this.sizer = new VerticalSizer;
+   this.sizer.scaledMargin = 8;
+   this.sizer.scaledSpacing = 6;
+   this.sizer.add(this.helpLabel);
+   this.sizer.add(this.image_List);
+   this.sizer.addScaledSpacing(6);
+   this.sizer.add(this.buttons_Sizer);
+
+   this.windowTitle = "Select image with coordinates";
+   this.adjustToContents();
+}
+
+SelectImageWithCoordsDialog.prototype = new Dialog;
 
 #endif
