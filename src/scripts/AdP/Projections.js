@@ -140,7 +140,8 @@ function ProjectionBase()
          return false;
       var np1 = this.sph.CelestialToNative(cp1);
       var np2 = this.sph.CelestialToNative(cp2);
-      return Math.abs(np1.x - np2.x) < 90;
+      var dist = ImageMetadata.DistanceFast(np1,np2);
+      return dist<150;
    };
 }
 
@@ -235,7 +236,8 @@ function ProjectionOrthographic()
          return false;
       var np1 = this.sph.CelestialToNative(cp1);
       var np2 = this.sph.CelestialToNative(cp2);
-      return Math.abs(np1.x - np2.x) < 90 || Math.abs(np1.x - np2.x) > 270;
+      var dist = ImageMetadata.DistanceFast(np1,np2);
+      return dist<150;
    };
 
    this.Project = function (np) // Native to projection plane

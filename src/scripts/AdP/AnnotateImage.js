@@ -863,7 +863,6 @@ function ConstLinesLayer()
          for (var i = 0; i < data.length; i++)
          {
             var pRD0 = new Point(data[i].pol[0].x * 15, data[i].pol[0].y);
-            //this.NormalizeCoord(metadata, pRD0);
             var p0 = metadata.Convert_RD_I(pRD0);
             if(p0 && !metadata.CheckOscillation(pRD0,p0))
                p0=null;
