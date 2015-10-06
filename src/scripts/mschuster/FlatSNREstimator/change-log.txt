@@ -1,0 +1,136 @@
+===============================================================================
+FlatSNREstimator Script Changelog
+===============================================================================
+
+-------------------------------------------------------------------------------
+2015.08.06 - v1.3
+
+- Improved high-res monitor support.
+
+- Updated tool tips and copyright.
+
+-------------------------------------------------------------------------------
+2014.12.19 - v0.15
+
+- Added onClose abort.
+
+- Added abort and parameters providers.
+
+- Added documentation.
+
+- Improved tool tips.
+
+- Fixed bugs.
+
+-------------------------------------------------------------------------------
+2014.12.17 - v0.14
+
+- Added abort.
+
+- Added gc().
+
+-------------------------------------------------------------------------------
+2014.12.16 - v0.12
+
+- Changed to block median/Sn measurements.
+
+- Improved tool tips.
+
+- Fixed bugs.
+
+- Added console status.
+
+-------------------------------------------------------------------------------
+2014.12.11 - v0.11
+
+- Changed name.
+
+- Added support for calibrated flats.
+
+- Improved labels and tool tips.
+
+- Added exposure difference warning.
+
+- Fixed bugs.
+
+-------------------------------------------------------------------------------
+2014.12.10 - v0.10
+
+- Improved labels and tool tips.
+
+-------------------------------------------------------------------------------
+2014.12.10 - v0.9
+
+- Fixed bugs.
+
+-------------------------------------------------------------------------------
+2014.12.09 - v0.8
+
+- Improved tool tips.
+
+- Fixed bugs.
+
+-------------------------------------------------------------------------------
+2014.12.08 - v0.7
+
+- Added foreground measurement and mask generation.
+
+- Improved tool tips.
+
+- Fixed bugs.
+
+-------------------------------------------------------------------------------
+2014.12.05 - v0.6
+
+- Changed script title.
+
+- Changed dialog labeling.
+
+- Improved tool tips.
+
+-------------------------------------------------------------------------------
+2014.12.04 - v0.5
+
+- Changed dialog labeling.
+
+- Improved tool tips.
+
+-------------------------------------------------------------------------------
+2014.12.01 - v0.4
+
+- Updated dialog labeling.
+
+- Improved tool tips.
+
+-------------------------------------------------------------------------------
+2014.11.29 - v0.3
+
+- Added gain calculation.
+
+- Removed support for pre-calibrated flat measurements.
+
+- Added check for significantly differing flat exposures.
+
+- Added check for invalid flat calibrations.
+
+- Improved tool tips.
+
+- Fixed bugs.
+
+-------------------------------------------------------------------------------
+2014.11.24 - v0.2
+
+- Added support for pre-calibrated flat measurements.
+
+- Added check for single channel, identically sized images.
+
+- Improved tool tips.
+
+- Fixed bugs.
+
+-------------------------------------------------------------------------------
+2014.11.23 - v0.1
+
+- Initial public release.
+
+-------------------------------------------------------------------------------

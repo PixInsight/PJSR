@@ -1,0 +1,195 @@
+===============================================================================
+WavefrontEstimator Script Changelog
+===============================================================================
+
+-------------------------------------------------------------------------------
+2015.10.05 - Version 1.16
+
+- Added Fringe count scale parameter.
+
+- Added contour labels in wavefront plot.
+
+- Added Control style sheet UI scaling.
+
+- Added validity checks on script instance parameters.
+
+- Decreased minimum defocus diameter to 48 pixels.
+
+- Increased maximum defocus diameter to 320 pixels.
+
+- Fixed problem in console logging of exposure measurements.
+
+- Fixed problem in cropped frame size normalization.
+
+- Restrict scale rejection method application to sets of 5 or more frames.
+
+- Generate rejection maps only if scale rejection is applied.
+
+- Improved anti-aliasing in wavefront and interferogram plots.
+
+- Improved documentation and tool-tips.
+
+-------------------------------------------------------------------------------
+2015.09.21 - Version 1.15
+
+- Changed minimum defocus exposure from 2,000 e- to 5% of detector's dynamic
+  range.
+
+- Fixed problem with signs of wavefront estimate, Zernike aberration estimate,
+  and interferograms.
+
+- Fixed problem with frame cropping.
+
+- Fixed problem with Strehl diameter estimation.
+
+- Fixed problem with label positioning in modulation transfer function plot.
+
+- Added Strehl diameter marker to encircled energy function plot.
+
+- Added cumulative fraction of wavefront error explained (CVE) column to
+  aberration estimation pane.
+
+- Added encoding of normalized coordinate mesh to wavefront_domain.fit/xsif.
+
+- Added WEOBWVLN observation wavelength FITS keyword to wavefront.fit/xsif,
+  point_spread_function.fit/xsif, and modulation_transfer_function.fit/xsif.
+
+- Added WEEFCNT FITS keyward application in exposure measurement.
+
+- Added console logging in exposure measurement.
+
+- Improved wavefront and interferogram plots.
+
+- Improved defocused image thresholding.
+
+- Improved documentation and tool-tips.
+
+-------------------------------------------------------------------------------
+2015.09.14 - Version 1.14
+
+- Fixed problem with sign of wavefront estimate.
+
+- Fixed problem with boundary conditions in wavefront estimation.
+
+- Fixed problem with modulus extraction in modulation transfer estimation.
+
+- Fixed problem with convergence in defocus threshold estimation.
+
+- Fixed problem with thresholding in frame cropping process.
+
+- Fixed problem with normalization in Strehl diameter estimation.
+
+- Improved wavefront plot.
+
+- Improved interferogram plots, positive wavefront estimate values shift
+  fringes rightward and downward.
+
+- Improved encircled energy function plot.
+
+- Improved modulation transfer function plot.
+
+- Added hot pixel removal to defocus threshold estimation.
+
+- Added minimum and maximum defocused image diameter enforcement.
+
+- Added maximum median defocus image signal enforcement.
+
+- Changed default observation bandwidth to ~300 mm L-band.
+
+- Changed default observation wavelength of G-band to 526 nm.
+
+- Documented higher accuracy Fourier transform based aberration simulations.
+
+- Improved documentation and tool-tips.
+
+-------------------------------------------------------------------------------
+2015.08.31 - Version 1.12
+
+- Changed exposure estimator pane title to exposure estimation.
+
+- Changed the acceptable aperture diameter range to between 0 and 1 meter.
+
+- Fixed problem with display of near zero wavefront error lambda RMS values.
+
+- Fixed problem with normalization of aberration percent fractional variance
+  explained values.
+
+- Fixed problem with GroupBox layout on MACOSX build <= 1123.
+
+- Fixed problem with TreeBox layout on MACOSX build <= 1123.
+
+- Documented field star magnitude requirement.
+
+- Documented factors affecting exposure estimation tool accuracy.
+
+- Documented fact that the effects of the central obstruction support structure
+  (i.e. spider) are not modeled.
+
+- Improved documentation of error handling, limitations, and known issues.
+
+- Added Shen 2006 Rayleigh-Sommerfeld integration reference.
+
+-------------------------------------------------------------------------------
+2015.08.24 - Version 1.11
+
+- Added interferogram generation.
+
+- Added pedestal-subtraction to exposure measurement tool.
+
+- Modified button handling to preserve previous results when possible.
+
+- Disabled Process Console Pause/Abort button during estimation and
+  measurement.
+
+- Improved labeling in encircled energy and modulation transfer function plots.
+
+- Documented annular Zernike definitions.
+
+- Improved documentation FAQs.
+
+- Reduced defocused image rescale ratio threshold to 2%.
+
+- Converted plot view images from float to 8 bit.
+
+- Improved dialog text layout.
+
+-------------------------------------------------------------------------------
+2015.08.18 - Version 1.10
+
+- Added defocus exposure in e- for individual and combined frames to console
+  log.
+
+- Improved dialog default button handling.
+
+-------------------------------------------------------------------------------
+2015.08.12 - Version 1.9
+
+- Documented the telescope thermal equilibrium requirement.
+
+- Documented the 100,000 e- combined exposure requirement.
+
+- Changed the acceptable exposure time range to between 0.1 and 1000 seconds.
+
+- Changed pixel rejection to apply to combinations of 3 or more frames only.
+
+- Changed Strehl ratio definition for obstructed telescopes to use the ideal
+  obstructed telescope rather than the ideal unobstructed telescope as a
+  reference optical system.
+
+- Improved dialog layout and tool-tips.
+
+- Improved documentation FAQs.
+
+- Removed debugging messages from console log.
+
+-------------------------------------------------------------------------------
+2015.08.09 - Version 1.8
+
+- Improved dialog layout and tool-tips.
+
+-------------------------------------------------------------------------------
+2015.08.08 - Version 1.7
+
+- Initial release.
+
+-------------------------------------------------------------------------------

@@ -1,0 +1,1 @@
+Copyright (C) 2012-2013 Mike Schuster. All Rights Reserved.
