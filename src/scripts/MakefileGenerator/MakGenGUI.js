@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGUI.js - Released 2015/07/29 23:22:54 UTC
+// MakGenGUI.js - Released 2015/10/07 15:20:17 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.95
+// This file is part of PixInsight Makefile Generator Script version 1.96
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
@@ -80,7 +80,7 @@ function MakefileGeneratorDialog()
    this.helpLabel.useRichText = true;
    this.helpLabel.text = "<b>" + TITLE + " v" + VERSION + "</b> &mdash; Automatic " +
           "generation of PCL makefiles and project files for PixInsight modules, " +
-          "executables and libraries on X11-Linux/FreeBSD, Mac OS X and Windows platforms.";
+          "executables and libraries on X11-Linux/FreeBSD, OS X and Windows platforms.";
 
    //
 
@@ -153,7 +153,7 @@ function MakefileGeneratorDialog()
 "<p><b>Module</b> generates makefiles and projects for a process or file format " + \
 "support PixInsight module that uses the PCL static library. A PixInsight module is " + \
 "a special dynamic library that carries the -pxm name suffix. File extensions are " + \
-".so (Linux and FreeBSD), .dylib (Mac OS X) and .dll (Windows).</p>" +  \
+".so (Linux and FreeBSD), .dylib (OS X) and .dll (Windows).</p>" +  \
 "<p><b>Dynamic library</b> generates makefiles and project files for a regular " + \
 "dynamic library that carries the -pxi name suffix. PCL include and library " + \
 "directories are used in these projects, but the PCL static library is not linked " + \
@@ -210,7 +210,7 @@ function MakefileGeneratorDialog()
 "<p>Select a platform to generate makefiles / project files:</p>" + \
 "<p><b>X11 on FreeBSD</b> with the system Clang compiler.</p>" + \
 "<p><b>X11 on Linux</b> with the GNU Compiler Collection version 4.7.2 or higher.</p>" + \
-"<p><b>Mac OS X 10.8 or later</b> with the Clang compiler - XCode 5.0.0 or later.</p>" + \
+"<p><b>OS X 10.8 or later</b> with the Clang compiler - XCode 5.0.0 or later.</p>" + \
 "<p><b>Windows</b> with Microsoft Visual C++ 2010, 2012 and 2013 (.vcproj and .vcxproj project files)</p>" + \
 "<p><b>Host development machine</b> is a Linux physical development workstation. <b>* for internal PTeam use *</b></p>"
 
@@ -223,7 +223,7 @@ function MakefileGeneratorDialog()
    this.platform_ComboBox = new ComboBox( this );
    this.platform_ComboBox.addItem( "FreeBSD/X11 with system Clang compiler" );
    this.platform_ComboBox.addItem( "Linux/X11 with GCC >= 4.7.2" );
-   this.platform_ComboBox.addItem( "Mac OS X 10.8 or later with Clang / Xcode >= 5.0.0" );
+   this.platform_ComboBox.addItem( "OS X 10.8 or later with Clang / Xcode >= 5.0.0" );
    this.platform_ComboBox.addItem( "Windows with MS Visual C++ 2010/2012/2013" );
    this.platform_ComboBox.addItem( "Host physical Linux development machine" );
    this.platform_ComboBox.toolTip = TOOLTIP_PLATFORM;
@@ -236,7 +236,7 @@ function MakefileGeneratorDialog()
 
 #define TOOLTIP_ALLPLATF \
 "<p>Generate makefiles and project files for all supported platforms: " + \
-"X11/FreeBSD, X11/Linux, Mac OS X, and Windows.</p>"
+"X11/FreeBSD, X11/Linux, OS X, and Windows.</p>"
 
    this.allPlatforms_CheckBox = new CheckBox( this );
    this.allPlatforms_CheckBox.text = "All platforms";
@@ -261,7 +261,7 @@ function MakefileGeneratorDialog()
 #define TOOLTIP_ARCH \
 "<p>Select a platform to generate makefiles / project files:</p>" + \
 "<p><b>x86</b> projects generate 32-bit code. " + \
-"SSE2 instructions are generated on FreeBSD, Linux and Windows. SSE3 instructions are generated on Mac OS X.</p>" + \
+"SSE2 instructions are generated on FreeBSD, Linux and Windows. SSE3 instructions are generated on OS X.</p>" + \
 "<p><b>x64</b> projects generate 64-bit code compatible with AMD64 and Intel64 architectures. " + \
 "SSE3 instructions are generated on all platforms.</p>" + \
 "<p>This option is disabled for Windows platforms, since a VC++ project includes configurations " + \
@@ -328,10 +328,10 @@ function MakefileGeneratorDialog()
 
 #define TOOLTIP_OSX_ARCH_OPTIONS \
 "<p>If this is checked, -arch xxx and -Xarch_xxx compiler and linker command line arguments will be " + \
-"included in makefiles for Mac OS X. This option is enabled by default.</p>"
+"included in makefiles for OS X. This option is enabled by default.</p>"
 
    this.osxArchOptions_CheckBox = new CheckBox( this );
-   this.osxArchOptions_CheckBox.text = "Generate architecture options on Mac OS X";
+   this.osxArchOptions_CheckBox.text = "Generate architecture options on OS X";
    this.osxArchOptions_CheckBox.checked = true;
    this.osxArchOptions_CheckBox.toolTip = TOOLTIP_OSX_ARCH_OPTIONS;
 
@@ -344,7 +344,7 @@ function MakefileGeneratorDialog()
 
 #define TOOLTIP_DEBUG \
 "<p>Select this option to generate makefiles for a debug configuration on FreeBSD, Linux " + \
-"and Mac OS X platforms. If this option is not selected, only release makefiles will be " + \
+"and OS X platforms. If this option is not selected, only release makefiles will be " + \
 "generated. Note that release makefiles are always generated.</p>" + \
 "<p>This option is ignored for Windows platforms, since VC++ project files always " + \
 "include both release and debug configurations.</p>"
@@ -361,10 +361,29 @@ function MakefileGeneratorDialog()
 
    //
 
+#define TOOLTIP_UNSTRIPPED \
+"<p>Select this option to include the -rdynamic compiler flag in makefiles for " + \
+"FreeBSD, Linux and OS X platforms. This enables generation of stack backtraces with " + \
+"demangled function names. If this option is not selected, -rdynamic will not be " + \
+"included and the -s flag will be used for linking to strip all symbols from binary files. " + \
+"This option is disabled by default. It can be useful for debugging purposes on UNIX/Linux " + \
+"platforms.</p>"
+
+   this.gccUnstripped_CheckBox = new CheckBox( this );
+   this.gccUnstripped_CheckBox.text = "Generate unstripped binaries";
+   this.gccUnstripped_CheckBox.checked = false;
+   this.gccUnstripped_CheckBox.toolTip = TOOLTIP_UNSTRIPPED;
+
+   this.gccUnstripped_Sizer = new HorizontalSizer;
+   this.gccUnstripped_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
+   this.gccUnstripped_Sizer.add( this.gccUnstripped_CheckBox );
+   this.gccUnstripped_Sizer.addStretch();
+
+   //
+
 #define TOOLTIP_GCC_VERSION_SUFFIX \
 "<p>This suffix allows you to control which version of the GCC compiler will be used to build " + \
 "your project on Linux.</p>" + \
-"<p>Currently GCC versions 4.8.x are used by default.</p>" + \
 "<p>If this field is left blank the system default GCC compiler will be used (either g++ or gcc, " + \
 "respectively to compile .cpp and .c files).</p>"
 
@@ -700,6 +719,7 @@ function MakefileGeneratorDialog()
    this.sizer.add( this.hostMakefiles_Sizer );
    this.sizer.add( this.osxArchOptions_Sizer );
    this.sizer.add( this.gccDebug_Sizer );
+   this.sizer.add( this.gccUnstripped_Sizer );
    this.sizer.add( this.gccSuffix_Sizer );
    this.sizer.add( this.gccOptimization_Sizer );
    this.sizer.add( this.diagnostics_Sizer );
@@ -736,6 +756,8 @@ function MakefileGeneratorDialog()
          this.osxArchOptions_CheckBox.checked      = Parameters.getBoolean( "osxArchOptions" );
       if ( Parameters.has( "gccDebug" ) )
          this.gccDebug_CheckBox.checked            = Parameters.getBoolean( "gccDebug" );
+      if ( Parameters.has( "gccUnstripped" ) )
+         this.gccUnstripped_CheckBox.checked       = Parameters.getBoolean( "gccUnstripped" );
       if ( Parameters.has( "gccSuffixLinux" ) )
          this.gccSuffixLinux_Edit.text             = Parameters.get( "gccSuffixLinux" );
       if ( Parameters.has( "gccOptimization" ) )
@@ -765,6 +787,7 @@ function MakefileGeneratorDialog()
       Parameters.set( "allArchitectures", this.allArchitectures_CheckBox.checked );
       Parameters.set( "osxArchOptions",   this.osxArchOptions_CheckBox.checked );
       Parameters.set( "gccDebug",         this.gccDebug_CheckBox.checked );
+      Parameters.set( "gccUnstripped",    this.gccUnstripped_CheckBox.checked );
       Parameters.set( "gccSuffixLinux",   this.gccSuffixLinux_Edit.text );
       Parameters.set( "gccOptimization",  this.gccOptimization_ComboBox.currentItem );
       Parameters.set( "diagnostics",      this.diagnostics_ComboBox.currentItem );
@@ -795,6 +818,7 @@ function MakefileGeneratorDialog()
          this.allArchitectures_CheckBox.enabled =
          this.osxArchOptions_CheckBox.enabled =
          this.gccDebug_CheckBox.enabled =
+         this.gccUnstripped_CheckBox.enabled =
          this.gccSuffixLinux_Label.enabled =
          this.gccSuffixLinux_Edit.enabled =
          this.gccOptimization_Label.enabled =
@@ -835,6 +859,7 @@ function MakefileGeneratorDialog()
 
          this.osxArchOptions_CheckBox.enabled =
          this.gccDebug_CheckBox.enabled =
+         this.gccUnstripped_CheckBox.enabled =
          this.gccSuffixLinux_Label.enabled =
          this.gccSuffixLinux_Edit.enabled =
          this.gccOptimization_Label.enabled =
@@ -863,4 +888,4 @@ function MakefileGeneratorDialog()
 MakefileGeneratorDialog.prototype = new Dialog;
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGUI.js - Released 2015/07/29 23:22:54 UTC
+// EOF MakGenGUI.js - Released 2015/10/07 15:20:17 UTC

@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGlobal.js - Released 2015/07/29 23:22:54 UTC
+// MakGenGlobal.js - Released 2015/10/07 15:20:17 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.95
+// This file is part of PixInsight Makefile Generator Script version 1.96
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
@@ -58,14 +58,15 @@
  * Global variables and definitions.
  */
 
-#define VERSION "1.95"
+#define VERSION "1.96"
 #define TITLE   "Makefile Generator"
 
 /*
- * Default GCC version
- * Set to an empty string to use the system GCC version
+ * Default GCC versions
+ * Set these to empty strings to use the system GCC compiler
  */
-#define DEFAULT_GCC_VERSION_SUFFIX_LINUX "" //"-4.8.2"
+#define DEFAULT_GCC_VERSION_SUFFIX_LINUX ""
+#define DEFAULT_GCC_VERSION_SUFFIX_HOST  "" /*"-4.8.5" "-4.9.3" "-5.2.0"*/ // since script version 1.96
 
 /*
  * - PixInsight Core 1.7.x Starbuck uses the SpiderMonkey engine version 1.8.5
@@ -149,4 +150,4 @@ var imageFileExtensions =
 #define OPTIMIZATION_DEFAULT_STR "3"
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGlobal.js - Released 2015/07/29 23:22:54 UTC
+// EOF MakGenGlobal.js - Released 2015/10/07 15:20:17 UTC

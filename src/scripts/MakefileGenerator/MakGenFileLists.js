@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenFileLists.js - Released 2015/07/29 23:22:54 UTC
+// MakGenFileLists.js - Released 2015/10/07 15:20:17 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.95
+// This file is part of PixInsight Makefile Generator Script version 1.96
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
@@ -285,4 +285,4 @@ if ( !noImages )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenFileLists.js - Released 2015/07/29 23:22:54 UTC
+// EOF MakGenFileLists.js - Released 2015/10/07 15:20:17 UTC
