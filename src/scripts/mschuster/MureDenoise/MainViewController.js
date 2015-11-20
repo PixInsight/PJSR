@@ -653,7 +653,7 @@ function MainView(model, controller) {
       groupBox.sizer.margin = 6;
       groupBox.sizer.spacing = 6;
       groupBox.title = title;
-      groupBox.styleSheet = "{}";
+      groupBox.styleSheet = "*{}";
 
 #ifeq __PI_PLATFORM__ MACOSX
       if (coreVersionBuild < 1168) {
