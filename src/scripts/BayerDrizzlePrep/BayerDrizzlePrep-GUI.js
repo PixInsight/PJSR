@@ -210,7 +210,7 @@ function ConversionDialog( engine )
          console.noteln( "} ConversionDialog.updateOKButton" );
       }
    }
-   
+
    /// Method to update all UI elements to reflect current dialog and engine object's settings.
    ///
    this.updateUI = function()
@@ -224,7 +224,7 @@ function ConversionDialog( engine )
       {
          console.noteln( " ConversionDialog.updateUI this.isProcessing: " + this.isProcessing );
       }
-      
+
       // Check for correct use of this.dialog vs this.
       if ( this.isProcessing )
       {
@@ -324,7 +324,7 @@ function ConversionDialog( engine )
       {
          console.noteln( "} ConversionDialog.readInputImage" );
       }
-      
+
       return ( !this.inputImageWindow.isNull );
    };
 
@@ -359,7 +359,7 @@ function ConversionDialog( engine )
          }
          else
          {
-            console.Warningln( "WARNING: File already exists, not overwriting: " + fullFilePath );
+            console.warningln( "WARNING: File already exists, not overwriting: " + fullFilePath );
          }
       }
       else
@@ -380,7 +380,7 @@ function ConversionDialog( engine )
       {
          console.noteln( "} ConversionDialog.saveImage" );
       }
-      
+
       return ( success );
    };
 
@@ -550,16 +550,16 @@ function ConversionDialog( engine )
                console.noteln( "Attempting image file " + i + " : " + this.inputImageFiles[i] );
                console.noteln( "Attempting drizzle file " + i + " : " + this.inputDRZFiles[i] );
             }
-   
+
             this.readInputImage( this.inputImageFiles[i] );
             filesProcessed++;
-   
+
             // Update status bar.
             this.setStatus( "Converting: " + filesProcessed + "/" + this.inputImageFiles.length + " Failed: " + filesErrors );
-   
+
             // Keep the GUI responsive.
             processEvents();
-   
+
             // Check for user wanting to abort script.
             if ( this.abortRequested )
             {
@@ -572,7 +572,7 @@ function ConversionDialog( engine )
                {
                   this.closeOutputImage();
                }
-   
+
                // Now abort script.
                this.abortRequested = false;
                console.noteln( "Conversion aborted by user." );
@@ -607,7 +607,7 @@ function ConversionDialog( engine )
                else
                {
                   console.writeln( "Converting image: " + this.inputImageFiles[i] );
-   
+
                   // Convert the mono CFA input image to a new RGB Bayer output image.
                   this.outputImageWindow = this.engine.convertImage( this.inputImageWindow[0] );
                   if (this.outputImageWindow == null )
@@ -619,7 +619,7 @@ function ConversionDialog( engine )
                      // Copy amdended version of image keywords from input image to output image.
                      keywords = this.inputImageWindow[0].keywords;
                      this.closeInputImage(); // Done with input image window.
-   
+
                      // Make any channel 0 noise estimates in the FITS/XISF keywords historical only as now have 3 channels.
                      // Not sure if this is a required step but better safe than sorry.
                      for ( j = 0; j < keywords.length; j++ )
@@ -629,11 +629,11 @@ function ConversionDialog( engine )
                            keywords[j].name = "HISTORY_" + keywords[j].name;
                         }
                      }
-                     // Add a new history keyword.   
+                     // Add a new history keyword.
                      keywords.push( new FITSKeyword( "HISTORY", "", "BayerDrizzlePrep with pattern " + this.dialog.bayerPatternComboBox.itemText( this.dialog.bayerPatternComboBox.currentItem ) ) );
                      this.outputImageWindow.keywords = keywords;
                      outputImagePath = this.outputDirectory + "/" + File.extractName( this.inputImageFiles[i] ) + "_brgb" + File.extractExtension( this.inputImageFiles[i] );
-   
+
                      // Save new RGB Bayer image to output directory.
                      if ( !this.saveImage( outputImagePath , this.outputImageWindow, true ) )
                      {
@@ -984,7 +984,7 @@ function ConversionDialog( engine )
    this.filesGroupBox.sizer.add( this.filesButtonsSizer );
 
    // -------- # Images Tree box end ---------------------------------------------------
-   
+
    // -------- # Drizzle File Tree box begin -------------------------------------------------
 
    // Tree box to hold drizzle files for conversion.
@@ -1303,7 +1303,7 @@ function ConversionDialog( engine )
 
    // Output Directory button.
    this.outputDirectoryButton = this.UIFactory.fullPushButton ( this, "Output Directory...", ":/icons/document-save.png", "<p>Choose output directory.</p>" );
-   
+
    this.outputDirectoryButton.onClick = function()
    {
       if ( this.dialog.isProcessing )
@@ -1361,7 +1361,7 @@ function ConversionDialog( engine )
    this.outputDirectorySizer = new HorizontalSizer;
    this.outputDirectorySizer.spacing = 8;
    this.outputDirectorySizer.add( this.outputDirectoryEditSizer, 100 );
-   this.outputDirectorySizer.add( this.outputDirectoryButton );   
+   this.outputDirectorySizer.add( this.outputDirectoryButton );
 
    // Group conversion options.
    this.conversionOptions = new HorizontalSizer;
@@ -1424,7 +1424,7 @@ function ConversionDialog( engine )
          "/ Update Drizzle Data option in each tool.<br /><br />" +
 
          "Once you have complete .drz files follow the instructions below:<br /><br />" +
-         
+
          "<strong>Images to Convert</strong><br /><br />" +
 
          "Click the <strong>&quot;Add&quot;</strong> button to choose the image " +
