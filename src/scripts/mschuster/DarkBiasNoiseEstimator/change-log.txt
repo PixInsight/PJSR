@@ -3,6 +3,13 @@ DarkBiasNoiseEstimator Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2015.11.23 - v1.4
+
+- Improved high-res monitor support.
+
+- Updated documentation and tool tips.
+
+-------------------------------------------------------------------------------
 2015.08.06 - v1.3
 
 - Improved high-res monitor support.
