@@ -1,0 +1,1 @@
+This file is part of BayerDrizzlePrep Script version 1.0
