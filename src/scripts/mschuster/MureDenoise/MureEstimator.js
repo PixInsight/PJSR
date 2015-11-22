@@ -4,7 +4,7 @@
 // MureEstimator.js - Released 2015/11/20 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.10
+// This file is part of MureDenoise Script Version 1.11
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -371,13 +371,14 @@ function MureEstimator(model, view) {
       console.flush();
    };
 
-   // Log subband variance scale.
-   this.logSubbandVarianceScale = function(level) {
-      var subbandScale = model.subbandVarianceScaling(level);
+   // Log refinement covariance scale.
+   this.logRefinementCovarianceScale = function(level) {
+      var refinementCovarianceScale = model.refinementCovarianceScale(level);
       console.writeln(format(
-         "Subband variance scale: %d, " + model.denoiseVarianceScaleFormat,
+         "Refinement covariance scale: %d, " +
+         model.denoiseVarianceScaleFormat,
          level,
-         subbandScale
+         refinementCovarianceScale
       ));
       console.flush();
    };
@@ -386,12 +387,14 @@ function MureEstimator(model, view) {
    this.denoiseImage = function(
       image, gaussianNoise, levelsOfRefinement, level, locations
    ) {
-      // this.logSubbandVarianceScale(level);
+      // this.logRefinementCovarianceScale(level);
 
-      var subbandScale = model.subbandVarianceScaling(level);
+      var refinementCovarianceScale = model.refinementCovarianceScale(level);
 
-      gaussianNoise *= Math.sqrt(subbandScale);
-      var imageDecompose = image.multiplyScalar(1 / subbandScale).pipeline([
+      gaussianNoise *= Math.sqrt(refinementCovarianceScale);
+      var imageDecompose = image.multiplyScalar(
+         1 / refinementCovarianceScale
+      ).pipeline([
          function(frame) {
             return frame.unnormalizedHaarDecompose();
          }
@@ -547,7 +550,7 @@ function MureEstimator(model, view) {
 
       return reconstruct.pipeline([
          function(frame) {
-            return frame.multiplyScalar(subbandScale);
+            return frame.multiplyScalar(refinementCovarianceScale);
          }
       ]);
    };
@@ -556,9 +559,9 @@ function MureEstimator(model, view) {
    this.denoiseCycleSpin = function(
       flatfield, cycleSpinLocation, levelsOfRefinement
    ) {
-      var effectiveGain = model.effectiveGain();
-      var effectiveGaussianNoise = model.effectiveGaussianNoise();
-      var effectiveOffset = model.effectiveOffset();
+      var baseGain = model.baseGain();
+      var baseGaussianNoise = model.baseGaussianNoise();
+      var baseOffset = model.baseOffset();
       var pad = 2 * Math.round(Math.pow2(levelsOfRefinement));
 
       var self = this;
@@ -571,7 +574,7 @@ function MureEstimator(model, view) {
             },
          function(frame) {
             return frame.fusedMultiplyAddScalar(
-               65535 * effectiveGain, -effectiveGain * effectiveOffset
+               65535 * baseGain, -baseGain * baseOffset
             );
          },
          function(frame) {
@@ -584,7 +587,7 @@ function MureEstimator(model, view) {
             view.throwAbort();
             return self.denoiseImage(
                frame,
-               effectiveGain * effectiveGaussianNoise,
+               baseGain * baseGaussianNoise,
                levelsOfRefinement,
                1,
                self.padShiftLogLocations(
@@ -603,7 +606,7 @@ function MureEstimator(model, view) {
          },
          function(frame) {
             return frame.fusedAddMultiplyScalar(
-               effectiveGain * effectiveOffset, 1 / (65535 * effectiveGain)
+               baseGain * baseOffset, 1 / (65535 * baseGain)
             );
          },
          flatfield == null ? null :
@@ -667,20 +670,27 @@ function MureEstimator(model, view) {
       return imageWindow;
    };
 
-   // Logs the effective parameters.
-   this.logEffectiveParameters = function() {
-      var effectiveGain = model.effectiveGain();
+   // Logs the base parameters.
+   this.logBaseParameters = function() {
+      var baseGain = model.baseGain();
       console.writeln(format(
-         "Effective gain: " + model.detectorGainFormat +
+         "Base gain: " + model.detectorGainFormat +
          " " + model.detectorGainUnits,
-         effectiveGain
+         baseGain
       ));
 
-      var effectiveGaussianNoise = model.effectiveGaussianNoise();
+      var baseGaussianNoise = model.baseGaussianNoise();
       console.writeln(format(
-         "Effective Gaussian noise: " + model.detectorGaussianNoiseFormat +
+         "Base Gaussian noise: " + model.detectorGaussianNoiseFormat +
          " " + model.detectorGaussianNoiseUnits,
-         effectiveGaussianNoise
+         baseGaussianNoise
+      ));
+
+      var baseOffset = model.baseOffset();
+      console.writeln(format(
+         "Base offset: " + model.detectorOffsetFormat +
+         " " + model.detectorOffsetUnits,
+         baseOffset
       ));
 
       console.flush();
@@ -777,7 +787,7 @@ function MureEstimator(model, view) {
       ));
       console.flush();
 
-      // this.logEffectiveParameters();
+      // this.logBaseParameters();
 
       var levelsOfRefinement = this.generateLevelsOfRefinement();
       var cycleSpinCount = model.denoiseCycleSpinCount;

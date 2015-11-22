@@ -4,7 +4,7 @@
 // MureDenoise.js - Released 2015/11/20 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.10
+// This file is part of MureDenoise Script Version 1.11
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,11 +48,11 @@
 // ****************************************************************************
 
 #define TITLE "MureDenoise"
-#define VERSION "1.10"
+#define VERSION "1.11"
 
 #feature-id Noise Reduction > MureDenoise
 
-#feature-info <b>MureDenoise Version 1.10</b><br/>\
+#feature-info <b>MureDenoise Version 1.11</b><br/>\
    <br/>\
    Script for denoising linear monochannel images corrupted by mixed \
    Poisson-Gaussian noise. Applicable to single frame images and average \
