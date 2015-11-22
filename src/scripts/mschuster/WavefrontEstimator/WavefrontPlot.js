@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// WavefrontPlot.js - Released 2015/10/05 00:00:00 UTC
+// WavefrontPlot.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,14 +48,37 @@
 // ****************************************************************************
 
 function WavefrontPlot(model) {
-   // Wavefront pane size.
-   this.contourPlotSize = 501;
+   // Crop wavefront diameter scale.
+   this.cropWavefrontDiameterScale = 1.1;
+
+   // Resample wavefront size.
+   this.resampleWavefrontSize = 501;
+
+   // Wavefront boundary width.
+   this.wavefrontBoundaryWidth = 0.01;
+
+   // Contour quantile limits.
+   this.contourQuantileMinimum = 0.001;
+   this.contourQuantileMaximum = 0.999;
+
+   // Contour shade limits.
+   this.contourShadeMinimum = 0.15;
+   this.contourShadeMaximum = 0.95;
+
+   // Contour blend scale.
+   this.contourBlendScale = 0.75;
+
+   // Contour level count.
+   this.contourLevels = 15;
+
+   // Background contour level.
+   this.backgroundContourLevel = 10;
 
    // Top and bottom legend bar pane margin size.
    this.legendBarMargin = 30;
 
    // Legend bar pane size.
-   this.legendBarRows = this.contourPlotSize;
+   this.legendBarRows = this.resampleWavefrontSize;
    this.legendBarCols = 40;
 
    // Top and bottom label bar pane margin size.
@@ -66,56 +89,55 @@ function WavefrontPlot(model) {
    this.labelBarCols = 60;
 
    // Label bar pane font and text offset.
-#ifeq __PI_PLATFORM__ MSWINDOWS
-   this.labelBarFont = new Font("Helvetica", 9 / (model.plotResolution / 96));
-#else
-   this.labelBarFont = new Font("Helvetica", 12 / (model.plotResolution / 96));
+   if (coreVersionBuild < 1189) {
+      this.labelBarFont =
+         new Font("Helvetica", 9 / (model.fontResolution / 96));
+   }
+   else {
+      this.labelBarFont =
+         new Font("Open Sans", 9 / (model.fontResolution / 96));
+   }
+#ifeq __PI_PLATFORM__ MACOSX
+   if (coreVersionBuild < 1168) {
+      this.labelBarFont =
+         new Font("Helvetica", 12 / (model.fontResolution / 96));
+   }
 #endif
+#iflt __PI_BUILD__ 1168
    this.labelBarTextOffset = new Point(5, this.labelBarFont.descent + 1);
-
-   // Contour level count.
-   this.contourLevels = 15;
-
-   // Contour shading constants.
-   this.minimumShade = 0.15;
-   this.maximumShade = 0.95;
-
-   // Contour quantile thresholds.
-   this.contourQuantileMin = 0.001;
-   this.contourQuantileMax = 0.999;
-
-   // Boundary thresholds.
-   this.boundaryWidth = 0.01;
-
-   // Crop wavefront threshold.
-   this.cropWavefrontAperture = 1.1;
+#else
+   this.labelBarTextOffset = new Point(5, this.labelBarFont.descent);
+#endif
 
    // Gives the cropped wavefront.
-   this.cropWavefront = function(wavefront) {
+   this.cropWavefront = function(wavefront, diameterScale) {
       var radius = Math.round(
-         0.5 * this.cropWavefrontAperture * model.defocusDiameterEstimate
+         0.5 * diameterScale * model.defocusDiameterEstimate
       );
       var pad = wavefront.rows() - 2 * radius - 1;
       var low = Math.round(0.5 * pad);
       var high = pad - low;
 
-      var cropRows = wavefront.padRows(-low + 1 * 1, -high, 0);
-      var cropCols = cropRows.padCols(-low + 1 * 1, -high, 0);
-      cropRows.clear();
-
-      return cropCols;
+      return wavefront.clone().stagePipeline([
+         function(frame) {
+            return frame.padRows(-low + 1, -high, 0);
+         },
+         function(frame) {
+            return frame.padCols(-low + 1, -high, 0);
+         }
+      ]);
    };
 
-   // Gives the resampled wavefront.
-   this.resampleWavefront = function(wavefront) {
+   // Gives the resampled wavefront and scale.
+   this.resampleWavefrontScale = function(wavefront, resampleSize) {
       var scale = model.plotResolution / 96;
       var resample = new Resample();
       resample.absoluteMode = Resample.prototype.ForceWidthAndHeight;
       resample.interpolation = Resample.prototype.Lanczos4;
       resample.mode = Resample.prototype.AbsolutePixels;
       resample.smoothness = 1.5;
-      resample.xSize = Math.ceil(scale * this.contourPlotSize);
-      resample.ySize = Math.ceil(scale * this.contourPlotSize);
+      resample.xSize = Math.ceil(scale * resampleSize);
+      resample.ySize = Math.ceil(scale * resampleSize);
 
       var identifierPrefix = model.identifierPrefix.trim() == "" ?
          "" :
@@ -131,16 +153,16 @@ function WavefrontPlot(model) {
 
       return {
          wavefront: resampleWavefront,
-         scale: Math.ceil(scale * this.contourPlotSize) / wavefront.rows()
+         scale: Math.ceil(scale * resampleSize) / wavefront.rows()
       };
    };
 
-   // Gives the wavefront boundary blending function.
-   this.boundary = function(wavefront, scale) {
+   // Gives the wavefront boundary blend.
+   this.wavefrontBoundary = function(wavefront, scale, width) {
       var apertureLow = 1.0;
-      var apertureHigh = apertureLow + this.boundaryWidth;
+      var apertureHigh = apertureLow + width;
       var obstructionHigh = model.defocusObstructionRatioEstimate;
-      var obstructionLow = Math.max(0, obstructionHigh - this.boundaryWidth);
+      var obstructionLow = Math.max(0, obstructionHigh - width);
 
       var matrix = wavefront.matrix();
       var rows = matrix.rows;
@@ -171,15 +193,17 @@ function WavefrontPlot(model) {
    };
 
    // Gives contour metrics.
-   this.contourMetrics = function(wavefront) {
+   this.contourMetrics = function(
+      wavefront, contourQuantileMinimum, contourQuantileMaximum, contourLevels
+   ) {
       var array = wavefront.matrix().toArray();
       var min = array[selectArraySideEffect(
          array, 0, array.length,
-         Math.round(this.contourQuantileMin * (array.length - 1))
+         Math.round(contourQuantileMinimum * (array.length - 1))
       )];
       var max = array[selectArraySideEffect(
          array, 0, array.length,
-         Math.round(this.contourQuantileMax * (array.length - 1))
+         Math.round(contourQuantileMaximum * (array.length - 1))
       )];
 
       var scale = model.scaleWavefrontErrorEstimate / model.wavefrontSaveScale;
@@ -192,7 +216,7 @@ function WavefrontPlot(model) {
          --labelMin;
          ++labelMax;
       }
-      var labelDelta = (labelMax - labelMin) / this.contourLevels;
+      var labelDelta = (labelMax - labelMin) / contourLevels;
 
       scale = Math.max(0.1, Math.min(
          1.0, Math.pow10(Math.floor(0.4 + Math.log10(labelDelta)))
@@ -200,9 +224,9 @@ function WavefrontPlot(model) {
       labelDelta = Math.ceil(labelDelta / scale) * scale;
 
       var offsetNm = Math.round(
-         (labelMin + labelDelta * this.contourLevels - labelMax) / (2 * labelDelta)
+         (labelMin + labelDelta * contourLevels - labelMax) / (2 * labelDelta)
       ) * labelDelta;
-      labelMax = labelMin + labelDelta * this.contourLevels;
+      labelMax = labelMin + labelDelta * contourLevels;
       labelMin -= offsetNm;
       labelMax -= offsetNm;
 
@@ -216,7 +240,7 @@ function WavefrontPlot(model) {
       }
 
       return {
-         contourLevels: this.contourLevels,
+         contourLevels: contourLevels,
          scale: scale,
          inverseScale: inverseScale,
          offset: offset,
@@ -231,17 +255,19 @@ function WavefrontPlot(model) {
 
    // Contour shading function.
    this.contourShade = function(metrics, x) {
-      return (this.maximumShade - this.minimumShade) *
+      return (this.contourShadeMaximum - this.contourShadeMinimum) *
          Math.max(0, Math.min(metrics.contourLevels - 1,
             Math.floor((x - metrics.min) / metrics.delta)
-         )) / (metrics.contourLevels - 1) + this.minimumShade;
+         )) / (metrics.contourLevels - 1) + this.contourShadeMinimum;
    };
 
    // Inverse contour shading function.
    this.inverseContourShade = function(metrics, x) {
       return Math.round(
-         ((x - this.minimumShade) / (this.maximumShade - this.minimumShade)) *
-         (metrics.contourLevels - 1)
+         (
+            (x - this.contourShadeMinimum) /
+            (this.contourShadeMaximum - this.contourShadeMinimum)
+         ) * (metrics.contourLevels - 1)
       );
    };
 
@@ -262,8 +288,8 @@ function WavefrontPlot(model) {
       return new FrameReal(newMatrix);
    };
 
-   // Gives the contours of the wavefront.
-   this.contours = function(wavefront) {
+   // Gives the wavefront contours.
+   this.wavefrontContours = function(wavefront) {
       var matrix = wavefront.matrix();
       var rows = matrix.rows;
       var cols = matrix.cols;
@@ -286,33 +312,6 @@ function WavefrontPlot(model) {
             else {
                newMatrix.at(row, col, 0);
             }
-         }
-      }
-
-      return new FrameReal(newMatrix);
-   };
-
-   // Contour blending function.
-   this.contourBlend = function(b, e) {
-      return b == 1 ? 0.7 * e : e;
-   };
-
-   // Gives the blend of the wavefront and the contours.
-   this.blendContours = function(wavefront, contours) {
-      var matrix = wavefront.matrix();
-      var contoursMatrix = contours.matrix();
-      var rows = matrix.rows;
-      var cols = matrix.cols;
-      var newMatrix = new Matrix(rows, cols);
-      for (var row = 0; row != rows; ++row) {
-         for (var col = 0; col != cols; ++col) {
-            newMatrix.at(
-               row,
-               col,
-               this.contourBlend(
-                  contoursMatrix.at(row, col), matrix.at(row, col)
-               )
-            );
          }
       }
 
@@ -476,67 +475,99 @@ function WavefrontPlot(model) {
       return idMetrics;
    };
 
-   // Draws a contour label.
-   this.drawContourLabel = function(graphics, point, level, metrics) {
+   // Gives the contour label text and bounds.
+   this.contourLabelTextBounds = function(point, level, metrics) {
       var labelFormat = metrics.labelDelta >= 1 ? "%.0f" : "%.1f";
+      var labelValue = metrics.labelMin + level * metrics.labelDelta;
 
-      var label = metrics.labelMin + level * metrics.labelDelta;
-      var text = format(labelFormat, label);
+      var text = format(labelFormat, labelValue);
 
       var scale = model.plotResolution / 96;
       var width =
          scale * this.labelBarFont.width(text);
-      var height =
-         scale * (this.labelBarFont.ascent - this.labelBarFont.descent);
+      if (coreVersionBuild < 1189) {
+         var height =
+            scale * (this.labelBarFont.ascent);
+      }
+      else {
+         var height =
+            scale * (this.labelBarFont.ascent - this.labelBarFont.descent);
+      }
+#ifeq __PI_PLATFORM__ MSWINDOWS
+      if (coreVersionBuild < 1168) {
+         var height =
+            scale * (this.labelBarFont.ascent - this.labelBarFont.descent - 1);
+      }
+#endif
       var x = Math.round(point.x - 0.5 * width);
       var y = Math.round(point.y + 0.5 * height);
 
-      graphics.drawText(x / scale, y / scale, text);
+      return {
+         text: text,
+         bounds: new Rect(x, y - height, x + width, y)
+      };
+   };
+
+   // Draws a contour label.
+   this.drawContourLabel = function(graphics, point, level, metrics) {
+      var textBounds = this.contourLabelTextBounds(point, level, metrics);
+      var scale = model.plotResolution / 96;
+
+      graphics.drawText(
+         textBounds.bounds.x0 / scale,
+         textBounds.bounds.y1 / scale,
+         textBounds.text
+      );
    };
 
    // Gives true if the contour label collides with another label.
    this.collidesContourLabel = function(
       boundary, collision, point, level, metrics
    ) {
-      var labelFormat = metrics.labelDelta >= 1 ? "%.0f" : "%.1f";
-
-      var label = metrics.labelMin + level * metrics.labelDelta;
-      var text = format(labelFormat, label);
-
+      var bounds = this.contourLabelTextBounds(point, level, metrics).bounds;
       var scale = model.plotResolution / 96;
-      var width =
-         scale * this.labelBarFont.width(text);
-      var height =
-         scale * (this.labelBarFont.ascent - this.labelBarFont.descent);
-      var x = Math.round(point.x - 0.5 * width);
-      var y = Math.round(point.y + 0.5 * height);
+
+      bounds.x0 -= Math.round(scale * 1);
+      bounds.y0 -= Math.round(scale * 1);
+      bounds.x1 += Math.round(scale * 1);
+      bounds.y1 += Math.round(scale * 1);
 
       var boundaryMatrix = boundary.matrix();
-      var collisionMatrix = collision.matrix();
-      var rows = collisionMatrix.rows;
-      var cols = collisionMatrix.cols;
+      var rows = boundaryMatrix.rows;
+      var cols = boundaryMatrix.cols;
 
-      var border = new Point(0, 0);
-      for (var row = y - height - border.y; row != y + border.y + 1; ++row) {
-         for (var col = x - border.x; col != x + width + border.x + 1; ++col) {
+      for (var row = bounds.y0; row != bounds.y1; ++row) {
+         for (var col = bounds.x0; col != bounds.x1; ++col) {
+            if (row < 0 || row > rows - 1 || col < 0 || col > cols - 1) {
+               return true;
+            }
             if (
-               row < 0 || row > rows - 1 ||
-               col < 0 || col > cols - 1 ||
-               boundaryMatrix.at(row, col) != 1
+               (row == bounds.y0 || row == bounds.y1 - 1) &&
+               (col == bounds.x0 || col == bounds.x1 - 1)
             ) {
+               continue;
+            }
+            if (boundaryMatrix.at(row, col) != 1) {
                return true;
             }
          }
       }
 
-      var border = new Point(Math.round(scale * 2), Math.round(scale * 1));
-      for (var row = y - height - border.y; row != y + border.y + 1; ++row) {
-         for (var col = x - border.x; col != x + width + border.x + 1; ++col) {
-            if (
-               row < 0 || row > rows - 1 ||
-               col < 0 || col > cols - 1 ||
-               collisionMatrix.at(row, col) != 0
-            ) {
+      bounds.x0 -= Math.round(scale * 2);
+      bounds.y0 -= Math.round(scale * 1);
+      bounds.x1 += Math.round(scale * 2);
+      bounds.y1 += Math.round(scale * 1);
+
+      var collisionMatrix = collision.matrix();
+      var rows = collisionMatrix.rows;
+      var cols = collisionMatrix.cols;
+
+      for (var row = bounds.y0; row != bounds.y1; ++row) {
+         for (var col = bounds.x0; col != bounds.x1; ++col) {
+            if (row < 0 || row > rows - 1 || col < 0 || col > cols - 1) {
+               return true;
+            }
+            if (collisionMatrix.at(row, col) != 0) {
                return true;
             }
          }
@@ -547,35 +578,98 @@ function WavefrontPlot(model) {
 
    // Updates the collision map with a contour label.
    this.collisionContourLabel = function(collision, point, level, metrics) {
-      var labelFormat = metrics.labelDelta >= 1 ? "%.0f" : "%.1f";
-
-      var label = metrics.labelMin + level * metrics.labelDelta;
-      var text = format(labelFormat, label);
-
+      var bounds = this.contourLabelTextBounds(point, level, metrics).bounds;
       var scale = model.plotResolution / 96;
-      var width =
-         scale * this.labelBarFont.width(text);
-      var height =
-         scale * (this.labelBarFont.ascent - this.labelBarFont.descent);
-      var x = Math.round(point.x - 0.5 * width);
-      var y = Math.round(point.y + 0.5 * height);
+
+      bounds.x0 -= Math.round(scale * 3);
+      bounds.y0 -= Math.round(scale * 2);
+      bounds.x1 += Math.round(scale * 3);
+      bounds.y1 += Math.round(scale * 2);
 
       var collisionMatrix = collision.matrix();
       var rows = collisionMatrix.rows;
       var cols = collisionMatrix.cols;
 
-      var border = new Point(Math.round(scale * 2), Math.round(scale * 1));
-      for (var row = y - height - border.y; row != y + border.y + 1; ++row) {
-         for (var col = x - border.x; col != x + width + border.x + 1; ++col) {
-            if (
-               row < 0 || row > rows - 1 ||
-               col < 0 || col > cols - 1
-            ) {
+      for (var row = bounds.y0; row != bounds.y1; ++row) {
+         for (var col = bounds.x0; col != bounds.x1; ++col) {
+            if (row < 0 || row > rows - 1 || col < 0 || col > cols - 1) {
                continue;
             }
             collisionMatrix.at(row, col, 1);
          }
       }
+   };
+
+   // Updates the background map with a contour label.
+   this.backgroundContourLabel = function(background, point, level, metrics) {
+      var bounds = this.contourLabelTextBounds(point, level, metrics).bounds;
+      var scale = model.plotResolution / 96;
+
+      bounds.x0 -= Math.round(scale * 1);
+      bounds.y0 -= Math.round(scale * 1);
+      bounds.x1 += Math.round(scale * 1);
+      bounds.y1 += Math.round(scale * 1);
+
+      var backgroundMatrix = background.matrix();
+      var rows = backgroundMatrix.rows;
+      var cols = backgroundMatrix.cols;
+
+      for (var row = bounds.y0; row != bounds.y1; ++row) {
+         for (var col = bounds.x0; col != bounds.x1; ++col) {
+            if (row < 0 || row > rows - 1 || col < 0 || col > cols - 1) {
+               continue;
+            }
+            if (
+               (row == bounds.y0 || row == bounds.y1 - 1) &&
+               (col == bounds.x0 || col == bounds.x1 - 1)
+            ) {
+               continue;
+            }
+            backgroundMatrix.at(row, col, 1);
+         }
+      }
+   };
+
+   // Gives a bitmap graphics pair for labeling.
+   this.newBitmapGraphicsLabeling = function(width, height) {
+      var scale = model.plotResolution / 96;
+      var bitmap = new Bitmap(
+         Math.ceil(scale * width), Math.ceil(scale * height)
+      );
+      bitmap.fill(0);
+
+      var graphics = new VectorGraphics(bitmap);
+      graphics.scaleTransformation(scale);
+      graphics.font = this.labelBarFont;
+      graphics.textAntialiasing = true;
+
+      return {
+         bitmap: bitmap,
+         graphics: graphics
+      };
+   };
+
+   // Gives a frame of the bitmap graphics pair for labeling.
+   this.frameBitmapGraphicsLabeling = function(bitmapGraphics) {
+      bitmapGraphics.graphics.end();
+
+      var image = new Image(
+         bitmapGraphics.bitmap.width,
+         bitmapGraphics.bitmap.height,
+         1,
+         ColorSpace_Gray,
+         32,
+         SampleType_Real
+      );
+      image.fill(1);
+      image.blend(bitmapGraphics.bitmap);
+
+      bitmapGraphics.bitmap.assign(new Bitmap());
+
+      var frame = new FrameReal(image.toMatrix());
+      image.free();
+
+      return frame;
    };
 
    // Gives the contour labels.
@@ -585,29 +679,20 @@ function WavefrontPlot(model) {
       var cols = quantizeMatrix.cols;
 
       var collision = new FrameReal(new Matrix(0, rows, cols));
+      var background = new FrameReal(new Matrix(0, rows, cols));
+
+      var bitmapGraphics = this.newBitmapGraphicsLabeling(cols, rows);
 
       var idMapCount = this.contourIdMapCount(quantize, contours, boundary);
       var idMetrics = this.contourIdMetrics(quantize, metrics, idMapCount);
 
       var scale = model.plotResolution / 96;
-      var bitmap = new Bitmap(
-         Math.ceil(scale * cols),
-         Math.ceil(scale * rows)
+      var minimumLength = Math.round(
+         4 * scale * (this.labelBarFont.ascent - this.labelBarFont.descent - 1)
       );
-      bitmap.fill(0);
-      var graphics = new VectorGraphics(bitmap);
-      graphics.scaleTransformation(scale);
-      graphics.font = this.labelBarFont;
-      graphics.textAntialiasing = true;
-
-      var minimumLength =
-         Math.round(
-            4 * scale * (this.labelBarFont.ascent - this.labelBarFont.descent)
-         );
-      var lengthScale =
-         Math.round(
-            2 * scale * (this.labelBarFont.ascent - this.labelBarFont.descent)
-         );
+      var lengthScale = Math.round(
+         2 * scale * (this.labelBarFont.ascent - this.labelBarFont.descent - 1)
+      );
       var maximumCandidates = 20;
       var maximumContours = 200;
       for (var i = 0; i != idMetrics.length; ++i) {
@@ -635,32 +720,57 @@ function WavefrontPlot(model) {
                      boundary, collision, point, level, metrics
                   )
                ) {
-                  this.drawContourLabel(graphics, point, level, metrics);
-                  this.collisionContourLabel(collision, point, level, metrics);
+                  this.drawContourLabel(bitmapGraphics.graphics, point, level, metrics);
+                  this.collisionContourLabel(
+                     collision, point, level, metrics
+                  );
+                  this.backgroundContourLabel(
+                     background, point, level, metrics
+                  );
                   break;
                }
             }
          }
       }
-      graphics.end();
-
-      var image = new Image(
-         bitmap.width, bitmap.height, 1, ColorSpace_Gray, 32, SampleType_Real
-      );
-      image.fill(1);
-      image.blend(bitmap);
-      bitmap.assign(new Bitmap());
-
-      var labels = new FrameReal(image.toMatrix());
-      image.free();
-
-      // collision.toImageWindow(uniqueViewId("collision")).show();
       collision.clear();
 
-      return labels;
+      return {
+         labels: this.frameBitmapGraphicsLabeling(bitmapGraphics),
+         background: background
+      };
    };
 
-   this.blendBoundary = function(wavefront, boundary, metrics) {
+   // Gives the wavefront label blend.
+   this.blendLabels = function(wavefront, labels) {
+      var backgroundShade =
+         (this.backgroundContourLevel / (this.contourLevels - 1)) *
+         (this.contourShadeMaximum - this.contourShadeMinimum) +
+         this.contourShadeMinimum;
+      return wavefront.map(
+         function(x) {
+            return Math.max(backgroundShade, x);
+         }
+      ).stagePipeline([
+         function(frame) {
+            return frame.blend(wavefront, labels.background);
+         },
+         function(frame) {
+            return frame.product(labels.labels);
+         }
+      ]);
+   };
+
+   // Gives the blend of the wavefront and the contours.
+   this.blendContours = function(wavefront, contours) {
+      return wavefront.scale(this.contourBlendScale).stagePipeline([
+         function(frame) {
+            return frame.blend(wavefront, contours);
+         }
+      ]);
+   };
+
+   // Gives the wavefront boundary blend.
+   this.blendBoundary = function(wavefront, boundary) {
       var one = new FrameReal(
          new Matrix(1, wavefront.rows(), wavefront.cols())
       );
@@ -668,6 +778,43 @@ function WavefrontPlot(model) {
       one.clear();
 
       return blend;
+   };
+
+   // Gives the y coordinate for level in the label bar.
+   this.labelBarLevelYCoordinate = function(level, metrics) {
+      var label = metrics.labelMin + level * metrics.labelDelta;
+
+      var location = metrics.inverseScale * label + metrics.offset;
+      var location = (location - metrics.min) / (metrics.max - metrics.min);
+
+      return this.labelBarTextOffset.y +
+         (1 - location) * (this.labelBarRows - 2 * this.legendBarMargin) +
+         this.legendBarMargin;
+   };
+
+   // Gives the wavefront notes.
+   this.wavefrontNotes = function(wavefront, metrics) {
+      var wavefrontMatrix = wavefront.matrix();
+      var rows = wavefrontMatrix.rows;
+      var cols = wavefrontMatrix.cols;
+
+      var bitmapGraphics = this.newBitmapGraphicsLabeling(cols, rows);
+
+      var x = this.labelBarFont.width("M");
+      var y = this.labelBarLevelYCoordinate(metrics.contourLevels, metrics);
+      var text = format(
+         model.formatWavefrontErrorEstimate + " nm RMS",
+         model.scaleWavefrontErrorEstimate * model.wavefrontErrorEstimate
+      );
+
+      bitmapGraphics.graphics.drawText(x, y, text);
+
+      return this.frameBitmapGraphicsLabeling(bitmapGraphics);
+   };
+
+   // Gives the wavefront notes blend.
+   this.blendNotes = function(wavefront, notes) {
+      return wavefront.product(notes);
    };
 
    // Gives the legend bar pane.
@@ -709,58 +856,39 @@ function WavefrontPlot(model) {
       var labelFormat = metrics.labelDelta >= 1 ? "%.0f" : "%.1f";
       var width = 0;
       for (var i = 0; i != metrics.contourLevels + 1; ++i) {
-         var label = metrics.labelMin + i * metrics.labelDelta;
-         var text = format(labelFormat, label) +
+         var labelValue = metrics.labelMin + i * metrics.labelDelta;
+         var text =
+            format(labelFormat, labelValue) +
             (i == metrics.contourLevels ? " nm" : "");
+
          width = Math.max(width, this.labelBarFont.width(text));
       }
       width += this.labelBarTextOffset.x + this.labelBarFont.width("M");
 
-      var scale = model.plotResolution / 96;
-      var bitmap = new Bitmap(
-         Math.ceil(scale * width), Math.ceil(scale * this.labelBarRows)
-      );
-      bitmap.fill(0);
-      var graphics = new VectorGraphics(bitmap);
-      graphics.scaleTransformation(scale);
-      graphics.font = this.labelBarFont;
-      graphics.textAntialiasing = true;
+      var bitmapGraphics = this.newBitmapGraphicsLabeling(width, this.labelBarRows);
 
       for (var i = 0; i != metrics.contourLevels + 1; ++i) {
-         var label = metrics.labelMin + i * metrics.labelDelta;
-         var e = metrics.inverseScale * label + metrics.offset;
-         var e = (e - metrics.min) / (metrics.max - metrics.min);
          var x = this.labelBarTextOffset.x;
-         var y = this.labelBarTextOffset.y +
-            (1 - e) * (this.labelBarRows - 2 * this.legendBarMargin) +
-            this.legendBarMargin;
-         var text = format(labelFormat, label) +
+         var y = this.labelBarLevelYCoordinate(i, metrics);
+         var labelValue = metrics.labelMin + i * metrics.labelDelta;
+         var text =
+            format(labelFormat, labelValue) +
             (i == metrics.contourLevels ? " nm" : "");
-         graphics.drawText(x, y, text);
+
+         bitmapGraphics.graphics.drawText(x, y, text);
       }
-      graphics.end();
 
-      var image = new Image(
-         bitmap.width, bitmap.height, 1, ColorSpace_Gray, 32, SampleType_Real
-      );
-      image.fill(1);
-      image.blend(bitmap);
-      bitmap.assign(new Bitmap());
-
-      var labelBar = new FrameReal(image.toMatrix());
-      image.free();
-
-      return labelBar;
+      return this.frameBitmapGraphicsLabeling(bitmapGraphics);
    };
 
    // Gives the pane combination.
-   this.combine = function(wavefrontPane, legendBarPane, labelBarPane) {
-      var cols = wavefrontPane.cols() +
-         legendBarPane.cols() +
-         labelBarPane.cols();
-      var rows = Math.max(Math.max(
-         wavefrontPane.rows(), legendBarPane.rows()
-      ), labelBarPane.rows());
+   this.combinePanes = function(wavefrontPane, legendBarPane, labelBarPane) {
+      var cols =
+         wavefrontPane.cols() + legendBarPane.cols() + labelBarPane.cols();
+      var rows =
+         Math.max(
+            wavefrontPane.rows(), legendBarPane.rows(), labelBarPane.rows()
+         );
 
       var identifierPrefix = filterViewId(model.identifierPrefix);
       var imageWindow = new ImageWindow(
@@ -803,54 +931,106 @@ function WavefrontPlot(model) {
    // Generates the wavefront plot.
    // Sets model.wavefrontEstimateContourPlot.
    this.generateWavefrontPlot = function() {
-      var seed = Math.randomSeed64();
       Math.initRandomGenerator([3190634479, 777680007]);
 
-      var scale = model.wavefrontEstimate.scale(model.wavefrontSaveScale);
-      var wavefront = scale.offset(model.wavefrontSaveOffset);
-      scale.clear();
-
-      var crop = this.cropWavefront(wavefront);
-      wavefront.clear();
-      var resample = this.resampleWavefront(crop);
-      crop.clear();
-      var boundary = this.boundary(resample.wavefront, resample.scale);
-      var metrics = this.contourMetrics(resample.wavefront);
-      var quantize = this.quantizeWavefront(resample.wavefront, metrics);
-      resample.wavefront.clear();
-      var contours = this.contours(quantize);
-      var wavefrontBase = this.blendContours(quantize, contours);
-      var labels = this.labelContours(quantize, contours, boundary, metrics);
-      wavefrontBase = wavefrontBase.stagePipeline([
-         function(frame) {return frame.product(labels);}
+      var self = this;
+      var wavefrontScale = model.wavefrontEstimate.clone().stagePipeline([
+         function(frame) {
+            return frame.scale(model.wavefrontSaveScale);
+         },
+         function(frame) {
+            return frame.offset(model.wavefrontSaveOffset);
+         },
+         function(frame) {
+            return self.cropWavefront(
+               frame, self.cropWavefrontDiameterScale
+            );
+         },
+         function(frame) {
+            return self.resampleWavefrontScale(
+               frame, self.resampleWavefrontSize
+            );
+         }
       ]);
-      quantize.clear();
-      contours.clear();
-      labels.clear();
-      var wavefrontPane = this.blendBoundary(wavefrontBase, boundary, metrics);
-      wavefrontBase.clear();
-      boundary.clear();
 
-      var legendBarBase = this.legendBar(metrics);
-      var contours = this.contours(legendBarBase);
-      var legendBarPane = this.blendContours(legendBarBase, contours);
-      legendBarBase.clear();
-      contours.clear();
+      var wavefrontBoundary = this.wavefrontBoundary(
+         wavefrontScale.wavefront,
+         wavefrontScale.scale,
+         this.wavefrontBoundaryWidth
+      );
+      var contourMetrics = this.contourMetrics(
+         wavefrontScale.wavefront,
+         this.contourQuantileMinimum,
+         this.contourQuantileMaximum,
+         this.contourLevels
+      );
+      var wavefrontQuantize = this.quantizeWavefront(
+         wavefrontScale.wavefront, contourMetrics
+      );
+      wavefrontScale.wavefront.clear();
 
-      var labelBarPane = this.labelBar(metrics);
-
-      model.wavefrontEstimateContourPlot.clear();
-      model.wavefrontEstimateContourPlot = this.combine(
-         wavefrontPane, legendBarPane, labelBarPane
+      var wavefrontContours = this.wavefrontContours(wavefrontQuantize);
+      var contourLabels = this.labelContours(
+         wavefrontQuantize,
+         wavefrontContours,
+         wavefrontBoundary,
+         contourMetrics
       );
 
+      var wavefrontLabels = this.blendLabels(
+         wavefrontQuantize, contourLabels
+      );
+      wavefrontQuantize.clear();
+      contourLabels.labels.clear();
+      contourLabels.background.clear();
+
+      var wavefrontLabelsContours = this.blendContours(
+         wavefrontLabels, wavefrontContours
+      );
+      wavefrontLabels.clear();
+      wavefrontContours.clear();
+
+      var wavefrontLabelsContoursBoundary = this.blendBoundary(
+         wavefrontLabelsContours, wavefrontBoundary
+      );
+      wavefrontLabelsContours.clear();
+      wavefrontBoundary.clear();
+
+      var wavefrontNotes = this.wavefrontNotes(
+         wavefrontLabelsContoursBoundary,
+         contourMetrics
+      );
+      var wavefrontPane = this.blendNotes(
+         wavefrontLabelsContoursBoundary,
+         wavefrontNotes
+      );
+      wavefrontLabelsContoursBoundary.clear();
+      wavefrontNotes.clear();
+
+      var legendBar = this.legendBar(contourMetrics);
+      var legendBarContours = this.wavefrontContours(legendBar);
+      var legendBarPane = this.blendContours(legendBar, legendBarContours);
+      legendBar.clear();
+      legendBarContours.clear();
+
+      var labelBarPane = this.labelBar(contourMetrics);
+
+      var self = this;
+      model.wavefrontEstimateContourPlot =
+         model.wavefrontEstimateContourPlot.stagePipeline([
+            function(frame) {
+               return self.combinePanes(
+                  wavefrontPane, legendBarPane, labelBarPane
+               );
+            }
+         ]);
       wavefrontPane.clear();
       legendBarPane.clear();
       labelBarPane.clear();
 
-      Math.initRandomGenerator(seed);
+      Math.initRandomGenerator(Math.randomSeed64());
    };
 }
 
 // ****************************************************************************
-// EOF WavefrontPlot.js - Released 2015/10/05 00:00:00 UTC
+// EOF WavefrontPlot.js - Released 2015/11/23 00:00:00 UTC

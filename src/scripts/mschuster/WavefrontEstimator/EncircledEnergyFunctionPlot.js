@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// EncircledEnergyFunctionPlot.js - Released 2015/10/05 00:00:00 UTC
+// EncircledEnergyFunctionPlot.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -190,7 +190,11 @@ function EncircledEnergyFunctionPlot(model) {
       }
 
       // Draw labels.
+#iflt __PI_BUILD__ 1168
       var yOffset = -(2 * this.graphics.font.descent + 1);
+#else
+      var yOffset = -1 * this.graphics.font.descent;
+#endif
       for (
          var value = 0;
          value <= this.encircledEnergyAxisMax;
@@ -297,15 +301,25 @@ function EncircledEnergyFunctionPlot(model) {
       }
 
       var xOffset = -this.graphics.font.width("m");
+#iflt __PI_BUILD__ 1168
       var yOffset = -2 * this.graphics.font.descent;
+#else
+      var yOffset = -1 * this.graphics.font.descent;
+#endif
       this.graphics.drawText(
          this.plotBounds.x1 - xOffset, this.plotBounds.y1 - yOffset,
          "μm"
       );
 
+#iflt __PI_BUILD__ 1168
       var yOffset = -(
          1.75 * this.graphics.font.height + this.graphics.font.ascent - 3
       );
+#else
+      var yOffset = -(
+         1.5 * this.graphics.font.height + this.graphics.font.ascent - 3
+      );
+#endif
       var text = "Diameter";
       this.graphics.drawText(
          this.micronAxisPosition(0.5 * this.diameterMicronAxisMax) -
@@ -370,7 +384,11 @@ function EncircledEnergyFunctionPlot(model) {
       }
 
       var xOffset = -this.graphics.font.width("m");
+#iflt __PI_BUILD__ 1168
       var yOffset = -2 * this.graphics.font.descent;
+#else
+      var yOffset = -1 * this.graphics.font.descent;
+#endif
       this.graphics.drawText(
          this.plotBounds.x1 - xOffset, this.plotBounds.y0 - yOffset,
          "arcsec"
@@ -427,7 +445,11 @@ function EncircledEnergyFunctionPlot(model) {
       else {
          var yOffset = this.graphics.font.height + this.graphics.font.ascent;
          this.graphics.drawText(
+#iflt __PI_BUILD__ 1168
             x - xOffset + 1.5, this.plotBounds.y0 + yOffset - 2, label
+#else
+            x - xOffset + 0.5, this.plotBounds.y0 + yOffset - 2, label
+#endif
          );
       }
    };
@@ -452,7 +474,11 @@ function EncircledEnergyFunctionPlot(model) {
       this.graphics.pen = new Pen(0xff000000, 1);
 
       var xOffset = -this.graphics.font.width("m");
+#iflt __PI_BUILD__ 1168
       var yOffset = -2 * this.graphics.font.descent;
+#else
+      var yOffset = -1 * this.graphics.font.descent;
+#endif
       this.graphics.drawText(
          xText - xOffset, yIdeal - yOffset, "Diffraction limit"
       );
@@ -478,14 +504,22 @@ function EncircledEnergyFunctionPlot(model) {
       this.graphics = new VectorGraphics(bitmap);
       this.graphics.scaleTransformation(scale);
 
-#ifeq __PI_PLATFORM__ MSWINDOWS
-      this.graphics.font = new Font(
-         "Helvetica", 9 / (model.plotResolution / 96)
-      );
-#else
-      this.graphics.font = new Font(
-         "Helvetica", 12 / (model.plotResolution / 96)
-      );
+      if (coreVersionBuild < 1189) {
+         this.graphics.font = new Font(
+            "Helvetica", 9 / (model.fontResolution / 96)
+         );
+      }
+      else {
+         this.graphics.font = new Font(
+            "Open Sans", 9 / (model.fontResolution / 96)
+         );
+      }
+#ifeq __PI_PLATFORM__ MACOSX
+      if (coreVersionBuild < 1168) {
+         this.graphics.font = new Font(
+            "Helvetica", 12 / (model.fontResolution / 96)
+         );
+      }
 #endif
       this.graphics.textAntialiasing = true;
 
@@ -541,4 +575,4 @@ function EncircledEnergyFunctionPlot(model) {
 }
 
 // ****************************************************************************
-// EOF EncircledEnergyFunctionPlot.js - Released 2015/10/05 00:00:00 UTC
+// EOF EncircledEnergyFunctionPlot.js - Released 2015/11/23 00:00:00 UTC

@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2015/10/05 00:00:00 UTC
+// MainModel.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -155,6 +155,12 @@ function MainModel() {
 
    // Plot resolution in dpi.
    this.plotResolution = 96;
+
+   // Plot zoom factor.
+   this.plotZoomFactor = 1;
+
+   // Font resolution in dpi.
+   this.fontResolution = 96;
 
    // Generate views.
    this.defaultGenerateViews = true;
@@ -879,4 +885,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2015/10/05 00:00:00 UTC
+// EOF MainModel.js - Released 2015/11/23 00:00:00 UTC

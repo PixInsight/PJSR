@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainViewController.js - Released 2015/10/05 00:00:00 UTC
+// MainViewController.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -63,7 +63,17 @@ function MainController(model) {
       this.wavefrontTabController.setView(this.view.wavefrontTabView);
       this.exposureTabController.setView(this.view.exposureTabView);
 
-      model.plotResolution = 96 * this.view.displayPixelRatio;
+      var displayPixelRatio =
+         Math.min(2, Math.round(this.view.displayPixelRatio));
+      var resourcePixelRatio =
+         Math.min(2, Math.round(this.view.resourcePixelRatio));
+      var maxPixelRatio = Math.max(displayPixelRatio, resourcePixelRatio);
+
+      model.plotResolution = 96 * maxPixelRatio;
+      model.plotZoomFactor = resourcePixelRatio == 1 ? 1 : -resourcePixelRatio;
+      model.fontResolution = 96 * (
+         displayPixelRatio >= resourcePixelRatio ? displayPixelRatio : 1
+      );
    };
 
    this.execute = function() {
@@ -272,11 +282,13 @@ function MainController(model) {
             }
             if (model.generateViews || model.outputDirectoryPath != null) {
                (new WavefrontPlot(model)).generateWavefrontPlot();
+               this.view.throwAbort();
                outputDirectoryController.generateWavefrontPlot();
                this.view.throwAbort();
             }
             if (model.generateViews || model.outputDirectoryPath != null) {
                (new InterferogramPlot(model)).generateInterferogramPlot();
+               this.view.throwAbort();
                outputDirectoryController.generateInterferogramPlot();
                this.view.throwAbort();
             }
@@ -309,6 +321,7 @@ function MainController(model) {
                   (new EncircledEnergyFunctionPlot(
                      model
                   )).generateEncircledEnergyFunctionPlot();
+                  this.view.throwAbort();
                   outputDirectoryController.generateEncircledEnergyFunctionPlot();
                   this.view.throwAbort();
                }
@@ -332,6 +345,7 @@ function MainController(model) {
                   (new ModulationTransferFunctionPlot(
                      model
                   )).generateModulationTransferFunctionPlot();
+                  this.view.throwAbort();
                   outputDirectoryController.generateModulationTransferFunctionPlot();
                   this.view.throwAbort();
                }
@@ -351,10 +365,10 @@ function MainController(model) {
       }
       catch (exception) {
          this.resetOutputEstimate();
-         console.criticalln(exception);
-         if (!(new RegExp("^abort")).test(exception)) {
+         console.criticalln(exception.message);
+         if (!(new RegExp("^abort")).test(exception.message)) {
             (new MessageBox(
-               "<p><b>Error</b>: " + exception + "</p>" +
+               "<p><b>Error</b>: " + exception.message + "</p>" +
                "<p>Estimation aborted.</p>",
                TITLE,
                StdIcon_Error,
@@ -425,7 +439,7 @@ function MainView(model, controller) {
    this.throwAbort = function() {
       processEvents();
       if (this.abortEnabled && this.abortRequested) {
-         throw "abort";
+         throw new Error("abort");
       }
    };
 
@@ -490,6 +504,11 @@ function MainView(model, controller) {
 
    {
       this.tabBox = new TabBox(this);
+      this.tabBox.onPageSelected = function() {
+         if (controller.view != null) {
+            controller.view.dismissAbortButton.hasFocus = true;
+         }
+      };
       this.sizer.add(this.tabBox);
 
       this.parametersTabView =
@@ -619,6 +638,7 @@ function MainView(model, controller) {
          }
       );
       this.dismissAbortButton.defaultButton = true;
+      this.dismissAbortButton.hasFocus = true;
    }
 
    this.onClose = function() {
@@ -629,13 +649,20 @@ function MainView(model, controller) {
 
    this.windowTitle = TITLE;
 
-   this.setScaledMinSize(520, 600);
+#iflt __PI_BUILD__ 1168
+   // this.setScaledMinSize(520, 600);
+   this.setScaledMinWidth(520);
+#endif
    this.adjustToContents();
-   this.setFixedHeight();
+#iflt __PI_BUILD__ 1168
+#else
+   this.setMinWidth(this.width + this.logicalPixelsToPhysical(20));
+#endif
+   this.setFixedHeight(this.height + this.logicalPixelsToPhysical(20));
 
    this.disableAbort();
 }
 MainView.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF MainViewController.js - Released 2015/10/05 00:00:00 UTC
+// EOF MainViewController.js - Released 2015/11/23 00:00:00 UTC
