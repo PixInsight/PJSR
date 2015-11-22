@@ -4,7 +4,7 @@
 // MainViewController.js - Released 2015/11/20 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.10
+// This file is part of MureDenoise Script Version 1.11
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.

@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// Global.js - Released 2015/10/05 00:00:00 UTC
+// Global.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -393,6 +393,18 @@ if (!Control.prototype.displayPixelRatio) {
 }
 #endif
 
+#iflt __PI_BUILD__ 1168
+if (!Control.prototype.resourcePixelRatio) {
+   Control.prototype.resourcePixelRatio = 1;
+}
+#endif
+
+if (!Control.prototype.logicalPixelsToPhysical) {
+   Control.prototype.logicalPixelsToPhysical = function(s) {
+      return Math.round(s);
+   };
+}
+
 if (!Control.prototype.setScaledFixedSize) {
    Control.prototype.setScaledFixedSize = function(w, h) {
       this.setFixedSize(w, h);
@@ -402,6 +414,12 @@ if (!Control.prototype.setScaledFixedSize) {
 if (!Control.prototype.setScaledMinSize) {
    Control.prototype.setScaledMinSize = function(w, h) {
       this.setMinSize(w, h);
+   };
+}
+
+if (!Control.prototype.setScaledMinWidth) {
+   Control.prototype.setScaledMinWidth = function(w) {
+      this.setMinWidth(w);
    };
 }
 
@@ -425,4 +443,4 @@ if (!Sizer.prototype.addUnscaledSpacing) {
 }
 
 // ****************************************************************************
-// EOF Global.js - Released 2015/10/05 00:00:00 UTC
+// EOF Global.js - Released 2015/11/23 00:00:00 UTC

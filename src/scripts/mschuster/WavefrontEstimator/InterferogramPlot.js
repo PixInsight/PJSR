@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// InterferogramPlot.js - Released 2015/10/05 00:00:00 UTC
+// InterferogramPlot.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,41 +48,44 @@
 // ****************************************************************************
 
 function InterferogramPlot(model) {
+   // Crop interferogram diameter scale.
+   this.cropInterferogramDiameterScale = 1.1;
+
    // Interferogram plot size.
    this.interferogramPlotSize = 501;
 
    // Boundary thresholds.
    this.boundaryWidth = 0.01;
 
-   // Crop interferogram threshold.
-   this.cropInterferogramAperture = 1.1;
-
    // Gives the cropped interferogram.
-   this.cropInterferogram = function(interferogram) {
+   this.cropInterferogram = function(interferogram, diameterScale) {
       var radius = Math.round(
-         0.5 * this.cropInterferogramAperture * model.defocusDiameterEstimate
+         0.5 * diameterScale * model.defocusDiameterEstimate
       );
       var pad = interferogram.rows() - 2 * radius - 1;
       var low = Math.round(0.5 * pad);
       var high = pad - low;
 
-      var cropRows = interferogram.padRows(-low + 1 * 1, -high, 0);
-      var cropCols = cropRows.padCols(-low + 1 * 1, -high, 0);
-      cropRows.clear();
-
-      return cropCols;
+      return interferogram.clone().stagePipeline([
+         function(frame) {
+            return frame.padRows(-low + 1, -high, 0);
+         },
+         function(frame) {
+            return frame.padCols(-low + 1, -high, 0);
+         }
+      ]);
    };
 
    // Gives the resampled interferogram.
-   this.resampleInterferogram = function(interferogram) {
+   this.resampleInterferogram = function(interferogram, resampleSize) {
       var scale = model.plotResolution / 96;
       var resample = new Resample();
       resample.absoluteMode = Resample.prototype.ForceWidthAndHeight;
       resample.interpolation = Resample.prototype.MitchellNetravaliFilter;
       resample.mode = Resample.prototype.AbsolutePixels;
       resample.smoothness = 1.5;
-      resample.xSize = Math.ceil(scale * this.interferogramPlotSize);
-      resample.ySize = Math.ceil(scale * this.interferogramPlotSize);
+      resample.xSize = Math.ceil(scale * resampleSize);
+      resample.ySize = Math.ceil(scale * resampleSize);
 
       var identifierPrefix = model.identifierPrefix.trim() == "" ?
          "" :
@@ -100,12 +103,12 @@ function InterferogramPlot(model) {
       return resampleInterferogram;
    };
 
-   // Gives the interferogram boundary blending function.
-   this.boundary = function(interferogram, scale) {
+   // Gives the interferogram boundary blend.
+   this.interferogramBoundary = function(interferogram, scale, width) {
       var apertureLow = 1.0;
-      var apertureHigh = apertureLow + this.boundaryWidth;
+      var apertureHigh = apertureLow + width;
       var obstructionHigh = model.defocusObstructionRatioEstimate;
-      var obstructionLow = Math.max(0, obstructionHigh - this.boundaryWidth);
+      var obstructionLow = Math.max(0, obstructionHigh - width);
 
       var matrix = interferogram.matrix();
       var rows = matrix.rows;
@@ -138,8 +141,8 @@ function InterferogramPlot(model) {
    };
 
    // Gives the boundary blended interferogram.
-   this.blendBoundaryInterferogram = function(interferogram, scale) {
-      var boundary = this.boundary(interferogram, scale);
+   this.blendBoundaryInterferogram = function(interferogram, scale, width) {
+      var boundary = this.interferogramBoundary(interferogram, scale, width);
       var one = new FrameReal(
          new Matrix(1, interferogram.rows(), interferogram.cols())
       );
@@ -160,38 +163,54 @@ function InterferogramPlot(model) {
          model.interferogramEstimateSagittalPlot.stagePipeline([
             function(frame) {
                return self.cropInterferogram(
-                  model.interferogramEstimateSagittal
+                  model.interferogramEstimateSagittal,
+                  self.cropInterferogramDiameterScale
                );
             },
             function(frame) {
                scale = Math.ceil(
                   (model.plotResolution / 96) * self.interferogramPlotSize
                ) / frame.rows();
-               return self.resampleInterferogram(frame);
+               return self.resampleInterferogram(
+                  frame,
+                  self.interferogramPlotSize
+               );
             },
             function(frame) {
-               return self.blendBoundaryInterferogram(frame, scale);
+               return self.blendBoundaryInterferogram(
+                  frame,
+                  scale,
+                  self.boundaryWidth
+               );
             }
          ]);
       model.interferogramEstimateMeridionalPlot =
          model.interferogramEstimateMeridionalPlot.stagePipeline([
             function(frame) {
                return self.cropInterferogram(
-                  model.interferogramEstimateMeridional
+                  model.interferogramEstimateMeridional,
+                  self.cropInterferogramDiameterScale
                );
             },
             function(frame) {
                scale = Math.ceil(
                   (model.plotResolution / 96) * self.interferogramPlotSize
                ) / frame.rows();
-               return self.resampleInterferogram(frame);
+               return self.resampleInterferogram(
+                  frame,
+                  self.interferogramPlotSize
+               );
             },
             function(frame) {
-               return self.blendBoundaryInterferogram(frame, scale);
+               return self.blendBoundaryInterferogram(
+                  frame,
+                  scale,
+                  self.boundaryWidth
+               );
             }
          ]);
    };
 }
 
 // ****************************************************************************
-// EOF InterferogramPlot.js - Released 2015/10/05 00:00:00 UTC
+// EOF InterferogramPlot.js - Released 2015/11/23 00:00:00 UTC

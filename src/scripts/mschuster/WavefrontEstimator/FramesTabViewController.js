@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// FramesTabViewController.js - Released 2015/10/05 00:00:00 UTC
+// FramesTabViewController.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -67,13 +67,13 @@ function FramesTabController(model, controller) {
       if (model.intraFocalFramePaths.length != 0) {
          title += format(" (%d)", model.intraFocalFramePaths.length);
       }
-      this.view.intraFocalFramesGroupBox.title = title + ":";
+      this.view.intraFocalFramesGroupBox.title = title;
 
       var title = "Extra-focal frames";
       if (model.extraFocalFramePaths.length != 0) {
          title += format(" (%d)", model.extraFocalFramePaths.length);
       }
-      this.view.extraFocalFramesGroupBox.title = title + ":";
+      this.view.extraFocalFramesGroupBox.title = title;
    };
 
    this.reset = function() {
@@ -357,9 +357,10 @@ function FramesTabView(parent, model, controller) {
       groupBox.sizer.margin = 6;
       groupBox.sizer.spacing = 6;
       groupBox.title = title;
+      groupBox.styleSheet = "*{}";
 
 #ifeq __PI_PLATFORM__ MACOSX
-      if (coreVersionBuild <= 1123) {
+      if (coreVersionBuild < 1168) {
          groupBox.sizer.addSpacing(-6);
       }
 #endif
@@ -375,6 +376,43 @@ function FramesTabView(parent, model, controller) {
       return buttonPane;
    };
 
+   this.treeBoxHeight = function(treeBox, header, rows, scrollBar) {
+#iflt __PI_BUILD__ 1168
+      var rowHeight = 6;
+#else
+      var rowHeight = 4;
+#endif
+#ifeq __PI_PLATFORM__ MACOSX
+      if (coreVersionBuild < 1168) {
+         rowHeight = 5;
+      }
+#endif
+
+      var height =
+         2 * treeBox.logicalPixelsToPhysical(0.5 * treeBox.borderWidth) +
+         treeBox.logicalPixelsToPhysical(2);
+
+      if (header) {
+         height +=
+            treeBox.logicalPixelsToPhysical(0.5 * treeBox.borderWidth) +
+            treeBox.font.height + treeBox.logicalPixelsToPhysical(rowHeight);
+      }
+
+      height +=
+         Math.round(
+            rows *
+            (treeBox.font.height + treeBox.logicalPixelsToPhysical(rowHeight))
+         );
+
+      if (scrollBar) {
+         height +=
+            2 * treeBox.logicalPixelsToPhysical(2) +
+            treeBox.logicalPixelsToPhysical(11);
+      }
+
+      return height;
+   };
+
    this.addTreeBox = function(group, rows, paths, fullPaths) {
       var treeBox = new TreeBox(this);
       group.sizer.add(treeBox);
@@ -386,19 +424,7 @@ function FramesTabView(parent, model, controller) {
       treeBox.multipleSelection = true;
       treeBox.numberOfColumns = 2;
       treeBox.setHeaderAlignment(0, TextAlign_Left | TextAlign_VertCenter);
-      //console.writeln("lineSpacing: ", treeBox.font.lineSpacing);
-      //console.writeln("borderWidth: ", treeBox.borderWidth);
-      var rowSpacing = 6;
-#ifeq __PI_PLATFORM__ MACOSX
-      if (coreVersionBuild <= 1123) {
-         rowSpacing = 2;
-      }
-#endif
-      treeBox.setFixedHeight(
-         this.displayPixelRatio * (rows + 1) *
-         (treeBox.font.lineSpacing + rowSpacing) +
-         treeBox.borderWidth
-      );
+      treeBox.setFixedHeight(this.treeBoxHeight(treeBox, false, rows, true));
       treeBox.showColumn(1, false);
 
       for (var i = 0; i < paths.length; ++i) {
@@ -443,7 +469,7 @@ function FramesTabView(parent, model, controller) {
    this.framesTreeBoxRows = 5.5;
 
    {
-      this.intraFocalFramesGroupBox = this.addGroupBox("Intra-focal frames:");
+      this.intraFocalFramesGroupBox = this.addGroupBox("Intra-focal frames");
       this.intraFocalFramesGroupBox.toolTip =
          "<p>The list of intra-focal frames selected for combination.</p>" +
 
@@ -494,7 +520,7 @@ function FramesTabView(parent, model, controller) {
    }
 
    {
-      this.extraFocalFramesGroupBox = this.addGroupBox("Extra-focal frames:");
+      this.extraFocalFramesGroupBox = this.addGroupBox("Extra-focal frames");
       this.extraFocalFramesGroupBox.toolTip =
          "<p>The list of extra-focal frames selected for combination.</p>" +
 
@@ -537,7 +563,7 @@ function FramesTabView(parent, model, controller) {
    }
 
    {
-      this.outputDirectoryGroupBox = this.addGroupBox("Output directory:");
+      this.outputDirectoryGroupBox = this.addGroupBox("Output directory");
       this.outputDirectoryGroupBox.toolTip =
          "<p>The output directory.</p>" +
 
@@ -587,4 +613,4 @@ function FramesTabView(parent, model, controller) {
 FramesTabView.prototype = new Frame;
 
 // ****************************************************************************
-// EOF FramesTabViewController.js - Released 2015/10/05 00:00:00 UTC
+// EOF FramesTabViewController.js - Released 2015/11/23 00:00:00 UTC

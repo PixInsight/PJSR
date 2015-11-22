@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// RousseeuwCrouxSn.js - Released 2015/10/05 00:00:00 UTC
+// RousseeuwCrouxSn.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -208,4 +208,4 @@ function SnArraySideEffect(x) {
 }
 
 // ****************************************************************************
-// EOF RousseeuwCrouxSn.js - Released 2015/10/05 00:00:00 UTC
+// EOF RousseeuwCrouxSn.js - Released 2015/11/23 00:00:00 UTC
