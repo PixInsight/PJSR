@@ -3,6 +3,15 @@ MureDenoise Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2015.11.23 - Version 1.11
+
+- Fixed dialog group box style sheet problem.
+
+- Improved covariance hypothesis.
+
+- Documented nonsupport of one shot color (OSC) detectors.
+
+-------------------------------------------------------------------------------
 2015.11.20 - Version 1.10
 
 - Improved covariance hypothesis.

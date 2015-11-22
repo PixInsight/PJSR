@@ -4,7 +4,7 @@
 // MainModel.js - Released 2015/11/20 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.10
+// This file is part of MureDenoise Script Version 1.11
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -86,35 +86,51 @@ function MainModel() {
       "Lanczos-5"
    ];
 
-   // Noise correlation ratios.
-   this.noiseCorrelationRatios = [
-      1,       // Nearest Neighbor
-      3 / 2,   // Bilinear
-      70 / 57, // Bicubic Spline
-      1.11897, // Lancsoz-3
-      1.09407, // Lanczos-4
-      1.07036  // Lanczos-5
+   // Interpolation method covariance scales.
+   this.imageInterpolationMethodCovarianceScales = [
+      1,           // Nearest Neighbor
+      4 / 9,       // Bilinear
+      3249 / 4900, // Bicubic Spline
+      0.798660,    // Lanczos-3
+      0.835437,    // Lanczos-4
+      0.872853     // Lanczos-5
    ];
 
-   // Noise variance scaling function.
-   this.noiseVarianceScaling = function() {
-      var v = this.denoiseVarianceScale;
-      var r = this.noiseCorrelationRatios[this.imageInterpolationMethod];
-      var n = this.imageCombinationCount;
+   // Interpolation method covariance bases.
+   this.imageInterpolationMethodCovarianceBases = [
+      1.5, // Nearest Neighbor
+      1.5, // Bilinear
+      1.5, // Bicubic Spline
+      1.5, // Lanczos-3
+      1.5, // Lanczos-4
+      1.5  // Lanczos-5
+   ];
 
-      return v * (1 + (n - 1) / (r * r)) / (n * n);
+   // Base variance scaling function.
+   this.baseVarianceScale = function() {
+      return this.denoiseVarianceScale / this.imageCombinationCount;
    };
 
-   // Subband variance scaling function.
-   this.subbandVarianceScaling = function(level) {
-      var v = this.denoiseVarianceScale;
+   // Base covariance scaling function.
+   this.baseCovarianceScale = function() {
+      var r = this.imageInterpolationMethodCovarianceScales[
+         this.imageInterpolationMethod
+      ];
       var n = this.imageCombinationCount;
-      var s = this.noiseVarianceScaling() / (v / n);
-      var a = -1 + Math.pow2(level) + Math.sqrt(s);
-      var b = -2 + Math.pow2(level) + 2 * Math.sqrt(s);
-      var ab = a / b;
 
-      return ab * ab;
+      return (1 + (n - 1) * r) / n;
+   };
+
+   // Refinement covariance scaling function.
+   this.refinementCovarianceScale = function(level) {
+      var s = this.baseCovarianceScale();
+      var e = this.imageInterpolationMethodCovarianceBases[
+         this.imageInterpolationMethod
+      ];
+      var a = Math.pow(e, level) - (1 - s);
+      var b = Math.pow(e, level) - e * (1 - s);
+
+      return a / b;
    };
 
    // Interpolation method of the combination.
@@ -134,9 +150,10 @@ function MainModel() {
    this.detectorGainUnits = "e-/DN";
    this.detectorGain = this.detectorGainDefault;
 
-   // Effective gain.
-   this.effectiveGain = function() {
-      return this.detectorGain / this.noiseVarianceScaling();
+   // Base gain.
+   this.baseGain = function() {
+      return this.detectorGain /
+         (this.baseVarianceScale() * this.baseCovarianceScale());
    };
 
    // Standard deviation of additive white Gaussian noise of the detector in
@@ -148,10 +165,10 @@ function MainModel() {
    this.detectorGaussianNoiseUnits = "DN";
    this.detectorGaussianNoise = this.detectorGaussianNoiseDefault;
 
-   // Effective standard deviation of additive white Gaussian noise.
-   this.effectiveGaussianNoise = function() {
+   // Base standard deviation of additive white Gaussian noise.
+   this.baseGaussianNoise = function() {
       return this.detectorGaussianNoise *
-         Math.sqrt(this.noiseVarianceScaling());
+         Math.sqrt(this.baseVarianceScale() * this.baseCovarianceScale());
    };
 
    // Offset of the detector in DN.
@@ -162,8 +179,8 @@ function MainModel() {
    this.detectorOffsetUnits = "DN";
    this.detectorOffset = this.detectorOffsetDefault;
 
-   // Effective offset.
-   this.effectiveOffset = function() {
+   // Base offset.
+   this.baseOffset = function() {
       return this.detectorOffset;
    };
 
