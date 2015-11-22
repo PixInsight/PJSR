@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// EstimateEncircledEnergyFunction.js - Released 2015/10/05 00:00:00 UTC
+// EstimateEncircledEnergyFunction.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -223,7 +223,7 @@ function EstimateEncircledEnergyFunction(model) {
 
       if (model.encircledEnergyFunctionEE50Diameter != 0) {
          console.writeln(format(
-            "Encircled energy 50%% diameter: " +
+            "EE 50%% diameter: " +
             model.formatStrehlDiameterEstimate +
             " μm, " +
             model.formatStrehlDiameterAngleEstimate +
@@ -237,7 +237,7 @@ function EstimateEncircledEnergyFunction(model) {
       }
       if (model.encircledEnergyFunctionEE80Diameter != 0) {
          console.writeln(format(
-            "Encircled energy 80%% diameter: " +
+            "EE 80%% diameter: " +
             model.formatStrehlDiameterEstimate +
             " μm, " +
             model.formatStrehlDiameterAngleEstimate +
@@ -253,4 +253,4 @@ function EstimateEncircledEnergyFunction(model) {
 }
 
 // ****************************************************************************
-// EOF EstimateEncircledEnergyFunction.js - Released 2015/10/05 00:00:00 UTC
+// EOF EstimateEncircledEnergyFunction.js - Released 2015/11/23 00:00:00 UTC

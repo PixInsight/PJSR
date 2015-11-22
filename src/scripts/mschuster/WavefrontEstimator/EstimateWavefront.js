@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// EstimateWavefront.js - Released 2015/10/05 00:00:00 UTC
+// EstimateWavefront.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -392,7 +392,7 @@ function EstimateWavefront(model, view, controller) {
       }
       for (var k = 0; k != model.defocusSignalFixedPointIterations; ++k) {
          if (intraFocalDefocusThreshold == 0) {
-            throw model.defocusThresholdEstimationDidNotConverge;
+            throw new Error(model.defocusThresholdEstimationDidNotConverge);
          }
          var intraFocalApertureMetrics =
             this.intraFocalEstimationImage.apertureMetrics(
@@ -401,7 +401,7 @@ function EstimateWavefront(model, view, controller) {
          var intraFocalDefocusMetrics = intraFocalApertureMetrics.metrics;
          intraFocalApertureMetrics.mask.clear();
          if (intraFocalDefocusMetrics.radius == 0) {
-            throw model.defocusThresholdEstimationDidNotConverge;
+            throw new Error(model.defocusThresholdEstimationDidNotConverge);
          }
          intraFocalDefocusThreshold = Math.max(
             0,
@@ -432,7 +432,7 @@ function EstimateWavefront(model, view, controller) {
       }
       for (var k = 0; k != model.defocusSignalFixedPointIterations; ++k) {
          if (extraFocalDefocusThreshold == 0) {
-            throw model.defocusThresholdEstimationDidNotConverge;
+            throw new Error(model.defocusThresholdEstimationDidNotConverge);
          }
          var extraFocalApertureMetrics =
             this.extraFocalEstimationImage.apertureMetrics(
@@ -441,7 +441,7 @@ function EstimateWavefront(model, view, controller) {
          var extraFocalDefocusMetrics = extraFocalApertureMetrics.metrics;
          extraFocalApertureMetrics.mask.clear();
          if (extraFocalDefocusMetrics.radius == 0) {
-            throw model.defocusThresholdEstimationDidNotConverge;
+            throw new Error(model.defocusThresholdEstimationDidNotConverge);
          }
          extraFocalDefocusThreshold = Math.max(
             0,
@@ -456,7 +456,7 @@ function EstimateWavefront(model, view, controller) {
       );
 
       if (defocusThreshold == 0) {
-         throw model.defocusThresholdEstimationDidNotConverge;
+         throw new Error(model.defocusThresholdEstimationDidNotConverge);
       }
       var intraFocalApertureMetrics =
          this.intraFocalEstimationImage.apertureMetrics(
@@ -465,11 +465,11 @@ function EstimateWavefront(model, view, controller) {
       var intraFocalDefocusMetrics = intraFocalApertureMetrics.metrics;
       intraFocalApertureMetrics.mask.clear();
       if (intraFocalDefocusMetrics.radius == 0) {
-         throw model.defocusThresholdEstimationDidNotConverge;
+         throw new Error(model.defocusThresholdEstimationDidNotConverge);
       }
 
       if (defocusThreshold == 0) {
-         throw model.defocusThresholdEstimationDidNotConverge;
+         throw new Error(model.defocusThresholdEstimationDidNotConverge);
       }
       var extraFocalApertureMetrics =
          this.extraFocalEstimationImage.apertureMetrics(
@@ -478,7 +478,7 @@ function EstimateWavefront(model, view, controller) {
       var extraFocalDefocusMetrics = extraFocalApertureMetrics.metrics;
       extraFocalApertureMetrics.mask.clear();
       if (extraFocalDefocusMetrics.radius == 0) {
-         throw model.defocusThresholdEstimationDidNotConverge;
+         throw new Error(model.defocusThresholdEstimationDidNotConverge);
       }
 
       defocusThreshold = Math.max(
@@ -541,19 +541,19 @@ function EstimateWavefront(model, view, controller) {
       var intraFocalDefocusMetrics = intraFocalApertureMetrics.metrics;
       intraFocalApertureMetrics.mask.clear();
       if (intraFocalDefocusMetrics.radius == 0) {
-         throw model.defocusThresholdEstimationDidNotConverge;
+         throw new Error(model.defocusThresholdEstimationDidNotConverge);
       }
       if (2 * intraFocalDefocusMetrics.radius < model.minimumDefocusDiameter) {
-         throw model.defocusedImageDiameterTooSmall;
+         throw new Error(model.defocusedImageDiameterTooSmall);
       }
       if (2 * intraFocalDefocusMetrics.radius > model.maximumDefocusDiameter) {
-         throw model.defocusedImageDiameterTooLarge;
+         throw new Error(model.defocusedImageDiameterTooLarge);
       }
       if (intraFocalDefocusMetrics.signal < model.minimumDefocusSignal) {
-         throw model.defocusedImageSignalTooSmall;
+         throw new Error(model.defocusedImageSignalTooSmall);
       }
       if (intraFocalDefocusMetrics.signal > model.maximumDefocusSignal) {
-         throw model.defocusedImageSignalTooLarge;
+         throw new Error(model.defocusedImageSignalTooLarge);
       }
       var intraFocalDefocusNoise =
          Math.sqrt(intraFocalDefocusMetrics.signal / (
@@ -577,19 +577,19 @@ function EstimateWavefront(model, view, controller) {
       var extraFocalDefocusMetrics = extraFocalApertureMetrics.metrics;
       extraFocalApertureMetrics.mask.clear();
       if (extraFocalDefocusMetrics.radius == 0) {
-         throw model.defocusThresholdEstimationDidNotConverge;
+         throw new Error(model.defocusThresholdEstimationDidNotConverge);
       }
       if (2 * extraFocalDefocusMetrics.radius < model.minimumDefocusDiameter) {
-         throw model.defocusedImageDiameterTooSmall;
+         throw new Error(model.defocusedImageDiameterTooSmall);
       }
       if (2 * extraFocalDefocusMetrics.radius > model.maximumDefocusDiameter) {
-         throw model.defocusedImageDiameterTooLarge;
+         throw new Error(model.defocusedImageDiameterTooLarge);
       }
       if (extraFocalDefocusMetrics.signal < model.minimumDefocusSignal) {
-         throw model.defocusedImageSignalTooSmall;
+         throw new Error(model.defocusedImageSignalTooSmall);
       }
       if (extraFocalDefocusMetrics.signal > model.maximumDefocusSignal) {
-         throw model.defocusedImageSignalTooLarge;
+         throw new Error(model.defocusedImageSignalTooLarge);
       }
       var extraFocalDefocusNoise =
          Math.sqrt(extraFocalDefocusMetrics.signal / (
@@ -1195,12 +1195,12 @@ function EstimateWavefront(model, view, controller) {
       return zernike4Fit.residual;
    };
 
-   // Generates the Zernike 22 residual.
-   this.generateZernike22Residual = function(wavefront) {
+   // Generates the Zernike residual.
+   this.generateZernikeResidual = function(wavefront) {
       var self = this;
-      var zernike22Fit = wavefront.clone().stagePipeline([
+      var zernikeFit = wavefront.clone().stagePipeline([
          function(frame) {
-            return (new ZernikeAberrations()).zernike22Fit(
+            return (new ZernikeAberrations()).zernikeFit(
                self.defocusMesh,
                model.defocusDomain,
                frame,
@@ -1209,16 +1209,16 @@ function EstimateWavefront(model, view, controller) {
          }
       ]);
 
-      for (var row = 4; row != zernike22Fit.coefficients.rows(); ++row) {
+      for (var row = 4; row != zernikeFit.coefficients.rows(); ++row) {
          model.aberrationCoefficientsEstimate.push(
-            this.wavefrontScale * zernike22Fit.coefficients.matrix().at(row, 0)
+            this.wavefrontScale * zernikeFit.coefficients.matrix().at(row, 0)
          );
       }
-      zernike22Fit.coefficients.clear();
+      zernikeFit.coefficients.clear();
 
       view.throwAbort();
 
-      return zernike22Fit.residual;
+      return zernikeFit.residual;
    };
 
    this.generateInterferogramEstimate = function(
@@ -1302,7 +1302,7 @@ function EstimateWavefront(model, view, controller) {
       }
 
       if (i == this.maximumCompensationIterationCount) {
-         throw model.wavefrontRefinementDidNotConverge;
+         throw new Error(model.wavefrontRefinementDidNotConverge);
       }
 
       var compensatedImages =
@@ -1362,7 +1362,7 @@ function EstimateWavefront(model, view, controller) {
       view.throwAbort();
 
       var residualRMS = totalWavefrontEstimate.stagePipeline([
-         function(frame) {return self.generateZernike22Residual(frame);},
+         function(frame) {return self.generateZernikeResidual(frame);},
          function(frame) {return frame.labeledElements(model.defocusDomain);},
          function(frame) {return frame.rms();}
       ]);
@@ -1407,28 +1407,14 @@ function EstimateWavefront(model, view, controller) {
          }
       }
 
-      var totalAberrationVarianceEstimate = 0;
-      for (var i = 4; i != this.aberrationLabels.length; ++i) {
-         totalAberrationVarianceEstimate +=
-            square(model.aberrationCoefficientsEstimate[i]);
-      }
-
       for (var i = 4; i != this.aberrationLabels.length; ++i) {
          console.writeln(format(
             this.aberrationLabels[i] +
             ": " +
             model.formatAberrationCoefficientsEstimate +
-            " nm RMS, " +
-            model.formatAberrationCoefficientsFVEEstimate +
-            " %% FVE",
+            " nm RMS",
             model.scaleAberrationCoefficientsEstimate *
-               model.aberrationCoefficientsEstimate[i],
-            model.scaleAberrationCoefficientsFVEEstimate * (
-               totalAberrationVarianceEstimate == 0 ?
-                  0 :
-                  square(model.aberrationCoefficientsEstimate[i]) /
-                  totalAberrationVarianceEstimate
-            )
+               model.aberrationCoefficientsEstimate[i]
          ));
       }
       console.flush();
@@ -1461,4 +1447,4 @@ function EstimateWavefront(model, view, controller) {
 }
 
 // ****************************************************************************
-// EOF EstimateWavefront.js - Released 2015/10/05 00:00:00 UTC
+// EOF EstimateWavefront.js - Released 2015/11/23 00:00:00 UTC

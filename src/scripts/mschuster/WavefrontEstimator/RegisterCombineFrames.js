@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// RegisterCombineFrames.js - Released 2015/10/05 00:00:00 UTC
+// RegisterCombineFrames.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -72,7 +72,7 @@ function RegisterCombineFrames(model, view, controller) {
       var imageWindows = ImageWindow.open(path);
       console.abortEnabled = false; // workaround for 1123 bug.
       if (imageWindows.length == 0) {
-         throw "abort";
+         throw new Error("abort");
       }
 
       try {
@@ -128,7 +128,7 @@ function RegisterCombineFrames(model, view, controller) {
             model.minimumDefocusThreshold /
             Math.sqrt(this.cropFrameDownSampling);
          if (defocusThreshold == 0) {
-            throw model.defocusThresholdEstimationDidNotConverge;
+            throw new Error(model.defocusThresholdEstimationDidNotConverge);
          }
          var apertureMetrics = subFrame.apertureMetrics(
             defocusThreshold, model.hotPixelRemovalRadius
@@ -136,7 +136,7 @@ function RegisterCombineFrames(model, view, controller) {
          var metrics = apertureMetrics.metrics;
          apertureMetrics.mask.clear();
          if (metrics.radius == 0) {
-            throw model.defocusThresholdEstimationDidNotConverge;
+            throw new Error(model.defocusThresholdEstimationDidNotConverge);
          }
          subFrame.clear();
 
@@ -190,7 +190,7 @@ function RegisterCombineFrames(model, view, controller) {
          var defocusThreshold =
             model.minimumDefocusThreshold;
          if (defocusThreshold == 0) {
-            throw model.defocusThresholdEstimationDidNotConverge;
+            throw new Error(model.defocusThresholdEstimationDidNotConverge);
          }
          var apertureMetrics = cropFrame.apertureMetrics(
             defocusThreshold, model.hotPixelRemovalRadius
@@ -198,7 +198,7 @@ function RegisterCombineFrames(model, view, controller) {
          var metrics = apertureMetrics.metrics;
          apertureMetrics.mask.clear();
          if (metrics.radius == 0) {
-            throw model.defocusThresholdEstimationDidNotConverge;
+            throw new Error(model.defocusThresholdEstimationDidNotConverge);
          }
          cropFrame.clear();
 
@@ -273,7 +273,7 @@ function RegisterCombineFrames(model, view, controller) {
             2 * this.registerFramePadding >
          this.maximumImageSize
       ) {
-         throw model.defocusedImageDiameterTooLarge;
+         throw new Error(model.defocusedImageDiameterTooLarge);
       }
       var size =
          Math.round(Math.pow2(Math.ceil(Math.log2(
@@ -311,7 +311,7 @@ function RegisterCombineFrames(model, view, controller) {
       frame, defocusThreshold, centerOffset, quantizeTranslation
    ) {
       if (defocusThreshold == 0) {
-         throw model.defocusThresholdEstimationDidNotConverge;
+         throw new Error(model.defocusThresholdEstimationDidNotConverge);
       }
       var apertureMetrics = frame.apertureMetrics(
          defocusThreshold, model.hotPixelRemovalRadius
@@ -319,19 +319,19 @@ function RegisterCombineFrames(model, view, controller) {
       var metrics = apertureMetrics.metrics;
       apertureMetrics.mask.clear();
       if (metrics.radius == 0) {
-         throw model.defocusThresholdEstimationDidNotConverge;
+         throw new Error(model.defocusThresholdEstimationDidNotConverge);
       }
       if (2 * metrics.radius < model.minimumDefocusDiameter) {
-         throw model.defocusedImageDiameterTooSmall;
+         throw new Error(model.defocusedImageDiameterTooSmall);
       }
       if (2 * metrics.radius > model.maximumDefocusDiameter) {
-         throw model.defocusedImageDiameterTooLarge;
+         throw new Error(model.defocusedImageDiameterTooLarge);
       }
       if (metrics.signal < model.minimumDefocusSignal) {
-         throw model.defocusedImageSignalTooSmall;
+         throw new Error(model.defocusedImageSignalTooSmall);
       }
       if (metrics.signal > model.maximumDefocusSignal) {
-         throw model.defocusedImageSignalTooLarge;
+         throw new Error(model.defocusedImageSignalTooLarge);
       }
 
       var rows = frame.rows();
@@ -655,7 +655,9 @@ function RegisterCombineFrames(model, view, controller) {
                ++k
             ) {
                if (defocusThreshold == 0) {
-                  throw model.defocusThresholdEstimationDidNotConverge;
+                  throw new Error(
+                     model.defocusThresholdEstimationDidNotConverge
+                  );
                }
                var apertureMetrics =
                   intraFocalFrames[i].apertureMetrics(
@@ -664,7 +666,9 @@ function RegisterCombineFrames(model, view, controller) {
                var metrics = apertureMetrics.metrics;
                apertureMetrics.mask.clear();
                if (metrics.radius == 0) {
-                  throw model.defocusThresholdEstimationDidNotConverge;
+                  throw new Error(
+                     model.defocusThresholdEstimationDidNotConverge
+                  );
                }
                defocusThreshold = Math.max(
                   0,
@@ -725,7 +729,9 @@ function RegisterCombineFrames(model, view, controller) {
                ++k
             ) {
                if (defocusThreshold == 0) {
-                  throw model.defocusThresholdEstimationDidNotConverge;
+                  throw new Error(
+                     model.defocusThresholdEstimationDidNotConverge
+                  );
                }
                var apertureMetrics =
                   extraFocalFrames[i].apertureMetrics(
@@ -734,7 +740,9 @@ function RegisterCombineFrames(model, view, controller) {
                var metrics = apertureMetrics.metrics;
                apertureMetrics.mask.clear();
                if (metrics.radius == 0) {
-                  throw model.defocusThresholdEstimationDidNotConverge;
+                  throw new Error(
+                     model.defocusThresholdEstimationDidNotConverge
+                  );
                }
                defocusThreshold = Math.max(
                   0,
@@ -1101,4 +1109,4 @@ function RegisterCombineFrames(model, view, controller) {
 }
 
 // ****************************************************************************
-// EOF RegisterCombineFrames.js - Released 2015/10/05 00:00:00 UTC
+// EOF RegisterCombineFrames.js - Released 2015/11/23 00:00:00 UTC

@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// ModulationTransferFunctionPlot.js - Released 2015/10/05 00:00:00 UTC
+// ModulationTransferFunctionPlot.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -141,6 +141,11 @@ function ModulationTransferFunctionPlot(model) {
             this.plotBounds.x1, y
          );
       }
+      var y = this.modulationAxisPosition(0.5 * this.modulationAxisMax, this);
+      this.graphics.drawLine(
+         this.plotBounds.x0, y,
+         this.plotBounds.x1, y
+      );
    };
 
    // Draws the modulation transfer axis.
@@ -181,7 +186,11 @@ function ModulationTransferFunctionPlot(model) {
       }
 
       // Draw labels.
-      var yOffset = -2 * this.graphics.font.descent;
+#iflt __PI_BUILD__ 1168
+      var yOffset = -(2 * this.graphics.font.descent + 1);
+#else
+      var yOffset = -1 * this.graphics.font.descent;
+#endif
       for (
          var value = 0;
          value <= this.modulationAxisMax;
@@ -269,7 +278,10 @@ function ModulationTransferFunctionPlot(model) {
          );
          value += delta;
          if (value == Math.pow10(Math.floor(Math.log10(value)))) {
-            delta *= 10;
+            delta *= 5;
+         }
+         else if (value == 2 * Math.pow10(Math.floor(Math.log10(value)))) {
+            delta *= 2;
          }
       }
 
@@ -319,15 +331,25 @@ function ModulationTransferFunctionPlot(model) {
       }
 
       var xOffset = -this.graphics.font.width("m");
+#iflt __PI_BUILD__ 1168
       var yOffset = -2 * this.graphics.font.descent;
+#else
+      var yOffset = -1 * this.graphics.font.descent;
+#endif
       this.graphics.drawText(
          this.plotBounds.x1 - xOffset, this.plotBounds.y1 - yOffset,
          "lp/mm"
       );
 
+#iflt __PI_BUILD__ 1168
       var yOffset = -(
          1.75 * this.graphics.font.height + this.graphics.font.ascent - 3
       );
+#else
+      var yOffset = -(
+         1.5 * this.graphics.font.height + this.graphics.font.ascent - 3
+      );
+#endif
       var text = "Spatial Frequency";
       this.graphics.drawText(
          this.frequencyAxisPosition(this.frequencyAxisValue(0.5)) -
@@ -408,7 +430,11 @@ function ModulationTransferFunctionPlot(model) {
 
       this.graphics.pen = new Pen(0xff000000, 1);
       var xOffset = -this.graphics.font.width("m");
+#iflt __PI_BUILD__ 1168
       var yOffset = -2 * this.graphics.font.descent;
+#else
+      var yOffset = -1 * this.graphics.font.descent;
+#endif
       this.graphics.drawText(
          xText - xOffset, yIdeal - yOffset, "Diffraction limit"
       );
@@ -488,14 +514,22 @@ function ModulationTransferFunctionPlot(model) {
       this.graphics = new VectorGraphics(bitmap);
       this.graphics.scaleTransformation(scale);
 
-#ifeq __PI_PLATFORM__ MSWINDOWS
-      this.graphics.font = new Font(
-         "Helvetica", 9 / (model.plotResolution / 96)
-      );
-#else
-      this.graphics.font = new Font(
-         "Helvetica", 12 / (model.plotResolution / 96)
-      );
+      if (coreVersionBuild < 1189) {
+         this.graphics.font = new Font(
+            "Helvetica", 9 / (model.fontResolution / 96)
+         );
+      }
+      else {
+         this.graphics.font = new Font(
+            "Open Sans", 9 / (model.fontResolution / 96)
+         );
+      }
+#ifeq __PI_PLATFORM__ MACOSX
+      if (coreVersionBuild < 1168) {
+         this.graphics.font = new Font(
+            "Helvetica", 12 / (model.fontResolution / 96)
+         );
+      }
 #endif
       this.graphics.textAntialiasing = true;
 
@@ -565,4 +599,4 @@ function ModulationTransferFunctionPlot(model) {
 }
 
 // ****************************************************************************
-// EOF ModulationTransferFunctionPlot.js - Released 2015/10/05 00:00:00 UTC
+// EOF ModulationTransferFunctionPlot.js - Released 2015/11/23 00:00:00 UTC

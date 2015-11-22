@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// OutputDirectoryController.js - Released 2015/10/05 00:00:00 UTC
+// OutputDirectoryController.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -131,11 +131,6 @@ function OutputDirectoryController(model) {
 
    // Gives the save image file extension.
    this.saveImageExtension = function() {
-//#ifgteq __PI_BUILD__ 1123
-//      // Gives the default image file extension.
-//      return (new Preferences).ImageWindow_defaultFileExtension;
-//#endif
-
       // Gives the majority file extension of the intra-focal and extra-focal
       // image paths.
       var extensions = new Array();
@@ -186,12 +181,14 @@ function OutputDirectoryController(model) {
          File.extractExtension(path), false, true
       );
       if (fileFormat.isNull) {
-         throw "Internal error: saveImage: fileFormat.isNull";
+         throw new Error("Internal error: saveImage: fileFormat.isNull");
       }
 
       var fileFormatInstance = new FileFormatInstance(fileFormat);
       if (fileFormatInstance.isNull) {
-         throw "Internal error: saveImage: fileFormatInstance.isNull";
+         throw new Error(
+            "Internal error: saveImage: fileFormatInstance.isNull"
+         );
       }
 
       try {
@@ -202,8 +199,10 @@ function OutputDirectoryController(model) {
          console.writeln(uniquePath);
 
          if (!fileFormatInstance.create(uniquePath, hints)) {
-            throw "Internal error: saveImage: " +
-               "!fileFormatInstance.create(uniquePath, hints)";
+            throw new Error(
+               "Internal error: saveImage: " +
+               "!fileFormatInstance.create(uniquePath, hints)"
+            );
          }
 
          var description = new ImageDescription;
@@ -212,16 +211,27 @@ function OutputDirectoryController(model) {
             description.ieeefpSampleFormat = true;
          }
          if (!fileFormatInstance.setOptions(description)) {
-            throw "Internal error: saveImage: " +
-               "!fileFormatInstance.setOptions(description)";
+            throw new Error(
+               "Internal error: saveImage: " +
+               "!fileFormatInstance.setOptions(description)"
+            );
          }
+
          if (File.extractExtension(path) != ".png") {
             fileFormatInstance.keywords = imageWindow.keywords;
          }
+#ifgteq __PI_BUILD__ 1189
+         if (File.extractExtension(path) == ".xisf") {
+            fileFormatInstance.displayFunction =
+               imageWindow.mainView.stf;
+         }
+#endif
 
          if (!fileFormatInstance.writeImage(imageWindow.mainView.image)) {
-            throw "Internal error: " +
-               "saveImage: error writing file: " + uniquePath;
+            throw new Error(
+               "Internal error: " +
+               "saveImage: error writing file: " + uniquePath
+            );
          }
       }
       finally {
@@ -400,8 +410,10 @@ function OutputDirectoryController(model) {
                );
                console.abortEnabled = false; // workaround for 1123 bug.
                if (imageWindows.length != 1) {
-                  throw "Internal error: " +
-                     "generateRejectionMaps: imageWindows.length != 1";
+                  throw new Error(
+                     "Internal error: " +
+                     "generateRejectionMaps: imageWindows.length != 1"
+                  );
                }
                imageWindow = imageWindows[0];
                imageWindow.mainView.stf = stf;
@@ -447,8 +459,10 @@ function OutputDirectoryController(model) {
                );
                console.abortEnabled = false; // workaround for 1123 bug.
                if (imageWindows.length != 1) {
-                  throw "Internal error: " +
-                     "generateRejectionMaps: imageWindows.length != 1";
+                  throw new Error(
+                     "Internal error: " +
+                     "generateRejectionMaps: imageWindows.length != 1"
+                  );
                }
                imageWindow = imageWindows[0];
                imageWindow.mainView.stf = stf;
@@ -544,8 +558,10 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generateCombinedImages: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generateCombinedImages: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
             imageWindow.mainView.stf = stf;
@@ -600,8 +616,10 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generateCombinedImages: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generateCombinedImages: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
             imageWindow.mainView.stf = stf;
@@ -657,6 +675,24 @@ function OutputDirectoryController(model) {
       var imageWindow = model.intraFocalCompensatedImage.toImageWindow(
          intraFocalIdPath.id
       );
+      imageWindow.keywords = new Array(
+         new FITSKeyword(
+            "WECFCNT",
+            format(
+               model.formatCombinedFrameCount,
+               model.intraFocalCombinedFrameCount
+            ),
+            TITLE + " combined frame count"
+         ),
+         new FITSKeyword(
+            "WEEFCNT",
+            format(
+               model.formatEffectiveFrameCount,
+               model.intraFocalEffectiveFrameCount
+            ),
+            TITLE + " effective frame count"
+         )
+      );
       imageWindow.mainView.stf = stf;
       if (model.outputDirectoryPath != null) {
          this.saveImage(
@@ -678,8 +714,10 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generateCompensatedImages: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generateCompensatedImages: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
             imageWindow.mainView.stf = stf;
@@ -694,6 +732,24 @@ function OutputDirectoryController(model) {
 
       var imageWindow = model.extraFocalCompensatedImage.toImageWindow(
          extraFocalIdPath.id
+      );
+      imageWindow.keywords = new Array(
+         new FITSKeyword(
+            "WECFCNT",
+            format(
+               model.formatCombinedFrameCount,
+               model.extraFocalCombinedFrameCount
+            ),
+            TITLE + " combined frame count"
+         ),
+         new FITSKeyword(
+            "WEEFCNT",
+            format(
+               model.formatEffectiveFrameCount,
+               model.extraFocalEffectiveFrameCount
+            ),
+            TITLE + " effective frame count"
+         )
       );
       imageWindow.mainView.stf = stf;
       if (model.outputDirectoryPath != null) {
@@ -716,8 +772,10 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generateCompensatedImages: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generateCompensatedImages: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
             imageWindow.mainView.stf = stf;
@@ -773,7 +831,7 @@ function OutputDirectoryController(model) {
          new FITSKeyword(
             "WEWSCALE",
             format("%.1f", model.wavefrontSaveScale),
-            TITLE + " wavefront scale"
+            TITLE + " wavefront scale 1/meters"
          ),
          new FITSKeyword(
             "WEWOFFST",
@@ -783,12 +841,12 @@ function OutputDirectoryController(model) {
          new FITSKeyword(
             "WEDEFDIA",
             format("%.6f", model.defocusDiameterEstimate),
-            TITLE + " defocus diameter pixels"
+            TITLE + " defocus diameter px"
          ),
          new FITSKeyword(
             "WEDEFOBS",
             format("%.6f", model.defocusObstructionDiameterEstimate),
-            TITLE + " defocus obstruction diameter pixels"
+            TITLE + " defocus obstruction diameter px"
          ),
          new FITSKeyword(
             "WEOBWVLN",
@@ -820,8 +878,10 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generateWavefrontImage: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generateWavefrontImage: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
             imageWindow.mainView.stf = stf;
@@ -841,7 +901,7 @@ function OutputDirectoryController(model) {
          function(frame) {return frame.product(model.defocusDomain);}
       ]);
       var blue = model.defocusMesh.y.clone().stagePipeline([
-         function(frame) {return frame.scale(0.5);},
+         function(frame) {return frame.scale(-0.5);},
          function(frame) {return frame.offset(0.5);},
          function(frame) {return frame.product(model.defocusDomain);}
       ]);
@@ -858,12 +918,12 @@ function OutputDirectoryController(model) {
          new FITSKeyword(
             "WEDEFDIA",
             format("%.6f", model.defocusDiameterEstimate),
-            TITLE + " defocus diameter pixels"
+            TITLE + " defocus diameter px"
          ),
          new FITSKeyword(
             "WEDEFOBS",
             format("%.6f", model.defocusObstructionDiameterEstimate),
-            TITLE + " defocus obstruction diameter pixels"
+            TITLE + " defocus obstruction diameter px"
          )
       );
       if (model.outputDirectoryPath != null) {
@@ -877,8 +937,10 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generateWavefrontImage: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generateWavefrontImage: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
          }
@@ -936,7 +998,7 @@ function OutputDirectoryController(model) {
          new FITSKeyword(
             "WEPSFPXS",
             format("%.6f", 1e6 * model.pointSpreadFunctionPixelSize),
-            TITLE + " pixel size in microns"
+            TITLE + " pixel size microns"
          ),
          new FITSKeyword(
             "WEOBWVLN",
@@ -968,8 +1030,10 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generatePointSpreadFunctionImage: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generatePointSpreadFunctionImage: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
             imageWindow.mainView.stf = stf;
@@ -1032,7 +1096,7 @@ function OutputDirectoryController(model) {
                model.maximumSpatialFrequencyOptics /
                   model.defocusDiameterEstimate
             ),
-            TITLE + " pixel size in lp/mm"
+            TITLE + " pixel size lp/mm"
          ),
          new FITSKeyword(
             "WEOBWVLN",
@@ -1067,9 +1131,11 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
+               throw new Error(
+                  "Internal error: " +
                   "generateModulationTransferFunctionImage: " +
-                  "imageWindows.length != 1";
+                  "imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
             imageWindow.mainView.stf = stf;
@@ -1116,13 +1182,17 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generateWavefrontPlot: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generateWavefrontPlot: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
          }
       }
       if (model.generateViews) {
+         imageWindow.zoomFactor = model.plotZoomFactor;
+         imageWindow.fitWindow();
          imageWindow.show();
       }
       else {
@@ -1161,13 +1231,17 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generateInterferogramPlot: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generateInterferogramPlot: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
          }
       }
       if (model.generateViews) {
+         imageWindow.zoomFactor = model.plotZoomFactor;
+         imageWindow.fitWindow();
          imageWindow.show();
       }
       else {
@@ -1202,13 +1276,17 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
-                  "generateInterferogramPlot: imageWindows.length != 1";
+               throw new Error(
+                  "Internal error: " +
+                  "generateInterferogramPlot: imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
          }
       }
       if (model.generateViews) {
+         imageWindow.zoomFactor = model.plotZoomFactor;
+         imageWindow.fitWindow();
          imageWindow.show();
       }
       else {
@@ -1260,14 +1338,18 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
+               throw new Error(
+                  "Internal error: " +
                   "generateEncircledEnergyFunctionPlot: " +
-                  "imageWindows.length != 1";
+                  "imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
          }
       }
       if (model.generateViews) {
+         imageWindow.zoomFactor = model.plotZoomFactor;
+         imageWindow.fitWindow();
          imageWindow.show();
       }
       else {
@@ -1351,14 +1433,18 @@ function OutputDirectoryController(model) {
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
-               throw "Internal error: " +
+               throw new Error(
+                  "Internal error: " +
                   "generateModulationTransferFunctionPlot: " +
-                  "imageWindows.length != 1";
+                  "imageWindows.length != 1"
+               );
             }
             imageWindow = imageWindows[0];
          }
       }
       if (model.generateViews) {
+         imageWindow.zoomFactor = model.plotZoomFactor;
+         imageWindow.fitWindow();
          imageWindow.show();
       }
       else {
@@ -1534,22 +1620,15 @@ function OutputDirectoryController(model) {
 
       var string = new String();
 
-      string += "Zernike aberration polynomial, Coefficient nm RMS, FVE\n";
+      string += "Zernike aberration polynomial, Coefficient nm RMS\n";
       for (var i = 4; i != this.aberrationLabels.length; ++i) {
          string += format(
             this.aberrationLabels[i].replace(",", ";", "g") +
             ", " +
             "%.6f" +
-            ", " +
-            "%.6f" +
             "\n",
             model.scaleAberrationCoefficientsEstimate *
-               model.aberrationCoefficientsEstimate[i],
-            (
-               model.wavefrontErrorEstimate == 0 ? 0 :
-                  square(model.aberrationCoefficientsEstimate[i]) /
-                  square(model.wavefrontErrorEstimate)
-            )
+               model.aberrationCoefficientsEstimate[i]
          );
       }
 
@@ -1580,4 +1659,4 @@ function OutputDirectoryController(model) {
 }
 
 // ****************************************************************************
-// EOF OutputDirectoryController.js - Released 2015/10/05 00:00:00 UTC
+// EOF OutputDirectoryController.js - Released 2015/11/23 00:00:00 UTC
