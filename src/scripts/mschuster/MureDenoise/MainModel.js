@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2015/11/20 00:00:00 UTC
+// MainModel.js - Released 2015/11/26 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.11
+// This file is part of MureDenoise Script Version 1.12
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -82,8 +82,7 @@ function MainModel() {
       "Bilinear",
       "Bicubic Spline",
       "Lanczos-3",
-      "Lanczos-4",
-      "Lanczos-5"
+      "Lanczos-4"
    ];
 
    // Interpolation method covariance scales.
@@ -92,18 +91,16 @@ function MainModel() {
       4 / 9,       // Bilinear
       3249 / 4900, // Bicubic Spline
       0.798660,    // Lanczos-3
-      0.835437,    // Lanczos-4
-      0.872853     // Lanczos-5
+      0.835437     // Lanczos-4
    ];
 
    // Interpolation method covariance bases.
    this.imageInterpolationMethodCovarianceBases = [
-      1.5, // Nearest Neighbor
-      1.5, // Bilinear
-      1.5, // Bicubic Spline
-      1.5, // Lanczos-3
-      1.5, // Lanczos-4
-      1.5  // Lanczos-5
+      1.0, // Nearest Neighbor
+      1.0, // Bilinear
+      1.0, // Bicubic Spline
+      1.0, // Lanczos-3
+      1.0  // Lanczos-4
    ];
 
    // Base variance scaling function.
@@ -415,4 +412,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2015/11/20 00:00:00 UTC
+// EOF MainModel.js - Released 2015/11/26 00:00:00 UTC

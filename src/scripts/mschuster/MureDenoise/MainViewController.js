@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainViewController.js - Released 2015/11/20 00:00:00 UTC
+// MainViewController.js - Released 2015/11/26 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.11
+// This file is part of MureDenoise Script Version 1.12
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -617,6 +617,7 @@ function MainView(model, controller) {
    this.__base__ = Dialog;
    this.__base__();
 
+   Console.abortEnabled = false;
    this.abortEnabled = false;
    this.abortRequested = false;
 
@@ -814,10 +815,10 @@ function MainView(model, controller) {
             "frames. The size of the image must be at least 256 pixels " +
             "in width and height.</p>" +
 
-            "<p>For linear multichannel images, run the monochannel " +
-            "denoiser on each channel separately. For linear one shot " +
-            "color (OSC) images, denoise the color filter array (CFA) " +
-            "channels not the debayered RGB channels.</p>",
+            "<p>For linear multichannel images from monocolor detectors, " +
+            "run the monochannel denoiser on each channel separately. The " +
+            "script does not work properly for images from one shot color " +
+            "(OSC) detectors.</p>",
             function() {}
          );
       }
@@ -1315,4 +1316,4 @@ function MainView(model, controller) {
 MainView.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF MainViewController.js - Released 2015/11/20 00:00:00 UTC
+// EOF MainViewController.js - Released 2015/11/26 00:00:00 UTC
