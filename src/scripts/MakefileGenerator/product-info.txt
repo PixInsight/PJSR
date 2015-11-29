@@ -1,1 +1,1 @@
-This file is part of PixInsight Makefile Generator Script version 1.95
+This file is part of PixInsight Makefile Generator Script version 1.96

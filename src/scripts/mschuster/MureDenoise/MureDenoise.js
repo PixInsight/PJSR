@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// WavefrontEstimator.js - Released 2015/11/23 00:00:00 UTC
+// MureDenoise.js - Released 2015/11/26 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.18
+// This file is part of MureDenoise Script Version 1.12
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -47,27 +47,46 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // ****************************************************************************
 
-#define TITLE "WavefrontEstimator"
-#define VERSION "1.18"
+#define TITLE "MureDenoise"
+#define VERSION "1.12"
 
-#feature-id Instrumentation > WavefrontEstimator
+#feature-id Noise Reduction > MureDenoise
 
-#feature-info <b>WavefrontEstimator Version 1.18</b><br/>\
+#feature-info <b>MureDenoise Version 1.12</b><br/>\
    <br/>\
-   Script for testing the on-axis optical quality of telescopes.<br/>\
+   Script for denoising linear monochannel images corrupted by mixed \
+   Poisson-Gaussian noise. Applicable to single frame images and average \
+   combinations of equally exposed and registered frames.<br/>\
    <br/>\
-   WavefrontEstimator estimates the on-axis optical wavefront of \
-   a telescope from long-exposure defocused stellar images. \
-   Exposure differences between an intra-focal image and an \
-   inverted (rotated by 180&deg;) extra-focal image of the same \
-   bright star reflect local changes in the curvature of the \
-   wavefront. WavefrontEstimator measures the \
-   defocused image exposure differences, reconstructs the \
-   wavefront, and provides a diagnosis of wavefront aberrations. \
-   WavefrontEstimator relies on long combined exposures of at least \
-   100 seconds and 100,000 e- to average out the effects of \
-   atmospheric turbulence and provide sufficient signal-to-noise \
-   ratio. The telescope must be in thermal equilibrium.<br/>\
+   The script supports an astronomical image processing workflow in which \
+   the denoising step occurs immediately after the calibration and optional \
+   average combination steps and prior to other linear or nonlinear \
+   processing steps.<br/>\
+   <br/>\
+   The script applies an interscale wavelet mixed noise unbiased risk \
+   estimator (MURE) to find a denoised output image that minimizes an \
+   estimate of the oracle mean-squared error (MSE), or &quot;risk&quot;, \
+   between the denoised output image and the unknown noise-free image.<br/>\
+   <br/>\
+   <b>Note</b>: For linear multichannel images, run the monochannel denoiser \
+   on each channel separately. For linear one shot color (OSC) images, \
+   denoise the color filter array (CFA) channels not the debayered RGB \
+   channels.<br/>\
+   <br/>\
+   <b>Warning</b>: The script is adapted to denoise linear monochannel images \
+   mainly corrupted by shot noise, read noise, and dark current noise which \
+   is typically the case for astronomical data. The script does not work \
+   properly for other noise distributions, for saturated images, for linearly \
+   or nonlinearly processed images, for median combinations, or for drizzle \
+   combinations.<br/>\
+   <br/>\
+   <b>Warning</b>: Do not combine denoised images. Signal-to-noise ratio \
+   (SNR) will be enhanced by combining noisy images and denoising the \
+   result. Combined images must be equally exposed, have the same pixel \
+   resolution, and be registered by projective transformation with no \
+   distortion correction. When denoising combinations, the script is unable \
+   to remove correlated noise introduced by the image registration \
+   process.<br/>\
    <br/>\
    Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>\
    Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -84,36 +103,14 @@
 #include <pjsr/TextAlign.jsh>
 #include <pjsr/UndoFlag.jsh>
 
-#include "EncircledEnergyFunctionPlot.js"
-#include "EstimateEncircledEnergyFunction.js"
-#include "EstimateModulationTransferFunction.js"
-#include "EstimatePointSpreadFunction.js"
-#include "EstimateWavefront.js"
-#include "ExposureTabViewController.js"
 #include "FrameMatrix.js"
-#include "FramesTabViewController.js"
 #include "Global.js"
-#include "InterferogramPlot.js"
 #include "MainModel.js"
 #include "MainViewController.js"
-#include "ModulationTransferFunctionPlot.js"
+#include "MureEstimator.js"
 #include "NR3SVD.js"
-#include "OutputDirectoryController.js"
-#include "ParametersTabViewController.js"
-#include "RegisterCombineFrames.js"
-#include "RousseeuwCrouxSn.js"
-#include "WavefrontPlot.js"
-#include "WavefrontTabViewController.js"
-#include "ZernikeAberrations.js"
 
 function main() {
-   if (Parameters.isViewTarget) {
-      throw new Error(
-         TITLE + " Version " + VERSION +
-         " can only be executed in the global context."
-      );
-   }
-
    console.hide();
 
    var model = new MainModel();
@@ -125,10 +122,16 @@ function main() {
    var view = new MainView(model, controller);
    controller.setView(view);
 
-   controller.resetOutput();
+   if (Parameters.isViewTarget) {
+      controller.setImageView(Parameters.targetView);
+   }
+   else {
+      controller.setImageView(ImageWindow.activeWindow.currentView);
+   }
+
    for (;;) {
       controller.execute();
-      if ((new MessageBox(
+      if (true || (new MessageBox(
          "Do you really want to dismiss " + TITLE + "?",
          TITLE,
          StdIcon_Question,
@@ -148,4 +151,4 @@ main();
 gc();
 
 // ****************************************************************************
-// EOF WavefrontEstimator.js - Released 2015/11/23 00:00:00 UTC
+// EOF MureDenoise.js - Released 2015/11/26 00:00:00 UTC

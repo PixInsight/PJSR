@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenParameters.js - Released 2015/07/29 23:22:54 UTC
+// MakGenParameters.js - Released 2015/10/07 15:20:17 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.95
+// This file is part of PixInsight Makefile Generator Script version 1.96
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
@@ -110,6 +110,19 @@ function GeneratorParameters()
     * For GNU/GCC only; ignored for Windows projects.
     */
    this.gccOptimization = OPTIMIZATION_DEFAULT_STR;
+
+   /*
+    * GCC link-time optimization (-flto). Disabled by default because it
+    * produces very slow code in our tests.
+    */
+   this.gccLinkTimeOptimization = false;
+
+   /*
+    * Do not strip binaries. If true, the -rdynamic flag will be used to enable
+    * backtraces with demangled function names. If false, the -s flag will be
+    * used to strip all executable files.
+    */
+   this.gccUnstrippedBinaries = false;
 
    /*
     * GCC C++ compiler executable suffix for Linux builds.
@@ -436,6 +449,8 @@ function GeneratorParameters()
    {
       if ( this.isMacOSXPlatform() || this.isFreeBSDPlatform() )
          return "clang++";
+      if ( this.isHostPlatform() )
+         return "g++" + DEFAULT_GCC_VERSION_SUFFIX_HOST;
       return "g++" + this.gccSuffixLinux;
    };
 
@@ -443,6 +458,8 @@ function GeneratorParameters()
    {
       if ( this.isMacOSXPlatform() || this.isFreeBSDPlatform() )
          return "clang";
+      if ( this.isHostPlatform() )
+         return "gcc" + DEFAULT_GCC_VERSION_SUFFIX_HOST;
       return "gcc" + this.gccSuffixLinux;
    };
 
@@ -562,31 +579,55 @@ function GeneratorParameters()
             if ( optimization == "fast" )
                optimization = "3";
 
-         // All builds require SSSE3 support
-         s += " -mtune=generic -mssse3 -O" + optimization;
+         // Optimize for a common Intel EM64 architecture (Core i7) on
+         // Linux and UNIX builds.
+         s += " -mtune=corei7";
 
-         if ( !this.isMacOSXPlatform() && !this.isFreeBSDPlatform() )
-            s += " -minline-all-stringops -ffunction-sections -fdata-sections"; // clang does not have these ones
+         // OS X builds require SSSE3 support. Linux and FreeBSD builds require
+         // only SSE3, for compatibility with vintage AMD machines.
+         if ( this.isMacOSXPlatform() )
+            s += " -mssse3";
+         else
+         {
+            if ( this.isLinuxPlatform() )
+               s += " -mfpmath=sse";
+            s += " -msse3";
+         }
 
-         // On OS X, omitting frame pointers is not *allowed* and leads to a nightmare of crashes.
+         // Inline string operations for small blocks with runtime checks, and
+         // use library calls for large blocks.
+         s += " -minline-all-stringops";
+
+         // GCC optimization level
+         s += " -O" + optimization;
+
+         // Make all functions susceptible to inlining under -O2 optimization
+         // (already enabled for -O3).
+         if ( optimization == "2" )
+            s += " -finline-functions";
+
+         // On OS X, omitting frame pointers is *not allowed* and leads to a
+         // nightmare of crashes.
          if ( !this.isMacOSXPlatform() )
             s += " -fomit-frame-pointer"; // this may not be enabled by default on x64
 
-         if ( optimization != "fast" )
+         // Generate separate function and data sections, for removal of unused
+         // sections during the link phase (see the --gc-sections linker flag).
+         s += " -ffunction-sections -fdata-sections";
+
+         if ( optimization == "2" || optimization == "3" )
          {
+            // Fast math always enabled for optimized builds.
             s += " -ffast-math";
-            if ( optimization == "2" || optimization == "3" )
-            {
-               s += " -ftree-vectorize";
-               if ( !this.isMacOSXPlatform() )
-               {
-                  // ### FIXME: These are experimental flags that seem to
-                  // improve vectorization on GCC. It is unclear if they
-                  // actually work well enough as to justify their inclusion.
-                  s += " --param vect-max-version-for-alias-checks=1000";
-                  s += " --param vect-max-version-for-alignment-checks=1000";
-               }
-            }
+
+            // Link-time optimization available for modules, PCL, and
+            // third-party shared libraries.
+            // ### N.B.: Use of this option is experimental and not recommended
+            // without extensive testing. It poses a risk to generate unstable
+            // binaries without a significant performance improvement.
+            if ( this.gccLinkTimeOptimization )
+               if ( this.isModule() || this.official && (this.isStaticLibrary() || this.isDynamicLibrary()) )
+                  s += " -flto";
          }
       }
 
@@ -599,10 +640,17 @@ function GeneratorParameters()
             s += " -fvisibility-inlines-hidden";
       }
 
+      // Generate code that allows trapping instructions to throw exceptions.
+      // This is not available on Clang.
       if ( !this.isMacOSXPlatform() && !this.isFreeBSDPlatform() )
-         s += " -fnon-call-exceptions"; // clang does not have this one
+         s += " -fnon-call-exceptions";
 
-      // Since Core version 1.8.3 we require C++11 support.
+      // Optional unstripped binaries to allow for significant backtraces with
+      // demangled function names.
+      if ( this.gccUnstrippedBinaries )
+         s += " -rdynamic";
+
+      // Since Core version 1.8.3, we require C++11 support.
       if ( isCpp )
       {
          s += " -std=c++11";
@@ -621,12 +669,13 @@ function GeneratorParameters()
          if ( this.isMacOSXPlatform() )
             s += " -Wno-extern-c-compat";
 
-         // SpiderMonkey 24 on g++ and clang generates warnings about applying
+         // SpiderMonkey on g++ and clang generates warnings about applying
          // offsetof() to non-POD types.
          if ( this.isCore() )
             s += " -Wno-invalid-offsetof";
       }
 
+      // Manage dependencies.
       s += " -MMD -MP -MF\"$(@:%.o=%.d)\" -o\"$@\" \"$<\"";
 
       return s;
@@ -654,6 +703,9 @@ function GeneratorParameters()
       }
       else
       {
+         // On Linux, always use the gold linker.
+         if ( this.isLinuxPlatform() )
+            s += " -Wl,-fuse-ld=gold"
          // On Linux and FreeBSD, mark all executables and shared objects as
          // not requiring an executable stack.
          s += " -Wl,-z,noexecstack";
@@ -661,9 +713,26 @@ function GeneratorParameters()
          s += " -Wl,-O1";
       }
 
+      // Exclude unused sections.
+      s += " -Wl,--gc-sections";
+
+      // Strip all symbols by default, or optionally allow for significant
+      // backtraces with demangled function names.
+      if ( this.gccUnstrippedBinaries )
+         s += " -rdynamic";
+      else
+         s += " -s";
+
       if ( this.isModule() || this.isDynamicLibrary() )
          s += (this.isMacOSXPlatform()) ?
                " -dynamiclib -install_name @executable_path/" + this.mainTarget() : " -shared";
+
+      // Link-time optimization for building modules and third-party shared
+      // libraries. ### Warning: this option is experimental.
+      if ( this.gccLinkTimeOptimization )
+         if ( this.isModule() || this.official && (this.isStaticLibrary() || this.isDynamicLibrary()) )
+            if ( this.gccOptimization == "2" || this.gccOptimization == "3" || this.gccOptimization == "fast" )
+               s += " -flto";
 
       s += " -L\"" + this.libDirectory() + "\"";
       s += " -L\"" + this.binDirectory() + "\"";
@@ -726,6 +795,8 @@ function GeneratorParameters()
             if ( !this.isFreeBSDPlatform() )
                s += " -ldl -lresolv";
             s += " -lcom_err -lidn -lz";
+            if ( !this.isMacOSXPlatform() )
+               s += " -lssl -lcrypto";
             if ( !this.isFreeBSDPlatform() )
                s += " -lssh2";
             s += " -lQt5UiTools -lQt5Sensors -lQt5Positioning -lQt5MultimediaWidgets -lQt5Multimedia" +
@@ -736,15 +807,9 @@ function GeneratorParameters()
          // SpiderMonkey >= 1.8.7 since PI version 1.8.0.853
          // Zlib
          // cURL
-         s += " -lmozjs" + CORE_JS_ENGINE_VERSION + " -lzlib-pxi -lcurl-pxi";
-
-         // OpenSSL required on FreeBSD and Linux
-         if ( !this.isMacOSXPlatform() )
-            s += " -lssl-pxi -lcrypto-pxi";
-
          // Little CMS
          // PixInsight Class Library (PCL)
-         s += " -llcms-pxi -lPCL-pxi";
+         s += " -lmozjs" + CORE_JS_ENGINE_VERSION + " -lzlib-pxi -lcurl-pxi -llcms-pxi -lPCL-pxi";
       }
 
       if ( this.isCoreAux() )
@@ -807,4 +872,4 @@ function GeneratorParameters()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenParameters.js - Released 2015/07/29 23:22:54 UTC
+// EOF MakGenParameters.js - Released 2015/10/07 15:20:17 UTC

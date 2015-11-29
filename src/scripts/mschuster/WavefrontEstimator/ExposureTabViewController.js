@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// ExposureTabViewController.js - Released 2015/10/05 00:00:00 UTC
+// ExposureTabViewController.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -336,7 +336,7 @@ function ExposureTabController(model, controller) {
             ++k
          ) {
             if (defocusThreshold == 0) {
-               throw model.defocusThresholdEstimationDidNotConverge;
+               throw new Error(model.defocusThresholdEstimationDidNotConverge);
             }
             var apertureMetrics = frame.apertureMetrics(
                defocusThreshold, model.hotPixelRemovalRadius
@@ -344,7 +344,7 @@ function ExposureTabController(model, controller) {
             var metrics = apertureMetrics.metrics;
             apertureMetrics.mask.clear();
             if (metrics.radius == 0) {
-               throw model.defocusThresholdEstimationDidNotConverge;
+               throw new Error(model.defocusThresholdEstimationDidNotConverge);
             }
             defocusThreshold = Math.max(
                0,
@@ -359,19 +359,19 @@ function ExposureTabController(model, controller) {
          metrics = apertureMetrics.metrics;
          apertureMetrics.mask.clear();
          if (metrics.radius == 0) {
-            throw model.defocusThresholdEstimationDidNotConverge;
+            throw new Error(model.defocusThresholdEstimationDidNotConverge);
          }
          if (2 * metrics.radius < model.minimumDefocusDiameter) {
-            throw model.defocusedImageDiameterTooSmall;
+            throw new Error(model.defocusedImageDiameterTooSmall);
          }
          if (2 * metrics.radius > model.maximumDefocusDiameter) {
-            throw model.defocusedImageDiameterTooLarge;
+            throw new Error(model.defocusedImageDiameterTooLarge);
          }
          if (metrics.signal < model.minimumDefocusSignal) {
-            throw model.defocusedImageSignalTooSmall;
+            throw new Error(model.defocusedImageSignalTooSmall);
          }
          if (metrics.signal > model.maximumDefocusSignal) {
-            throw model.defocusedImageSignalTooLarge;
+            throw new Error(model.defocusedImageSignalTooLarge);
          }
          frame.clear();
 
@@ -454,9 +454,10 @@ function ExposureTabView(parent, model, controller) {
       groupBox.sizer.margin = 6;
       groupBox.sizer.spacing = 6;
       groupBox.title = title;
+      groupBox.styleSheet = "*{}";
 
 #ifeq __PI_PLATFORM__ MACOSX
-      if (coreVersionBuild <= 1123) {
+      if (coreVersionBuild < 1168) {
          groupBox.sizer.addSpacing(-6);
       }
 #endif
@@ -558,7 +559,8 @@ function ExposureTabView(parent, model, controller) {
       var toolButton = new ToolButton(this);
       pane.add(toolButton);
 
-      toolButton.icon = icon;
+      toolButton.icon = this.scaledResource(icon);
+      toolButton.setScaledFixedSize(20, 20);
       toolButton.toolTip = toolTip;
       toolButton.onMousePress = onMousePress;
 
@@ -581,11 +583,15 @@ function ExposureTabView(parent, model, controller) {
    this.sizer.spacing = 6;
 
    this.labelWidth = this.parent.font.width("Observation bandwidth:");
+#iflt __PI_BUILD__ 1168
    this.editWidth = this.parent.font.width("00000000000");
+#else
+   this.editWidth = this.parent.font.width("0000000000");
+#endif
    this.unitWidth = this.parent.font.width("cycles per aperture diameter ");
 
    {
-      this.estimateGroupBox = this.addGroupBox("Exposure estimation:");
+      this.estimateGroupBox = this.addGroupBox("Exposure estimation");
 
       this.defocusExposurePane = this.addPane(this.estimateGroupBox);
 
@@ -673,7 +679,7 @@ function ExposureTabView(parent, model, controller) {
 
       this.observationBandwidthComboBox = this.addComboBox(
          this.estimateObservationBandwidthPane,
-         [" ~300 nm L-band", " ~50-100 nm RGB-band"],
+         [" ~300 nm L-bandwidth", " ~50 to 100 nm RGB-bandwidth"],
          model.observationBandwidth,
          this.estimateObservationBandwidthLabel.toolTip,
          function(item) {controller.observationBandwidthOnItemSelected(item);}
@@ -823,7 +829,7 @@ function ExposureTabView(parent, model, controller) {
    this.unitWidth = this.parent.font.width("DN RMS ");
 
    {
-      this.measurementGroupBox = this.addGroupBox("Exposure measurement:");
+      this.measurementGroupBox = this.addGroupBox("Exposure measurement");
 
       this.measurementViewListPane = this.addPane(this.measurementGroupBox);
 
@@ -954,4 +960,4 @@ function ExposureTabView(parent, model, controller) {
 ExposureTabView.prototype = new Frame;
 
 // ****************************************************************************
-// EOF ExposureTabViewController.js - Released 2015/10/05 00:00:00 UTC
+// EOF ExposureTabViewController.js - Released 2015/11/23 00:00:00 UTC

@@ -2,6 +2,21 @@
 Makefile Generator Script Changelog
 ===============================================================================
 
+1.96 - Released with PI 1.8.4.1185 Ripley
+
+   - New optimization flags for GCC and Clang builds, selected after extensive
+     tests and benchmarking work.
+   - Remove unused function and data sections from binaries (--gc-sections) in
+     all Linux/UNIX builds.
+   - New option to generate unstripped binaries on GCC/Clang builds.
+   - Fixed several tool tips and labels to show more up-to-date information.
+   - Removed use of SSSE3 instructions on Linux and FreeBSD builds, which broke
+     compatibility with vintage AMD machines in the initial 1.8.4 release.
+   - Removed some dubious optimization flags used in the initial 1.8.4 version.
+   - Hardcoded GCC suffix for host Linux builds (see MakGenGlobal.js). Useful
+     for benchmarking the core application.
+
+-------------------------------------------------------------------------------
 1.95 - Released with PI 1.8.4.1167 Ripley
 
    - Minimum core version required is now 1.8.4.

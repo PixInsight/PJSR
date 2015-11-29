@@ -4,7 +4,7 @@
 // FWHMEccentricity.js - Released 2015/08/09 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of FWHMEccentricity Script version 1.4
+// This file is part of FWHMEccentricity Script version 1.5
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,14 +48,16 @@
 // ****************************************************************************
 
 #define TITLE "FWHMEccentricity"
-#define VERSION "1.4"
+#define VERSION "1.5"
 
 #feature-id Image Analysis > FWHMEccentricity
 
-#feature-info Estimates the median full width at half maximum (FWHM) and eccentricity of the stars \
-   in a view.<br/>\
+#feature-info <b>FWHMEccentricity Version 1.5</b><br/>\
    <br/>\
-   Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.\
+   Estimates the median full width at half maximum (FWHM) and eccentricity \
+   of the stars in a view.<br/>\
+   <br/>\
+   Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>\
    Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 
 #include <pjsr/ColorSpace.jsh>
@@ -135,7 +137,8 @@ if (!Control.prototype.scaledResource) {
 }
 
 function defaultNullMinMaxValue(value, min, max, def) {
-   return value != null && !isNaN(value) && value >= min && value <= max ? value : def;
+   return value != null &&
+      !isNaN(value) && value >= min && value <= max ? value : def;
 }
 
 function parametersPrototype() {
@@ -209,9 +212,14 @@ function parametersPrototype() {
    };
 
    this.loadSettings = function() {
-      var value = Settings.read(TITLE + "." + VERSION + "_modelFunctionIndex", DataType_Int32);
+      var value = Settings.read(
+         TITLE + "." + VERSION + "_modelFunctionIndex", DataType_Int32
+      );
       this.modelFunctionIndex = defaultNullMinMaxValue(
-         value, 0, this.modelFunctionLabels.length - 1, this.defModelFunctionIndex
+         value,
+         0,
+         this.modelFunctionLabels.length - 1,
+         this.defModelFunctionIndex
       );
 
       var value = Settings.read(
@@ -324,7 +332,9 @@ function uniqueArray(values, compareFunction) {
 }
 
 function starProfilesOfImageWindow(imageWindow) {
-   var starsViewId = uniqueViewIdNoLeadingZero(imageWindow.mainView.id + "_stars");
+   var starsViewId = uniqueViewIdNoLeadingZero(
+      imageWindow.mainView.id + "_stars"
+   );
 
    var barycenters = new Array;
    var threshold = 1.0;
@@ -1471,7 +1481,9 @@ function globalSupport(dialog) {
          rows,
          columns
       );
-      if (minimumStarProfilePartitionTileSize(partition, rows, columns) >= 30) {
+      if (
+         minimumStarProfilePartitionTileSize(partition, rows, columns) >= 30
+      ) {
          break;
       }
       --rows;
@@ -1499,7 +1511,9 @@ function globalSupport(dialog) {
        );
        FWHMContourImageWindow.show();
 
-      var eccentricityPartition = generateEccentricityPartition(partition, rows, columns);
+      var eccentricityPartition = generateEccentricityPartition(
+         partition, rows, columns
+      );
       var eccentricityContourImageWindow = createContourImageWindow(
          dialog.displayPixelRatio,
          eccentricityPartition,
@@ -1519,7 +1533,8 @@ function globalSupport(dialog) {
    }
    else {
       (new MessageBox(
-         "<p>Error: Insufficient number of fitted stars for supporting contour image generation.</p>",
+         "<p>Error: Insufficient number of fitted stars for supporting " +
+         "contour image generation.</p>",
          TITLE,
          StdIcon_Warning,
          StdButton_Ok
@@ -1547,7 +1562,7 @@ function parametersDialogPrototype() {
       parameters.targetView = ImageWindow.activeWindow.currentView;
       this.viewList.currentView = parameters.targetView;
    }
-   this.viewList.toolTip = "<p>The view targeted for measurement.</p>";
+   // this.viewList.toolTip = "<p>The view targeted for measurement.</p>";
    this.viewList.onViewSelected = function(view) {
       parameters.targetView = view;
       globalClear();
@@ -1559,7 +1574,7 @@ function parametersDialogPrototype() {
 
    this.settingsPane.spacing = 6;
 
-   var alignmentWidth = this.font.width("Log(star detection sensitivity):" + "M");
+   var alignmentWidth = this.font.width("Log(star detection sensitivity):");
 
    this.logStarDetectionSensitivityPane = new HorizontalSizer;
 
@@ -1568,21 +1583,31 @@ function parametersDialogPrototype() {
    this.logStarDetectionSensitivityLabel = new Label(this);
 
    this.logStarDetectionSensitivityLabel.setFixedWidth(alignmentWidth);
-   this.logStarDetectionSensitivityLabel.text = "Log(star detection sensitivity):";
-   this.logStarDetectionSensitivityLabel.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-   this.logStarDetectionSensitivityLabel.toolTip = "<p>This parameter specifies the logarithm of the star detection " +
+   this.logStarDetectionSensitivityLabel.text =
+      "Log(star detection sensitivity):";
+   this.logStarDetectionSensitivityLabel.textAlignment =
+      TextAlign_Right | TextAlign_VertCenter;
+   this.logStarDetectionSensitivityLabel.toolTip =
+      "<p>This parameter specifies the logarithm of the star detection " +
       "sensitivity.</p>" +
-      "<p>Decrease this parameter to favor detection of fainter stars or stars on " +
-      "brighter backgrounds. Increase it to restrict detection to brighter stars or stars " +
-      "on dimmer backgrounds.</p>";
+      "<p>Decrease this parameter to favor detection of fainter stars or " +
+      "stars on brighter backgrounds. Increase it to restrict detection to " +
+      "brighter stars or stars on dimmer backgrounds.</p>";
 
-   this.logStarDetectionSensitivityPane.add(this.logStarDetectionSensitivityLabel);
+   this.logStarDetectionSensitivityPane.add(
+      this.logStarDetectionSensitivityLabel
+   );
 
    this.logStarDetectionSensitivity = new Edit(this);
 
-   this.logStarDetectionSensitivity.setFixedWidth(this.font.width("-000000.00"));
-   this.logStarDetectionSensitivity.text = format("%.2f", parameters.logStarDetectionSensitivity);
-   this.logStarDetectionSensitivity.toolTip = this.logStarDetectionSensitivityLabel.toolTip;
+   this.logStarDetectionSensitivity.setFixedWidth(
+      this.font.width("-000000.00")
+   );
+   this.logStarDetectionSensitivity.text = format(
+      "%.2f", parameters.logStarDetectionSensitivity
+   );
+   this.logStarDetectionSensitivity.toolTip =
+      this.logStarDetectionSensitivityLabel.toolTip;
    this.logStarDetectionSensitivity.onEditCompleted = function() {
       // workaround for recursive onEditCompleted
       if (this.dialog.onEditCompletedActive) {
@@ -1625,8 +1650,10 @@ function parametersDialogPrototype() {
    this.upperLimitLabel.text = "Upper limit:";
    this.upperLimitLabel.textAlignment = TextAlign_Right | TextAlign_VertCenter;
    this.upperLimitLabel.toolTip =
-      "<p>Stars with peak values larger than this value won't be measured.</p>" +
-      "<p>This feature may be used to avoid the measurement of saturated and bloomed stars.</p>" +
+      "<p>Stars with peak values larger than this value won't be " +
+      "measured.</p>" +
+      "<p>This feature may be used to avoid the measurement of saturated " +
+      "and bloomed stars.</p>" +
       "<p>To disable this feature, set this parameter to one.</p>";
 
    this.upperLimitPane.add(this.upperLimitLabel);
@@ -1676,8 +1703,10 @@ function parametersDialogPrototype() {
 
    this.modelFunctionLabel.setFixedWidth(alignmentWidth);
    this.modelFunctionLabel.text = "Model function:";
-   this.modelFunctionLabel.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-   this.modelFunctionLabel.toolTip = "<p>This parameters specifies the star profile model function " +
+   this.modelFunctionLabel.textAlignment =
+      TextAlign_Right | TextAlign_VertCenter;
+   this.modelFunctionLabel.toolTip =
+      "<p>This parameters specifies the star profile model function " +
       "used to fit star images.</p>";
 
    this.modelFunctionPane.add(this.modelFunctionLabel);
@@ -1714,66 +1743,99 @@ function parametersDialogPrototype() {
    this.displayPixelRatio;
 
    this.treeBox.setHeaderAlignment(0, Align_Left | TextAlign_VertCenter);
-   this.treeBox.setColumnWidth(0, this.treeBox.font.width("Median eccentricityMM"));
+   this.treeBox.setColumnWidth(
+      0, this.treeBox.font.width("Median eccentricityMM")
+   );
    this.treeBox.setHeaderAlignment(1, Align_Left | TextAlign_VertCenter);
-   this.treeBox.setColumnWidth(1, this.treeBox.columnWidth(0));
+   this.treeBox.setColumnWidth(
+      1, this.treeBox.columnWidth(0)
+   );
 
-   this.treeBox.setFixedHeight(8 *(this.treeBox.font.ascent + 3 * this.treeBox.font.descent));
+   this.treeBox.setFixedHeight(
+      8 *(this.treeBox.font.ascent + 3 * this.treeBox.font.descent)
+   );
 
    this.medianFWHMNode = new TreeBoxNode(this.treeBox);
 
    this.medianFWHMNode.setText(0, "Median FWHM");
    this.medianFWHMNode.setText(1, "-");
-   this.medianFWHMNode.setToolTip(0, "<p>Median FWHM equals the median full width at half maximum of fitted " +
-      "star profiles in pixels.</p>");
-   this.medianFWHMNode.setToolTip(1, this.medianFWHMNode.toolTip(0));
+   this.medianFWHMNode.setToolTip(
+      0, "<p>Median FWHM equals the median full width at half maximum of " +
+      "fitted star profiles in pixels.</p>");
+   this.medianFWHMNode.setToolTip(
+      1, this.medianFWHMNode.toolTip(0)
+   );
 
    this.medianEccentricityNode = new TreeBoxNode(this.treeBox);
 
    this.medianEccentricityNode.setText(0, "Median eccentricity");
    this.medianEccentricityNode.setText(1, "-");
-   this.medianEccentricityNode.setToolTip(0, "<p>Median eccentricity equals the median eccentricity of fitted star " +
-      "profiles.</p>");
-   this.medianEccentricityNode.setToolTip(1, this.medianEccentricityNode.toolTip(0));
+   this.medianEccentricityNode.setToolTip(
+      0, "<p>Median eccentricity equals the median eccentricity of fitted " +
+      "star profiles.</p>"
+   );
+   this.medianEccentricityNode.setToolTip(
+      1, this.medianEccentricityNode.toolTip(0)
+   );
 
    this.medianResidualNode = new TreeBoxNode(this.treeBox);
 
    this.medianResidualNode.setText(0, "Median residual");
    this.medianResidualNode.setText(1, "-");
-   this.medianResidualNode.setToolTip(0, "<p>Median residual equals the median residual of fitted star profiles " +
-      "in data number (DN) units.</p>");
-   this.medianResidualNode.setToolTip(1, this.medianResidualNode.toolTip(0));
+   this.medianResidualNode.setToolTip(
+      0, "<p>Median residual equals the median residual of fitted star " +
+      "profiles in data number (DN) units.</p>"
+   );
+   this.medianResidualNode.setToolTip(
+      1, this.medianResidualNode.toolTip(0)
+   );
 
    this.MADMedianFWHMNode = new TreeBoxNode(this.treeBox);
 
    this.MADMedianFWHMNode.setText(0, "MAD FWHM");
    this.MADMedianFWHMNode.setText(1, "-");
-   this.MADMedianFWHMNode.setToolTip(0, "<p>MAD FWHM equals the mean absolute deviation about the median full " +
-      "width at half maximum of fitted star profiles in pixels.</p>");
-   this.MADMedianFWHMNode.setToolTip(1, this.MADMedianFWHMNode.toolTip(0));
+   this.MADMedianFWHMNode.setToolTip(
+      0, "<p>MAD FWHM equals the mean absolute deviation about the median " +
+      "full width at half maximum of fitted star profiles in pixels.</p>"
+   );
+   this.MADMedianFWHMNode.setToolTip(
+      1, this.MADMedianFWHMNode.toolTip(0)
+   );
 
    this.MADMedianEccentricityNode = new TreeBoxNode(this.treeBox);
 
    this.MADMedianEccentricityNode.setText(0, "MAD eccentricity");
    this.MADMedianEccentricityNode.setText(1, "-");
-   this.MADMedianEccentricityNode.setToolTip(0, "<p>MAD eccentricity equals the mean absolute deviation about the " +
-      "median eccentricity of fitted star profiles.</p>");
-   this.MADMedianEccentricityNode.setToolTip(1, this.MADMedianEccentricityNode.toolTip(0));
+   this.MADMedianEccentricityNode.setToolTip(
+      0, "<p>MAD eccentricity equals the mean absolute deviation about the " +
+      "median eccentricity of fitted star profiles.</p>"
+   );
+   this.MADMedianEccentricityNode.setToolTip(
+      1, this.MADMedianEccentricityNode.toolTip(0)
+   );
 
    this.MADMedianResidualNode = new TreeBoxNode(this.treeBox);
 
    this.MADMedianResidualNode.setText(0, "MAD residual");
    this.MADMedianResidualNode.setText(1, "-");
-   this.MADMedianResidualNode.setToolTip(0, "<p>MAD residual equals the mean absolute deviation about the median " +
-      "residual of fitted star profiles in data number (DN) units.</p>");
-   this.MADMedianResidualNode.setToolTip(1, this.MADMedianResidualNode.toolTip(0));
+   this.MADMedianResidualNode.setToolTip(
+      0, "<p>MAD residual equals the mean absolute deviation about the " +
+      "median residual of fitted star profiles in data number (DN) units.</p>"
+   );
+   this.MADMedianResidualNode.setToolTip(
+      1, this.MADMedianResidualNode.toolTip(0)
+   );
 
    this.starSupportNode = new TreeBoxNode(this.treeBox);
 
    this.starSupportNode.setText(0, "Star support");
    this.starSupportNode.setText(1, "-");
-   this.starSupportNode.setToolTip(0, "<p>Star support equals the number of star profiles fitted.</p>");
-   this.starSupportNode.setToolTip(1, this.starSupportNode.toolTip(0));
+   this.starSupportNode.setToolTip(
+      0, "<p>Star support equals the number of star profiles fitted.</p>"
+   );
+   this.starSupportNode.setToolTip(
+      1, this.starSupportNode.toolTip(0)
+   );
 
    this.resultsPane.add(this.treeBox);
 
@@ -1783,7 +1845,9 @@ function parametersDialogPrototype() {
 
    this.resetButton = new ToolButton(this);
 
-   this.resetButton.icon = ":/process-interface/reset.png";
+   this.resetButton.icon =
+      this.scaledResource(":/process-interface/reset.png");
+   this.resetButton.setScaledFixedSize(20, 20);
    this.resetButton.toolTip =
       "<p>Resets all settings to default values.</p>";
    this.resetButton.onClick = function() {
@@ -1795,11 +1859,14 @@ function parametersDialogPrototype() {
    this.versionLabel = new Label(this);
    this.versionLabel.text = "Version " + VERSION;
    this.versionLabel.toolTip =
-      "<p>" + TITLE + " Version " + VERSION + "</p>" +
-      "<p>Estimates the median full width at half maximim (FWHM) and eccentricity of " +
-      "the stars in a view.</p>" +
-      "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.</p>" +
-      "<p>Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.</p>";
+      "<p><b>" + TITLE + " Version " + VERSION + "</b></p>" +
+      "<p>Estimates the median full width at half maximim (FWHM) and " +
+      "eccentricity of the stars in a view.</p>" +
+
+      "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights " +
+      "Reserved.<br>" +
+      "Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights " +
+      "Reserved.</p>";
    this.versionLabel.textAlignment = TextAlign_Right | TextAlign_VertCenter;
 
    this.buttonPane.add(this.versionLabel);
@@ -1819,7 +1886,8 @@ function parametersDialogPrototype() {
    this.saveAsButton = new PushButton(this);
 
    this.saveAsButton.text = "Save As...";
-   this.saveAsButton.toolTip = "<p>Save the measurements in a comma separated value file.</p>";
+   this.saveAsButton.toolTip =
+      "<p>Save the measurements in a comma separated value file.</p>";
    this.saveAsButton.onClick = function() {
       globalSaveAs();
    };
@@ -1829,7 +1897,8 @@ function parametersDialogPrototype() {
    this.supportButton = new PushButton(this);
 
    this.supportButton.text = "Support";
-   this.supportButton.toolTip = "<p>Generates supporting star and contour images.</p>";
+   this.supportButton.toolTip =
+      "<p>Generates supporting star and contour images.</p>";
    this.supportButton.onClick = function() {
       globalSupport(this);
    };
@@ -1844,6 +1913,7 @@ function parametersDialogPrototype() {
       this.dialog.ok();
    };
    this.dismissButton.defaultButton = true;
+   this.dismissButton.hasFocus = true;
 
    this.buttonPane.add(this.dismissButton);
 
@@ -1856,9 +1926,9 @@ function parametersDialogPrototype() {
    this.sizer.add(this.resultsPane);
    this.sizer.add(this.buttonPane);
 
-   this.setFixedWidth(this.displayPixelRatio * 456);
    this.adjustToContents();
-   this.setFixedSize();
+   this.setMinWidth(this.width + this.logicalPixelsToPhysical(40));
+   this.setFixedHeight();
 
    parameters.dialog = this;
    globalClear();
@@ -1873,7 +1943,8 @@ function main() {
    parametersDialog.execute();
 
    // Workaround to avoid image window close crash in 1.8 RC7.
-   parametersDialog.viewList.currentView = parametersDialog.viewListNullCurrentView;
+   parametersDialog.viewList.currentView =
+      parametersDialog.viewListNullCurrentView;
 
    parameters.storeSettings();
 }

@@ -1,12 +1,13 @@
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ----------------------------------------------------------------------------
-// MakefileGenerator.js - Released 2015/10/07 15:20:17 UTC
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+// Global.js - Released 2015/11/26 00:00:00 UTC
+// ****************************************************************************
 //
-// This file is part of PixInsight Makefile Generator Script version 1.96
+// This file is part of MureDenoise Script Version 1.12
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,54 +45,58 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 
-/*
- * PixInsight Makefile Generator
- *
- * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
- * Mac OS X and Windows platforms.
- *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
- * Written by Juan Conejero (PTeam)
- *
- * Executable file.
- */
+// Throws an error if assertion does not hold.
+function assert(assertion, message) {
+   if (!assertion) {
+      throw new Error("Assertion failed: " + message);
+   }
+}
 
-#feature-id    Development > Makefile Generator
+// Filters a view id to match ^[_a-zA-Z][_a-zA-Z0-9]*$ by replacing invalid
+// characters by "_".
+function filterViewId(viewId) {
+   return viewId.trim() == "" ?
+      "_" :
+      viewId.trim().replace(/[^_a-zA-Z0-9]/g, '_').replace(/^[^_a-zA-Z]/, '_');
+}
 
-#feature-info  A utility script to generate makefiles and project files for PCL \
-   development on all supported platforms and architectures: FreeBSD, Linux, \
-   Mac OS X and Windows, x86 and x64.<br/>\
-   <br/>\
-   Written by Juan Conejero (PTeam)<br/>\
-   Copyright &copy; 2009-2015 Pleiades Astrophoto, S.L.
+// Gives a unique view id with base id by appending a suffix.
+function uniqueViewId(baseId) {
+   var viewId = baseId.replace("->", "_");
+   for (var i = 1; !View.viewById(viewId).isNull; ++i) {
+      viewId = baseId.replace("->", "_") + format("_%d", i);
+   }
 
-#feature-icon  MakefileGenerator.xpm
+   return viewId;
+}
 
-#iflt __PI_BUILD__ 1165
-#error This script requires PixInsight 1.8.4.1165 or higher.
-#endif
+// Dynamic methods for core Control object.
+if (!Control.prototype.logicalPixelsToPhysical) {
+   Control.prototype.logicalPixelsToPhysical = function(s) {
+      return Math.round(s);
+   };
+}
 
-#include <pjsr/Sizer.jsh>
-#include <pjsr/FrameStyle.jsh>
-#include <pjsr/TextAlign.jsh>
-#include <pjsr/StdButton.jsh>
-#include <pjsr/StdIcon.jsh>
+if (!Control.prototype.setScaledFixedSize) {
+   Control.prototype.setScaledFixedSize = function(w, h) {
+      this.setFixedSize(w, h);
+   };
+}
 
-#include "MakGenGlobal.js"
-#include "MakGenUtility.js"
-#include "MakGenFileLists.js"
-#include "MakGenParameters.js"
-#include "MakGenGCCMakefiles.js"
-#include "MakGenMSVC9Projects.js"
-#include "MakGenMSVC1xProjects.js"
-#include "MakGenMSVCProjects.js"
-#include "MakGenGenerators.js"
-#include "MakGenGUI.js"
-#include "MakGenMain.js"
+if (!Control.prototype.scaledResource) {
+   Control.prototype.scaledResource = function(r) {
+      return r;
+   };
+}
 
-main();
+// Dynamic methods for core Sizer object.
+if (!Sizer.prototype.addUnscaledSpacing) {
+   Sizer.prototype.addUnscaledSpacing = function(s) {
+      this.addSpacing(s);
+   };
+}
 
-// ----------------------------------------------------------------------------
-// EOF MakefileGenerator.js - Released 2015/10/07 15:20:17 UTC
+// ****************************************************************************
+// EOF Global.js - Released 2015/11/26 00:00:00 UTC
