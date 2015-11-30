@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchStatistics.js - Released 2015/09/22 15:48:00 UTC
+// BatchStatistics.js - Released 2015/11/30 00:00:00 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of BatchStatistics Script version 1.2
+// This file is part of BatchStatistics Script version 1.2.2
 //
 // Copyright (C) 2014-2015 Ian Lauwerys. (www.blackwaterskies.co.uk)
 //
@@ -52,6 +52,7 @@
 
 /*
    Changelog:
+   1.2.2: Bug fix release
    1.2.1: Bug fix release
    1.2:   Third (full) release.
           Relocated call to dialog.updateUI to resize exit button on launch.
@@ -82,8 +83,8 @@ V1.2 Copyright (C) 2014-2015 Ian Lauwerys
 #endif
 
 #define TITLE "BatchStatistics"
-#define VERSION "1.2.1"
-#define COMPILE_DATE "2015/09/22"
+#define VERSION "1.2.2"
+#define COMPILE_DATE "2015/11/23"
 
 // Includes.
 #include "BatchStatistics-Engine.js"   // Engine part.
@@ -149,4 +150,4 @@ function main()
 main();
 
 // ----------------------------------------------------------------------------
-// EOF BatchStatistics.js - Released 2015/09/22 15:48:00 UTC
+// EOF BatchStatistics.js - Released 2015/11/30 00:00:00 UTC

@@ -1,5 +1,5 @@
-Copyright (C) 2014-2015 Ian Lauwerys. (www.blackwaterskies.co.uk)
+Copyright (C) 2015 Ian Lauwerys. (www.blackwaterskies.co.uk)
 
-Based on BatchFormatConversion.js, NoiseEvaluation.js and other work.
+Based on BatchFormatConversion.js, BatchPreprocessing.js and other work.
 Copyright (c) 2009-2014 Pleiades Astrophoto S.L.
 Written by Juan Conejero (PTeam)
