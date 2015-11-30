@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BayerDrizzlePrep.js - Released 2015/11/06 00:00:00 UTC
+// BayerDrizzlePrep.js - Released 2015/11/30 00:00:00 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of BayerDrizzlePrep Script version 1.0
+// This file is part of BayerDrizzlePrep Script version 1.1
 //
 // Copyright (C) 2015 Ian Lauwerys. (www.blackwaterskies.co.uk)
 //
@@ -51,6 +51,7 @@
 
 /*
    Changelog:
+   1.1:  Bug fix release.
    1.0:  First release.
 */
 
@@ -77,8 +78,8 @@ V1.0 Copyright (C) 2015 Ian Lauwerys
 #endif
 
 #define TITLE "BayerDrizzlePrep"
-#define VERSION "1.0"
-#define COMPILE_DATE "2015/11/06"
+#define VERSION "1.1"
+#define COMPILE_DATE "2015/11/30"
 
 // Includes.
 #include "BayerDrizzlePrep-Engine.js" // Engine part.
@@ -144,4 +145,4 @@ function main()
 main();
 
 // ----------------------------------------------------------------------------
-// EOF BayerDrizzlePrep.js - Released 2015/11/06 00:00:00 UTC
+// EOF BayerDrizzlePrep.js - Released 2015/11/30 00:00:00 UTC
