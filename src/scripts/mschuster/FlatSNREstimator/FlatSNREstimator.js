@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// FlatSNREstimator.js - Released 2015/08/06 00:00:00 UTC
+// FlatSNREstimator.js - Released 2015/12/02 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of FlatSNREstimator Script version 1.3
+// This file is part of FlatSNREstimator Script version 1.4
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,11 +48,13 @@
 // ****************************************************************************
 
 #define TITLE "FlatSNREstimator"
-#define VERSION "1.3"
+#define VERSION "1.4"
 
 #feature-id Image Analysis > FlatSNREstimator
 
-#feature-info This script estimates the signal to temporal noise ratio and \
+#feature-info <b>FlatSNREstimator Version 1.4</b><br/>\
+   <br/>\
+   This script estimates the signal to temporal noise ratio and \
    gain of flat subframes or integrations.<br/>\
    <br/>\
    Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>\
@@ -512,7 +514,7 @@ function getNoise() {
    if (!parameters.validResults) {
       return "-";
    }
-   return format("%.2f DN RMS", parameters.noise);
+   return format("%.2f DN", parameters.noise);
 }
 
 function getSNR() {
@@ -1028,6 +1030,9 @@ function parametersDialogPrototype(parameters) {
    this.__base__ = Dialog;
    this.__base__();
 
+   // Workaround to avoid scaledResource failure in 1.8.4.1190
+   this.displayPixelRatio;
+
    this.parameters = parameters;
 
    this.abortEnabled = false;
@@ -1049,7 +1054,7 @@ function parametersDialogPrototype(parameters) {
 
    this.throwAbort = function() {
       if (this.abortEnabled && this.abortRequested) {
-         throw "abort";
+         throw new Error("abort");
       }
    }
 
@@ -1213,7 +1218,7 @@ function parametersDialogPrototype(parameters) {
       0,
       "<p>Temporal noise is an estimate of the standard deviation of " +
       "temporal noise (e.g. photon noise, read noise, and dark noise) in the " +
-      "flats, in data number (DN 16-bit [0,65535]) RMS units.</p>"
+      "flats, in data number (DN 16-bit [0,65535]) units.</p>"
    );
    this.noiseNode.setToolTip(1, this.noiseNode.toolTip(0));
    this.noiseNode.selectable = false;
@@ -1262,54 +1267,7 @@ function parametersDialogPrototype(parameters) {
    this.browseDocumentationButton.onClick = function () {
       if (!Dialog.browseScriptDocumentation(TITLE)) {
          (new MessageBox(
-            "<p>Documentation has not been installed.</p>" +
-
-            "<p>This script estimates the signal to temporal noise ratio and gain " +
-            "of flat subframes or integrations. The information is useful for " +
-            "flat frame quality evaluation and detector characterization.</p>" +
-
-            "<p>This script requires as inputs two flats and, if the flats are " +
-            "uncalibrated (i.e. not flat dark or bias subtracted), either a flat " +
-            "dark or a bias, all equally sized, single " +
-            "channel subframes or integrations, and a foreground quantile parameter. " +
-            "Flat subframes must be similarly exposed within the linear operating " +
-            "region of the detector. Flat integrations must be similar combinations " +
-            "of the same number of similarly exposed subframes. The flats and " +
-            "flat dark or bias may be monochrome detector images, raw Bayer CFA detector " +
-            "images, or a CFA channel extracted from raw Bayer CFA detector images. " +
-            "Estimation accuracy will be compromised on RGB channels extracted from " +
-            "de-Bayered CFA images due to channel interpolation.</p>" +
-
-            "<p>The foreground " +
-            "quantile parameter specifies the brightest quantile of local regions " +
-            "in the flats used to estimate the signal to temporal noise ratio and " +
-            "gain.</p>" +
-
-            "<p>The signal component of the estimated signal to temporal noise ratio " +
-            "is an estimate of the typical exposure of the flats. Spurious signal " +
-            "noise (e.g. cosmic-ray hits and stars in sky flats) is discounted from " +
-            "the signal estimation by measuring the typical median of local " +
-            "regions in the normalized sum of the flat dark or bias subtracted, if " +
-            "uncalibrated, flats.</p>" +
-
-            "<p>The temporal noise component of the estimated signal to temporal " +
-            "noise ratio is an estimate of the typical standard deviation of " +
-            "temporal noise (e.g. photon noise, read noise, and dark noise) in the " +
-            "flats. Spatial noise (e.g. offset, sensitivity, and dark current " +
-            "nonuniformity) and spurious signal noise (e.g. cosmic-ray hits and " +
-            "stars in sky flats) are discounted from the temporal noise estimation " +
-            "by measuring the typical normalized Rousseeuw and Croux " +
-            "S<sub>n</sub> scale estimate of local regions in the normalized " +
-            "difference between the flats.</p>" +
-
-            "<p>Gain is estimated by the signal to squared temporal noise ratio of " +
-            "the flats. For flat subframes, gain is an estimate of detector gain. " +
-            "For flat integrations, gain is an estimate of the product of detector " +
-            "gain and the number of subframes combined in the integrations.</p>" +
-
-            "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>" +
-            "Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.</p>",
-
+            "<p>Documentation has not been installed.</p>",
             TITLE,
             StdIcon_Warning,
             StdButton_Ok
@@ -1332,7 +1290,24 @@ function parametersDialogPrototype(parameters) {
    this.versionLabel = new Label(this);
    this.versionLabel.text = "Version " + VERSION;
    this.versionLabel.toolTip =
-         "<p>" + TITLE + " Version " + VERSION + "</p>" +
+         "<p><b>" + TITLE + " Version " + VERSION + "</b></p>" +
+
+         "<p>This script estimates the signal to temporal noise ratio and gain " +
+         "of flat subframes or integrations. The information is useful for " +
+         "flat frame quality evaluation and detector characterization.</p>" +
+
+         "<p>This script requires as inputs two flats and, if the flats are " +
+         "uncalibrated (i.e. not flat dark or bias subtracted), either a flat " +
+         "dark or a bias, all equally sized, single " +
+         "channel subframes or integrations, and a foreground quantile parameter. " +
+         "Flat subframes must be similarly exposed within the linear operating " +
+         "region of the detector. Flat integrations must be similar combinations " +
+         "of the same number of similarly exposed subframes. The flats and " +
+         "flat dark or bias may be monochrome detector images, raw Bayer CFA detector " +
+         "images, or a CFA channel extracted from raw Bayer CFA detector images. " +
+         "Estimation accuracy will be compromised on RGB channels extracted from " +
+         "de-Bayered CFA images due to channel interpolation.</p>" +
+
          "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>" +
             "Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.</p>";
    this.versionLabel.textAlignment = TextAlign_Right | TextAlign_VertCenter;
@@ -1378,6 +1353,7 @@ function parametersDialogPrototype(parameters) {
       }
    };
    this.dismissAbortButton.defaultButton = true;
+   this.dismissAbortButton.hasFocus = true;
 
    this.buttonPane.add(this.dismissAbortButton);
 
@@ -1398,9 +1374,9 @@ function parametersDialogPrototype(parameters) {
    this.sizer.add(this.resultsPane);
    this.sizer.add(this.buttonPane);
 
-   this.setFixedWidth(this.displayPixelRatio * 456);
    this.adjustToContents();
-   this.setFixedSize();
+   this.setMinWidth(this.width + this.logicalPixelsToPhysical(40));
+   this.setFixedHeight();
 
    this.disableAbort(); // PushButton.text update may force an adjustToContents()
 }
@@ -1424,4 +1400,4 @@ function main() {
 main();
 
 // ****************************************************************************
-// EOF FlatSNREstimator.js - Released 2015/08/06 00:00:00 UTC
+// EOF FlatSNREstimator.js - Released 2015/12/02 00:00:00 UTC
