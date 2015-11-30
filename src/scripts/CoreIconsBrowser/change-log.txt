@@ -1,0 +1,10 @@
+===============================================================================
+Core Icons Browser Script Changelog
+===============================================================================
+
+1.00 - 2015 November 30 - Released as an official core distribution script for
+       PixInsight Core 1.8.4.1194 Ripley
+
+-------------------------------------------------------------------------------
+
+?.?? - 2013 April 02 - Initial release on PixInsight Forum.
