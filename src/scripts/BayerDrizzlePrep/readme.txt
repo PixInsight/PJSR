@@ -1,6 +1,8 @@
 Script Installation Instructions
 ================================
 
+Note that BayerDrizzlePrep and its documentation form part of the standard PixInsight installation as of version 01.08.04.1193.  If you wish to add this script to earlier versions, follow the instructions below. 
+
 1. Find the a folder called "BayerDrizzlePrep" in this .ZIP file.  Place the unzipped folder and its contents in your <PixInsight Folder>/src/scripts folder. (Note: Do not place the contents of the "BatchStatistics" folder directly in to /src/scripts but rather ensure that it is inside the scripts folder in a sub-folder called BayerDrizzlePrep).
 
 2. In PixInsight select "Script" menu -> "Feature Scripts...".
@@ -34,7 +36,9 @@ Documentation Installation Instructions (Optional)
 
 ChangeLog
 =========
-   1.0: First release.
+   1.1:  Bug fix release.
+         Minor UI fixes around enabling/disabling controls.
+   1.0:  First release.
 
 Notes for Script Developers
 ===========================
