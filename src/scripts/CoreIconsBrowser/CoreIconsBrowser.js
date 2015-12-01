@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// CoreIconsBrowser.js - Released 2015/11/30 15:36:16 UTC
+// CoreIconsBrowser.js - Released 2015/12/01 15:27:58 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of Core Icons Browser Script version 1.0
+// This file is part of Core Icons Browser Script version 1.10
 //
 // Copyright (c) 2013-2015 Pleiades Astrophoto S.L.
 //
@@ -67,10 +67,12 @@
 #error This script requires PixInsight 1.8.4.1193 or higher.
 #endif
 
-#define VERSION "1.00"
+#define VERSION "1.10"
 #define TITLE   "Core Icons Browser"
 
 #include <pjsr/Sizer.jsh>
+#include <pjsr/Slider.jsh>
+#include <pjsr/TextAlign.jsh>
 
 #define MAX_ICON_SIZE 64
 
@@ -398,9 +400,7 @@ function IconBrowser()
       ":/icons/class-remove.png",
       ":/icons/class-warn.png",
       ":/icons/class.png",
-      ":/icons/clear-inverted-old.png",
       ":/icons/clear-inverted.png",
-      ":/icons/clear-old.png",
       ":/icons/clear.png",
       ":/icons/clipboard-add.png",
       ":/icons/clipboard-delete.png",
@@ -1642,23 +1642,26 @@ function IconBrowser()
          s += "<tr>";
          for ( let c = 0; c < tableColumns && i < this.coreIcons.length; ++c, ++i )
          {
-            let icon = new Bitmap( this.scaledResource( this.coreIcons[i] ) );
-            let width = icon.width;
-            let height = icon.height;
+            let iconResource = this.scaledResource( this.coreIcons[i] );
+            let icon = new Bitmap( iconResource );
+            let iconWidth = Math.round( icon.width/this.resourcePixelRatio )|0;
+            let iconHeight = Math.round( icon.height/this.resourcePixelRatio )|0;
+            let imgWidth = iconWidth;
+            let imgHeight = iconHeight;
             let maxSize = Math.uiScaled( this.displayPixelRatio, MAX_ICON_SIZE );
-            if ( width > maxSize || height > maxSize )
+            if ( imgWidth > maxSize || imgHeight > maxSize )
             {
-               let scaleFactor = maxSize/Math.max( width, height );
-               width = Math.round( scaleFactor*width )|0;
-               height = Math.round( scaleFactor*height )|0;
+               let scaleFactor = maxSize/Math.max( imgWidth, imgHeight );
+               imgWidth = Math.round( scaleFactor*imgWidth )|0;
+               imgHeight = Math.round( scaleFactor*imgHeight )|0;
             }
 
             s += "<td>";
-            s += "<img width=\"" + width.toString() + "\" " +
-                      "height=\"" + height.toString() + "\" " +
-                      "src=\"" + this.coreIcons[i] + "\" " +
-                      "title=\"" + this.coreIcons[i] + format( " (%dx%d)", icon.width, icon.height ) + "\"/><br/>";
-            s += this.coreIcons[i] + format( " (%dx%d)", icon.width, icon.height );
+            s += "<img width=\"" + imgWidth.toString() + "\" " +
+                      "height=\"" + imgHeight.toString() + "\" " +
+                      "src=\"" + iconResource + "\" " +
+                      "title=\"" + this.coreIcons[i] + format( " (%dx%d)", iconWidth, iconHeight ) + "\"/><br/>";
+            s += this.coreIcons[i] + format( " (%dx%d)", iconWidth, iconHeight );
             s += "</td>";
          }
          s += "</tr>";
@@ -1670,14 +1673,46 @@ function IconBrowser()
       return s;
    };
 
-   this.browser = new TextBox( this );
-   this.browser.text = this.generateHTML( 4 );
-   //this.browser.readOnly = true; // for convenience, allow cursor interaction
-   this.browser.home();
+   this.browser_TextBox = new TextBox( this );
+   this.browser_TextBox.text = this.generateHTML( 4 );
+   this.browser_TextBox.styleSheet = "QWidget { background: transparent; }";
+   this.browser_TextBox.readOnly = true; // for convenience, allow cursor interaction
+   this.browser_TextBox.home();
+
+   this.bkgColor_Label = new Label( this );
+   this.bkgColor_Label.text = "Background color:";
+   this.bkgColor_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+
+   this.bkgColor_SpinBox = new SpinBox( this );
+   this.bkgColor_SpinBox.minValue = 0;
+   this.bkgColor_SpinBox.maxValue = 255;
+   this.bkgColor_SpinBox.value = 0xe0;
+   this.bkgColor_SpinBox.onValueUpdated = function( value )
+   {
+      this.dialog.styleSheet = format( "QWidget { background: #%02x%02x%02x; }", value, value, value );
+   };
+
+   this.close_PushButton = new PushButton( this );
+   this.close_PushButton.text = "Close";
+   this.close_PushButton.onClick = function()
+   {
+      this.dialog.cancel();
+   };
+
+   this.bottom_Sizer = new HorizontalSizer;
+   this.bottom_Sizer.spacing = 4;
+   this.bottom_Sizer.add( this.bkgColor_Label );
+   this.bottom_Sizer.add( this.bkgColor_SpinBox );
+   this.bottom_Sizer.addStretch();
+   this.bottom_Sizer.add( this.close_PushButton );
+
+   this.bkgColor_SpinBox.onValueUpdated( this.bkgColor_SpinBox.value );
 
    this.sizer = new VerticalSizer;
-   this.sizer.margin = 4;
-   this.sizer.add( this.browser );
+   this.sizer.margin = 8;
+   this.sizer.spacing = 8;
+   this.sizer.add( this.browser_TextBox, 100 );
+   this.sizer.add( this.bottom_Sizer );
 
    this.windowTitle = TITLE + " v" + VERSION;
    this.resize( Math.uiScaled( this.displayPixelRatio, 1024 ),
@@ -1690,4 +1725,4 @@ console.hide();
 (new IconBrowser).execute();
 
 // ----------------------------------------------------------------------------
-// EOF CoreIconsBrowser.js - Released 2015/11/30 15:36:16 UTC
+// EOF CoreIconsBrowser.js - Released 2015/12/01 15:27:58 UTC
