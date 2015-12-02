@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MureEstimator.js - Released 2015/11/26 00:00:00 UTC
+// MureEstimator.js - Released 2015/12/04 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.12
+// This file is part of MureDenoise Script Version 1.14
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -371,34 +371,11 @@ function MureEstimator(model, view) {
       console.flush();
    };
 
-   // Log refinement covariance scale.
-   this.logRefinementCovarianceScale = function(level) {
-      var refinementCovarianceScale = model.refinementCovarianceScale(level);
-      console.writeln(format(
-         "Refinement covariance scale: %d, " +
-         model.denoiseVarianceScaleFormat,
-         level,
-         refinementCovarianceScale
-      ));
-      console.flush();
-   };
-
    // Denoises the image.
    this.denoiseImage = function(
       image, gaussianNoise, levelsOfRefinement, level, locations
    ) {
-      // this.logRefinementCovarianceScale(level);
-
-      var refinementCovarianceScale = model.refinementCovarianceScale(level);
-
-      gaussianNoise *= Math.sqrt(refinementCovarianceScale);
-      var imageDecompose = image.multiplyScalar(
-         1 / refinementCovarianceScale
-      ).pipeline([
-         function(frame) {
-            return frame.unnormalizedHaarDecompose();
-         }
-      ]);
+      var imageDecompose = image.unnormalizedHaarDecompose();
       view.throwAbort();
 
       var s = imageDecompose[0];
@@ -548,11 +525,7 @@ function MureEstimator(model, view) {
          s.clear();
       }
 
-      return reconstruct.pipeline([
-         function(frame) {
-            return frame.multiplyScalar(refinementCovarianceScale);
-         }
-      ]);
+      return reconstruct;
    };
 
    // Performs one cycle-spin of denoising.
@@ -854,4 +827,4 @@ function MureEstimator(model, view) {
 };
 
 // ****************************************************************************
-// EOF MureEstimator.js - Released 2015/11/26 00:00:00 UTC
+// EOF MureEstimator.js - Released 2015/12/04 00:00:00 UTC

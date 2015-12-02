@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MureDenoise.js - Released 2015/11/26 00:00:00 UTC
+// MureDenoise.js - Released 2015/12/04 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.12
+// This file is part of MureDenoise Script Version 1.14
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,11 +48,11 @@
 // ****************************************************************************
 
 #define TITLE "MureDenoise"
-#define VERSION "1.12"
+#define VERSION "1.14"
 
 #feature-id Noise Reduction > MureDenoise
 
-#feature-info <b>MureDenoise Version 1.12</b><br/>\
+#feature-info <b>MureDenoise Version 1.14</b><br/>\
    <br/>\
    Script for denoising linear monochannel images corrupted by mixed \
    Poisson-Gaussian noise. Applicable to single frame images and average \
@@ -68,25 +68,22 @@
    estimate of the oracle mean-squared error (MSE), or &quot;risk&quot;, \
    between the denoised output image and the unknown noise-free image.<br/>\
    <br/>\
-   <b>Note</b>: For linear multichannel images, run the monochannel denoiser \
-   on each channel separately. For linear one shot color (OSC) images, \
-   denoise the color filter array (CFA) channels not the debayered RGB \
-   channels.<br/>\
+   <b>Note</b>: For linear multichannel images from monocolor detectors, run \
+   the monochannel denoiser on each channel separately. The script does not \
+   work properly for images from one shot color (OSC) detectors.<br/>\
    <br/>\
    <b>Warning</b>: The script is adapted to denoise linear monochannel images \
    mainly corrupted by shot noise, read noise, and dark current noise which \
    is typically the case for astronomical data. The script does not work \
-   properly for other noise distributions, for saturated images, for linearly \
-   or nonlinearly processed images, for median combinations, or for drizzle \
-   combinations.<br/>\
+   properly for other noise distributions, for saturated images, for \
+   debayered images, for linearly or nonlinearly processed images, for \
+   median combinations, or for drizzle combinations.<br/>\
    <br/>\
    <b>Warning</b>: Do not combine denoised images. Signal-to-noise ratio \
    (SNR) will be enhanced by combining noisy images and denoising the \
    result. Combined images must be equally exposed, have the same pixel \
    resolution, and be registered by projective transformation with no \
-   distortion correction. When denoising combinations, the script is unable \
-   to remove correlated noise introduced by the image registration \
-   process.<br/>\
+   distortion correction.<br/>\
    <br/>\
    Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>\
    Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -151,4 +148,4 @@ main();
 gc();
 
 // ****************************************************************************
-// EOF MureDenoise.js - Released 2015/11/26 00:00:00 UTC
+// EOF MureDenoise.js - Released 2015/12/04 00:00:00 UTC
