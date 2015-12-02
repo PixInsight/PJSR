@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BayerDrizzlePrep-Engine.js - Released 2015/11/06 00:00:00 UTC
+// BayerDrizzlePrep-Engine.js - Released 2015/11/30 00:00:00 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of BayerDrizzlePrep Script version 1.0
+// This file is part of BayerDrizzlePrep Script version 1.1
 //
 // Copyright (C) 2015 Ian Lauwerys. (www.blackwaterskies.co.uk)
 //
@@ -52,6 +52,7 @@
 
 /*
    Changelog:
+   1.1:  Bug fix release.
    1.0:  First release.
 */
 
@@ -262,4 +263,4 @@ function ConversionEngine()
 }  // class ConversionEngine
 
 // ----------------------------------------------------------------------------
-// EOF BayerDrizzlePrep-Engine.js - Released 2015/11/06 00:00:00 UTC
+// EOF BayerDrizzlePrep-Engine.js - Released 2015/11/30 00:00:00 UTC

@@ -1,16 +1,15 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchStatistics-GUI.js - Released 2015/09/22 15:42:00 UTC
+// BatchStatistics-GUI.js - Released 2015/11/30 00:00:00 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of BatchStatistics Script version 1.2.1
+// This file is part of BatchStatistics Script version 1.2.2
 //
 // Copyright (C) 2014-2015 Ian Lauwerys. (www.blackwaterskies.co.uk)
 //
 // Based on BatchFormatConversion.js, NoiseEvaluation.js and other work.
 // Copyright (c) 2009-2014 Pleiades Astrophoto S.L.
-// Written by Juan Conejero (PTeam)
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,6 +51,8 @@
 
 /*
    Changelog:
+   1.2.2: Bug fix release
+          Mainly to enabling / disabling controls when processing.
    1.2.1: Bug fix release
           Fixed problem where saving a script instance with no input files and
           relaunching it created an empty file name in the input file list.
@@ -132,21 +133,21 @@ function BatchStatisticsDialog( engine )
          console.noteln( "{ BatchStatisticsDialog.importParameters" );
       }
       this.outputToConsole = ( Parameters.has( "outputToConsole" ) ) ? Parameters.getBoolean( "outputToConsole" ) : this.outputToConsole;
-      this.consoleOutputCheckBox.checked = this.outputToConsole;
+      this.dialog.consoleOutputCheckBox.checked = this.outputToConsole;
       this.outputToFile = ( Parameters.has( "outputToFile" ) ) ? Parameters.getBoolean( "outputToFile" ) : this.outputToFile;
-      this.fileOutputCheckBox.checked = this.outputToFile;
+      this.dialog.fileOutputCheckBox.checked = this.outputToFile;
       // Update other controls based on the state of this one.
-      this.fileOutputCheckBox.onClick( this.outputToFile );
+      this.dialog.fileOutputCheckBox.onClick( this.outputToFile );
       this.outputFile = ( Parameters.has( "outputFile" ) ) ? Parameters.getString( "outputFile" ) : this.outputFile;
-      this.outputFileEdit.text = this.outputFile;
+      this.dialog.outputFileEdit.text = this.outputFile;
       this.overwriteExisting = ( Parameters.has( "overwriteExisting" ) ) ? Parameters.getBoolean( "overwriteExisting" ) : this.overwriteExisting;
-      this.overwriteExistingCheckBox.checked = this.overwriteExisting;
+      this.dialog.overwriteExistingCheckBox.checked = this.overwriteExisting;
       // Update other controls based on the state of this one.
-      this.overwriteExistingCheckBox.onClick( this.overwriteExisting );
+      this.dialog.overwriteExistingCheckBox.onClick( this.overwriteExisting );
       this.appendExisting = ( Parameters.has( "appendExisting" ) ) ? Parameters.getBoolean( "appendExisting" ) : this.appendExisting;
-      this.appendExistingCheckBox.checked = this.appendExisting;
+      this.dialog.appendExistingCheckBox.checked = this.appendExisting;
       this.includeHeader = ( Parameters.has( "includeHeader" ) ) ? Parameters.getBoolean( "includeHeader" ) : this.includeHeader;
-      this.includeHeaderCheckBox.checked = this.includeHeader;
+      this.dialog.includeHeaderCheckBox.checked = this.includeHeader;
       if ( Parameters.has( "inputFiles" ) )
       {
          // Add the comma separated list of file names as elements in the InputFiles array.
@@ -210,63 +211,63 @@ function BatchStatisticsDialog( engine )
 
          // Disable all UI elements relating to this object's properties.
          this.dialog.filesTreeBox.adjustColumnWidthToContents( 0 );
-         this.consoleOutputCheckBox.enabled = false;
-         this.fileOutputCheckBox.enabled = false;
-         this.overwriteExistingCheckBox.enabled = false;
-         this.appendExistingCheckBox.enabled = false;
-         this.includeHeaderCheckBox.enabled = false;
+         this.dialog.consoleOutputCheckBox.enabled = false;
+         this.dialog.fileOutputCheckBox.enabled = false;
+         this.dialog.overwriteExistingCheckBox.enabled = false;
+         this.dialog.appendExistingCheckBox.enabled = false;
+         this.dialog.includeHeaderCheckBox.enabled = false;
          this.dialog.outputFileEdit.enabled = false;
          this.dialog.outputFileButton.enabled = false;
-         this.filesAddButton.enabled = false;
-         this.filesClearButton.enabled = false;
-         this.filesInvertButton.enabled = false;
-         this.filesRemoveButton.enabled = false;
-         this.newInstanceButton.enabled = false;
-         this.helpButton.enabled = false;
-         this.okButton.enabled = false;
+         this.dialog.filesAddButton.enabled = false;
+         this.dialog.filesClearButton.enabled = false;
+         this.dialog.filesInvertButton.enabled = false;
+         this.dialog.filesRemoveButton.enabled = false;
+         this.dialog.newInstanceButton.enabled = false;
+         this.dialog.helpButton.enabled = false;
+         this.dialog.okButton.enabled = false;
 
          // Disable all UI elements relating to engine object's properties.
-         this.numericFormatComboBox.enabled = false;
-         this.numericNotationCheckBox.enabled = false;
-         this.normalizedCheckBox.enabled = false;
-         this.precisionSpinBox.enabled = false;
-         this.outputFormatComboBox.enabled = false;
-         this.unclippedCheckBox.enabled = false;
-         this.unclippedCheckBox.enabled = false;
-         this.clippingLowControl.enabled = false;
-         this.clippingHighControl.enabled = false;
-         this.filePathCheckBox.enabled = false;
-         this.fileNameCheckBox.enabled = false;
-         this.fileFullCheckBox.enabled = false;
-         this.imageNumberCheckBox.enabled = false;
-         this.clippingLowCheckBox.enabled = false;
-         this.clippingHighCheckBox.enabled = false;
-         this.widthCheckBox.enabled = false;
-         this.heightCheckBox.enabled = false;
-         this.numberOfChannelsCheckBox.enabled = false;
-         this.countPctCheckBox.enabled = false;
-         this.countPxCheckBox.enabled = false;
-         this.meanCheckBox.enabled = false;
-         this.modulusCheckBox.enabled = false;
-         this.normCheckBox.enabled = false;
-         this.sumOfSquaresCheckBox.enabled = false;
-         this.meanOfSquaresCheckBox.enabled = false;
-         this.medianCheckBox.enabled = false;
-         this.varianceCheckBox.enabled = false;
-         this.stdDevCheckBox.enabled = false;
-         this.avgDevCheckBox.enabled = false;
-         this.madCheckBox.enabled = false;
-         this.bwmvCheckBox.enabled = false;
-         this.pbmvCheckBox.enabled = false;
-         this.snCheckBox.enabled = false;
-         this.qnCheckBox.enabled = false;
-         this.minimumCheckBox.enabled = false;
-         this.maximumCheckBox.enabled = false;
-         this.minimumPosCheckBox.enabled = false;
-         this.maximumPosCheckBox.enabled = false;
-         this.noiseEvaluationCheckBox.enabled = false;
-         this.selectAllButton.enabled = false;
-         this.selectNoneButton.enabled = false;
+         this.dialog.numericFormatComboBox.enabled = false;
+         this.dialog.numericNotationCheckBox.enabled = false;
+         this.dialog.normalizedCheckBox.enabled = false;
+         this.dialog.precisionSpinBox.enabled = false;
+         this.dialog.outputFormatComboBox.enabled = false;
+         this.dialog.unclippedCheckBox.enabled = false;
+         this.dialog.unclippedCheckBox.enabled = false;
+         this.dialog.clippingLowControl.enabled = false;
+         this.dialog.clippingHighControl.enabled = false;
+         this.dialog.filePathCheckBox.enabled = false;
+         this.dialog.fileNameCheckBox.enabled = false;
+         this.dialog.fileFullCheckBox.enabled = false;
+         this.dialog.imageNumberCheckBox.enabled = false;
+         this.dialog.clippingLowCheckBox.enabled = false;
+         this.dialog.clippingHighCheckBox.enabled = false;
+         this.dialog.widthCheckBox.enabled = false;
+         this.dialog.heightCheckBox.enabled = false;
+         this.dialog.numberOfChannelsCheckBox.enabled = false;
+         this.dialog.countPctCheckBox.enabled = false;
+         this.dialog.countPxCheckBox.enabled = false;
+         this.dialog.meanCheckBox.enabled = false;
+         this.dialog.modulusCheckBox.enabled = false;
+         this.dialog.normCheckBox.enabled = false;
+         this.dialog.sumOfSquaresCheckBox.enabled = false;
+         this.dialog.meanOfSquaresCheckBox.enabled = false;
+         this.dialog.medianCheckBox.enabled = false;
+         this.dialog.varianceCheckBox.enabled = false;
+         this.dialog.stdDevCheckBox.enabled = false;
+         this.dialog.avgDevCheckBox.enabled = false;
+         this.dialog.madCheckBox.enabled = false;
+         this.dialog.bwmvCheckBox.enabled = false;
+         this.dialog.pbmvCheckBox.enabled = false;
+         this.dialog.snCheckBox.enabled = false;
+         this.dialog.qnCheckBox.enabled = false;
+         this.dialog.minimumCheckBox.enabled = false;
+         this.dialog.maximumCheckBox.enabled = false;
+         this.dialog.minimumPosCheckBox.enabled = false;
+         this.dialog.maximumPosCheckBox.enabled = false;
+         this.dialog.noiseEvaluationCheckBox.enabled = false;
+         this.dialog.selectAllButton.enabled = false;
+         this.dialog.selectNoneButton.enabled = false;
       }
       else
       {
@@ -276,120 +277,120 @@ function BatchStatisticsDialog( engine )
 
          // Update UI elements relating to this object's properties.
          this.dialog.filesTreeBox.adjustColumnWidthToContents( 0 );
-         this.consoleOutputCheckBox.enabled = true;
-         this.consoleOutputCheckBox.checked = this.outputToConsole;
-         this.fileOutputCheckBox.enabled = true;
-         this.fileOutputCheckBox.checked = this.outputToFile;
+         this.dialog.consoleOutputCheckBox.enabled = true;
+         this.dialog.consoleOutputCheckBox.checked = this.outputToConsole;
+         this.dialog.fileOutputCheckBox.enabled = true;
+         this.dialog.fileOutputCheckBox.checked = this.outputToFile;
          // Update other controls based on the state of this one.
-         this.fileOutputCheckBox.onClick( this.outputToFile );
+         this.dialog.fileOutputCheckBox.onClick( this.outputToFile );
          // Enabling done by fileOutputCheckBox.onClick.
-         this.overwriteExistingCheckBox.checked = this.overwriteExisting;
+         this.dialog.overwriteExistingCheckBox.checked = this.overwriteExisting;
          // Update other controls based on the state of this one.
          // Enabling done by fileOutputCheckBox.onClick.
-         this.overwriteExistingCheckBox.onClick( this.overwriteExisting );
+         this.dialog.overwriteExistingCheckBox.onClick( this.overwriteExisting );
          // Enabling done by fileOutputCheckBox.onClick and overwriteExistingCheckBox.onClick.
-         this.appendExistingCheckBox.checked = this.appendExisting;
-         this.includeHeaderCheckBox.enabled = true;
-         this.includeHeaderCheckBox.checked = this.includeHeader;
+         this.dialog.appendExistingCheckBox.checked = this.appendExisting;
+         this.dialog.includeHeaderCheckBox.enabled = true;
+         this.dialog.includeHeaderCheckBox.checked = this.includeHeader;
          // Enabling done by fileOutputCheckBox.onClick, also done for outputFileButton.
          this.dialog.outputFileEdit.text = this.dialog.outputFile;
-         this.filesAddButton.enabled = true;
-         this.filesClearButton.enabled = true;
-         this.filesInvertButton.enabled = true;
-         this.filesRemoveButton.enabled = true;
-         this.newInstanceButton.enabled = true;
-         this.helpButton.enabled = true;
-         this.okButton.enabled = true;
+         this.dialog.filesAddButton.enabled = true;
+         this.dialog.filesClearButton.enabled = true;
+         this.dialog.filesInvertButton.enabled = true;
+         this.dialog.filesRemoveButton.enabled = true;
+         this.dialog.newInstanceButton.enabled = true;
+         this.dialog.helpButton.enabled = true;
+         this.dialog.okButton.enabled = true;
 
          // Update UI elements relating to engine object's properties.
          // onItemSelected updates its own control and other controls based on this control's state.
-         this.numericFormatComboBox.enabled = true;
-         this.numericFormatComboBox.onItemSelected( this.engine.numericFormat );
+         this.dialog.numericFormatComboBox.enabled = true;
+         this.dialog.numericFormatComboBox.onItemSelected( this.engine.numericFormat );
          // Enabling done by numericFormatComboBox.onItemSelected.
-         this.numericNotationCheckBox.checked = this.engine.numericNotation;
-         this.normalizedCheckBox.enabled = true;
-         this.normalizedCheckBox.checked = this.engine.normalizeScale;
-         this.precisionSpinBox.enabled = true;
-         this.precisionSpinBox.value = this.engine.precision;
-         this.outputFormatComboBox.enabled = true;
+         this.dialog.numericNotationCheckBox.checked = this.engine.numericNotation;
+         this.dialog.normalizedCheckBox.enabled = true;
+         this.dialog.normalizedCheckBox.checked = this.engine.normalizeScale;
+         this.dialog.precisionSpinBox.enabled = true;
+         this.dialog.precisionSpinBox.value = this.engine.precision;
+         this.dialog.outputFormatComboBox.enabled = true;
          // onItemSelected updates its own control based on its state.
-         this.outputFormatComboBox.onItemSelected( this.engine.outputFormat );
+         this.dialog.outputFormatComboBox.onItemSelected( this.engine.outputFormat );
          // onClick changes internal state of engine plus updates other controls based on this control's state.
-         this.unclippedCheckBox.enabled = true;
-         this.unclippedCheckBox.checked = this.engine.unclipped;
-         this.unclippedCheckBox.onClick( this.engine.unclipped );
+         this.dialog.unclippedCheckBox.enabled = true;
+         this.dialog.unclippedCheckBox.checked = this.engine.unclipped;
+         this.dialog.unclippedCheckBox.onClick( this.engine.unclipped );
          // Enabling done by unclippedCheckBox.onClick.
          // setValue changes state of slider and numeric input.
-         this.clippingLowControl.setValue( this.engine.clippingLow );
+         this.dialog.clippingLowControl.setValue( this.engine.clippingLow );
          // onValueupdated updates other controls based on this control's state.
-         this.clippingLowControl.onValueUpdated( this.engine.clippingLow );
+         this.dialog.clippingLowControl.onValueUpdated( this.engine.clippingLow );
          // Enabling done by unclippedCheckBox.onClick.
          // setValue changes state of slider and numeric input.
-         this.clippingHighControl.setValue( this.engine.clippingHigh );
+         this.dialog.clippingHighControl.setValue( this.engine.clippingHigh );
          // onValueupdated updates other controls based on this control's state.
-         this.clippingHighControl.onValueUpdated( this.engine.clippingHigh );
-         this.filePathCheckBox.enabled = true;
-         this.filePathCheckBox.checked = this.engine.showFilePath;
-         this.fileNameCheckBox.enabled = true;
-         this.fileNameCheckBox.checked = this.engine.showFileName;
-         this.fileFullCheckBox.enabled = true;
-         this.fileFullCheckBox.checked = this.engine.showFileFull;
-         this.imageNumberCheckBox.enabled = true;
-         this.imageNumberCheckBox.checked = this.engine.showImageNumber;
-         this.clippingLowCheckBox.enabled = true;
-         this.clippingLowCheckBox.checked = this.engine.showClippingLow;
-         this.clippingHighCheckBox.enabled = true;
-         this.clippingHighCheckBox.checked = this.engine.showClippingHigh;
-         this.widthCheckBox.enabled = true;
-         this.widthCheckBox.checked = this.engine.showWidth;
-         this.heightCheckBox.enabled = true;
-         this.heightCheckBox.checked = this.engine.showHeight;
-         this.numberOfChannelsCheckBox.enabled = true;
-         this.numberOfChannelsCheckBox.checked = this.engine.showNumberOfChannels;
-         this.countPctCheckBox.enabled = true;
-         this.countPctCheckBox.checked = this.engine.showCountPct;
-         this.countPxCheckBox.enabled = true;
-         this.countPxCheckBox.checked = this.engine.showCountPx;
-         this.meanCheckBox.enabled = true;
-         this.meanCheckBox.checked = this.engine.showMean;
-         this.modulusCheckBox.enabled = true;
-         this.modulusCheckBox.checked = this.engine.showModulus;
-         this.normCheckBox.enabled = true;
-         this.normCheckBox.checked = this.engine.showNorm;
-         this.sumOfSquaresCheckBox.enabled = true;
-         this.sumOfSquaresCheckBox.checked = this.engine.showSumOfSquares;
-         this.meanOfSquaresCheckBox.enabled = true;
-         this.meanOfSquaresCheckBox.checked = this.engine.showMeanOfSquares;
-         this.medianCheckBox.enabled = true;
-         this.medianCheckBox.checked = this.engine.showMedian;
-         this.varianceCheckBox.enabled = true;
-         this.varianceCheckBox.checked = this.engine.showVariance;
-         this.stdDevCheckBox.enabled = true;
-         this.stdDevCheckBox.checked = this.engine.showStdDev;
-         this.avgDevCheckBox.enabled = true;
-         this.avgDevCheckBox.checked = this.engine.showAvgDev;
-         this.madCheckBox.enabled = true;
-         this.madCheckBox.checked = this.engine.showMad;
-         this.bwmvCheckBox.enabled = true;
-         this.bwmvCheckBox.checked = this.engine.showBwmv;
-         this.pbmvCheckBox.enabled = true;
-         this.pbmvCheckBox.checked = this.engine.showPbmv;
-         this.snCheckBox.enabled = true;
-         this.snCheckBox.checked = this.engine.showSn;
-         this.qnCheckBox.enabled = true;
-         this.qnCheckBox.checked = this.engine.showQn;
-         this.minimumCheckBox.enabled = true;
-         this.minimumCheckBox.checked = this.engine.showMinimum;
-         this.maximumCheckBox.enabled = true;
-         this.maximumCheckBox.checked = this.engine.showMaximum;
-         this.minimumPosCheckBox.enabled = true;
-         this.minimumPosCheckBox.checked = this.engine.showMinimumPos;
-         this.maximumPosCheckBox.enabled = true;
-         this.maximumPosCheckBox.checked = this.engine.showMaximumPos;
-         this.noiseEvaluationCheckBox.enabled = true;
-         this.noiseEvaluationCheckBox.checked = this.engine.showNoiseEvaluation;
-         this.selectAllButton.enabled = true;
-         this.selectNoneButton.enabled = true;
+         this.dialog.clippingHighControl.onValueUpdated( this.engine.clippingHigh );
+         this.dialog.filePathCheckBox.enabled = true;
+         this.dialog.filePathCheckBox.checked = this.engine.showFilePath;
+         this.dialog.fileNameCheckBox.enabled = true;
+         this.dialog.fileNameCheckBox.checked = this.engine.showFileName;
+         this.dialog.fileFullCheckBox.enabled = true;
+         this.dialog.fileFullCheckBox.checked = this.engine.showFileFull;
+         this.dialog.imageNumberCheckBox.enabled = true;
+         this.dialog.imageNumberCheckBox.checked = this.engine.showImageNumber;
+         this.dialog.clippingLowCheckBox.enabled = true;
+         this.dialog.clippingLowCheckBox.checked = this.engine.showClippingLow;
+         this.dialog.clippingHighCheckBox.enabled = true;
+         this.dialog.clippingHighCheckBox.checked = this.engine.showClippingHigh;
+         this.dialog.widthCheckBox.enabled = true;
+         this.dialog.widthCheckBox.checked = this.engine.showWidth;
+         this.dialog.heightCheckBox.enabled = true;
+         this.dialog.heightCheckBox.checked = this.engine.showHeight;
+         this.dialog.numberOfChannelsCheckBox.enabled = true;
+         this.dialog.numberOfChannelsCheckBox.checked = this.engine.showNumberOfChannels;
+         this.dialog.countPctCheckBox.enabled = true;
+         this.dialog.countPctCheckBox.checked = this.engine.showCountPct;
+         this.dialog.countPxCheckBox.enabled = true;
+         this.dialog.countPxCheckBox.checked = this.engine.showCountPx;
+         this.dialog.meanCheckBox.enabled = true;
+         this.dialog.meanCheckBox.checked = this.engine.showMean;
+         this.dialog.modulusCheckBox.enabled = true;
+         this.dialog.modulusCheckBox.checked = this.engine.showModulus;
+         this.dialog.normCheckBox.enabled = true;
+         this.dialog.normCheckBox.checked = this.engine.showNorm;
+         this.dialog.sumOfSquaresCheckBox.enabled = true;
+         this.dialog.sumOfSquaresCheckBox.checked = this.engine.showSumOfSquares;
+         this.dialog.meanOfSquaresCheckBox.enabled = true;
+         this.dialog.meanOfSquaresCheckBox.checked = this.engine.showMeanOfSquares;
+         this.dialog.medianCheckBox.enabled = true;
+         this.dialog.medianCheckBox.checked = this.engine.showMedian;
+         this.dialog.varianceCheckBox.enabled = true;
+         this.dialog.varianceCheckBox.checked = this.engine.showVariance;
+         this.dialog.stdDevCheckBox.enabled = true;
+         this.dialog.stdDevCheckBox.checked = this.engine.showStdDev;
+         this.dialog.avgDevCheckBox.enabled = true;
+         this.dialog.avgDevCheckBox.checked = this.engine.showAvgDev;
+         this.dialog.madCheckBox.enabled = true;
+         this.dialog.madCheckBox.checked = this.engine.showMad;
+         this.dialog.bwmvCheckBox.enabled = true;
+         this.dialog.bwmvCheckBox.checked = this.engine.showBwmv;
+         this.dialog.pbmvCheckBox.enabled = true;
+         this.dialog.pbmvCheckBox.checked = this.engine.showPbmv;
+         this.dialog.snCheckBox.enabled = true;
+         this.dialog.snCheckBox.checked = this.engine.showSn;
+         this.dialog.qnCheckBox.enabled = true;
+         this.dialog.qnCheckBox.checked = this.engine.showQn;
+         this.dialog.minimumCheckBox.enabled = true;
+         this.dialog.minimumCheckBox.checked = this.engine.showMinimum;
+         this.dialog.maximumCheckBox.enabled = true;
+         this.dialog.maximumCheckBox.checked = this.engine.showMaximum;
+         this.dialog.minimumPosCheckBox.enabled = true;
+         this.dialog.minimumPosCheckBox.checked = this.engine.showMinimumPos;
+         this.dialog.maximumPosCheckBox.enabled = true;
+         this.dialog.maximumPosCheckBox.checked = this.engine.showMaximumPos;
+         this.dialog.noiseEvaluationCheckBox.enabled = true;
+         this.dialog.noiseEvaluationCheckBox.checked = this.engine.showNoiseEvaluation;
+         this.dialog.selectAllButton.enabled = true;
+         this.dialog.selectNoneButton.enabled = true;
       }
 
       if ( DEBUGGING_MODE_ON )
@@ -468,11 +469,9 @@ function BatchStatisticsDialog( engine )
          console.noteln( "{ BatchStatisticsDialog.processInputImages" );
       }
 
-		this.isProcessing = true;
 		console.show();
       // Handle aborting through dialog's own button.
 		console.abortEnabled = false;
-		this.dialog.updateUI();
       processEvents();
 
       var textFile = null;
@@ -599,8 +598,6 @@ function BatchStatisticsDialog( engine )
 						this.abortRequested = false;
                   console.noteln( "Processing aborted by user." );
                   this.setStatus( "Processing aborted by user." );
-                  this.isProcessing = false;
-                  this.dialog.updateUI();
                   processEvents();
                   if ( DEBUGGING_MODE_ON )
                   {
@@ -670,8 +667,6 @@ function BatchStatisticsDialog( engine )
       // Update status bar and console.
       this.setStatus( "Analysed: " + filesProcessed + "/" + this.inputFiles.length + " Failed: " + filesErrors );
       console.noteln( "Image files analysed: " + filesProcessed + ". Successful: " + (filesProcessed - filesErrors) + ". Failed: " + filesErrors + "." );
-		this.isProcessing = false;
-		this.dialog.updateUI();
       processEvents();
 
       if ( DEBUGGING_MODE_ON )
@@ -758,7 +753,9 @@ function BatchStatisticsDialog( engine )
 			return;
 		}
 
+      this.dialog.filesTreeBox.canUpdate = false;
       this.dialog.filesTreeBox.clear();
+      this.dialog.filesTreeBox.canUpdate = true;
       this.dialog.filesTreeBox.adjustColumnWidthToContents( 0 );
       this.dialog.inputFiles.length = 0;
    };
@@ -772,11 +769,20 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
+      this.dialog.filesTreeBox.canUpdate = false;
       for ( var i = 0; i < this.dialog.filesTreeBox.numberOfChildren; ++i )
       {
          this.dialog.filesTreeBox.child(i).selected = !this.dialog.filesTreeBox.child(i).selected;
       }
+      this.dialog.filesTreeBox.canUpdate = true;
+      this.dialog.filesTreeBox.adjustColumnWidthToContents( 0 );
+
+      this.dialog.isProcessing = false;
    };
 
    // Tree box Remove Selected button.
@@ -788,7 +794,12 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
+      this.dialog.filesTreeBox.canUpdate = false;
       this.dialog.inputFiles.length = 0;
       for ( var i = 0; i < this.dialog.filesTreeBox.numberOfChildren; ++i )
       {
@@ -804,7 +815,10 @@ function BatchStatisticsDialog( engine )
             this.dialog.filesTreeBox.remove( i );
          }
       }
+      this.dialog.filesTreeBox.canUpdate = true;
       this.dialog.filesTreeBox.adjustColumnWidthToContents( 0 );
+      
+      this.dialog.isProcessing = false;
    };
 
    // Sizer for Tree box buttons.
@@ -840,11 +854,17 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.setNumericFormat( item );
       // Update control in case item has been changed by setNumericFormat.
       this.dialog.numericFormatComboBox.currentItem = this.dialog.engine.numericFormat;
       this.dialog.numericNotationCheckBox.enabled = (this.dialog.engine.numericFormat == 0);
+
+      this.dialog.isProcessing = false;
    };
 
    this.numericFormatSizer = new HorizontalSizer;
@@ -875,9 +895,15 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.precision = value;
-   };
+
+      this.dialog.isProcessing = false;
+};
 
    this.precisionSizer = new HorizontalSizer;
    this.precisionSizer.spacing = 4;
@@ -893,8 +919,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.normalizeScale = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Unclipped Check Box.
@@ -906,10 +938,16 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
-
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
+      
       this.dialog.engine.unclipped = checked;
       this.dialog.clippingLowControl.enabled = !checked;
       this.dialog.clippingHighControl.enabled = !checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Clipping Low control.
@@ -921,6 +959,10 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.clippingLow = value;
       if ( value > this.dialog.clippingHighControl.value )
@@ -928,6 +970,8 @@ function BatchStatisticsDialog( engine )
          this.dialog.clippingHighControl.setValue( value );
          this.dialog.engine.clippingHigh = value;
       }
+
+      this.dialog.isProcessing = false;
    }
 
    // Clipping High control.
@@ -939,6 +983,10 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.clippingHigh = value;
       if ( value < this.dialog.clippingLowControl.value )
@@ -946,6 +994,8 @@ function BatchStatisticsDialog( engine )
          this.dialog.clippingLowControl.setValue( value );
          this.dialog.engine.clippingLow = value;
       }
+
+      this.dialog.isProcessing = false;
    }
 
    // Group statistics options.
@@ -987,8 +1037,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showFilePath = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // File Name Check Box.
@@ -1000,8 +1056,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showFileName = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // File Full Check Box.
@@ -1013,8 +1075,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showFileFull = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Image Number Check Box.
@@ -1026,8 +1094,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showImageNumber = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Clipping Low Check Box.
@@ -1039,8 +1113,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showClippingLow = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Clipping High Check Box.
@@ -1052,8 +1132,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showClippingHigh = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Width Check Box.
@@ -1065,8 +1151,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showWidth = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Height Check Box.
@@ -1078,8 +1170,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showHeight = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Number of Channels Check Box.
@@ -1091,8 +1189,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showNumberOfChannels = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Per channel statistics.
@@ -1106,8 +1210,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showCountPct = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show countPx Check Box.
@@ -1119,8 +1229,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showCountPx = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Mean Check Box.
@@ -1132,8 +1248,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showMean = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Modulus Check Box.
@@ -1145,8 +1267,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showModulus = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Norm Check Box.
@@ -1158,8 +1286,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showNorm = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Sum of Squares Check Box.
@@ -1171,8 +1305,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showSumOfSquares = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Mean of Squares Check Box.
@@ -1184,8 +1324,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showMeanOfSquares = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Median Check Box.
@@ -1197,8 +1343,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showMedian = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Variance Check Box.
@@ -1210,8 +1362,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showVariance = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show StdDev Check Box.
@@ -1223,8 +1381,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showStdDev = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show AvgDev Check Box.
@@ -1236,8 +1400,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showAvgDev = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show MAD Check Box.
@@ -1249,8 +1419,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showMad = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Bwmv Check Box.
@@ -1262,8 +1438,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showBwmv = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Pbmv Check Box.
@@ -1275,8 +1457,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showPbmv = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Sn Check Box.
@@ -1288,8 +1476,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showSn = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Qn Check Box.
@@ -1301,8 +1495,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showQn = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Minimum Check Box.
@@ -1314,8 +1514,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showMinimum = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Maximum Check Box.
@@ -1327,8 +1533,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showMaximum = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show MinimumPos Check Box.
@@ -1340,8 +1552,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showMinimumPos = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show MaximumPos Check Box.
@@ -1353,8 +1571,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showMaximumPos = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Show Noise Evaluation Check Box.
@@ -1366,8 +1590,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showNoiseEvaluation = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Select All button
@@ -1379,6 +1609,10 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showFilePath = true;
       this.dialog.engine.showFileName = true;
@@ -1411,6 +1645,8 @@ function BatchStatisticsDialog( engine )
       this.dialog.engine.showMaximumPos = true;
       this.dialog.engine.showNoiseEvaluation = true;
 
+      this.dialog.isProcessing = false;
+
       this.dialog.updateUI();
    };
 
@@ -1423,6 +1659,10 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.showFilePath = false;
       this.dialog.engine.showFileName = false;
@@ -1454,6 +1694,8 @@ function BatchStatisticsDialog( engine )
       this.dialog.engine.showMinimumPos = false;
       this.dialog.engine.showMaximumPos = false;
       this.dialog.engine.showNoiseEvaluation = false;
+
+      this.dialog.isProcessing = false;
 
       this.dialog.updateUI();
    };
@@ -1542,10 +1784,16 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.engine.setOutputFormat( item );
       // Update ontrol in case value has been changed by setOutputFormat.
       this.currentItem = this.dialog.engine.outputFormat;
+
+      this.dialog.isProcessing = false;
    };
 
    this.outputFormatSizer = new HorizontalSizer;
@@ -1562,8 +1810,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.outputToConsole = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // File Output Check Box.
@@ -1575,12 +1829,18 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.outputToFile = checked;
       this.dialog.outputFileEdit.enabled = checked;
       this.dialog.outputFileButton.enabled = checked;
       this.dialog.overwriteExistingCheckBox.enabled = checked;
       this.dialog.appendExistingCheckBox.enabled = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Overwrite Existing Check Box.
@@ -1592,9 +1852,15 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.overwriteExisting = checked;
       this.dialog.appendExistingCheckBox.enabled = !checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Append Existing Check Box.
@@ -1606,8 +1872,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.appendExisting = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    // Include Header Check Box.
@@ -1619,8 +1891,14 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.dialog.includeHeader = checked;
+
+      this.dialog.isProcessing = false;
    };
 
    this.outputOptionsSizer = new HorizontalSizer;
@@ -1652,6 +1930,10 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
      // Show a dialog to select a directory and set a file name for output.
       var outputFileDialog = new SaveFileDialog();
@@ -1713,6 +1995,8 @@ function BatchStatisticsDialog( engine )
       {
          console.noteln( "File name chosen is: " + this.dialog.outputFile );
       }
+
+      this.dialog.isProcessing = false;
    };
 
    this.outputFileSizer = new HorizontalSizer;
@@ -1746,12 +2030,18 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       this.hasFocus = true;
       this.pushed = false;
       this.dialog.engine.exportParameters();
       this.dialog.exportParameters();
       this.dialog.newInstance();
+
+      this.dialog.isProcessing = false;
    };
 
    // Help button.
@@ -1811,11 +2101,17 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+      }
 
       if ( !Dialog.browseScriptDocumentation( "BatchStatistics" ) )
       {
          ( new MessageBox( "<p>Documentation has not been installed.</p>", TITLE + "." + VERSION, StdIcon_Error, StdButton_Ok ) ).execute();
       }
+
+      this.dialog.isProcessing = false;
    };
 
    // OK button.
@@ -1832,8 +2128,16 @@ function BatchStatisticsDialog( engine )
 		{
 			return;
 		}
+      else
+      {
+         this.dialog.isProcessing = true;
+         this.dialog.updateUI();
+      }
 
       this.dialog.processInputImages();
+
+      this.dialog.isProcessing = false;
+      this.dialog.updateUI();
 
       if ( DEBUGGING_MODE_ON )
       {
@@ -1953,4 +2257,4 @@ function BatchStatisticsDialog( engine )
 BatchStatisticsDialog.prototype = new Dialog;
 
 // ----------------------------------------------------------------------------
-// EOF BatchStatistics-GUI.js - Released 2015/09/22 15:42:00 UTC
+// EOF BatchStatistics-GUI.js - Released 2015/11/30 00:00:00 UTC

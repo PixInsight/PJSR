@@ -956,7 +956,7 @@ function MosaicDialog(engine)
    // Tile rotation CW
    this.tile_CW = new ToolButton(this);
    this.tile_CW.toolTip = "Rotate the selected tiles clockwise";
-   this.tile_CW.icon = scriptDir + "/Images/rotateCW.png";
+   this.tile_CW.icon = this.scaledResource(":/icons/picture-rotate-right.png");
    this.tile_CW.setScaledFixedSize(24, 24);
    this.tile_CW.onClick = function ()
    {
@@ -976,8 +976,8 @@ function MosaicDialog(engine)
    };
 
    this.tile_CCW = new ToolButton(this);
-   this.tile_CCW.toolTip = "Rotate the selected tiles counterclockwise";
-   this.tile_CCW.icon = scriptDir + "/Images/rotateCCW.png";
+   this.tile_CCW.toolTip = "Rotate the selected tiles counter-clockwise";
+   this.tile_CCW.icon = this.scaledResource(":/icons/picture-rotate-left.png");
    this.tile_CCW.setScaledFixedSize(24, 24);
    this.tile_CCW.onClick = function ()
    {

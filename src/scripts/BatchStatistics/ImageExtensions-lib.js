@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// ImageExtensions-lib.js - Released 2015/07/22 15:52:00 UTC
+// ImageExtensions-lib.js - Released 2015/11/30 00:00:00 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of BatchStatistics Script version 1.2.1
+// This file is part of BatchStatistics Script version 1.2.2
 //
 // Copyright (C) 2014-2015 Ian Lauwerys. (www.blackwaterskies.co.uk)
 //
@@ -52,6 +52,7 @@
 
 /*
    Changelog:
+   1.2.2: Bug fix release
    1.2.1: Bug fix release
    1.2:   Third (full) release.
    1.1:   Second (full) release.
@@ -167,4 +168,4 @@ else if ( typeof Image.prototype.variance !== "function" )
 }
 
 // ----------------------------------------------------------------------------
-// EOF ImageExtensions-lib.js - Released 2015/09/22 15:52:00 UTC
+// EOF ImageExtensions-lib.js - Released 2015/11/30 00:00:00 UTC

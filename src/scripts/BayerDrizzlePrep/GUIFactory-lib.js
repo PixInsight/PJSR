@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// GUIFactory-lib.js - Released 2015/11/06 00:00:00 UTC
+// GUIFactory-lib.js - Released 2015/11/30 00:00:00 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of CFABayerToRGBBayer Script version 1.0
+// This file is part of BayerDrizzlePrepScript version 1.1
 //
 // Copyright (C) 2014-2015 Ian Lauwerys. (www.blackwaterskies.co.uk)
 //
@@ -52,10 +52,11 @@
 
 /*
    Changelog:
-   1.2.1: Bug fix release
-   1.2:   Third (full) release.
-   1.1:   Second (full) release.
-   1.0b:  First (beta) release.
+   1.1.2: Bug fix release.
+   1.2.1: Bug fix release.
+   1.2  : Third (full) release.
+   1.1  : Second (full) release.
+   1.0b : First (beta) release.
 */
 
 // ========= # defines / includes ==============================================
@@ -357,4 +358,4 @@ function GUIFactory()
 } // class GUIFactory
 
 // ----------------------------------------------------------------------------
-// EOF GUIFactory-lib.js - Released 2015/11/06 00:00:00 UTC
+// EOF GUIFactory-lib.js - Released 2015/11/30 00:00:00 UTC
