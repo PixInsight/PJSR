@@ -771,7 +771,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dbPath_RadioButton.textAlignment = TextAlign_Right|TextAlign_VertCenter;
    this.dbPath_RadioButton.setMinWidth( labelWidth1 );
    this.dbPath_RadioButton.checked = this.solverCfg.catalogMode==0;
-   this.dbPath_RadioButton.toolTip = "Use an locally stored star catalog";
+   this.dbPath_RadioButton.toolTip = "Use a locally stored star catalog";
    this.dbPath_RadioButton.onCheck = function( value )
    {
       this.dialog.dbPath_Edit.enabled = value;
@@ -1584,7 +1584,8 @@ function ImageSolver()
          generator.outputFilePath = STAR_CSV_FILE;
          generator.sensorWidth = templateWidth;
          generator.sensorHeight = templateHeight;
-         generator.executeGlobal();
+         if(!generator.executeGlobal())
+            throw "There was a problem reading the local catalog";
       } else {
          if( !this.catalog )
             this.catalog = __catalogRegister__.GetCatalog(this.solverCfg.catalog);
@@ -2411,6 +2412,7 @@ function ImageSolver()
       var abortableBackup = jsAbortable;
       jsAbortable = true;
       var auxWindow = null;
+      this.error = null;
       try
       {
          console.show();
@@ -2499,12 +2501,14 @@ function ImageSolver()
             } catch (ex)
             {
                console.writeln("Error solving the image: " + ex);
+               this.error = "Error solving the image: " + ex.toString();
                return false;
             }
             if (result == null)
             {
                console.writeln("*** The image could not be solved.");
                console.writeln("This is usually because the initial parameters are too far from the real metadata of the image");
+               this.error = "The image could not be solved";
                return false;
             }
             iterationDegree = result.ref_I_G.polDegree;
