@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainViewController.js - Released 2015/11/26 00:00:00 UTC
+// MainViewController.js - Released 2015/12/04 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.12
+// This file is part of MureDenoise Script Version 1.14
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -1176,7 +1176,9 @@ function MainView(model, controller) {
             "denoising method, defined as the difference between the noisy " +
             "input and the denoised output. Method noise should track " +
             "hypothesis noise statistics, and is strongly signal dependent " +
-            "due to the presence of Poisson noise.</p>",
+            "due to the presence of Poisson noise. Method noise departs " +
+            "from hypothesis noise statistics in areas where image gradient " +
+            "magnitude exceeds the noise level significantly.</p>",
             model.generateMethodNoiseImage,
             function(checked) {
                controller.generateMethodNoiseImageOnCheck(checked);
@@ -1243,26 +1245,24 @@ function MainView(model, controller) {
          "\"risk\", between the denoised output image and the unknown " +
          "noise-free image.</p>" +
 
-         "<p><b>Note</b>: For linear multichannel images, run the " +
-         "monochannel denoiser on each channel separately. For linear one " +
-         "shot color (OSC) images, denoise the color filter array (CFA) " +
-         "channels not the debayered RGB channels.</p>" +
+         "<p><b>Note</b>: For linear multichannel images from monocolor " +
+         "detectors, run the monochannel denoiser on each channel " +
+         "separately. The script does not work properly for images from one " +
+         "shot color (OSC) detectors.</p>" +
 
          "<p><b>Warning</b>: The script is adapted to denoise linear " +
          "monochannel images mainly corrupted by shot noise, read noise, " +
          "and dark current noise which is typically the case for " +
          "astronomical data. The script does not work properly for other " +
-         "noise distributions, for saturated images, for linearly or " +
-         "nonlinearly processed images, for median combinations, or for " +
-         "drizzle combinations.</p>" +
+         "noise distributions, for saturated images, for debayered images, " +
+         "for linearly or nonlinearly processed images, for median " +
+         "combinations, or for drizzle combinations.</p>" +
 
          "<p><b>Warning</b>: Do not combine denoised images. Signal-to-" +
          "noise ratio (SNR) will be enhanced by combining noisy images and " +
          "denoising the result. Combined images must be equally exposed, " +
          "have the same pixel resolution, and be registered by projective " +
-         "transformation with no distortion correction. When denoising " +
-         "combinations, the script is unable to remove correlated noise " +
-         "introduced by the image registration process.</p>" +
+         "transformation with no distortion correction.</p>" +
 
          "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights " +
          "Reserved.<br>" +
@@ -1316,4 +1316,4 @@ function MainView(model, controller) {
 MainView.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF MainViewController.js - Released 2015/11/26 00:00:00 UTC
+// EOF MainViewController.js - Released 2015/12/04 00:00:00 UTC

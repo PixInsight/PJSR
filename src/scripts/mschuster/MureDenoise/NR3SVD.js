@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// NR3SVD.js - Released 2015/11/26 00:00:00 UTC
+// NR3SVD.js - Released 2015/12/04 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.12
+// This file is part of MureDenoise Script Version 1.14
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -450,4 +450,4 @@ function NR3SVD(a) {
 };
 
 // ****************************************************************************
-// EOF NR3SVD.js - Released 2015/11/26 00:00:00 UTC
+// EOF NR3SVD.js - Released 2015/12/04 00:00:00 UTC

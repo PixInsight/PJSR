@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2015/11/26 00:00:00 UTC
+// MainModel.js - Released 2015/12/04 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.12
+// This file is part of MureDenoise Script Version 1.14
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -94,15 +94,6 @@ function MainModel() {
       0.835437     // Lanczos-4
    ];
 
-   // Interpolation method covariance bases.
-   this.imageInterpolationMethodCovarianceBases = [
-      1.0, // Nearest Neighbor
-      1.0, // Bilinear
-      1.0, // Bicubic Spline
-      1.0, // Lanczos-3
-      1.0  // Lanczos-4
-   ];
-
    // Base variance scaling function.
    this.baseVarianceScale = function() {
       return this.denoiseVarianceScale / this.imageCombinationCount;
@@ -116,18 +107,6 @@ function MainModel() {
       var n = this.imageCombinationCount;
 
       return (1 + (n - 1) * r) / n;
-   };
-
-   // Refinement covariance scaling function.
-   this.refinementCovarianceScale = function(level) {
-      var s = this.baseCovarianceScale();
-      var e = this.imageInterpolationMethodCovarianceBases[
-         this.imageInterpolationMethod
-      ];
-      var a = Math.pow(e, level) - (1 - s);
-      var b = Math.pow(e, level) - e * (1 - s);
-
-      return a / b;
    };
 
    // Interpolation method of the combination.
@@ -412,4 +391,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2015/11/26 00:00:00 UTC
+// EOF MainModel.js - Released 2015/12/04 00:00:00 UTC
