@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// benchmark.js - Released 2015/07/22 17:01:02 UTC
+// benchmark.js - Released 2015/10/12 20:16:23 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Benchmark Script version 1.02
+// This file is part of PixInsight Benchmark Script version 1.03
 //
 // Copyright (C) 2014-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 // Written by Juan Conejero, PTeam.
@@ -62,7 +62,7 @@
 #include <pjsr/StdIcon.jsh>
 #include <pjsr/TextAlign.jsh>
 
-#define VERSION "1.02"
+#define VERSION "1.03"
 #define TITLE   "PixInsight Benchmark"
 
 if ( coreVersionBuild < 1157 )
@@ -702,6 +702,7 @@ function Benchmark()
                this.progress.show();
             }
             let download = new BenchmarkFileDownload( localPath, this.progress );
+            download.setSSL( this.secureConnections );
             download.setURL( remoteURL );
             download.download();
             download.flush();
@@ -2071,7 +2072,7 @@ function BenchmarkProgressDialog()
    this.setText = function( text )
    {
       this.info_Label.text = text;
-      processEvents( true/*exhaustive*/ );
+      processEvents();
    };
 
    this.setValue = function( value )
@@ -2082,7 +2083,7 @@ function BenchmarkProgressDialog()
       else
          this.progress.value++;
       this.progress.update();
-      processEvents( true/*exhaustive*/ );
+      processEvents();
    };
 
    this.increment = function()
@@ -2199,4 +2200,4 @@ function main()
 main();
 
 // ----------------------------------------------------------------------------
-// EOF benchmark.js - Released 2015/07/22 17:01:02 UTC
+// EOF benchmark.js - Released 2015/10/12 20:16:23 UTC

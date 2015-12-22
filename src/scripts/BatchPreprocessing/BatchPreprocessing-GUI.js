@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-GUI.js - Released 2015/07/22 16:32:44 UTC
+// BatchPreprocessing-GUI.js - Released 2015/10/30 18:51:47 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.41
+// This file is part of Batch Preprocessing Script version 1.42
 //
 // Copyright (c) 2012 Kai Wiechen
 // Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
@@ -1305,17 +1305,19 @@ function FileControl( parent, imageType )
       this.darkOptimizationThresholdControl.label.text = "Optimization threshold:";
       this.darkOptimizationThresholdControl.label.minWidth = this.dialog.labelWidth1
                                           + this.dialog.logicalPixelsToPhysical( 6 ); // + integration control margin
-      this.darkOptimizationThresholdControl.setRange( 0, 0.5 );
-      this.darkOptimizationThresholdControl.slider.setRange( 0, 250 );
+      this.darkOptimizationThresholdControl.setRange( 0, 10 );
+      this.darkOptimizationThresholdControl.slider.setRange( 0, 200 );
       //this.darkOptimizationThresholdControl.slider.scaledMinWidth = 200;
-      this.darkOptimizationThresholdControl.setPrecision( 5 );
-      this.darkOptimizationThresholdControl.toolTip = "<p>Lower bound for the subset of dark optimization pixels. " +
-         "Set to zero (the default value) to optimize for the whole master dark frame. Set to a value greater than " +
-         "zero to restrict dark frame optimization to pixels with higher SNR. This option can be useful to improve " +
-         "dark optimization and correction of hot pixels with relatively poor master bias and dark frames.</p>";
+      this.darkOptimizationThresholdControl.setPrecision( 4 );
+      this.darkOptimizationThresholdControl.toolTip = "<p>Lower bound for the set of dark optimization pixels, " +
+         "measured in sigma units from the median.</p>" +
+         "<p>This parameter defines the set of dark frame pixels that will be used to compute dark optimization " +
+         "factors adaptively. By restricting this set to relatively bright pixels, the optimization process can " +
+         "be more robust to readout noise present in the master bias and dark frames. Increase this parameter to " +
+         "remove more dark pixels from the optimization set.</p>";
       this.darkOptimizationThresholdControl.onValueUpdated = function( value )
       {
-         engine.darkOptimizationThreshold = value;
+         engine.darkOptimizationLow = value;
       };
 
       this.rightPanelSizer.add( this.darkOptimizationThresholdControl );
@@ -2185,7 +2187,7 @@ function StackDialog()
    this.optionsSizer.add( this.optionsSizer1 );
    this.optionsSizer.add( this.optionsSizer2 );
 
-   this.optionsControl = new ParametersControl( "Options", this );
+   this.optionsControl = new ParametersControl( "Global Options", this );
    this.optionsControl.add( this.optionsSizer );
 
    //
@@ -2353,7 +2355,7 @@ StackDialog.prototype.updateControls = function()
          page.overscanControl.updateControls();
          break;
       case ImageType.DARK:
-         page.darkOptimizationThresholdControl.setValue( engine.darkOptimizationThreshold );
+         page.darkOptimizationThresholdControl.setValue( engine.darkOptimizationLow );
          page.darkOptimizationThresholdControl.enabled = engine.optimizeDarks;
          page.darkOptimizationWindowSpinBox.value = engine.darkOptimizationWindow;
          page.darkOptimizationWindowLabel.enabled = engine.optimizeDarks;
@@ -2491,4 +2493,4 @@ StackDialog.prototype.refreshTreeBoxes = function()
 };
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-GUI.js - Released 2015/07/22 16:32:44 UTC
+// EOF BatchPreprocessing-GUI.js - Released 2015/10/30 18:51:47 UTC

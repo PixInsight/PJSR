@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenMSVCProjects.js - Released 2015/10/07 15:20:17 UTC
+// MakGenMSVCProjects.js - Released 2015/11/26 08:53:10 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.96
+// This file is part of PixInsight Makefile Generator Script version 1.100
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
@@ -127,4 +127,4 @@ function MSVCxxHeader( f, F, P, vcVersion )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenMSVCProjects.js - Released 2015/10/07 15:20:17 UTC
+// EOF MakGenMSVCProjects.js - Released 2015/11/26 08:53:10 UTC

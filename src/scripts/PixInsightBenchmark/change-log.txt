@@ -3,6 +3,11 @@ PixInsight Benchmark Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2015.10.12 - v1.03
+
+- Fixed a bug where secure network connections were failing in Core 1.8.4.1185.
+
+-------------------------------------------------------------------------------
 2015.07.22 - v1.02
 
 - Use the new ElapsedTime PJSR object for accurate time interval measurements.

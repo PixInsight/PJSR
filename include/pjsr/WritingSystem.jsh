@@ -4,7 +4,7 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/TransparencyMode.jsh - Released 2015/11/09 15:21:11 UTC
+// pjsr/WritingSystem.jsh - Released 2015/11/09 15:21:11 UTC
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
@@ -50,18 +50,45 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // ----------------------------------------------------------------------------
 
-#ifndef __PJSR_TransparencyMode_jsh
-#define __PJSR_TransparencyMode_jsh
+#ifndef __PJSR_WritingSystem_jsh
+#define __PJSR_WritingSystem_jsh
 
 /*
- * Transparency rendering modes
+ * Writing systems recognized by Font.families()
  */
-#define TransparencyMode_Hide             0  // Don't show transparencies (ignore alpha channel)
-#define TransparencyMode_BackgroundBrush  1  // Use the transparency background brush
-#define TransparencyMode_Color            2  // Use an opaque background color
-#define TransparencyMode_Default          TransparencyMode_BackgroundBrush
+#define WritingSystem_Any                  0
+#define WritingSystem_Latin                1
+#define WritingSystem_Greek                2
+#define WritingSystem_Cyrillic             3
+#define WritingSystem_Armenian             4
+#define WritingSystem_Hebrew               5
+#define WritingSystem_Arabic               6
+#define WritingSystem_Syriac               7
+#define WritingSystem_Thaana               8
+#define WritingSystem_Devanagari           9
+#define WritingSystem_Bengali             10
+#define WritingSystem_Gurmukhi            11
+#define WritingSystem_Gujarati            12
+#define WritingSystem_Oriya               13
+#define WritingSystem_Tamil               14
+#define WritingSystem_Telugu              15
+#define WritingSystem_Kannada             16
+#define WritingSystem_Malayalam           17
+#define WritingSystem_Sinhala             18
+#define WritingSystem_Thai                19
+#define WritingSystem_Lao                 20
+#define WritingSystem_Tibetan             21
+#define WritingSystem_Myanmar             22
+#define WritingSystem_Georgian            23
+#define WritingSystem_Khmer               24
+#define WritingSystem_SimplifiedChinese   25
+#define WritingSystem_TraditionalChinese  26
+#define WritingSystem_Japanese            27
+#define WritingSystem_Korean              28
+#define WritingSystem_Vietnamese          29
+#define WritingSystem_Symbol              30
 
-#endif   // __PJSR_TransparencyMode_jsh
+#endif   // __PJSR_WritingSystem_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/TransparencyMode.jsh - Released 2015/11/09 15:21:11 UTC
+// EOF pjsr/WritingSystem.jsh - Released 2015/11/09 15:21:11 UTC

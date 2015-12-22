@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGlobal.js - Released 2015/10/07 15:20:17 UTC
+// MakGenGlobal.js - Released 2015/11/26 08:53:10 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.96
+// This file is part of PixInsight Makefile Generator Script version 1.100
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
@@ -58,7 +58,7 @@
  * Global variables and definitions.
  */
 
-#define VERSION "1.96"
+#define VERSION "1.100"
 #define TITLE   "Makefile Generator"
 
 /*
@@ -150,4 +150,4 @@ var imageFileExtensions =
 #define OPTIMIZATION_DEFAULT_STR "3"
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGlobal.js - Released 2015/10/07 15:20:17 UTC
+// EOF MakGenGlobal.js - Released 2015/11/26 08:53:10 UTC

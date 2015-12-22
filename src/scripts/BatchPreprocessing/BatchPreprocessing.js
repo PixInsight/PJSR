@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing.js - Released 2015/07/22 16:32:44 UTC
+// BatchPreprocessing.js - Released 2015/10/30 18:51:47 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.41
+// This file is part of Batch Preprocessing Script version 1.42
 //
 // Copyright (c) 2012 Kai Wiechen
 // Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
@@ -52,8 +52,8 @@
 #feature-info  A script for calibration and alignment of light frames.<br/>\
                Original script written by Kai Wiechen (c) 2012
 
-#iflt __PI_BUILD__ 1015
-#error This script requires PixInsight 1.8.0 RC7 or higher.
+#iflt __PI_BUILD__ 1187
+#error This script requires PixInsight 1.8.4.1187 or higher.
 #endif
 
 #include <pjsr/Sizer.jsh>
@@ -77,21 +77,11 @@ function main()
             if ( !engine.showIntegrationWarning() )
                return;
 
-      function elapsedTime( t0 )
-      {
-         var ss = ((new Date).getTime() - t0.getTime())/1000;
-         var mm = ss/60;
-         ss = 60*Math.frac( mm );
-         var hh = mm/60;
-         mm = 60*Math.frac( hh );
-         return format( "%.0f:%02.0f:%02.2f", Math.trunc( hh ), Math.trunc( mm ), ss );
-      }
-
       try
       {
          console.show();
 
-         var t0 = new Date;
+         var T = new ElapsedTime;
 
          if ( !engine.useAsMaster[ImageType.BIAS] )
             engine.doBias();
@@ -102,7 +92,7 @@ function main()
 
          engine.doLight();
 
-         console.writeln( "<end><cbr><br>* Batch Preprocessing Script: ", elapsedTime( t0 ) );
+         console.writeln( "<end><cbr><br>* BatchPreprocessing script: ", ElapsedTime.toString( T.value ) );
 
          console.flush();
          console.hide();
@@ -150,4 +140,4 @@ function main()
 main();
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing.js - Released 2015/07/22 16:32:44 UTC
+// EOF BatchPreprocessing.js - Released 2015/10/30 18:51:47 UTC

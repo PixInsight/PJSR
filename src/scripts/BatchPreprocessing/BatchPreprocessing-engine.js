@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-engine.js - Released 2015/07/22 16:32:44 UTC
+// BatchPreprocessing-engine.js - Released 2015/10/30 18:51:47 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.41
+// This file is part of Batch Preprocessing Script version 1.42
 //
 // Copyright (c) 2012 Kai Wiechen
 // Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
@@ -257,21 +257,22 @@ function StackEngine()
    this.frameGroups = new Array;
 
    // General options
-   this.outputSuffix = ".xisf";
-   this.outputDirectory = "";
-   this.cfaImages = false;
-   this.upBottomFITS = true;
-   this.exportCalibrationFiles = true;
-   this.generateRejectionMaps = true;
+   this.outputSuffix = DEFAULT_OUTPUT_SUFFIX;
+   this.outputDirectory = DEFAULT_OUTPUT_DIRECTORY;
+   this.cfaImages = DEFAULT_CFA_IMAGES;
+   this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
+   this.exportCalibrationFiles = DEFAULT_EXPORT_CALIBRATION_FILES;
+   this.generateRejectionMaps = DEFAULT_GENERATE_REJECTION_MAPS;
    this.useAsMaster = new Array( 3 );
 
    // Calibration parameters
-   this.optimizeDarks = true;
-   this.darkOptimizationThreshold = 0;
-   this.darkOptimizationWindow = 1024;
-   this.darkExposureTolerance = 10; // in seconds
+   this.optimizeDarks = DEFAULT_OPTIMIZE_DARKS;
+   this.darkOptimizationThreshold = 0; // ### deprecated - retained for compatibility
+   this.darkOptimizationLow = DEFAULT_DARK_OPTIMIZATION_LOW; // in sigma units from the central value
+   this.darkOptimizationWindow = DEFAULT_DARK_OPTIMIZATION_WINDOW;
+   this.darkExposureTolerance = DEFAULT_DARK_EXPOSURE_TOLERANCE; // in seconds
    this.overscan = new Overscan;
-   this.evaluateNoise = true;
+   this.evaluateNoise = DEFAULT_EVALUATE_NOISE;
 
    // Image integration parameters
    this.combination = new Array( 4 );
@@ -286,27 +287,27 @@ function StackEngine()
    this.linearFitHigh = new Array( 4 );
 
    // Cosmetic correction
-   this.cosmeticCorrection = false;
-   this.cosmeticCorrectionTemplateId = ""; // id of a CC instance
+   this.cosmeticCorrection = DEFAULT_COSMETIC_CORRECTION;
+   this.cosmeticCorrectionTemplateId = DEFAULT_COSMETIC_CORRECTION_TEMPLATE; // id of a CC instance
 
-   this.calibrateOnly = false; // skip the registration and integration tasks
-   this.generateDrizzleData = false; // generate .drz files in the registration task
-   this.bayerDrizzle = false; // apply drizzle to CFA Bayer data instead of deBayered images
+   this.calibrateOnly = DEFAULT_CALIBRATE_ONLY; // skip the registration and integration tasks
+   this.generateDrizzleData = DEFAULT_GENERATE_DRIZZLE_DATA; // generate .drz files in the registration task
+   this.bayerDrizzle = DEFAULT_BAYER_DRIZZLE; // apply drizzle to CFA Bayer data instead of deBayered images
 
    // Debayering options (only when cfaImages=true)
-   this.bayerPattern = Debayer.prototype.RGGB;
-   this.debayerMethod = Debayer.prototype.VNG;
+   this.bayerPattern = DEFAULT_CFA_PATTERN;
+   this.debayerMethod = DEFAULT_DEBAYER_METHOD;
 
    // Registration parameters
-   this.pixelInterpolation = StarAlignment.prototype.Auto;
-   this.clampingThreshold = 0.3;
-   this.maxStars = 500;
-   this.noiseReductionFilterRadius = 0;
-   this.useTriangleSimilarity = true;
+   this.pixelInterpolation = DEFAULT_SA_PIXEL_INTERPOLATION;
+   this.clampingThreshold = DEFAULT_SA_CLAMPING_THRESHOLD;
+   this.maxStars = DEFAULT_SA_MAX_STARS;
+   this.noiseReductionFilterRadius = DEFAULT_SA_NOISE_REDUCTION;
+   this.useTriangleSimilarity = DEFAULT_SA_USE_TRIANGLE_SIMILARITY;
    this.referenceImage = "";   // registration reference image / CSV star list
 
    // Light integration parameters
-   this.integrate = true;
+   this.integrate = DEFAULT_INTEGRATE;
 }
 
 StackEngine.prototype = new Object;
@@ -975,15 +976,15 @@ StackEngine.prototype.doFlat = function()
 StackEngine.prototype.doLight = function()
 {
    /*
-    * ### NB: If the registration reference image belongs to one of the light
-    *         frame lists (e.g., because it was selected by double-clicking on
-    *         a tree box element):
+    * ### N.B. If the registration reference image belongs to one of the light
+    *          frame lists (e.g., because it was selected by double-clicking
+    *          on a tree box element):
     *
-    *         1. Replace it with its calibrated/cosmetized/debayered
-    *            counterpart. See also doCalibrate().
+    *          1. Replace it with its calibrated/cosmetized/debayered
+    *             counterpart. See also doCalibrate().
     *
-    *         2. Make sure that we calibrate/cosmetize/debayer the group that
-    *            contains the reference image in first place.
+    *          2. Make sure that we calibrate/cosmetize/debayer the group that
+    *             contains the reference image in first place.
     */
 
    this.actualReferenceImage = this.referenceImage;
@@ -1578,7 +1579,8 @@ StackEngine.prototype.doCalibrate = function( frameGroup )
    IC.calibrateFlat             = false;  // assume we have calibrated each individual flat frame
    IC.optimizeDarks             = this.optimizeDarks;
    IC.darkCFADetectionMode      = this.cfaImages ? ImageCalibration.prototype.ForceCFA : ImageCalibration.prototype.DetectCFA;
-   IC.darkOptimizationThreshold = this.darkOptimizationThreshold;
+   IC.darkOptimizationThreshold = this.darkOptimizationThreshold; // ### deprecated - retained for compatibility
+   IC.darkOptimizationLow       = this.darkOptimizationLow;
    IC.darkOptimizationWindow    = this.darkOptimizationWindow;
    IC.outputExtension           = this.outputSuffix;
    IC.outputPrefix              = "";
@@ -1718,6 +1720,8 @@ StackEngine.prototype.loadSettings = function()
       this.optimizeDarks = o;
    if ( (o = load( "darkOptimizationThreshold", DataType_Float )) != null )
       this.darkOptimizationThreshold = o;
+   if ( (o = load( "darkOptimizationLow",       DataType_Float )) != null )
+      this.darkOptimizationLow = o;
    if ( (o = load( "darkOptimizationWindow",    DataType_Int32 )) != null )
       this.darkOptimizationWindow = o;
    if ( (o = load( "darkExposureTolerance",     DataType_Float )) != null )
@@ -1822,7 +1826,7 @@ StackEngine.prototype.saveSettings = function()
    save( "exportCalibrationFiles",    DataType_Boolean, this.exportCalibrationFiles );
    save( "generateRejectionMaps",     DataType_Boolean, this.generateRejectionMaps );
    save( "optimizeDarks",             DataType_Boolean, this.optimizeDarks );
-   save( "darkOptimizationThreshold", DataType_Float,   this.darkOptimizationThreshold );
+   save( "darkOptimizationLow",       DataType_Float,   this.darkOptimizationLow );
    save( "darkOptimizationWindow",    DataType_Int32,   this.darkOptimizationWindow );
    save( "darkExposureTolerance",     DataType_Float,   this.darkExposureTolerance );
    save( "evaluateNoise",             DataType_Boolean, this.evaluateNoise );
@@ -1874,19 +1878,20 @@ StackEngine.prototype.saveSettings = function()
 
 StackEngine.prototype.setDefaultParameters = function()
 {
-   this.outputSuffix = ".xisf";
-   this.outputDirectory = "";
-   this.cfaImages = false;
-   this.upBottomFITS = true;
-   this.exportCalibrationFiles = true;
-   this.generateRejectionMaps = true;
+   this.outputSuffix = DEFAULT_OUTPUT_SUFFIX;
+   this.outputDirectory = DEFAULT_OUTPUT_DIRECTORY;
+   this.cfaImages = DEFAULT_CFA_IMAGES;
+   this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
+   this.exportCalibrationFiles = DEFAULT_EXPORT_CALIBRATION_FILES;
+   this.generateRejectionMaps = DEFAULT_GENERATE_REJECTION_MAPS;
 
-   this.optimizeDarks = true;
+   this.optimizeDarks = DEFAULT_OPTIMIZE_DARKS;
    this.darkOptimizationThreshold = 0;
-   this.darkOptimizationWindow = 1024;
-   this.darkExposureTolerance = 10;
+   this.darkOptimizationLow = DEFAULT_DARK_OPTIMIZATION_LOW;
+   this.darkOptimizationWindow = DEFAULT_DARK_OPTIMIZATION_WINDOW;
+   this.darkExposureTolerance = DEFAULT_DARK_EXPOSURE_TOLERANCE;
 
-   this.evaluateNoise = true;
+   this.evaluateNoise = DEFAULT_EVALUATE_NOISE;
 
    this.overscan.enabled = false;
    for ( var i = 0; i < 4; ++i )
@@ -1912,24 +1917,24 @@ StackEngine.prototype.setDefaultParameters = function()
       this.linearFitHigh[i] = 3.5;
    }
 
-   this.calibrateOnly = false;
-   this.generateDrizzleData = false;
-   this.bayerDrizzle = false;
+   this.calibrateOnly = DEFAULT_CALIBRATE_ONLY;
+   this.generateDrizzleData = DEFAULT_GENERATE_DRIZZLE_DATA;
+   this.bayerDrizzle = DEFAULT_BAYER_DRIZZLE;
 
-   this.cosmeticCorrection = false;
-   this.cosmeticCorrectionTemplateId = "";
+   this.cosmeticCorrection = DEFAULT_COSMETIC_CORRECTION;
+   this.cosmeticCorrectionTemplateId = DEFAULT_COSMETIC_CORRECTION_TEMPLATE;
 
-   this.bayerPattern = Debayer.prototype.RGGB;
-   this.debayerMethod = Debayer.prototype.VNG;
+   this.bayerPattern = DEFAULT_CFA_PATTERN;
+   this.debayerMethod = DEFAULT_DEBAYER_METHOD;
 
-   this.pixelInterpolation = StarAlignment.prototype.Auto;
-   this.clampingThreshold = 0.3;
-   this.maxStars = 500;
-   this.noiseReductionFilterRadius = 0;
-   this.useTriangleSimilarity = true;
+   this.pixelInterpolation = DEFAULT_SA_PIXEL_INTERPOLATION;
+   this.clampingThreshold = DEFAULT_SA_CLAMPING_THRESHOLD;
+   this.maxStars = DEFAULT_SA_MAX_STARS;
+   this.noiseReductionFilterRadius = DEFAULT_SA_NOISE_REDUCTION;
+   this.useTriangleSimilarity = DEFAULT_SA_USE_TRIANGLE_SIMILARITY;
    this.referenceImage = "";
 
-   this.integrate = true;
+   this.integrate = DEFAULT_INTEGRATE;
 };
 
 StackEngine.prototype.importParameters = function()
@@ -1962,6 +1967,9 @@ StackEngine.prototype.importParameters = function()
 
    if ( Parameters.has( "darkOptimizationThreshold" ) )
       this.darkOptimizationThreshold = Parameters.getReal( "darkOptimizationThreshold" );
+
+   if ( Parameters.has( "darkOptimizationLow" ) )
+      this.darkOptimizationLow = Parameters.getReal( "darkOptimizationLow" );
 
    if ( Parameters.has( "darkOptimizationWindow" ) )
       this.darkOptimizationWindow = Parameters.getInteger( "darkOptimizationWindow" );
@@ -2151,7 +2159,7 @@ StackEngine.prototype.exportParameters = function()
    Parameters.set( "generateRejectionMaps",     this.generateRejectionMaps );
 
    Parameters.set( "optimizeDarks",             this.optimizeDarks );
-   Parameters.set( "darkOptimizationThreshold", this.darkOptimizationThreshold );
+   Parameters.set( "darkOptimizationLow",       this.darkOptimizationLow );
    Parameters.set( "darkOptimizationWindow",    this.darkOptimizationWindow );
    Parameters.set( "darkExposureTolerance",     this.darkExposureTolerance );
 
@@ -2260,6 +2268,16 @@ StackEngine.prototype.runDiagnostics = function()
          try
          {
             var F = new FileFormat( this.outputSuffix, false/*toRead*/, true/*toWrite*/ );
+            if ( F == null )
+               throw '';
+            if ( !F.canStoreFloat )
+               this.error( "The " + F.name + " format cannot store 32-bit floating point image data." );
+            if ( !F.canStoreKeywords )
+               this.warning( "The " + F.name + " format does not support keywords." );
+            if ( !F.canStoreProperties || !F.supportsViewProperties )
+               this.warning( "The " + F.name + " format does not support image properties." );
+            if ( F.isDeprecated )
+               this.warning( "Using a deprecated output file format: " + F.name );
          }
          catch ( x )
          {
@@ -2415,4 +2433,4 @@ StackEngine.prototype.getPath = function( filePath, imageType )
 };
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-engine.js - Released 2015/07/22 16:32:44 UTC
+// EOF BatchPreprocessing-engine.js - Released 2015/10/30 18:51:47 UTC

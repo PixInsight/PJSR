@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGCCMakefiles.js - Released 2015/10/07 15:20:17 UTC
+// MakGenGCCMakefiles.js - Released 2015/11/26 08:53:10 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.96
+// This file is part of PixInsight Makefile Generator Script version 1.100
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
@@ -312,6 +312,10 @@ function GnuCxx( F, P )
                       " @executable_path/../Frameworks/liblcms-pxi.dylib " +
                       appBundle + "/Contents/MacOS/PixInsight" );
          f.outTextLn( "\tinstall_name_tool" +
+                      " -change @executable_path/libzlib-pxi.dylib" +
+                      " @executable_path/../Frameworks/libzlib-pxi.dylib " +
+                      appBundle + "/Contents/MacOS/PixInsight" );
+         f.outTextLn( "\tinstall_name_tool" +
                       " -change @executable_path/libmozjs-24.dylib" +
                       " @executable_path/../Frameworks/libmozjs-24.dylib " +
                       appBundle + "/Contents/MacOS/PixInsight" );
@@ -322,90 +326,34 @@ function GnuCxx( F, P )
          f.outTextLn( "\trm -rf " + appBundle + "/Contents/Frameworks/Qt*" );
          f.outTextLn( "\trm -rf " + appBundle + "/Contents/PlugIns" );
          f.outTextLn( "\trm -f " + appBundle + "/Contents/Resources/qt.conf" );
-         f.outTextLn( "\texport DYLD_FRAMEWORK_PATH=$QTDIR/qtbase/lib" );
+         f.outTextLn( "\texport DYLD_FRAMEWORK_PATH=$(QTDIR)/qtbase/lib" );
          f.outTextLn( "\tmacdeployqt " + appBundle );
 
          /*
-          * Fix macdeployqt bug on OS X >= 10.9.5. See:
-          *    http://stackoverflow.com/questions/19637131/sign-a-framework-for-osx-10-9
-          */
-         /*
-          * This bug has been fixed as of Qt 5.4.1.
-          *
-      	f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtCore.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtCore.framework/Resources" );
-	      f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtGui.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtGui.framework/Resources" );
-	      f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtNetwork.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtNetwork.framework/Resources" );
-      	f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtSvg.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtSvg.framework/Resources" );
-      	f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtWebKit.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtWebKit.framework/Resources" );
-      	f.outTextLn( "\tcp " + P.qtDirectory() + "/lib/QtXml.framework/Contents/Info.plist " + appBundle + "/Contents/Frameworks/QtXml.framework/Resources" );
-          */
-
-         /*
-          * Fix Qt framework distribution on OS X >= 10.9.5. See:
-          *    http://blog.qt.digia.com/blog/2014/10/29/an-update-on-os-x-code-signing/
-          */
-         /*
-          * This bug has been fixed as of Qt 5.4.1.
-          *
-         f.outTextLn( "\tpython " + "$(PCLSRCDIR)/core/scripts/macfixqt.py $(QTDIR64) " + appBundle );
-          */
-
-         /*
-          * Update core application bundle creation time.
-          * ### NB: This must be done *before* signing, as file times are part
-          * of the code signature.
+          * Update creation time for the core application bundle.
+          * ### N.B.: This must be done *before* signing, as file times are
+          * part of the code signature.
           */
          f.outTextLn( "\ttouch " + appBundle );
 
          /*
-          * _Unfortunately_, since OS X 10.9.5, the --resource-rules argument
-          * to codesign is no longer supported. From now on every file inside
-          * an application bundle has to be signed without exceptions---even
-          * plain text files have to be part of signed code. The --deep
-          * argument works fine by doing this recursively.
+          * Since OS X 10.9.5, the --resource-rules argument to codesign is no
+          * longer supported. From now on every file inside an application
+          * bundle has to be signed without exceptions---even plain text files
+          * have to be part of signed code. Fortunately, the --deep argument
+          * works fine to simplify things by doing this recursively.
           */
          f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + appBundle );
-
-         /*
-          * Signing commands for OS X < 10.9.5
-          *
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtCore.framework/Versions/4/QtCore" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtGui.framework/Versions/4/QtGui" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtNetwork.framework/Versions/4/QtNetwork" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtSvg.framework/Versions/4/QtSvg" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtWebKit.framework/Versions/4/QtWebKit" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/Frameworks/QtXml.framework/Versions/4/QtXml" );
-
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/bearer/libqcorewlanbearer.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/bearer/libqgenericbearer.dylib" );
-
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqcncodecs.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqjpcodecs.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqkrcodecs.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/codecs/libqtwcodecs.dylib" );
-
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/iconengines/libqsvgicon.dylib" );
-
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqgif.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqico.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqjpeg.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqmng.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqsvg.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqtga.dylib" );
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp " + appBundle + "/Contents/PlugIns/imageformats/libqtiff.dylib" );
-
-         f.outTextLn( "\tcodesign -s pleiades -f -v --timestamp --resource-rules " + appDir + "/CoreSignRules.plist " + appBundle );
-          */
       }
       else if ( P.isCoreAux() )
       {
-         f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/qtbase/lib/QtCore.framework/Versions/5/QtCore" +
+         f.outTextLn( "\tinstall_name_tool -change QtCore.framework/Versions/5/QtCore" +
                       " @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" +
                       " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
-         f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/qtbase/lib/QtWidgets.framework/Versions/5/QtWidgets" +
+         f.outTextLn( "\tinstall_name_tool -change QtWidgets.framework/Versions/5/QtWidgets" +
                       " @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets" +
                       " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
-         f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/qtbase/lib/QtGui.framework/Versions/5/QtGui" +
+         f.outTextLn( "\tinstall_name_tool -change QtGui.framework/Versions/5/QtGui" +
                       " @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui" +
                       " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
       }
@@ -413,13 +361,19 @@ function GnuCxx( F, P )
       {
          for ( let i = 0; i < P.extraLibraries.length; ++i )
             if ( P.extraLibraries[i].startsWith( "Qt" ) )
-               f.outTextLn( "\tinstall_name_tool -change " + P.qtDirectory() + "/qtbase/lib/" + P.extraLibraries[i] + ".framework/Versions/5/" + P.extraLibraries[i] +
-                            " " + "@executable_path/../Frameworks/" + P.extraLibraries[i] + ".framework/Versions/5/" + P.extraLibraries[i] +
+            {
+               // A Foo Qt framework is named QtFoo *instead* of Qt5Foo.
+               let qtFramework = P.extraLibraries[i].replace( "Qt5", "Qt" );
+               f.outTextLn( "\tinstall_name_tool -change " + qtFramework + ".framework/Versions/5/" + qtFramework +
+                            " " + "@executable_path/../Frameworks/" + qtFramework + ".framework/Versions/5/" + qtFramework +
                             " " + P.destinationDirectory() + "/" + P.mainTarget() );
+            }
             else
+            {
                f.outTextLn( "\tinstall_name_tool -change @executable_path/lib" + P.extraLibraries[i] + ".dylib" +
                             " " + "@loader_path/lib" + P.extraLibraries[i] + ".dylib" +
                             " " + P.destinationDirectory() + "/" + P.mainTarget() );
+            }
          /*
           * In official distributions, all modules and executables are
           * digitally signed on OS X and Windows platforms.
@@ -495,4 +449,4 @@ function GnuCxx( F, P )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGCCMakefiles.js - Released 2015/10/07 15:20:17 UTC
+// EOF MakGenGCCMakefiles.js - Released 2015/11/26 08:53:10 UTC
