@@ -4,7 +4,7 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/CryptographicHash.jsh - Released 2015/07/23 10:07:13 UTC
+// pjsr/CryptographicHash.jsh - Released 2015/11/09 15:21:11 UTC
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
@@ -54,11 +54,13 @@
 #define __PJSR_CryptographicHash_jsh
 
 /*
- * Implemented cryptographic hashing algorithms
+ * Cryptographic hashing algorithms
  */
-#define CryptographicHash_SHA1      1     // SHA-1
 #define CryptographicHash_MD5       5     // MD5
+#define CryptographicHash_SHA1      1     // SHA-1
+#define CryptographicHash_SHA224    224   // SHA-224
 #define CryptographicHash_SHA256    256   // SHA-256
+#define CryptographicHash_SHA384    384   // SHA-384
 #define CryptographicHash_SHA512    512   // SHA-512
 #define CryptographicHash_SHA3_256  3256  // SHA3-256 (Keccak)
 #define CryptographicHash_SHA3_512  3512  // SHA3-512 (Keccak)
@@ -66,4 +68,4 @@
 #endif   // __PJSR_CryptographicHash_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/CryptographicHash.jsh - Released 2015/07/23 10:07:13 UTC
+// EOF pjsr/CryptographicHash.jsh - Released 2015/11/09 15:21:11 UTC

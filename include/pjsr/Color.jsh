@@ -4,7 +4,7 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/Color.jsh - Released 2015/07/23 10:07:13 UTC
+// pjsr/Color.jsh - Released 2015/11/09 15:21:11 UTC
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
@@ -108,7 +108,7 @@ Color.blueF = function( rgba )
 
 Color.isGray = function( rgba )
 {
-   var r = Color.red( rgba );
+   let r = Color.red( rgba );
    return r == Color.green( rgba ) && r == Color.blue( rgba );
 };
 
@@ -212,4 +212,4 @@ Color.BLUE        = 0xff0000ff;
 #endif   // __PJSR_Color_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/Color.jsh - Released 2015/07/23 10:07:13 UTC
+// EOF pjsr/Color.jsh - Released 2015/11/09 15:21:11 UTC
