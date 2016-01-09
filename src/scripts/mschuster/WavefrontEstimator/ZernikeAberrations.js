@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// ZernikeAberrations.js - Released 2015/10/05 00:00:00 UTC
+// ZernikeAberrations.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,8 +48,9 @@
 // ****************************************************************************
 
 function ZernikeAberrations() {
-   // Singular values smaller than this threshold will be dropped.
-   this.pseudoInverseThreshold = 1e-10;
+   // Singular values smaller than the product of this threshold and a
+   // default will be dropped.
+   this.pseudoInverseThreshold = 1;
 
    // Gives the aberration labels.
    this.aberrationLabels = function() {
@@ -76,29 +77,39 @@ function ZernikeAberrations() {
          "Z20 (5, 5) Primary pentafoil oblique",
          "Z21 (5, -5) Primary pentafoil vertical",
          "Z22 (6, 0) Secondary spherical",
+         // "Z23 (6, -2) Tertiary astigmatism oblique",
+         // "Z24 (6, 2) Tertiary astigmatism vertical",
+         // "Z29 (7, -1) Tertiary coma vertical",
+         // "Z30 (7, 1) Tertiary coma horizontal",
+         // "Z37 (8, 0) Tertiary spherical",
          "Residual aberration"
       );
    };
+
+   // Gives the Zernike basis size.
+   this.zernikeBasisSize = this.aberrationLabels().length - 1;
 
    // Gives the Zernike [z1, z4] basis for mesh and no obstruction.
    this.zernike4BasisNoObstruction = function(mesh) {
       var mx = mesh.x.matrix();
       var my = mesh.y.matrix();
+      var rows = mx.rows;
+      var cols = mx.cols;
 
-      var newMatrix = new Matrix(mesh.x.rows() * mesh.x.cols(), 4);
+      var newMatrix = new Matrix(rows * cols, 4);
       var newRow = 0;
-      for (var row = 0; row != mesh.x.rows(); ++row) {
-         for (var col = 0; col != mesh.x.cols(); ++col) {
+      for (var row = 0; row != rows; ++row) {
+         for (var col = 0; col != cols; ++col) {
             var x = mx.at(row, col);
             var y = my.at(row, col);
             var r = Math.sqrt(x * x + y * y);
-            var a = x == 0 && y == 0 ? 0 : Math.atan2(-y, x);
             var r2 = r * r;
+            var a = x == 0 && y == 0 ? 0 : Math.atan2(-y, x);
 
             newMatrix.at(newRow, 0, 1);
-            newMatrix.at(newRow, 1, 2 * r * Math.cos(a));
-            newMatrix.at(newRow, 2, 2 * r * Math.sin(a));
-            newMatrix.at(newRow, 3, Math.sqrt(3) * (-1 + 2 * r2));
+            newMatrix.at(newRow, 1, 2 * Math.cos(a) * r);
+            newMatrix.at(newRow, 2, 2 * Math.sin(a) * r);
+            newMatrix.at(newRow, 3, Math.sqrt(3) * (2 * r2 - 1));
             ++newRow;
          }
       }
@@ -110,26 +121,27 @@ function ZernikeAberrations() {
    this.zernike4BasisObstruction = function(mesh, obstruction) {
       var mx = mesh.x.matrix();
       var my = mesh.y.matrix();
+      var rows = mx.rows;
+      var cols = mx.cols;
 
-      var e = obstruction;
-      var e2 = e * e;
+      var e2 = obstruction * obstruction;
       var e2p1 = e2 + 1;
       var e2m1 = e2 - 1;
 
-      var newMatrix = new Matrix(mesh.x.rows() * mesh.x.cols(), 4);
+      var newMatrix = new Matrix(rows * cols, 4);
       var newRow = 0;
-      for (var row = 0; row != mesh.x.rows(); ++row) {
-         for (var col = 0; col != mesh.x.cols(); ++col) {
+      for (var row = 0; row != rows; ++row) {
+         for (var col = 0; col != cols; ++col) {
             var x = mx.at(row, col);
             var y = my.at(row, col);
             var r = Math.sqrt(x * x + y * y);
-            var a = x == 0 && y == 0 ? 0 : Math.atan2(-y, x);
             var r2 = r * r;
+            var a = x == 0 && y == 0 ? 0 : Math.atan2(-y, x);
 
             newMatrix.at(newRow, 0, 1);
-            newMatrix.at(newRow, 1, 2 * r * Math.cos(a) / Math.sqrt(e2p1));
-            newMatrix.at(newRow, 2, 2 * r * Math.sin(a) / Math.sqrt(e2p1));
-            newMatrix.at(newRow, 3, Math.sqrt(3) * (e2p1 - 2 * r2) / e2m1);
+            newMatrix.at(newRow, 1, 2 * Math.cos(a) / Math.sqrt(e2p1) * r);
+            newMatrix.at(newRow, 2, 2 * Math.sin(a) / Math.sqrt(e2p1) * r);
+            newMatrix.at(newRow, 3, -Math.sqrt(3) / e2m1 * (2 * r2 - e2p1));
             ++newRow;
          }
       }
@@ -144,65 +156,94 @@ function ZernikeAberrations() {
          this.zernike4BasisObstruction(mesh, obstruction);
    };
 
-   // Gives the Zernike [z1, z22] basis for mesh and no obstruction.
-   this.zernike22BasisNoObstruction = function(mesh) {
+   // Gives the Zernike basis for mesh and no obstruction.
+   this.zernikeBasisNoObstruction = function(mesh) {
       var mx = mesh.x.matrix();
       var my = mesh.y.matrix();
+      var rows = mx.rows;
+      var cols = mx.cols;
 
-      var newMatrix = new Matrix(mesh.x.rows() * mesh.x.cols(), 22);
+      var newMatrix = new Matrix(rows * cols, this.zernikeBasisSize);
       var newRow = 0;
-      for (var row = 0; row != mesh.x.rows(); ++row) {
-         for (var col = 0; col != mesh.x.cols(); ++col) {
+      for (var row = 0; row != rows; ++row) {
+         for (var col = 0; col != cols; ++col) {
             var x = mx.at(row, col);
             var y = my.at(row, col);
             var r = Math.sqrt(x * x + y * y);
-            var a = x == 0 && y == 0 ? 0 : Math.atan2(-y, x);
             var r2 = r * r;
-            var r3 = r2 * r;
-            var r4 = r3 * r;
-            var r5 = r4 * r;
-            var r6 = r5 * r;
+            var a = x == 0 && y == 0 ? 0 : Math.atan2(-y, x);
 
             newMatrix.at(newRow, 0, 1);
-            newMatrix.at(newRow, 1, 2 * r * Math.cos(a));
-            newMatrix.at(newRow, 2, 2 * r * Math.sin(a));
-            newMatrix.at(newRow, 3, Math.sqrt(3) * (-1 + 2 * r2));
-            newMatrix.at(newRow, 4, Math.sqrt(6) * r2 * Math.sin(2 * a));
-            newMatrix.at(newRow, 5, Math.sqrt(6) * r2 * Math.cos(2 * a));
+            newMatrix.at(newRow, 1, 2 * Math.cos(a) * r);
+            newMatrix.at(newRow, 2, 2 * Math.sin(a) * r);
+            newMatrix.at(newRow, 3, Math.sqrt(3) * (2 * r2 - 1));
+            newMatrix.at(newRow, 4, Math.sqrt(6) * Math.sin(2 * a) * r2);
+            newMatrix.at(newRow, 5, Math.sqrt(6) * Math.cos(2 * a) * r2);
             newMatrix.at(newRow, 6,
-               2 * Math.sqrt(2) * r * (-2 + 3 * r2) * Math.sin(a
-            ));
-            newMatrix.at(newRow, 7,
-               2 * Math.sqrt(2) * r * (-2 + 3 * r2) * Math.cos(a)
+               2 * Math.sqrt(2) * Math.sin(a) * (3 * r2 - 2) * r
             );
-            newMatrix.at(newRow, 8, 2 * Math.sqrt(2) * r3 * Math.sin(3 * a));
-            newMatrix.at(newRow, 9, 2 * Math.sqrt(2) * r3 * Math.cos(3 * a));
-            newMatrix.at(newRow, 10, Math.sqrt(5) * (1 - 6 * r2 + 6 * r4));
+            newMatrix.at(newRow, 7,
+               2 * Math.sqrt(2) * Math.cos(a) * (3 * r2 - 2) * r
+            );
+            newMatrix.at(newRow, 8,
+               2 * Math.sqrt(2) * Math.sin(3 * a) * r2 * r
+            );
+            newMatrix.at(newRow, 9,
+               2 * Math.sqrt(2) * Math.cos(3 * a) * r2 * r
+            );
+            newMatrix.at(newRow, 10, Math.sqrt(5) * ((6 * r2 - 6) * r2 + 1));
+
             newMatrix.at(newRow, 11,
-               Math.sqrt(10) * r2 * (-3 + 4 * r2) * Math.cos(2 * a)
+               Math.sqrt(10) * Math.cos(2 * a) * (4 * r2 - 3) * r2
             );
             newMatrix.at(newRow, 12,
-               Math.sqrt(10) * r2 * (-3 + 4 * r2) * Math.sin(2 * a)
+               Math.sqrt(10) * Math.sin(2 * a) * (4 * r2 - 3) * r2
             );
-            newMatrix.at(newRow, 13, Math.sqrt(10) * r4 * Math.cos(4 * a));
-            newMatrix.at(newRow, 14, Math.sqrt(10) * r4 * Math.sin(4 * a));
+            newMatrix.at(newRow, 13,
+               Math.sqrt(10) * Math.cos(4 * a) * r2 * r2
+            );
+            newMatrix.at(newRow, 14,
+               Math.sqrt(10) * Math.sin(4 * a) * r2 * r2
+            );
             newMatrix.at(newRow, 15,
-               2 * Math.sqrt(3) * r * (3 - 12 * r2 + 10 * r4) * Math.cos(a)
+               2 * Math.sqrt(3) * Math.cos(a) * ((10 * r2 - 12) * r2 + 3) * r
             );
             newMatrix.at(newRow, 16,
-               2 * Math.sqrt(3) * r * (3 - 12 * r2 + 10 * r4) * Math.sin(a)
+               2 * Math.sqrt(3) * Math.sin(a) * ((10 * r2 - 12) * r2 + 3) * r
             );
             newMatrix.at(newRow, 17,
-               2 * Math.sqrt(3) * r3 * (-4 + 5 * r2) * Math.cos(3 * a)
+               2 * Math.sqrt(3) * Math.cos(3 * a) * (5 * r2 - 4) * r2 * r
             );
             newMatrix.at(newRow, 18,
-               2 * Math.sqrt(3) * r3 * (-4 + 5 * r2) * Math.sin(3 * a)
+               2 * Math.sqrt(3) * Math.sin(3 * a) * (5 * r2 - 4) * r2 * r
             );
-            newMatrix.at(newRow, 19, 2 * Math.sqrt(3) * r5 * Math.cos(5 * a));
-            newMatrix.at(newRow, 20, 2 * Math.sqrt(3) * r5 * Math.sin(5 * a));
+            newMatrix.at(newRow, 19,
+               2 * Math.sqrt(3) * Math.cos(5 * a) * r2 * r2 * r
+            );
+            newMatrix.at(newRow, 20,
+               2 * Math.sqrt(3) * Math.sin(5 * a) * r2 * r2 * r
+            );
             newMatrix.at(newRow, 21,
-               Math.sqrt(7) * (-1 + 12 * r2 - 30 * r4 + 20 * r6)
+               Math.sqrt(7) * (((20 * r2 - 30) * r2 + 12) * r2 - 1)
             );
+         if (this.zernikeBasisSize > 22) {
+            newMatrix.at(newRow, 22,
+               Math.sqrt(14) * Math.sin(2 * a) * ((15 * r2 - 20) * r2 + 6) * r2
+            );
+            newMatrix.at(newRow, 23,
+               Math.sqrt(14) * Math.cos(2 * a) * ((15 * r2 - 20) * r2 + 6) * r2
+            );
+
+            newMatrix.at(newRow, 24,
+               4 * Math.sin(a) * (((35 * r2 - 60) * r2 + 30) * r2 - 4) * r
+            );
+            newMatrix.at(newRow, 25,
+               4 * Math.cos(a) * (((35 * r2 - 60) * r2 + 30) * r2 - 4) * r
+            );
+            newMatrix.at(newRow, 26,
+               3 * ((((70 * r2 - 140) * r2 + 90) * r2 - 20) * r2 + 1)
+            );
+         }
             ++newRow;
          }
       }
@@ -210,129 +251,212 @@ function ZernikeAberrations() {
       return new FrameReal(newMatrix);
    };
 
-   // Gives the Zernike [z1, z22] basis for mesh and obstruction.
-   this.zernike22BasisObstruction = function(mesh, obstruction) {
+   // Gives the Zernike basis for mesh and obstruction.
+   this.zernikeBasisObstruction = function(mesh, obstruction) {
       var mx = mesh.x.matrix();
       var my = mesh.y.matrix();
+      var rows = mx.rows;
+      var cols = mx.cols;
 
       var e = obstruction;
       var e2 = e * e;
-      var e4 = e2 * e2;
-      var e6 = e4 * e2;
-      var e8 = e6 * e2;
-      var e10 = e8 * e2;
-      var e12 = e10 * e2;
-      var e14 = e12 * e2;
-      var e16 = e14 * e2;
-      var e2p1 = e2 + 1;
-      var e2m1 = e2 - 1;
-      var e2m1u3 = e2m1 * e2m1 * e2m1;
-      var e2m1u4 = e2m1u3 * e2m1;
-      var e2m1u6 = e2m1u4 * e2m1 * e2m1;
-      var e4p1 = e4 + 1;
-      var e4pe2p1 = e4 + e2p1;
-      var e6p5e4p5e2p1 = e6 + 5 * e4 + 5 * e2 + 1;
-      var e6pe4pe2p1 = e6 + e4pe2p1;
-      var e4p4e2p1 = e4 + 4 * e2 + 1;
-      var e8p4e6p10e4p4e2p1 = e8 + 4 * e6 + 10 * e4 + 4 * e2 + 1;
-      var e8pe6pe4pe2p1 = e8 + e6 + e4 + e2 + 1;
-      var e6p4e4p4e2p1 = e6 + 4 * e4 + 4 * e2 + 1;
-      var e6p9e4p9e2p1 = e6 + 9 * e4 + 9 * e2 + 1;
-      var e12p4e10p10e8p20e6p10e4p4e2p1 =
-         e12 + 4 * e10 + 10 * e8 + 20 * e6 + 10 * e4 + 4 * e2 + 1;
-      var e10pe8pe6pe4pe2p1 = e10 + e8 + e6 + e4 + e2 + 1;
-      var e4p3e2p1 = e4 + 3 * e2 + 1;
 
-      var newMatrix = new Matrix(mesh.x.rows() * mesh.x.cols(), 22);
+      var e2m1 = e2 - 1;
+      var e2m1u2 = e2m1 * e2m1;
+      var e2m1u3 = e2m1u2 * e2m1;
+      var e2m1u4 = e2m1u3 * e2m1;
+      var e2p1 = e2 + 1;
+
+      var e4p1 = e2 * e2 + 1;
+      var e4pe2p1 = (e2 + 1) * e2 + 1;
+      var e4p3e2p1 = (e2 + 3) * e2 + 1;
+      var e4p4e2p1 = (e2 + 4) * e2 + 1;
+      var c3e4p8e2p3 = (3 * e2 + 8) * e2 + 3;
+
+      var e6pe4pe2p1 = ((e2 + 1) * e2 + 1) * e2 + 1;
+      var e6p4e4p4e2p1 = ((e2 + 4) * e2 + 4) * e2 + 1;
+      var e6p5e4p5e2p1 = ((e2 + 5) * e2 + 5) * e2 + 1;
+      var e6p6e4p6e2p1 = ((e2 + 6) * e2 + 6) * e2 + 1;
+      var e6p9e4p9e2p1 = ((e2 + 9) * e2 + 9) * e2 + 1;
+
+      var e8pe6pe4pe2p1 = (((e2 + 1) * e2 + 1) * e2 + 1) * e2 + 1;
+      var e8p4e6p10e4p4e2p1 = (((e2 + 4) * e2 + 10) * e2 + 4) * e2 + 1;
+      var e8p9e6p15e4p9e2p1 = (((e2 + 9) * e2 + 15) * e2 + 9) * e2 + 1;
+      var e8p16e6p36e4p16e2p1 = (((e2 + 16) * e2 + 36) * e2 + 16) * e2 + 1;
+
+      var e10pe8pe6pe4pe2p1 =
+         ((((e2 + 1) * e2 + 1) * e2 + 1) * e2 + 1) * e2 + 1;
+      var e10p4e8p10e6p10e4p4e2p1 =
+         ((((e2 + 4) * e2 + 10) * e2 + 10) * e2 + 4) * e2 + 1;
+      var e10p9e8p25e6p25e4p9e2p1 =
+         ((((e2 + 9) * e2 + 25) * e2 + 25) * e2 + 9) * e2 + 1;
+
+      var e12p4e10p10e8p20e6p10e4p4e2p1 =
+         (((((e2 + 4) * e2 + 10) * e2 + 20) * e2 + 10) * e2 + 4) * e2 + 1;
+      var e12p9e10p45e8p65e6p45e4p9e2p1 =
+         (((((e2 + 9) * e2 + 45) * e2 + 65) * e2 + 45) * e2 + 9) * e2 + 1;
+
+      var e16m16e10p30e8m16e6p1 =
+         (((e2 * e2 * e2 - 16) * e2 + 30) * e2 - 16) * e2 * e2 * e2 + 1;
+
+      var newMatrix = new Matrix(rows * cols, this.zernikeBasisSize);
       var newRow = 0;
-      for (var row = 0; row != mesh.x.rows(); ++row) {
-         for (var col = 0; col != mesh.x.cols(); ++col) {
+      for (var row = 0; row != rows; ++row) {
+         for (var col = 0; col != cols; ++col) {
             var x = mx.at(row, col);
             var y = my.at(row, col);
             var r = Math.sqrt(x * x + y * y);
-            var a = x == 0 && y == 0 ? 0 : Math.atan2(-y, x);
             var r2 = r * r;
-            var r3 = r2 * r;
-            var r4 = r3 * r;
-            var r5 = r4 * r;
-            var r6 = r5 * r;
+            var a = x == 0 && y == 0 ? 0 : Math.atan2(-y, x);
 
             newMatrix.at(newRow, 0, 1);
-            newMatrix.at(newRow, 1, 2 * r * Math.cos(a) / Math.sqrt(e2p1));
-            newMatrix.at(newRow, 2, 2 * r * Math.sin(a) / Math.sqrt(e2p1));
-            newMatrix.at(newRow, 3, Math.sqrt(3) * (e2p1 - 2 * r2) / e2m1);
+            newMatrix.at(newRow, 1, 2 * Math.cos(a) / Math.sqrt(e2p1) * r);
+            newMatrix.at(newRow, 2, 2 * Math.sin(a) / Math.sqrt(e2p1) * r);
+            newMatrix.at(newRow, 3, -Math.sqrt(3) / e2m1 * (2 * r2 - e2p1));
             newMatrix.at(newRow, 4,
-               Math.sqrt(6) * r2 * Math.sin(2 * a) / Math.sqrt(e4pe2p1)
+               Math.sqrt(6) * Math.sin(2 * a) / Math.sqrt(e4pe2p1) * r2
             );
             newMatrix.at(newRow, 5,
-               Math.sqrt(6) * r2 * Math.cos(2 * a) / Math.sqrt(e4pe2p1)
+               Math.sqrt(6) * Math.cos(2 * a) / Math.sqrt(e4pe2p1) * r2
             );
-            newMatrix.at(newRow, 6, 2 * Math.sqrt(2) * r * (
-               2 * e4pe2p1 - 3 * r2 * e2p1
-            ) * Math.sin(a) / (e2m1 * Math.sqrt(e6p5e4p5e2p1))
+            newMatrix.at(newRow, 6,
+               -2 * Math.sqrt(2) * Math.sin(a) /
+               (e2m1 * Math.sqrt(e6p5e4p5e2p1)) *
+               (3 * r2 * e2p1 - 2 * e4pe2p1) * r
             );
-            newMatrix.at(newRow, 7, 2 * Math.sqrt(2) * r * (
-               2 * e4pe2p1 - 3 * r2 * e2p1
-            ) * Math.cos(a) / (e2m1 * Math.sqrt(e6p5e4p5e2p1))
+            newMatrix.at(newRow, 7,
+               -2 * Math.sqrt(2) * Math.cos(a) /
+               (e2m1 * Math.sqrt(e6p5e4p5e2p1)) *
+               (3 * r2 * e2p1 - 2 * e4pe2p1) * r
             );
             newMatrix.at(newRow, 8,
-               2 * Math.sqrt(2) * r3 * Math.sin(3 * a) / Math.sqrt(e6pe4pe2p1)
+               2 * Math.sqrt(2) * Math.sin(3 * a) / Math.sqrt(e6pe4pe2p1) *
+               r2 * r
             );
             newMatrix.at(newRow, 9,
-               2 * Math.sqrt(2) * r3 * Math.cos(3 * a) / Math.sqrt(e6pe4pe2p1)
+               2 * Math.sqrt(2) * Math.cos(3 * a) / Math.sqrt(e6pe4pe2p1) *
+               r2 * r
             );
             newMatrix.at(newRow, 10,
-               Math.sqrt(5) * (e4p4e2p1 - 6 * r2 * e2p1 + 6 * r4) /
-               (e2m1 * e2m1)
+               Math.sqrt(5) / e2m1u2 *
+               ((6 * r2 - 6 * e2p1) * r2 + e4p4e2p1)
             );
-            newMatrix.at(newRow, 11, Math.sqrt(10) * r2 * (
-               3 * e6pe4pe2p1 - 4 * r2 * e4pe2p1
-            ) * Math.cos(2 * a) /
-               (e2m1 *  Math.sqrt(e4pe2p1 * e8p4e6p10e4p4e2p1))
+            newMatrix.at(newRow, 11,
+               -Math.sqrt(10) * Math.cos(2 * a) /
+               (e2m1 *  Math.sqrt(e4pe2p1 * e8p4e6p10e4p4e2p1)) *
+               (4 * e4pe2p1 * r2 - 3 * e6pe4pe2p1) * r2
             );
-            newMatrix.at(newRow, 12, Math.sqrt(10) * r2 * (
-               3 * e6pe4pe2p1 - 4 * r2 * e4pe2p1
-            ) * Math.sin(2 * a) /
-               (e2m1 *  Math.sqrt(e4pe2p1 * e8p4e6p10e4p4e2p1))
+            newMatrix.at(newRow, 12,
+               -Math.sqrt(10) * Math.sin(2 * a) /
+               (e2m1 *  Math.sqrt(e4pe2p1 * e8p4e6p10e4p4e2p1)) *
+               (4 * e4pe2p1 * r2 - 3 * e6pe4pe2p1) * r2
             );
             newMatrix.at(newRow, 13,
-               Math.sqrt(10) * r4 * Math.cos(4 * a) / Math.sqrt(e8pe6pe4pe2p1)
+               Math.sqrt(10) * Math.cos(4 * a) / Math.sqrt(e8pe6pe4pe2p1) *
+               r2 * r2
             );
             newMatrix.at(newRow, 14,
-               Math.sqrt(10) * r4 * Math.sin(4 * a) / Math.sqrt(e8pe6pe4pe2p1)
+               Math.sqrt(10) * Math.sin(4 * a) / Math.sqrt(e8pe6pe4pe2p1) *
+               r2 * r2
             );
-            newMatrix.at(newRow, 15, 2 * Math.sqrt(3) * r * (
-               3 * e8p4e6p10e4p4e2p1 - 12 * r2 * e6p4e4p4e2p1 +
-               10 * r4 * e4p4e2p1
-            ) * Math.cos(a) /
-               (e2m1 * e2m1 * Math.sqrt(e4p4e2p1 * e6p9e4p9e2p1))
+            newMatrix.at(newRow, 15,
+               2 * Math.sqrt(3) * Math.cos(a) /
+               (e2m1u2 * Math.sqrt(e4p4e2p1 * e6p9e4p9e2p1)) *
+               (
+                  (10 * e4p4e2p1 * r2 - 12 * e6p4e4p4e2p1) * r2 +
+                  3 * e8p4e6p10e4p4e2p1
+               ) * r
             );
-            newMatrix.at(newRow, 16, 2 * Math.sqrt(3) * r * (
-               3 * e8p4e6p10e4p4e2p1 - 12 * r2 * e6p4e4p4e2p1 +
-               10 * r4 * e4p4e2p1
-            ) * Math.sin(a) /
-               (e2m1 * e2m1 * Math.sqrt(e4p4e2p1 * e6p9e4p9e2p1))
+            newMatrix.at(newRow, 16,
+               2 * Math.sqrt(3) * Math.sin(a) /
+               (e2m1u2 * Math.sqrt(e4p4e2p1 * e6p9e4p9e2p1)) *
+               (
+                  (10 * e4p4e2p1 * r2 - 12 * e6p4e4p4e2p1) * r2 +
+                  3 * e8p4e6p10e4p4e2p1
+               ) * r
             );
-            newMatrix.at(newRow, 17, 2 * Math.sqrt(3) * r3 * (
-               -4 * e8pe6pe4pe2p1 + 5 * r2 * e6pe4pe2p1
-            ) * Math.sqrt(e2m1u6 * e6pe4pe2p1) * Math.cos(3 * a) /
-            (e2m1u4 * e2p1 * e4p1 * Math.sqrt(e12p4e10p10e8p20e6p10e4p4e2p1))
+            newMatrix.at(newRow, 17,
+               -2 * Math.sqrt(3) * e2m1u3 * Math.sqrt(e6pe4pe2p1) *
+               Math.cos(3 * a) /
+               (
+                  e2m1u4 * e2p1 * e4p1 *
+                  Math.sqrt(e12p4e10p10e8p20e6p10e4p4e2p1)
+               ) *
+               (5 * r2 * e6pe4pe2p1 - 4 * e8pe6pe4pe2p1) * r2 * r
             );
-            newMatrix.at(newRow, 18, 2 * Math.sqrt(3) * r3 * (
-               -4 * e8pe6pe4pe2p1 + 5 * r2 * e6pe4pe2p1
-            ) * Math.sqrt(e2m1u6 * e6pe4pe2p1) * Math.sin(3 * a) /
-            (e2m1u4 * e2p1 * e4p1 * Math.sqrt(e12p4e10p10e8p20e6p10e4p4e2p1))
+            newMatrix.at(newRow, 18,
+               -2 * Math.sqrt(3) * e2m1u3 * Math.sqrt(e6pe4pe2p1) *
+               Math.sin(3 * a) /
+               (
+                  e2m1u4 * e2p1 * e4p1 *
+                  Math.sqrt(e12p4e10p10e8p20e6p10e4p4e2p1)
+               ) *
+               (5 * r2 * e6pe4pe2p1 - 4 * e8pe6pe4pe2p1) * r2 * r
             );
-            newMatrix.at(newRow, 19, 2 * Math.sqrt(3) * r5 * Math.cos(5 * a) /
+            newMatrix.at(newRow, 19,
+               2 * Math.sqrt(3) * Math.cos(5 * a) * r2 * r2 * r /
                Math.sqrt(e10pe8pe6pe4pe2p1)
             );
-            newMatrix.at(newRow, 20, 2 * Math.sqrt(3) * r5 * Math.sin(5 * a) /
+            newMatrix.at(newRow, 20,
+               2 * Math.sqrt(3) * Math.sin(5 * a) * r2 * r2 * r /
                Math.sqrt(e10pe8pe6pe4pe2p1)
             );
-            newMatrix.at(newRow, 21, Math.sqrt(7) * (
-               e6p9e4p9e2p1 - 12 * r2 * e4p3e2p1 + 30 * r4 * e2p1 - 20 * r6
-            ) / e2m1u3
+            newMatrix.at(newRow, 21,
+               -Math.sqrt(7) / e2m1u3 *
+               (
+                  ((20 * r2 - 30 * e2p1) * r2 + 12 * e4p3e2p1) * r2 -
+                  e6p9e4p9e2p1
+               )
             );
+         if (this.zernikeBasisSize > 22) {
+            newMatrix.at(newRow, 22,
+               Math.sqrt(14) * Math.sin(2 * a) /
+               Math.sqrt(
+                  e12p9e10p45e8p65e6p45e4p9e2p1 * e16m16e10p30e8m16e6p1
+               ) *
+               (
+                  (15 * e8p4e6p10e4p4e2p1 * r2 - 20 * e10p4e8p10e6p10e4p4e2p1) *
+                  r2 +
+                  6 * e12p4e10p10e8p20e6p10e4p4e2p1
+               ) * r2
+            );
+            newMatrix.at(newRow, 23,
+               Math.sqrt(14) * Math.cos(2 * a) /
+               Math.sqrt(
+                  e12p9e10p45e8p65e6p45e4p9e2p1 * e16m16e10p30e8m16e6p1
+               ) *
+               (
+                  (15 * e8p4e6p10e4p4e2p1 * r2 - 20 * e10p4e8p10e6p10e4p4e2p1) *
+                  r2 +
+                  6 * e12p4e10p10e8p20e6p10e4p4e2p1
+               ) * r2
+            );
+            newMatrix.at(newRow, 24,
+               -4 * Math.sin(a) /
+               (e2m1u3 * Math.sqrt(e6p9e4p9e2p1 * e8p16e6p36e4p16e2p1)) *
+               (
+                  ((35 * e6p9e4p9e2p1 * r2 - 60 * e8p9e6p15e4p9e2p1) * r2 +
+                  30 * e10p9e8p25e6p25e4p9e2p1) * r2 -
+                  4 * e12p9e10p45e8p65e6p45e4p9e2p1
+               ) * r
+            );
+            newMatrix.at(newRow, 25,
+               -4 * Math.cos(a) /
+               (e2m1u3 * Math.sqrt(e6p9e4p9e2p1 * e8p16e6p36e4p16e2p1)) *
+               (
+                  ((35 * e6p9e4p9e2p1 * r2 - 60 * e8p9e6p15e4p9e2p1) * r2 +
+                  30 * e10p9e8p25e6p25e4p9e2p1) * r2 -
+                  4 * e12p9e10p45e8p65e6p45e4p9e2p1
+               ) * r
+            );
+            newMatrix.at(newRow, 26,
+               3 / e2m1u4 *
+               (
+                  (((70 * r2 - 140 * e2p1) * r2 + 30 * c3e4p8e2p3) * r2 -
+                  20 * e6p6e4p6e2p1) * r2 + e8p16e6p36e4p16e2p1
+               )
+            );
+         }
             ++newRow;
          }
       }
@@ -340,11 +464,11 @@ function ZernikeAberrations() {
       return new FrameReal(newMatrix);
    };
 
-   // Gives the Zernike [z1, z22] basis for mesh and obstruction.
-   this.zernike22Basis = function(mesh, obstruction) {
+   // Gives the Zernike basis for mesh and obstruction.
+   this.zernikeBasis = function(mesh, obstruction) {
       return obstruction == 0 ?
-         this.zernike22BasisNoObstruction(mesh) :
-         this.zernike22BasisObstruction(mesh, obstruction);
+         this.zernikeBasisNoObstruction(mesh) :
+         this.zernikeBasisObstruction(mesh, obstruction);
    };
 
    // Gives coefficients and residual of a [z1, z4] least square error fit to
@@ -381,10 +505,10 @@ function ZernikeAberrations() {
       };
    };
 
-   // Gives coefficients and residual of a [z1, z22] least square error fit to
+   // Gives coefficients and residual of a least square error fit to
    // wavefront within mask for mesh and obstruction.
-   this.zernike22Fit = function(mesh, mask, wavefront, obstruction) {
-      var basis = this.zernike22Basis(mesh, obstruction);
+   this.zernikeFit = function(mesh, mask, wavefront, obstruction) {
+      var basis = this.zernikeBasis(mesh, obstruction);
 
       var wavefrontElements = wavefront.labeledElements(mask);
       var pseudoInverseThreshold = this.pseudoInverseThreshold;
@@ -417,4 +541,4 @@ function ZernikeAberrations() {
 };
 
 // ****************************************************************************
-// EOF ZernikeAberrations.js - Released 2015/10/05 00:00:00 UTC
+// EOF ZernikeAberrations.js - Released 2015/11/23 00:00:00 UTC

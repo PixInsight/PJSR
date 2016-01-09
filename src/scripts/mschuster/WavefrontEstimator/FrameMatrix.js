@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// FrameMatrix.js - Released 2015/10/05 00:00:00 UTC
+// FrameMatrix.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -65,11 +65,21 @@ function FrameReal(matrix) {
       matrix.assign(0, 0, 0);
    };
 
+   // Gives a matrix clone.
+   this.cloneMatrix = function() {
+#iflt __PI_BUILD__ 1168
+      var z = new Matrix(0, matrix.rows, matrix.cols);
+      var r = z.add(matrix);
+      z.assign(0, 0, 0);
+      return r;
+#else
+      return new Matrix(matrix);
+#endif
+   };
+
    // Gives a clone.
    this.clone = function() {
-      return new FrameReal(
-         (new Matrix(0, matrix.rows, matrix.cols)).add(matrix)
-      );
+      return new FrameReal(this.cloneMatrix());
    };
 
    // Gives the result of a stage pipeline.
@@ -510,8 +520,10 @@ function FrameReal(matrix) {
    // Gives a reshaped frame.
    this.reshape = function(rows, cols) {
       if (rows * cols != matrix.rows * matrix.cols) {
-         throw "Internal error: " +
-            "reshape: rows * cols != matrix.rows * matrix.cols";
+         throw new Error(
+            "Internal error: " +
+            "reshape: rows * cols != matrix.rows * matrix.cols"
+         );
       }
 
       var oldRow = 0;
@@ -571,7 +583,7 @@ function FrameReal(matrix) {
    // Gives a complex frame with matrix real and zero imag components.
    this.toComplex = function() {
       return new FrameComplex(
-         (new Matrix(0, matrix.rows, matrix.cols)).add(matrix),
+         this.cloneMatrix(),
          new Matrix(0, matrix.rows, matrix.cols)
       );
    };
@@ -599,7 +611,7 @@ function FrameReal(matrix) {
       var rows = matrix.rows;
       var cols = matrix.cols;
       if (low + rows + high < 1) {
-         throw "Internal error: padRows: low + rows + high < 1";
+         throw new Error("Internal error: padRows: low + rows + high < 1");
       }
 
       var newMatrix = new Matrix(low + rows + high, cols);
@@ -637,7 +649,7 @@ function FrameReal(matrix) {
       var rows = matrix.rows;
       var cols = matrix.cols;
       if (low + cols + high < 1) {
-         throw "Internal error: padCols: low + cols + high < 1";
+         throw new Error("Internal error: padCols: low + cols + high < 1");
       }
 
       var newMatrix = new Matrix(rows, low + cols + high);
@@ -665,13 +677,16 @@ function FrameReal(matrix) {
       return new FrameReal(newMatrix);
    };
 
-   // Gives the pseudo inverse frame, singular values smaller than threshold
-   // will be dropped. Threshold typically equals 1e-10.
-   this.pseudoInverse = function(threshold) {
-      var svd = Math.svd(matrix);
-      var u = svd[0];
-      var w = svd[1];
-      var v = svd[2];
+   // Gives the pseudo inverse frame, singular values smaller than the product
+   // of thresholdScale and a default based on expected roundoff error will be
+   // dropped.
+   this.pseudoInverse = function(thresholdScale) {
+      var svdt = NR3SVD(matrix);
+      var u = svdt[0];
+      var w = svdt[1];
+      var v = svdt[2];
+      var tsd = svdt[3];
+      var threshold = thresholdScale * tsd;
 
       var iw = new Matrix(w.length, w.length);
       for (var row = 0; row != w.length; ++row) {
@@ -679,13 +694,26 @@ function FrameReal(matrix) {
             iw.at(
                row,
                col,
-               row == col ? Math.abs(w.at(row)) < threshold ?
-                  0 : 1 / w.at(row) : 0
+               row == col ?
+                  Math.abs(w.at(row)) < threshold ? 0 : 1 / w.at(row) :
+                  0
             );
          }
       }
 
-      return new FrameReal(v.mul(iw).mul(u.transpose()));
+      var ut = u.transpose();
+      var viw = v.mul(iw);
+      var r = viw.mul(ut);
+
+      iw.assign(0, 0, 0);
+      ut.assign(0, 0, 0);
+      viw.assign(0, 0, 0);
+
+      u.assign(0, 0, 0);
+      w.assign(0, 0);
+      v.assign(0, 0, 0);
+
+      return new FrameReal(r);
    };
 
    // Gives the bilinear interpolation frame with specified row and column
@@ -927,6 +955,24 @@ function FrameReal(matrix) {
          }
          for (var col = 0; col != cols; ++col) {
             newMatrix.at(row, col, 0);
+         }
+      }
+
+      return new FrameReal(newMatrix);
+   };
+
+   // Gives map(frame).
+   this.map = function(map) {
+      var rows = matrix.rows;
+      var cols = matrix.cols;
+      var newMatrix = new Matrix(rows, cols);
+      for (var row = 0; row != rows; ++row) {
+         for (var col = 0; col != cols; ++col) {
+            newMatrix.at(
+               row,
+               col,
+               map(matrix.at(row, col))
+            );
          }
       }
 
@@ -1319,11 +1365,11 @@ function FrameReal(matrix) {
    this.downSample = function(size) {
       var rows = Math.floor(matrix.rows / size);
       if (rows < 1) {
-         throw "Internal error: downsample: rows < 1";
+         throw new Error("Internal error: downsample: rows < 1");
       }
       var cols = Math.floor(matrix.cols / size);
       if (cols < 1) {
-         throw "Internal error: downsample: cols < 1";
+         throw new Error("Internal error: downsample: cols < 1");
       }
 
       var newMatrix = new Matrix(rows, cols);
@@ -1520,11 +1566,35 @@ function FrameComplex(real, imag) {
       imag.assign(0, 0, 0);
    };
 
+   // Gives a real matrix clone.
+   this.cloneRealMatrix = function() {
+#iflt __PI_BUILD__ 1168
+      var z = new Matrix(0, real.rows, real.cols);
+      var r = z.add(real);
+      z.assign(0, 0, 0);
+      return r;
+#else
+      return new Matrix(real);
+#endif
+   };
+
+   // Gives a imag matrix clone.
+   this.cloneImagMatrix = function() {
+#iflt __PI_BUILD__ 1168
+      var z = new Matrix(0, imag.rows, imag.cols);
+      var r = z.add(imag);
+      z.assign(0, 0, 0);
+      return r;
+#else
+      return new Matrix(imag);
+#endif
+   };
+
    // Gives a clone.
    this.clone = function() {
       return new FrameComplex(
-         (new Matrix(0, real.rows, real.cols)).add(real),
-         (new Matrix(0, imag.rows, imag.cols)).add(imag)
+         this.cloneRealMatrix(),
+         this.cloneImagMatrix()
       );
    };
 
@@ -1542,12 +1612,12 @@ function FrameComplex(real, imag) {
 
    // Gives the real frame.
    this.real = function() {
-      return new FrameReal((new Matrix(0, real.rows, real.cols)).add(real));
+      return new FrameReal(this.cloneRealMatrix());
    };
 
    // Gives the imag frame.
    this.imag = function() {
-      return new FrameReal((new Matrix(0, imag.rows, imag.cols)).add(imag));
+      return new FrameReal(this.cloneImagMatrix());
    };
 
    // Gives rows.
@@ -1792,4 +1862,4 @@ function FrameComplex(real, imag) {
 }
 
 // ****************************************************************************
-// EOF FrameMatrix.js - Released 2015/10/05 00:00:00 UTC
+// EOF FrameMatrix.js - Released 2015/11/23 00:00:00 UTC

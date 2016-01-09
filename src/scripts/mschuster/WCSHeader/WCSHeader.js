@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// WCSHeader.js - Released 2015/08/06 00:00:00 UTC
+// WCSHeader.js - Released 2015/11/21 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WCSHeader Script version 1.3
+// This file is part of WCSHeader Script version 1.5
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 //
@@ -47,13 +47,17 @@
 // ****************************************************************************
 
 #define TITLE "WCSHeader"
-#define VERSION "1.3"
+#define VERSION "1.5"
 
 #feature-id Utilities > WCSHeader
 
-#feature-info This script displays an image's FITS World Coordinate System astrometric (WCS) header information.<br/>\
+#feature-info <b>WCSHeader Version 1.5</b><br/>\
    <br/>\
-   Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.
+   Script for displaying an image's FITS World Coordinate System astrometric \
+   (WCS) header information.<br/>\
+   <br/>\
+   Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>\
+   Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
 
 #include <pjsr/FrameStyle.jsh>
 #include <pjsr/Sizer.jsh>
@@ -148,7 +152,12 @@ function positionAngleOfAngle(angle, mirrored) {
       minute -= 600.0;
       degree += 1.0;
    }
-   var result = format("%03d° %02d.%01d'", degree, Math.floor(minute / 10.0), Math.mod(minute, 10));
+   var result = format(
+      "%03d° %02d.%01d'",
+      degree,
+      Math.floor(minute / 10.0),
+      Math.mod(minute, 10)
+   );
    if (mirrored) {
       result = result + " (mirrored)";
    }
@@ -267,11 +276,15 @@ function getPositionAngle() {
    //console.writeln("cd12Value: ", cd12Value);
    //console.writeln("cd21Value: ", cd21Value);
    //console.writeln("cd22Value: ", cd22Value);
-   //console.writeln("angle: ", Math.atan2(-cd12Value, -cd11Value) * 360.0 / (2.0 * Math.PI));
+   //console.writeln("angle: ",
+   //    Math.atan2(-cd12Value, -cd11Value) * 360.0 / (2.0 * Math.PI)
+   //);
    //console.writeln("cross: ", cd11Value * cd22Value - cd12Value * cd21Value);
 
    var angle = Math.atan2(-cd12Value, -cd11Value) * 360.0 / (2.0 * Math.PI);
-   return positionAngleOfAngle(angle, cd11Value * cd22Value - cd12Value * cd21Value < 0.0);
+   return positionAngleOfAngle(
+      angle, cd11Value * cd22Value - cd12Value * cd21Value < 0.0
+   );
 }
 
 function getImageScale() {
@@ -353,7 +366,9 @@ function getFieldWidth() {
       return "-";
    }
 
-   return fieldOfAngle(parameters.targetView.image.width * Math.sqrt(res1 * res2));
+   return fieldOfAngle(
+      parameters.targetView.image.width * Math.sqrt(res1 * res2)
+   );
 }
 
 function getFieldHeight() {
@@ -394,7 +409,9 @@ function getFieldHeight() {
       return "-";
    }
 
-   return fieldOfAngle(parameters.targetView.image.height * Math.sqrt(res1 * res2));
+   return fieldOfAngle(
+      parameters.targetView.image.height * Math.sqrt(res1 * res2)
+   );
 }
 
 function updateResults() {
@@ -405,7 +422,6 @@ function updateResults() {
    parameters.dialog.imageScaleNode.setText(1, getImageScale());
    parameters.dialog.fieldWidthNode.setText(1, getFieldWidth());
    parameters.dialog.fieldHeightNode.setText(1, getFieldHeight());
-   // gc(true); // Workaround for __PI_BUILD__ 0990 view.window.keywords bug
 }
 
 // The script's parameters dialog prototype.
@@ -414,18 +430,6 @@ function parametersDialogPrototype() {
    this.__base__();
 
    this.windowTitle = TITLE;
-
-   this.titlePane = new Label(this);
-
-   this.titlePane.frameStyle = FrameStyle_Box;
-   this.titlePane.margin = 4;
-   this.titlePane.wordWrapping = true;
-   this.titlePane.useRichText = true;
-   this.titlePane.text =
-      "<p><b>" + TITLE + " Version " + VERSION + "</b> &mdash; " +
-      "This script displays an image's FITS World Coordinate System (WCS) astrometric header information.</p>" +
-      "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.</p>";
-   this.titlePane.setMinWidth(this.titlePane.font.width("Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.")+ 4 * this.titlePane.font.width("M"));
 
    this.targetView = new HorizontalSizer;
 
@@ -467,7 +471,9 @@ function parametersDialogPrototype() {
    this.treeBox.setColumnWidth(
       1, this.treeBox.font.width("00h 00m 00.00s (mirrored)MM")
    );
-   this.treeBox.setFixedHeight(8 *(this.treeBox.font.ascent + 3 * this.treeBox.font.descent));
+   this.treeBox.setMinHeight(
+      8 *(this.treeBox.font.ascent + 3 * this.treeBox.font.descent)
+   );
 
    this.equinoxNode = new TreeBoxNode(this.treeBox);
 
@@ -507,6 +513,30 @@ function parametersDialogPrototype() {
    this.resultsPane.add(this.treeBox);
 
    this.buttonPane = new HorizontalSizer;
+   this.buttonPane.spacing = 6;
+
+   this.commentButton = new ToolButton(this);
+   this.buttonPane.add(this.commentButton);
+
+   this.commentButton.icon = this.scaledResource(":/icons/comment.png");
+   this.commentButton.setScaledFixedSize(20, 20);
+   this.commentButton.toolTip =
+      "<p><b>" + TITLE + " Version " + VERSION + "</b></p>" +
+
+      "<p>Script for displaying an image's FITS World Coordinate System " +
+      "(WCS) astrometric header information.</p>" +
+
+      "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights " +
+      "Reserved.<br>" +
+      "Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights " +
+      "Reserved.</p>";
+
+   this.versionLabel = new Label(this);
+   this.buttonPane.add(this.versionLabel);
+
+   this.versionLabel.text = "Version " + VERSION;
+   this.versionLabel.toolTip = this.commentButton.toolTip;
+   this.versionLabel.textAlignment = TextAlign_Right | TextAlign_VertCenter;
 
    this.buttonPane.addStretch();
 
@@ -516,6 +546,8 @@ function parametersDialogPrototype() {
    this.dismissButton.onClick = function() {
       this.dialog.ok();
    };
+   this.dismissButton.defaultButton = true;
+   this.dismissButton.hasFocus = true;
 
    this.buttonPane.add(this.dismissButton);
 
@@ -523,15 +555,14 @@ function parametersDialogPrototype() {
 
    this.sizer.margin = 6;
    this.sizer.spacing = 6;
-   this.sizer.add(this.titlePane);
    this.sizer.add(this.targetView);
    this.sizer.add(this.resultsPane);
-   this.sizer.addStretch();
+   // this.sizer.addStretch();
    this.sizer.add(this.buttonPane);
 
-   this.setFixedWidth(this.displayPixelRatio * 356);
    this.adjustToContents();
-   this.setFixedSize();
+   this.setMinWidth(this.width + this.logicalPixelsToPhysical(120));
+   this.setFixedHeight();
 
    parameters.dialog = this;
    updateResults();
@@ -553,10 +584,13 @@ function main() {
    parametersDialog.execute();
 
    // Workaround to avoid image window close crash in 1.8 RC7.
-   parametersDialog.viewList.currentView = parametersDialog.viewListNullCurrentView;
+   parametersDialog.viewList.currentView =
+      parametersDialog.viewListNullCurrentView;
 }
 
 main();
 
+gc();
+
 // ****************************************************************************
-// EOF WCSHeader.js - Released 2015/08/06 00:00:00 UTC
+// EOF WCSHeader.js - Released 2015/11/21 00:00:00 UTC

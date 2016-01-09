@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// EstimateModulationTransferFunction.js - Released 2015/10/05 00:00:00 UTC
+// EstimateModulationTransferFunction.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -174,9 +174,9 @@ function EstimateModulationTransferFunction(model, view, controller) {
       return detectorModulation;
    }
 
-   // Gives modulation for resolution.
-   this.generateModulationTransfer = function(
-      resolution, modulationTransferFunction
+   // Gives the resolution of a specified modulation transfer.
+   this.generateModulationTransferResolution = function(
+      modulationTransferFunction, modulation
    ) {
       if (modulationTransferFunction.length == 0) {
          return 0;
@@ -184,12 +184,13 @@ function EstimateModulationTransferFunction(model, view, controller) {
 
       for (var i = 1; i != modulationTransferFunction.length; ++i) {
          if (
-            modulationTransferFunction[i - 1].x < resolution &&
-            resolution <= modulationTransferFunction[i].x
+            modulationTransferFunction[i - 1].y > modulation &&
+            modulation >= modulationTransferFunction[i].y
          ) {
-            var m0 = modulationTransferFunction[i - 1];
-            var m1 = modulationTransferFunction[i];
-            return (resolution - m0.x) / (m1.x - m0.x) * (m1.y - m0.y) + m0.y;
+            var e0 = modulationTransferFunction[i - 1];
+            var e1 = modulationTransferFunction[i];
+            return (modulation - e0.y) / (e1.y - e0.y) *
+               (e1.x - e0.x) + e0.x;
          }
       }
 
@@ -277,50 +278,54 @@ function EstimateModulationTransferFunction(model, view, controller) {
             model.modulationTransferFunctionOpticsMeridional
          );
 
-      var resolutions = [5, 10, 20, 40];
+      var modulations = [0.8, 0.5];
       console.writeln("Telescope:");
-      for (var i = 0; i != resolutions.length; ++i) {
-         var resolution = resolutions[i];
-         console.write(format("%d lp/mm: ", resolution));
-         var modulation = this.generateModulationTransfer(
-            resolution, model.modulationTransferFunctionOpticsSagittal
+      for (var i = 0; i != modulations.length; ++i) {
+         var modulation = modulations[i];
+         console.write(
+            format("MTF %.0f%% spatial frequency: ", 100 * modulation)
          );
-         var sagittal = modulation != 0;
+         var resolution = this.generateModulationTransferResolution(
+            model.modulationTransferFunctionOpticsSagittal, modulation
+         );
+         var sagittal = resolution != 0;
          if (sagittal) {
-            console.write(format("Sagittal %.1f%%", 100 * modulation));
+            console.write(format("Sagittal %.1f lp/mm", resolution));
          }
-         var modulation = this.generateModulationTransfer(
-            resolution, model.modulationTransferFunctionOpticsMeridional
+         var resolution = this.generateModulationTransferResolution(
+            model.modulationTransferFunctionOpticsMeridional, modulation
          );
-         var meridional = modulation != 0;
+         var meridional = resolution != 0;
          if (meridional) {
             if (sagittal) {
                console.write(", ");
             }
-            console.write(format("Meridional %.1f%%", 100 * modulation));
+            console.write(format("Meridional %.1f lp/mm", resolution));
          }
          console.writeln();
       }
       console.writeln("Telescope and Detector:");
-      for (var i = 0; i != resolutions.length; ++i) {
-         var resolution = resolutions[i];
-         console.write(format("%d lp/mm: ", resolution));
-         var modulation = this.generateModulationTransfer(
-            resolution, model.modulationTransferFunctionDetectorSagittal
+      for (var i = 0; i != modulations.length; ++i) {
+         var modulation = modulations[i];
+         console.write(
+            format("MTF %.0f%% spatial frequency: ", 100 * modulation)
          );
-         var sagittal = modulation != 0;
+         var resolution = this.generateModulationTransferResolution(
+            model.modulationTransferFunctionDetectorSagittal, modulation
+         );
+         var sagittal = resolution != 0;
          if (sagittal) {
-            console.write(format("Sagittal %.1f%%", 100 * modulation));
+            console.write(format("Sagittal %.1f lp/mm", resolution));
          }
-         var modulation = this.generateModulationTransfer(
-            resolution, model.modulationTransferFunctionDetectorMeridional
+         var resolution = this.generateModulationTransferResolution(
+            model.modulationTransferFunctionDetectorMeridional, modulation
          );
-         var meridional = modulation != 0;
+         var meridional = resolution != 0;
          if (meridional) {
             if (sagittal) {
                console.write(", ");
             }
-            console.write(format("Meridional %.1f%%", 100 * modulation));
+            console.write(format("Meridional %.1f lp/mm", resolution));
          }
          console.writeln();
       }
@@ -328,4 +333,4 @@ function EstimateModulationTransferFunction(model, view, controller) {
 };
 
 // ****************************************************************************
-// EOF EstimateModulationTransferFunction.js - Released 2015/10/05 00:00:00 UTC
+// EOF EstimateModulationTransferFunction.js - Released 2015/11/23 00:00:00 UTC

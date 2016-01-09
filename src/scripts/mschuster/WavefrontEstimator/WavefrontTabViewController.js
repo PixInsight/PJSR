@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// WavefrontTabViewController.js - Released 2015/10/05 00:00:00 UTC
+// WavefrontTabViewController.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -208,9 +208,10 @@ function WavefrontTabView(parent, model, controller) {
       groupBox.sizer.margin = 6;
       groupBox.sizer.spacing = 6;
       groupBox.title = title;
+      groupBox.styleSheet = "*{}";
 
 #ifeq __PI_PLATFORM__ MACOSX
-      if (coreVersionBuild <= 1123) {
+      if (coreVersionBuild < 1168) {
          groupBox.sizer.addSpacing(-6);
       }
 #endif
@@ -282,18 +283,63 @@ function WavefrontTabView(parent, model, controller) {
       return comboBox;
    };
 
+   this.treeBoxHeight = function(treeBox, header, rows, scrollBar) {
+#iflt __PI_BUILD__ 1168
+      var rowHeight = 6;
+#else
+      var rowHeight = 4;
+#endif
+#ifeq __PI_PLATFORM__ MACOSX
+      if (coreVersionBuild < 1168) {
+         rowHeight = 5;
+      }
+#endif
+
+      var height =
+         2 * treeBox.logicalPixelsToPhysical(0.5 * treeBox.borderWidth) +
+         treeBox.logicalPixelsToPhysical(2);
+
+      if (header) {
+         height +=
+            treeBox.logicalPixelsToPhysical(0.5 * treeBox.borderWidth) +
+            treeBox.font.height + treeBox.logicalPixelsToPhysical(rowHeight);
+      }
+
+      height +=
+         Math.round(
+            rows *
+            (treeBox.font.height + treeBox.logicalPixelsToPhysical(rowHeight))
+         );
+
+      if (scrollBar) {
+         height +=
+            2 * treeBox.logicalPixelsToPhysical(2) +
+            treeBox.logicalPixelsToPhysical(11);
+      }
+
+      return height;
+   };
+
    this.sizer = new VerticalSizer();
    this.sizer.margin = 6;
    this.sizer.spacing = 6;
 
    this.labelWidth = this.parent.font.width("Corrugation resolution:")
+#iflt __PI_BUILD__ 1168
    this.editWidth = this.parent.font.width("00000000000");
+#else
+   this.editWidth = this.parent.font.width("0000000000");
+#endif
    this.unitWidth = this.parent.font.width("DN RMS ");
 
+#iflt __PI_BUILD__ 1168
    this.aberrationEstimateTreeBoxRows = 12.5;
+#else
+   this.aberrationEstimateTreeBoxRows = 11.5;
+#endif
 
    {
-      this.wavefrontEstimateGroupBox = this.addGroupBox("Wavefront estimate:");
+      this.wavefrontEstimateGroupBox = this.addGroupBox("Wavefront estimate");
 
       this.defocusDistancePane = this.addPane(this.wavefrontEstimateGroupBox);
 
@@ -457,7 +503,7 @@ function WavefrontTabView(parent, model, controller) {
 
    {
       this.aberrationEstimateGroupBox = this.addGroupBox(
-         "Aberration estimate:"
+         "Aberration estimate"
       );
       this.aberrationEstimateGroupBox.toolTip =
          "<p>A table of orthogonal Zernike aberration polynomial " +
@@ -511,16 +557,13 @@ function WavefrontTabView(parent, model, controller) {
          3, TextAlign_Right | TextAlign_VertCenter
       );
       this.aberrationEstimateTreeBox.setHeaderText(4, "");
-      var rowSpacing = 6;
-#ifeq __PI_PLATFORM__ MACOSX
-      if (coreVersionBuild <= 1123) {
-         rowSpacing = 2;
-      }
-#endif
       this.aberrationEstimateTreeBox.setFixedHeight(
-         this.displayPixelRatio * (this.aberrationEstimateTreeBoxRows + 1) *
-         (this.aberrationEstimateTreeBox.font.lineSpacing + rowSpacing) +
-         this.aberrationEstimateTreeBox.borderWidth
+         this.treeBoxHeight(
+            this.aberrationEstimateTreeBox,
+            true,
+            this.aberrationEstimateTreeBoxRows,
+            false
+         )
       );
 
       for (var i = 4; i != this.aberrationLabels.length; ++i) {
@@ -570,4 +613,4 @@ function WavefrontTabView(parent, model, controller) {
 WavefrontTabView.prototype = new Frame;
 
 // ****************************************************************************
-// EOF WavefrontTabViewController.js - Released 2015/10/05 00:00:00 UTC
+// EOF WavefrontTabViewController.js - Released 2015/11/23 00:00:00 UTC

@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// ParametersTabViewController.js - Released 2015/10/05 00:00:00 UTC
+// ParametersTabViewController.js - Released 2015/11/23 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.16
+// This file is part of WavefrontEstimator Script Version 1.18
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -299,9 +299,10 @@ function ParametersTabView(parent, model, controller) {
       groupBox.sizer.margin = 6;
       groupBox.sizer.spacing = 6;
       groupBox.title = title;
+      groupBox.styleSheet = "*{}";
 
 #ifeq __PI_PLATFORM__ MACOSX
-      if (coreVersionBuild <= 1123) {
+      if (coreVersionBuild < 1168) {
          groupBox.sizer.addSpacing(-6);
       }
 #endif
@@ -388,11 +389,15 @@ function ParametersTabView(parent, model, controller) {
    this.sizer.spacing = 6;
 
    this.labelWidth = this.parent.font.width("Observation wavelength:");
+#iflt __PI_BUILD__ 1168
    this.editWidth = this.parent.font.width("00000000000");
+#else
+   this.editWidth = this.parent.font.width("0000000000");
+#endif
    this.unitWidth = this.parent.font.width("DN RMS ");
 
    {
-      this.telescopeGroupBox = this.addGroupBox("Telescope:");
+      this.telescopeGroupBox = this.addGroupBox("Telescope");
 
       this.apertureDiameterPane = this.addPane(this.telescopeGroupBox);
 
@@ -460,7 +465,7 @@ function ParametersTabView(parent, model, controller) {
    }
 
    {
-      this.detectorGroupBox = this.addGroupBox("Detector:");
+      this.detectorGroupBox = this.addGroupBox("Detector");
 
       this.detectorTypePane = this.addPane(this.detectorGroupBox);
 
@@ -555,7 +560,7 @@ function ParametersTabView(parent, model, controller) {
    }
 
    {
-      this.filterGroupBox = this.addGroupBox("Filter:");
+      this.filterGroupBox = this.addGroupBox("Filter");
 
       this.observationWavelengthPane = this.addPane(this.filterGroupBox);
 
@@ -619,7 +624,7 @@ function ParametersTabView(parent, model, controller) {
    }
 
    {
-      this.frameCombinationGroupBox = this.addGroupBox("Frame combination:");
+      this.frameCombinationGroupBox = this.addGroupBox("Frame combination");
 
       this.rejectionMethodPane = this.addPane(this.frameCombinationGroupBox);
 
@@ -680,7 +685,7 @@ function ParametersTabView(parent, model, controller) {
    }
 
    {
-      this.visualizationGroupBox = this.addGroupBox("Visualization:");
+      this.visualizationGroupBox = this.addGroupBox("Visualization");
 
       this.identifierPrefixPane = this.addPane(this.visualizationGroupBox);
 
@@ -756,4 +761,4 @@ function ParametersTabView(parent, model, controller) {
 ParametersTabView.prototype = new Frame;
 
 // ****************************************************************************
-// EOF ParametersTabViewController.js - Released 2015/10/05 00:00:00 UTC
+// EOF ParametersTabViewController.js - Released 2015/11/23 00:00:00 UTC

@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// DarkBiasNoiseEstimator.js - Released 2015/08/06 00:00:00 UTC
+// DarkBiasNoiseEstimator.js - Released 2015/11/21 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of DarkBiasNoiseEstimator Script version 1.3
+// This file is part of DarkBiasNoiseEstimator Script version 1.4
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,11 +48,13 @@
 // ****************************************************************************
 
 #define TITLE "DarkBiasNoiseEstimator"
-#define VERSION "1.3"
+#define VERSION "1.4"
 
 #feature-id Image Analysis > DarkBiasNoiseEstimator
 
-#feature-info This script estimates the offset and the standard deviation \
+#feature-info <b>DarkBiasNoiseEstimator Version 1.4</b><br/>\
+   <br/>\
+   This script estimates the offset and the standard deviation \
    of temporal noise (e.g. read noise and dark noise) in dark or bias \
    subframes or integrations.<br/>\
    <br/>\
@@ -329,19 +331,31 @@ function signalNoiseEstimatorPrototype() {
          for (var i = 0; i != signalBlocks.length; ++i) {
             signalNoiseBlocks.push(
                new Pair(
-                  new Pair(signalBlocks[i].first.first, noiseBlocks[i].first.last),
+                  new Pair(
+                     signalBlocks[i].first.first, noiseBlocks[i].first.last
+                  ),
                   signalBlocks[i].last
                )
             );
          }
       }
       else {
-         var signalNoiseBlocks = this.blocksOfImageCycleSpin(signalImage, cycleSpin);
+         var signalNoiseBlocks = this.blocksOfImageCycleSpin(
+            signalImage, cycleSpin
+         );
       }
-      signalNoiseBlocks.sort(function (a, b) {return a.first.first - b.first.first;});
+      signalNoiseBlocks.sort(
+         function (a, b) {
+            return a.first.first - b.first.first;
+         }
+      );
 
-      var thresholdLow = Math.round(this.quantileLow * (signalNoiseBlocks.length - 1));
-      var thresholdHigh = Math.round(this.quantileHigh * (signalNoiseBlocks.length - 1));
+      var thresholdLow = Math.round(
+         this.quantileLow * (signalNoiseBlocks.length - 1)
+      );
+      var thresholdHigh = Math.round(
+         this.quantileHigh * (signalNoiseBlocks.length - 1)
+      );
 
       var signals = new Array();
       var noises = new Array();
@@ -418,7 +432,7 @@ function getNoise() {
    if (!parameters.validResults) {
       return "-";
    }
-   return format("%.2f DN RMS", parameters.noise);
+   return format("%.2f DN", parameters.noise);
 }
 
 function enable() {
@@ -603,7 +617,16 @@ function globalEstimate() {
    }
    catch (exception) {
       parameters.validResults = false;
-      console.criticalln("abort");
+      console.criticalln(exception.message);
+      if (!(new RegExp("^abort")).test(exception.message)) {
+         (new MessageBox(
+            "<p><b>Error</b>: " + exception.message + "</p>" +
+            "<p>Estimation aborted.</p>",
+            TITLE,
+            StdIcon_Error,
+            StdButton_Ok
+         )).execute();
+      }
    }
    finally {
       if (offsetView != null) {
@@ -624,6 +647,9 @@ function globalEstimate() {
 function parametersDialogPrototype(parameters) {
    this.__base__ = Dialog;
    this.__base__();
+
+   // Workaround to avoid scaledResource failure in 1.8.4.1190
+   this.displayPixelRatio;
 
    this.parameters = parameters;
 
@@ -646,7 +672,7 @@ function parametersDialogPrototype(parameters) {
 
    this.throwAbort = function() {
       if (this.abortEnabled && this.abortRequested) {
-         throw "abort";
+         throw new Error("abort");
       }
    }
 
@@ -720,7 +746,8 @@ function parametersDialogPrototype(parameters) {
    this.treeBox.setHeaderAlignment(0, Align_Left | TextAlign_VertCenter);
    this.treeBox.setColumnWidth(
       0,
-      this.treeBox.font.width("Temporal noise") + 3 * this.treeBox.font.width("M")
+      this.treeBox.font.width("Temporal noise") +
+      3 * this.treeBox.font.width("M")
    );
    this.treeBox.setHeaderAlignment(1, Align_Left | TextAlign_VertCenter);
    this.treeBox.setColumnWidth(1, this.treeBox.columnWidth(0));
@@ -744,8 +771,8 @@ function parametersDialogPrototype(parameters) {
    this.noiseNode.setToolTip(
       0,
       "<p>Temporal noise is an estimate of the standard deviation of " +
-      "temporal noise (e.g. read noise and dark noise) in the darks or biases, " +
-      "in data number (DN 16-bit [0,65535]) RMS units.</p>"
+      "temporal noise (e.g. read noise and dark noise) in the darks or " +
+      "biases, in data number (DN 16-bit [0,65535]) units.</p>"
    );
    this.noiseNode.setToolTip(1, this.noiseNode.toolTip(0));
    this.noiseNode.selectable = false;
@@ -757,42 +784,15 @@ function parametersDialogPrototype(parameters) {
    this.buttonPane.spacing = 6;
 
    this.browseDocumentationButton = new ToolButton(this);
-   this.browseDocumentationButton.icon = this.scaledResource( ":/process-interface/browse-documentation.png" );
+   this.browseDocumentationButton.icon =
+      this.scaledResource( ":/process-interface/browse-documentation.png" );
    this.browseDocumentationButton.setScaledFixedSize( 20, 20 );
    this.browseDocumentationButton.toolTip =
       "<p>Opens a browser to view the script's documentation.</p>";
    this.browseDocumentationButton.onClick = function () {
       if (!Dialog.browseScriptDocumentation(TITLE)) {
          (new MessageBox(
-            "<p>Documentation has not been installed.</p>" +
-
-            "<p>This script estimates the offset and the standard deviation of " +
-            "temporal noise (e.g. read noise and dark noise) in dark or bias " +
-            "subframes or integrations. The information is useful for dark and " +
-            "bias frame quality evaluation and detector characterization.</p>" +
-
-            "<p>This script requires as inputs two darks or biases, both equally " +
-            "sized, single channel subframes or integrations. Subframes must be " +
-            "similarly exposed. Integrations must be similar combinations of the " +
-            "same number of similarly exposed subframes. The darks or biases may be " +
-            "monochrome detector images, raw Bayer CFA detector images, or a CFA channel " +
-            "extracted from raw Bayer CFA detector images. Estimation accuracy will " +
-            "be compromised for RGB channels extracted from de-Bayered CFA " +
-            "images due to channel interpolation.</p>" +
-
-            "<p>Spurious signal noise (e.g. cosmic-ray hits) is discounted from the " +
-            "offset estimation by measuring the typical median of local regions " +
-            "in the normalized sum of the darks or biases.<p>" +
-
-            "<p>Spatial noise (e.g. offset and dark current nonuniformity) and " +
-            "spurious signal noise (e.g. cosmic-ray hits) are discounted from the " +
-            "temporal noise estimation by measuring the typical normalized " +
-            "Rousseeuw and Croux S<sub>n</sub> scale estimate of local regions in "+
-            "the normalized difference between the darks or biases.</p>" +
-
-            "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>" +
-            "Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.</p>",
-
+            "<p>Documentation has not been installed.</p>",
             TITLE,
             StdIcon_Warning,
             StdButton_Ok
@@ -815,9 +815,27 @@ function parametersDialogPrototype(parameters) {
    this.versionLabel = new Label(this);
    this.versionLabel.text = "Version " + VERSION;
    this.versionLabel.toolTip =
-         "<p>" + TITLE + " Version " + VERSION + "</p>" +
-         "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>" +
-            "Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.</p>";
+      "<p><b>" + TITLE + " Version " + VERSION + "</b></p>" +
+
+      "<p>This script estimates the offset and the standard deviation of " +
+      "temporal noise (e.g. read noise and dark noise) in dark or bias " +
+      "subframes or integrations. The information is useful for dark and " +
+      "bias frame quality evaluation and detector characterization.</p>" +
+
+      "<p>This script requires as inputs two darks or biases, both " +
+      "equally sized, single channel subframes or integrations. " +
+      "Subframes must be similarly exposed. Integrations must be similar " +
+      "combinations of the same number of similarly exposed subframes. " +
+      "The darks or biases may be monochrome detector images, raw Bayer " +
+      "CFA detector images, or a CFA channel extracted from raw Bayer " +
+      "CFA detector images. Estimation accuracy will be compromised for " +
+      "RGB channels extracted from de-Bayered CFA images due to channel " +
+      "interpolation.</p>" +
+
+      "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights " +
+      "Reserved.<br/>" +
+      "Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights " +
+      "Reserved.</p>";
    this.versionLabel.textAlignment = TextAlign_Right | TextAlign_VertCenter;
 
    this.buttonPane.add(this.versionLabel);
@@ -848,6 +866,7 @@ function parametersDialogPrototype(parameters) {
       }
    };
    this.dismissAbortButton.defaultButton = true;
+   this.dismissAbortButton.hasFocus = true;
 
    this.buttonPane.add(this.dismissAbortButton);
 
@@ -866,11 +885,12 @@ function parametersDialogPrototype(parameters) {
    this.sizer.add(this.resultsPane);
    this.sizer.add(this.buttonPane);
 
-   this.setFixedWidth(this.displayPixelRatio * 356);
    this.adjustToContents();
-   this.setFixedSize();
+   this.setMinWidth(this.width + this.logicalPixelsToPhysical(20));
+   this.setFixedHeight();
 
-   this.disableAbort(); // PushButton.text update may force an adjustToContents()
+   // PushButton.text update may force an adjustToContents()
+   this.disableAbort();
 }
 parametersDialogPrototype.prototype = new Dialog;
 
@@ -891,5 +911,7 @@ function main() {
 
 main();
 
+gc();
+
 // ****************************************************************************
-// EOF DarkBiasNoiseEstimator.js - Released 2015/08/06 00:00:00 UTC
+// EOF DarkBiasNoiseEstimator.js - Released 2015/11/21 00:00:00 UTC

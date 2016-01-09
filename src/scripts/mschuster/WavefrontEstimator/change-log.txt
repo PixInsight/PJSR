@@ -3,6 +3,42 @@ WavefrontEstimator Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2015.11.23 - Version 1.18
+
+- Improved modulation transfer function plot and console log.
+
+- Improved wavefront plot.
+
+- Improved dialog layout.
+
+- Improved documentation.
+
+- Improved error handling.
+
+- Improved matrix memory management.
+
+- Fixed SVD unnormalized floating point problem.
+
+- Use Open Sans font in plots, added high resolution rendering.
+
+- Save display function in .xisf files.
+
+-------------------------------------------------------------------------------
+2015.11.02 - Version 1.17
+
+- Improved dialog layout.
+
+- Improved wavefront plot.
+
+- Removed the FVE column from aberration_estimate.cvs and console log.
+
+- Flipped sign of y coordinate in wavefront_domain.fits/xisf.
+
+- Improved FITS keyword comments.
+
+- Improved documentation.
+
+-------------------------------------------------------------------------------
 2015.10.05 - Version 1.16
 
 - Added Fringe count scale parameter.

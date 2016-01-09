@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenMain.js - Released 2015/07/29 23:22:54 UTC
+// MakGenMain.js - Released 2015/10/07 15:20:17 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.95
+// This file is part of PixInsight Makefile Generator Script version 1.96
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
@@ -225,6 +225,8 @@ function main()
          default: throw new Error( "Internal error: bad gccOptimization item selection!" );
          }
 
+         P.gccUnstrippedBinaries = dialog.gccUnstripped_CheckBox.checked;
+
          var a = dialog.extraDefinitions_TextBox.text.trim().split( '\n' );
          for ( var i = 0; i < a.length; ++i )
          {
@@ -377,4 +379,4 @@ function main()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenMain.js - Released 2015/07/29 23:22:54 UTC
+// EOF MakGenMain.js - Released 2015/10/07 15:20:17 UTC

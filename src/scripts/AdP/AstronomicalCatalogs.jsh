@@ -2211,22 +2211,32 @@ function VizierMirrorDialog(serverAddress)
       var node = new TreeBoxNode(this.server_List);
       node.checkable = false;
       node.setText(0, VizierCatalog.mirrors[m].name);
-      //node.setText(1, VizierCatalog.mirrors[m].address);
       node.address = VizierCatalog.mirrors[m].address;
       if (VizierCatalog.mirrors[m].address == serverAddress)
-         node.selected=true;
+         node.selected = true;
    }
    this.server_List.adjustColumnWidthToContents(0);
-   //this.server_List.adjustColumnWidthToContents(1);
-   //this.server_List.setMinWidth(this.font.width("abc")*25);
-   this.server_List.setMinWidth(this.server_List.columnWidth(0)*1.1);
+   this.server_List.setMinWidth(this.server_List.columnWidth(0) * 1.1);
+
+   this.resetCache_Button = new ToolButton(this);
+   this.resetCache_Button.text = "Reset catalog cache";
+   this.resetCache_Button.icon = this.scaledResource(":/bullets/bullet-ball-red.png");
+   this.resetCache_Button.toolTip = "<p>Resets the catalog cache.</p>" +
+      "<p>The script stores in a cache the results of the queries to the catalogs to reduce " +
+      "the load in the servers. However, sometimes a query fails for a temporary cause but " +
+      "it still returns a result and the script can not know if the result is good. " +
+      "In this case this button resets the cache so the query can be sent to the server again.</p>";
+   this.resetCache_Button.onClick = function ()
+   {
+      __vizier_cache__ = new VizierCache();
+   };
 
    // Buttons
 
    this.ok_Button = new PushButton(this);
    this.ok_Button.defaultButton = true;
    this.ok_Button.text = "OK";
-   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
+   this.ok_Button.icon = this.scaledResource(":/icons/ok.png");
    this.ok_Button.onClick = function ()
    {
       if (this.dialog.server_List.selectedNodes == 0)
@@ -2242,7 +2252,7 @@ function VizierMirrorDialog(serverAddress)
 
    this.cancel_Button = new PushButton(this);
    this.cancel_Button.text = "Cancel";
-   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
+   this.cancel_Button.icon = this.scaledResource(":/icons/cancel.png");
    this.cancel_Button.onClick = function ()
    {
       this.dialog.cancel();
@@ -2260,6 +2270,7 @@ function VizierMirrorDialog(serverAddress)
    this.sizer.scaledSpacing = 6;
    this.sizer.add(this.helpLabel);
    this.sizer.add(this.server_List);
+   this.sizer.add(this.resetCache_Button);
    this.sizer.addScaledSpacing(6);
    this.sizer.add(this.buttons_Sizer);
 

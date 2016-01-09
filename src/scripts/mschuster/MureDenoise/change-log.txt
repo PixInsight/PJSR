@@ -1,0 +1,66 @@
+===============================================================================
+MureDenoise Script Changelog
+===============================================================================
+
+-------------------------------------------------------------------------------
+2015.12.04 - Version 1.14
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
+2015.11.26 - Version 1.12
+
+- Improved covariance hypothesis.
+
+- Disabled process console pause/abort button.
+
+- Improved tooltips.
+
+- Removed support for Lanczos-5 interpolation method.
+
+-------------------------------------------------------------------------------
+2015.11.23 - Version 1.11
+
+- Fixed dialog group box style sheet problem.
+
+- Improved covariance hypothesis.
+
+- Documented nonsupport of one shot color (OSC) detectors.
+
+-------------------------------------------------------------------------------
+2015.11.20 - Version 1.10
+
+- Improved covariance hypothesis.
+
+- Improved quality of cycle-spin shift generator.
+
+- Improved documentation.
+
+-------------------------------------------------------------------------------
+2015.11.14 - Version 1.9
+
+- Added large spatial scale flatfield compensation.
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
+2015.11.10 - Version 1.8
+
+- Added denoise variance scale parameter.
+
+- Added loading of variance scale from an ImageIntegration process log file.
+
+- Removed unsupported image interpolation methods.
+
+- Remove denoise amount parameter.
+
+- Improved documentation.
+
+- Added change-log.txt, copyright-info.txt, and product-info.txt.
+
+-------------------------------------------------------------------------------
+2015.11.03 - Version 1.7
+
+- Initial release.
+
+-------------------------------------------------------------------------------
