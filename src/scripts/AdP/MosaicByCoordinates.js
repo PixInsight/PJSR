@@ -32,6 +32,9 @@
 
  Changelog:
 
+  1.2:  * Keep the keywords of the images
+        * Better error management
+
   1.1:  * Optional faster algorithm for warping the images
 
   1.0:  * Orthographic projection
@@ -60,7 +63,7 @@ Copyright &copy; 2013-2015 Andr&eacute;s del Pozo
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define VERSION "1.1"
+#define VERSION "1.2"
 #define TITLE "MosaicByCoordinates"
 #define SETTINGS_MODULE "MosaicCoord"
 

@@ -78,9 +78,13 @@ function WarpImage()
 
    this.AdaptImageLQ = function (metadata0, window1)
    {
+      if(!metadata0.projection)
+         throw "The reference image has no coordinates";
       console.writeln("<br><b>Fast image warping</b>");
       var metadata1 = new ImageMetadata();
       metadata1.ExtractMetadata(window1);
+      if(!metadata1.projection)
+         throw "The target image has no coordinates";
 
       var bounds = WarpImage.GetPixelBounds(metadata0, metadata1);
       //console.writeln("Image1 bounds: ", bounds);
@@ -197,6 +201,10 @@ function WarpImage()
             window1.mainView.id + this.suffix);
          var resImage = resWindow.mainView.image;
          resWindow.mainView.beginProcess(UndoFlag_NoSwapFile);
+
+         // Copy keywords to target image
+         resWindow.keywords = window1.keywords;
+
          for (var c = 0; c < numChannels; c++)
             resImage.setSamples(values[c], bounds, c);
          metadata0.SaveKeywords(resWindow, false);
@@ -216,9 +224,13 @@ function WarpImage()
 
    this.AdaptImageHQ = function (metadata0, window1)
    {
+      if(!metadata0.projection)
+         throw "The reference image has no coordinates";
       console.writeln("<br><b>High quality image warping</b>");
       var metadata1 = new ImageMetadata();
       metadata1.ExtractMetadata(window1);
+      if(!metadata1.projection)
+         throw "The target image has no coordinates";
 
       var bounds = WarpImage.GetPixelBounds(metadata0, metadata1);
       //console.writeln("Image1 bounds: ", bounds);
@@ -293,6 +305,10 @@ function WarpImage()
             window1.mainView.id + this.suffix);
          var resImage = resWindow.mainView.image;
          resWindow.mainView.beginProcess(UndoFlag_NoSwapFile);
+
+         // Copy keywords to target image
+         resWindow.keywords = window1.keywords;
+
          for (var c = 0; c < numChannels; c++)
             resImage.setSamples(values[c], bounds, c);
          metadata0.SaveKeywords(resWindow, false);
