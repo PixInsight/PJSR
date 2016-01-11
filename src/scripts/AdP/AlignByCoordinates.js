@@ -31,6 +31,9 @@
 
  Changelog:
 
+ 1.3:  * Keep the keywords of the images
+       * Better error management
+
  1.2:  * Optional faster algorithm for warping the images
 
  1.1:  * Removed the capability of creating mosaics
@@ -62,7 +65,7 @@ Copyright &copy; 2013-2015 Andr&eacute;s del Pozo
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define VERSION "1.2"
+#define VERSION "1.3"
 #define TITLE "AlignByCoordinates"
 #define SETTINGS_MODULE "AlignCoord"
 
@@ -929,7 +932,8 @@ function AlignByCoordsEngine()
          }
          catch (exception)
          {
-            console.writeln("**********************\nError: ", exception);
+            console.writeln("**********************\n\x1b[38;2;255;128;128mError: " + exception.toString() + "\x1b[0m");
+            new MessageBox(exception, TITLE, StdIcon_Error, StdButton_Ok).execute();
          }
       }
       else
@@ -1001,7 +1005,7 @@ function AlignByCoordsEngine()
             console.writeln("\n<b>Process finished successfully.</b>");
          else
          {
-            console.writeln(format("\n<b>Process finished with %d errors.</b>", errors.length));
+            console.writeln(format("\n<b>\x1b[38;2;255;128;128mProcess finished with %d errors.\x1b[0m</b>", errors.length));
             for (var i = 0; i < errors.length; i++)
             {
                console.writeln(errors[i].file + ":");
