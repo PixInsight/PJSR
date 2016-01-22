@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorMD5.js - Released 2014/08/07 00:00:00 UTC
+// SubframeSelectorMD5.js - Released 2016/01/24 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.3
+// This file is part of SubframeSelector Script version 1.4
 //
-// Copyright (C) 2012-2014 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2014 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -307,4 +307,4 @@ function MD5Equal(state1, state2) {
 }
 
 // ****************************************************************************
-// EOF SubframeSelectorMD5.js - Released 2014/08/07 00:00:00 UTC
+// EOF SubframeSelectorMD5.js - Released 2016/01/24 00:00:00 UTC
