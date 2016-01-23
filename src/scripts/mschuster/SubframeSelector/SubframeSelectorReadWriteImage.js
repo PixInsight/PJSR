@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorReadWriteImage.js - Released 2014/08/07 00:00:00 UTC
+// SubframeSelectorReadWriteImage.js - Released 2016/01/24 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.3
+// This file is part of SubframeSelector Script version 1.4
 //
-// Copyright (C) 2012-2014 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2014 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -280,6 +280,14 @@ function cantWriteCSVFileAskUser(filePath) {
 }
 
 function readImage(filePath, hints) {
+   var imageWindows = ImageWindow.open(filePath);
+   if (imageWindows.length != 1) {
+      console.writeln("");
+      console.writeln("*** Error: multi image file not supported: ", filePath);
+      return null;
+   }
+   return imageWindows[0];
+
    var extension = File.extractExtension(filePath);
 
    var fileFormat = new FileFormat(extension, true, false);
@@ -338,7 +346,7 @@ function readImage(filePath, hints) {
 }
 
 function writeImage(filePath, imageWindows, ieeefpSampleFormat, hints) {
-   var extension = ".fit";
+   var extension = File.extractExtension(filePath);
 
    var fileFormat = new FileFormat(extension, false, true);
    if (fileFormat.isNull) {
@@ -375,4 +383,4 @@ function writeImage(filePath, imageWindows, ieeefpSampleFormat, hints) {
 }
 
 // ****************************************************************************
-// EOF SubframeSelectorReadWriteImage.js - Released 2014/08/07 00:00:00 UTC
+// EOF SubframeSelectorReadWriteImage.js - Released 2016/01/24 00:00:00 UTC

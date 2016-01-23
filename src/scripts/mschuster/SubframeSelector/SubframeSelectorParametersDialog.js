@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorParametersDialog.js - Released 2014/08/07 00:00:00 UTC
+// SubframeSelectorParametersDialog.js - Released 2016/01/24 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.3
+// This file is part of SubframeSelector Script version 1.4
 //
-// Copyright (C) 2012-2014 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2014 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -153,8 +153,8 @@ function parametersDialogPrototype() {
 "to output directories for postprocessing. Subframe weights may be recorded in the " +
 "FITS header of the copies.</p>" +
 "<p>For more information see the script documentation.</p>" +
-"<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br>" +        // ### 01.08.00.1065
-"Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.</p>";  // ### 01.08.00.1065
+"<p>Copyright &copy; 2012-2016 Mike Schuster. All Rights Reserved.<br>" +        // ### 01.08.00.1065
+"Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.</p>";  // ### 01.08.00.1065
    }
    var sizerMargin = 6;
    //aboutSection.setMinWidth(dialogMinWidth - 2 * sizerMargin);                 // ### 01.08.00.1065
@@ -2427,4 +2427,4 @@ function parametersDialogPrototype() {
 parametersDialogPrototype.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF SubframeSelectorParametersDialog.js - Released 2014/08/07 00:00:00 UTC
+// EOF SubframeSelectorParametersDialog.js - Released 2016/01/24 00:00:00 UTC

@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelector.js - Released 2015/08/09 00:00:00 UTC
+// SubframeSelector.js - Released 2016/01/24 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.3
+// This file is part of SubframeSelector Script version 1.4
 //
-// Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -48,7 +48,7 @@
 // ****************************************************************************
 
 #define TITLE "SubframeSelector"
-#define VERSION "1.3"
+#define VERSION "1.4"
 
 #feature-id Batch Processing > SubframeSelector
 
@@ -61,8 +61,8 @@ to output directories for postprocessing. Subframe weights may be recorded in th
 FITS header of the copies.<br/>\
 For more information see the script documentation and the dialog tool tip \
 messages.<br/>\
-Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br>\
-Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+Copyright &copy; 2012-2016 Mike Schuster. All Rights Reserved.<br>\
+Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 
 #include <pjsr/ButtonCodes.jsh>
 #include <pjsr/Color.jsh>
@@ -224,35 +224,44 @@ function backgroundColorSelection(dialog, checked, index) {
 }
 
 function targetSubframesUpdateTreeBox(dialog) {
-   dialog.targetSubframesTreeBox.clear();
-   for (var i = 0; i != parameters.targetSubframeDescriptions.length; ++i) {
-      var description = parameters.targetSubframeDescriptions[i];
-      var treeBoxNode = new TreeBoxNode(dialog.targetSubframesTreeBox);
-      with (treeBoxNode) {
-         checkable = true;
-         try {
-            checked = description.checked;
+   try {
+      dialog.targetSubframesTreeBox.clear();
+      for (var i = 0; i != parameters.targetSubframeDescriptions.length; ++i) {
+         var description = parameters.targetSubframeDescriptions[i];
+         var treeBoxNode = new TreeBoxNode(dialog.targetSubframesTreeBox);
+         with (treeBoxNode) {
+            checkable = true;
+            //try {
+               checked = description.checked;
+            //}
+            //catch (error) {
+            //   checked = true;
+            //}
+            //try {
+               selected = description.selected;
+            //}
+            //catch (error) {
+            //   selected = false;
+            //}
+            var filePath = description.filePath;
+            setText(
+               0,
+               format("%d ", i + 1) +
+               (parameters.targetSubframesFullPaths ? filePath : File.extractName(filePath))
+            );
+            if (!parameters.targetSubframesFullPaths) {
+               setToolTip(0, filePath);
+            }
+            setBackgroundColor(0, backgroundColorSelection(dialog, description.checked, i));
          }
-         catch (error) {
-            checked = true;
-         }
-         try {
-            selected = description.selected;
-         }
-         catch (error) {
-            selected = false;
-         }
-         var filePath = description.filePath;
-         setText(
-            0,
-            format("%d ", i + 1) +
-            (parameters.targetSubframesFullPaths ? filePath : File.extractName(filePath))
-         );
-         if (!parameters.targetSubframesFullPaths) {
-            setToolTip(0, filePath);
-         }
-         setBackgroundColor(0, backgroundColorSelection(dialog, description.checked, i));
       }
+   }
+   catch (error) {
+      // handle corrupted script settings and parameters.
+      parameters.targetSubframeDescriptions = [];
+      dialog.targetSubframesTreeBox.clear();
+      tabulationClear(dialog);
+      subframeCacheFlush();
    }
    enableButtons(dialog);
 }
@@ -278,30 +287,30 @@ function targetSubframesNodeUpdated(dialog) {
 }
 
 function targetSubframesAddFiles(dialog) {
-   var directory = Settings.read(
-      TITLE + "." + VERSION + "_" + "targetSubframesAddFilesDirectory", DataType_String
-   );
-   if (!Settings.lastReadOK || directory == null || !File.directoryExists(directory)) {
-      directory = File.systemTempDirectory;
-   }
+   //var directory = Settings.read(
+   //   TITLE + "." + VERSION + "_" + "targetSubframesAddFilesDirectory", DataType_String
+   //);
+   //if (!Settings.lastReadOK || directory == null || !File.directoryExists(directory)) {
+   //   directory = File.systemTempDirectory;
+   //}
    var openFileDialog = new OpenFileDialog();
    with (openFileDialog) {
       caption = TITLE + ": Select Target Images";
       loadImageFilters();
       multipleSelections = true;
-      initialPath = directory;
+      //initialPath = directory;
       if (!execute()) {
          return;
       }
    }
-   if (openFileDialog.fileNames.length != 0) {
-      Settings.write(
-         TITLE + "." + VERSION + "_" + "targetSubframesAddFilesDirectory",
-         DataType_String,
-         File.extractDrive(openFileDialog.fileNames[0]) +
-            File.extractDirectory(openFileDialog.fileNames[0])
-      );
-   }
+   //if (openFileDialog.fileNames.length != 0) {
+   //   Settings.write(
+   //      TITLE + "." + VERSION + "_" + "targetSubframesAddFilesDirectory",
+   //      DataType_String,
+   //      File.extractDrive(openFileDialog.fileNames[0]) +
+   //         File.extractDirectory(openFileDialog.fileNames[0])
+   //   );
+   //}
 
    for (var i = 0; i != openFileDialog.fileNames.length; ++i) {
       parameters.targetSubframeDescriptions.push(
@@ -795,34 +804,35 @@ function tabulationClear(dialog) {
 }
 
 function tabulationSaveAs(dialog) {
-   var directory = parameters.starMapDirectory;
-   if (directory == "" || !File.directoryExists(directory)) {
-      directory = Settings.read(
-         TITLE + "." + VERSION + "_" + "saveAsDirectory", DataType_String
-      );
-      if (
-         !Settings.lastReadOK ||
-         directory == null ||
-         !File.directoryExists(directory)
-      ) {
-         directory = File.systemTempDirectory;
-      }
-   }
+   //var directory = parameters.starMapDirectory;
+   //if (directory == "" || !File.directoryExists(directory)) {
+   //   directory = Settings.read(
+   //      TITLE + "." + VERSION + "_" + "saveAsDirectory", DataType_String
+   //   );
+   //   if (
+   //      !Settings.lastReadOK ||
+   //      directory == null ||
+   //      !File.directoryExists(directory)
+   //   ) {
+   //      directory = File.systemTempDirectory;
+   //   }
+   //}
    var saveFileDialog = new SaveFileDialog();
    with (saveFileDialog) {
       caption = TITLE + ": Save Table .csv File As";
       filters = [[".csv files", "*.csv"]];
-      initialPath = directory + "/" + "SubframeSelector_table.csv";
+      //initialPath = directory + "/" + "SubframeSelector_table.csv";
+      initialPath = "SubframeSelector_table.csv";
       if (!execute()) {
          return;
       }
    }
-   Settings.write(
-      TITLE + "." + VERSION + "_" + "saveAsDirectory",
-      DataType_String,
-      File.extractDrive(saveFileDialog.fileName) +
-         File.extractDirectory(saveFileDialog.fileName)
-   );
+   //Settings.write(
+   //   TITLE + "." + VERSION + "_" + "saveAsDirectory",
+   //   DataType_String,
+   //   File.extractDrive(saveFileDialog.fileName) +
+   //      File.extractDirectory(saveFileDialog.fileName)
+   //);
 
    console.writeln("");
    console.writeln("<b>Save table as</b>: ", saveFileDialog.fileName);
@@ -1041,34 +1051,35 @@ function propertyPlotExport(dialog) {
 }
 
 function propertyPlotSaveAs(dialog) {
-   var directory = parameters.starMapDirectory;
-   if (directory == "" || !File.directoryExists(directory)) {
-      directory = Settings.read(
-         TITLE + "." + VERSION + "_" + "saveAsDirectory", DataType_String
-      );
-      if (
-         !Settings.lastReadOK ||
-         directory == null ||
-         !File.directoryExists(directory)
-      ) {
-         directory = File.systemTempDirectory;
-      }
-   }
+   //var directory = parameters.starMapDirectory;
+   //if (directory == "" || !File.directoryExists(directory)) {
+   //   directory = Settings.read(
+   //      TITLE + "." + VERSION + "_" + "saveAsDirectory", DataType_String
+   //   );
+   //   if (
+   //      !Settings.lastReadOK ||
+   //      directory == null ||
+   //      !File.directoryExists(directory)
+   //   ) {
+   //      directory = File.systemTempDirectory;
+   //   }
+   //}
    var saveFileDialog = new SaveFileDialog();
    with (saveFileDialog) {
       caption = TITLE + ": Save Plots Image File As";
       filters = [["FITS files", "*.fit, *.fits, *.fts"]];
-      initialPath = directory + "/" + "SubframeSelector_plots.fit";
+      //initialPath = directory + "/" + "SubframeSelector_plots.fit";
+      initialPath = "SubframeSelector_plots.fit";
       if (!execute()) {
          return null;
       }
    }
-   Settings.write(
-      TITLE + "." + VERSION + "_" + "saveAsDirectory",
-      DataType_String,
-      File.extractDrive(saveFileDialog.fileName) +
-         File.extractDirectory(saveFileDialog.fileName)
-   );
+   //Settings.write(
+   //   TITLE + "." + VERSION + "_" + "saveAsDirectory",
+   //   DataType_String,
+   //   File.extractDrive(saveFileDialog.fileName) +
+   //      File.extractDirectory(saveFileDialog.fileName)
+   //);
 
    return saveFileDialog.fileName;
 }
@@ -1997,8 +2008,8 @@ function outputSubframesProcess(dialog) {
 
       if (action == parameters.copyAction && parameters.weightKeyword != "") {
          var copyFilePath = description.checked ?
-            makeApprovedSubframeFilePath(filePath, ".fit") :
-            makeRejectedSubframeFilePath(filePath, ".fit");
+            makeApprovedSubframeFilePath(filePath, File.extractExtension(filePath)) :
+            makeRejectedSubframeFilePath(filePath, File.extractExtension(filePath));
 
          var imageWindow = readImage(filePath, "");
          if (imageWindow == null) {
@@ -2172,4 +2183,4 @@ function main() {
 main();
 
 // ****************************************************************************
-// EOF SubframeSelector.js - Released 2015/08/09 00:00:00 UTC
+// EOF SubframeSelector.js - Released 2016/01/24 00:00:00 UTC
