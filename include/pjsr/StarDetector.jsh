@@ -4,7 +4,7 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/StarDetector.jsh - Released 2015/07/23 10:07:13 UTC
+// pjsr/StarDetector.jsh - Released 2015/11/09 15:21:11 UTC
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
@@ -54,12 +54,14 @@
 #define __PJSR_StarDetector_jsh
 
 /******************************************************************************
- * StarDetector.jsh version 1.23 (January 2014)
+ * StarDetector.jsh version 1.24 (November 2015)
  *
  * A JavaScript star detection engine. Adapted from the StarAlignment tool.
  * Written by Juan Conejero, PTeam
  *
  * Changelog:
+ *
+ * 1.24  - Language optimization: All occurrences of 'var' replaced with 'let'.
  *
  * 1.23  - Several optimizations.
  *
@@ -203,10 +205,10 @@ function StarDetector()
     */
    function BoxStructure( size )
    {
-      var B = new Array( size*size );
-      for ( var i = 0; i < B.length; ++i )
+      let B = new Array( size*size );
+      for ( let i = 0; i < B.length; ++i )
          B[i] = 1;
-      var S = new Array;
+      let S = new Array;
       S.push( B );
       return S;
    }
@@ -216,20 +218,20 @@ function StarDetector()
     */
    function CircularStructure( size )
    {
-      var C = new Array( size*size );
-      var n2 = size >> 1;
-      var n22 = n2*n2;
-      for ( var i = 0; i < size; ++i )
+      let C = new Array( size*size );
+      let n2 = size >> 1;
+      let n22 = n2*n2;
+      for ( let i = 0; i < size; ++i )
       {
-         var di = i - n2;
-         var di2 = di*di;
-         for ( var j = 0; j < size; ++j )
+         let di = i - n2;
+         let di2 = di*di;
+         for ( let j = 0; j < size; ++j )
          {
-            var dj = j - n2;
+            let dj = j - n2;
             C[i*size + j] = (di2 + dj*dj <= n22) ? 1 : 0;
          }
       }
-      var S = new Array;
+      let S = new Array;
       S.push( C );
       return S;
    }
@@ -259,13 +261,13 @@ function StarDetector()
       // Noise reduction with a low-pass filter
       if ( this.noiseLayers > 0 )
       {
-         var G = Matrix.gaussianFilterBySize( 1 + (1 << this.noiseLayers) );
+         let G = Matrix.gaussianFilterBySize( 1 + (1 << this.noiseLayers) );
          map.convolveSeparable( G.rowVector( G.rows >> 1 ), G.rowVector( G.rows >> 1 ) );
       }
 
       // Flatten the image with a high-pass filter
-      var s = new Image( map );
-      var G = Matrix.gaussianFilterBySize( 1 + (1 << this.structureLayers) );
+      let s = new Image( map );
+      let G = Matrix.gaussianFilterBySize( 1 + (1 << this.structureLayers) );
       s.convolveSeparable( G.rowVector( G.rows >> 1 ), G.rowVector( G.rows >> 1 ) );
       map.apply( s, ImageOp_Sub );
       s.free();
@@ -276,13 +278,13 @@ function StarDetector()
       map.morphologicalTransformation( MorphOp_Dilation, BoxStructure( 3 ) );
 
       // Adaptive binarization based on noise evaluation
-      var m = map.median();
+      let m = map.median();
       if ( 1 + m == 1 )
       {
          // Black background - probably a synthetic star field
-         var wasRangeClippingEnabled = map.rangeClippingEnabled;
-         var wasRangeClipLow = map.rangeClipLow;
-         var wasRangeClipHigh = map.rangeClipHigh;
+         let wasRangeClippingEnabled = map.rangeClippingEnabled;
+         let wasRangeClipLow = map.rangeClipLow;
+         let wasRangeClipHigh = map.rangeClipHigh;
          map.rangeClippingEnabled = true;
          map.rangeClipLow = 0;
          map.rangeClipHigh = 1;
@@ -296,7 +298,7 @@ function StarDetector()
       else
       {
          // A "natural" image
-         var n = map.noiseKSigma( 1 )[0];
+         let n = map.noiseKSigma( 1 )[0];
          map.binarize( m + 3*n );
       }
 
@@ -310,7 +312,7 @@ function StarDetector()
     */
    this.starParameters = function( image, rect, starPoints )
    {
-      var params = { pos:  {x:0, y:0}, // barycenter image coordinates
+      let params = { pos:  {x:0, y:0}, // barycenter image coordinates
                      bkg:  0,          // local background
                      norm: 0,          // detection level
                      flux: 0,          // total flux
@@ -318,26 +320,26 @@ function StarDetector()
                      size: 0 };        // structure size in square pixels
 
       // Calculate the mean local background as the median of background pixels
-      var r = rect.inflatedBy( this.bkgDelta );
-      var b = [[],[],[],[]];
+      let r = rect.inflatedBy( this.bkgDelta );
+      let b = [[],[],[],[]];
       image.getSamples( b[0], new Rect(    r.x0,    r.y0,    r.x1, rect.y0 ) );
       image.getSamples( b[1], new Rect(    r.x0, rect.y0, rect.x0, rect.y1 ) );
       image.getSamples( b[2], new Rect(    r.x0, rect.y1,    r.x1,    r.y1 ) );
       image.getSamples( b[3], new Rect( rect.x1, rect.y0,    r.x1, rect.y1 ) );
-      for ( var i = 1; i < b.length; ++i )
-         for ( var j = 0; j < b[i].length; ++j )
+      for ( let i = 1; i < b.length; ++i )
+         for ( let j = 0; j < b[i].length; ++j )
             b[0].push( b[i][j] );
       params.bkg = Math.median( b[0] );
 
       // Compute barycenter coordinates
-      var M = Matrix.fromImage( image, rect );
+      let M = Matrix.fromImage( image, rect );
       M.truncate( Math.range( M.median() + this.xyStretch*M.stdDev(), 0.0, 1.0 ), 1.0 );
       M.rescale();
-      var sx = 0, sy = 0, sz = 0;
-      for ( var y = rect.y0, i = 0; i < M.rows; ++y, ++i )
-         for ( var x = rect.x0, j = 0; j < M.cols; ++x, ++j )
+      let sx = 0, sy = 0, sz = 0;
+      for ( let y = rect.y0, i = 0; i < M.rows; ++y, ++i )
+         for ( let x = rect.x0, j = 0; j < M.cols; ++x, ++j )
          {
-            var z = M.at( i, j );
+            let z = M.at( i, j );
             if ( z > 0 )
             {
                sx += z*x;
@@ -349,10 +351,10 @@ function StarDetector()
       params.pos.y = sy/sz + 0.5;
 
       // Total flux, peak value and structure size
-      for ( var i = 0; i < starPoints.length; ++i )
+      for ( let i = 0; i < starPoints.length; ++i )
       {
-         var p = starPoints[i];
-         var f = image.sample( p.x, p.y );
+         let p = starPoints[i];
+         let f = image.sample( p.x, p.y );
          params.flux += f;
          if ( f > params.peak )
             params.peak = f;
@@ -372,7 +374,7 @@ function StarDetector()
    {
       // We work on a duplicate of the source grayscale image, or on its HSI
       // intensity component if it is a color image.
-      var wrk = Image.newFloatImage();
+      let wrk = Image.newFloatImage();
       image.getIntensity( wrk );
 
       // If the invert flag is set, then we are looking for dark structures on
@@ -388,12 +390,12 @@ function StarDetector()
          this.hotPixelFilter( wrk );
          this.alreadyFixedHotPixels = true; // prevent a second hot pixel removal in getStructureMap()
 
-         var G = Matrix.gaussianFilterBySize( (this.noiseReductionFilterRadius << 1)|1 );
+         let G = Matrix.gaussianFilterBySize( (this.noiseReductionFilterRadius << 1)|1 );
          wrk.convolveSeparable( G.rowVector( G.rows >> 1 ), G.rowVector( G.rows >> 1 ) );
       }
 
       // Structure map
-      var map = Image.newFloatImage();
+      let map = Image.newFloatImage();
       map.assign( wrk );
       this.getStructureMap( map );
 
@@ -401,34 +403,34 @@ function StarDetector()
       this.alreadyFixedHotPixels = false;
 
       // Use matrices instead of images for faster access
-      var M = map.toMatrix();
+      let M = map.toMatrix();
       map.free();
       //gc();
 
       // The detected stars
-      var S = new Array;
+      let S = new Array;
 
       // Structure scanner
-      for ( var y0 = 0, x1 = M.cols-1, y1 = M.rows-1; y0 < y1; ++y0 )
+      for ( let y0 = 0, x1 = M.cols-1, y1 = M.rows-1; y0 < y1; ++y0 )
       {
          if ( this.progressCallback != undefined )
             if ( !this.progressCallback( y0, M.rows ) )
                return null;
 
-         for ( var x0 = 0; x0 < x1; ++x0 )
+         for ( let x0 = 0; x0 < x1; ++x0 )
          {
             // Exclude background pixels and already visited pixels
             if ( M.at( y0, x0 ) == 0 )
                continue;
 
             // Star pixel coordinates
-            var starPoints = new Array;
+            let starPoints = new Array;
 
             // Star bounding rectangle
-            var r = new Rect( x0, y0, x0+1, y0+1 );
+            let r = new Rect( x0, y0, x0+1, y0+1 );
 
             // Grow star region downward
-            for ( var y = y0, x = x0, xa, xb; ; )
+            for ( let y = y0, x = x0, xa, xb; ; )
             {
                // Add this pixel to the current star
                starPoints.push( { x:x, y:y } );
@@ -466,7 +468,7 @@ function StarDetector()
                // Decide whether we are done with this star now, or if
                // there is at least one more row that must be explored.
 
-               var nextRow = false;
+               let nextRow = false;
 
                // Explore the next row from left to right. We'll continue
                // gathering pixels if we find at least one nonzero map pixel.
@@ -525,19 +527,19 @@ function StarDetector()
             if ( r.width > 1 && r.height > 1 )
                if ( r.y0 > 0 && r.y1 <= y1 && r.x0 > 0 && r.x1 <= x1 )
                {
-                  var d = Math.max( r.width, r.height );
+                  let d = Math.max( r.width, r.height );
                   if ( starPoints.length/d/d > this.maxDistortion )
                   {
-                     var p = this.starParameters( wrk, r, starPoints );
+                     let p = this.starParameters( wrk, r, starPoints );
                      if ( p.peak <= this.upperLimit )
                      {
-                        var ix = Math.trunc( p.pos.x )|0;
-                        var iy = Math.trunc( p.pos.y )|0;
+                        let ix = Math.trunc( p.pos.x )|0;
+                        let iy = Math.trunc( p.pos.y )|0;
                         if ( this.mask == undefined || this.mask.sample( ix, iy ) != 0 )
                            if ( p.bkg == 0 || (p.norm - p.bkg)/p.bkg > this.sensitivity )
                               if ( wrk.sample( ix, iy ) > 0.85*p.peak )
                               {
-                                 var m = Matrix.fromImage( wrk, r );
+                                 let m = Matrix.fromImage( wrk, r );
                                  if ( m.median() < this.peakResponse*p.peak )
                                     S.push( new Star( p.pos, p.flux, p.size ) );
                               }
@@ -546,9 +548,9 @@ function StarDetector()
                }
 
             // Erase this structure.
-            for ( var i = 0; i < starPoints.length; ++i )
+            for ( let i = 0; i < starPoints.length; ++i )
             {
-               var p = starPoints[i];
+               let p = starPoints[i];
                M.at( p.y, p.x, 0 );
             }
          }
@@ -577,10 +579,10 @@ function StarDetector()
     */
    this.createStructureMapWindow = function( image )
    {
-      var map = new Image( image );
+      let map = new Image( image );
       this.getStructureMap( map );
 
-      var w = new ImageWindow( 1, 1,
+      let w = new ImageWindow( 1, 1,
                                1,      // numberOfChannels
                                8,      // bitsPerSample
                                false,  // floatSample
@@ -600,13 +602,13 @@ function StarDetector()
    {
       function elapsedTime( t0 )
       {
-         var ss = ((new Date).getTime() - t0.getTime())/1000;
-         var mm = ss/60;
+         let ss = ((new Date).getTime() - t0.getTime())/1000;
+         let mm = ss/60;
          ss = 60*Math.frac( mm );
          return format( "%02.0f:%02.2f", Math.trunc( mm ), ss );
       }
 
-      var lastProgressPc = 0;
+      let lastProgressPc = 0;
       function progressCallback( count, total )
       {
          if ( count == 0 )
@@ -617,7 +619,7 @@ function StarDetector()
          }
          else
          {
-            var pc = Math.round( 100*count/total );
+            let pc = Math.round( 100*count/total );
             if ( pc > lastProgressPc )
             {
                console.write( format( "<end>\b\b\b\b%3d%%", pc ) );
@@ -632,27 +634,27 @@ function StarDetector()
 
       this.progressCallback = progressCallback;
 
-      var t0 = new Date;
-      var S = this.stars( image );
-      var st = elapsedTime( t0 );
+      let t0 = new Date;
+      let S = this.stars( image );
+      let st = elapsedTime( t0 );
       console.writeln( format( "<end><cbr><br>* StarDetector: %d stars found ", S.length ) );
       console.writeln( st );
 
       if ( createStarMaskWindow )
       {
-         var bmp = new Bitmap( image.width, image.height );
+         let bmp = new Bitmap( image.width, image.height );
          bmp.fill( 0xffffffff );
-         var G = new VectorGraphics( bmp );
+         let G = new VectorGraphics( bmp );
          G.antialiasing = true;
          G.pen = new Pen( 0xff000000 );
-         for ( var i = 0; i < S.length; ++i )
+         for ( let i = 0; i < S.length; ++i )
          {
-            var s = S[i];
+            let s = S[i];
             G.strokeCircle( s.pos, Math.max( 3, Math.round( Math.sqrt( s.size ) )|1 ) );
          }
          G.end();
 
-         var w = new ImageWindow( bmp.width, bmp.height,
+         let w = new ImageWindow( bmp.width, bmp.height,
                                   1,      // numberOfChannels
                                   8,      // bitsPerSample
                                   false,  // floatSample
@@ -674,4 +676,4 @@ StarDetector.prototype = new Object;
 #endif   // __PJSR_StarDetector_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/StarDetector.jsh - Released 2015/07/23 10:07:13 UTC
+// EOF pjsr/StarDetector.jsh - Released 2015/11/09 15:21:11 UTC

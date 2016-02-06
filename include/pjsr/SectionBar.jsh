@@ -4,7 +4,7 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/SectionBar.jsh - Released 2015/07/23 10:07:13 UTC
+// pjsr/SectionBar.jsh - Released 2015/11/09 15:21:11 UTC
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
@@ -262,15 +262,16 @@ function SectionBar( parent, title, collapsible )
 #else
          this.dialog.canUpdate = false;
 #endif
-         var fixedWidth = this.dialog.isFixedWidth;
+         let fixedWidth = this.dialog.isFixedWidth;
+         let saveMinWidth, saveMaxWidth;
          if ( !fixedWidth )
          {
-            var saveMinWidth = this.dialog.minWidth;
-            var saveMaxWidth = this.dialog.maxWidth;
+            saveMinWidth = this.dialog.minWidth;
+            saveMaxWidth = this.dialog.maxWidth;
             this.dialog.setFixedWidth();
          }
 
-         var fixedHeight = this.dialog.isFixedHeight;
+         let fixedHeight = this.dialog.isFixedHeight;
          if ( fixedHeight )
             this.dialog.setVariableHeight();
 
@@ -344,4 +345,4 @@ SectionBar.prototype = new Control;
 #endif   // __PJSR_SectionBar_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/SectionBar.jsh - Released 2015/07/23 10:07:13 UTC
+// EOF pjsr/SectionBar.jsh - Released 2015/11/09 15:21:11 UTC

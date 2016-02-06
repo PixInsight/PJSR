@@ -4,7 +4,7 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/NumericControl.jsh - Released 2015/07/23 10:07:13 UTC
+// pjsr/NumericControl.jsh - Released 2015/11/09 15:21:11 UTC
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
@@ -166,7 +166,7 @@ function NumericEdit( parent )
 
    this.valueAsString = function( val )
    {
-      var v = Math.range( val, this.lowerBound, this.upperBound );
+      let v = Math.range( val, this.lowerBound, this.upperBound );
 
       if ( this.real )
       {
@@ -183,10 +183,10 @@ function NumericEdit( parent )
 
    this.minEditWidth = function()
    {
-      var n = Math.trunc( Math.max( this.valueAsString( this.lowerBound ).length,
+      let n = Math.trunc( Math.max( this.valueAsString( this.lowerBound ).length,
                                     this.valueAsString( this.upperBound ).length ) );
-      var s = '';
-      for ( var i = 0; i <= n; ++i )
+      let s = '';
+      for ( let i = 0; i <= n; ++i )
          s += '0';
       return this.edit.font.width( s ) + this.logicalPixelsToPhysical( 1+2+2+1 );
    };
@@ -348,4 +348,4 @@ NumericControl.prototype = new NumericEdit;
 #endif   // __PJSR_NumericControl_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/NumericControl.jsh - Released 2015/07/23 10:07:13 UTC
+// EOF pjsr/NumericControl.jsh - Released 2015/11/09 15:21:11 UTC

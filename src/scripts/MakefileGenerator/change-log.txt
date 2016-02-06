@@ -2,6 +2,30 @@
 Makefile Generator Script Changelog
 ===============================================================================
 
+1.100 - Released with PI 1.8.4.1193 Ripley
+
+   - Added -Wno-extern-c-compat warning suppression flag to all FreeBSD builds
+     with clang.
+
+-------------------------------------------------------------------------------
+1.99 - Released with PI 1.8.4.1190 Ripley
+
+   - Fixed a bug in core makefile generation on OS X (wrong install_name_tool
+     application for the updater3 executable).
+
+-------------------------------------------------------------------------------
+1.98 - Released with PI 1.8.4.1189 Ripley
+
+   - Fixed a bug in core makefile generation on OS X (missing install_name_tool
+     application for libzlib-pxi.so).
+
+-------------------------------------------------------------------------------
+1.97 - Released with PI 1.8.4.1187 Ripley
+
+   - Fixed dead code elimination on OS X / clang builds.
+   - Fixed Qt framework updates with install_name_tool for modules on OS X.
+
+-------------------------------------------------------------------------------
 1.96 - Released with PI 1.8.4.1185 Ripley
 
    - New optimization flags for GCC and Clang builds, selected after extensive

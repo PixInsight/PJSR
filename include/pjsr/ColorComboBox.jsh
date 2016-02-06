@@ -4,7 +4,7 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/ColorComboBox.jsh - Released 2015/07/23 10:07:13 UTC
+// pjsr/ColorComboBox.jsh - Released 2015/11/09 15:21:11 UTC
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
@@ -104,16 +104,16 @@ function ComboColor( value, name )
 
    function myHue( rgb )
    {
-      var r = Color.red( rgb );
-      var g = Color.green( rgb );
-      var b = Color.blue( rgb );
+      let r = Color.red( rgb );
+      let g = Color.green( rgb );
+      let b = Color.blue( rgb );
 
       if ( r == g && r == b ) // if this is a gray color
          return -1;
 
-      var max = Math.max( Math.max( r, g ), b );
-      var delta = 255.0*(max - Math.min( Math.min( r, g ), b ));
-      var h;
+      let max = Math.max( Math.max( r, g ), b );
+      let delta = 255.0*(max - Math.min( Math.min( r, g ), b ));
+      let h;
       if ( r == max )
          h = 60*(g - b)/delta; // between yellow & magenta
       else if ( g == max )
@@ -339,11 +339,12 @@ ComboColor.initColors = function()
 
 ComboColor.searchColor = function( rgba )
 {
-   for ( var v = new ComboColor( rgba ), n = ComboColor.colors.length, i = 0, j = n; ; )
+   let n = ComboColor.colors.length;
+   for ( let v = new ComboColor( rgba ), i = 0, j = n; ; )
    {
       if ( j <= i )
          return (i < n && v.isEqualTo( ComboColor.colors[i] )) ? i : -1;
-      var m = (i + j) >> 1;
+      let m = (i + j) >> 1;
       if ( ComboColor.colors[m].isLessThan( v ) )
          i = m+1;
       else
@@ -387,7 +388,7 @@ function ColorComboBox( parent )
 
    let iconSize = this.logicalPixelsToPhysical( ICONSIZE );
    let iconMargin = this.logicalPixelsToPhysical( ICONMARGIN );
-   for ( var i = 0; i < ComboColor.colors.length; ++i )
+   for ( let i = 0; i < ComboColor.colors.length; ++i )
       this.addItem( ComboColor.colors[i].title(), ComboColor.colors[i].icon( iconSize, iconMargin ) );
 
    this.setMinWidth( this.font.width( "Custom (255,255,255)" ) + this.logicalPixelsToPhysical( 60 ) );
@@ -433,7 +434,7 @@ function ColorComboBox( parent )
 
    this.onItemHighlighted = function( index )
    {
-      var rgba = this.colorForIndex( index );
+      let rgba = this.colorForIndex( index );
       if ( this.onCurrentColorChanged )
          this.onCurrentColorChanged( rgba );
    };
@@ -455,4 +456,4 @@ ColorComboBox.prototype = new ComboBox;
 #endif   // __PJSR_ColorComboBox_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/ColorComboBox.jsh - Released 2015/07/23 10:07:13 UTC
+// EOF pjsr/ColorComboBox.jsh - Released 2015/11/09 15:21:11 UTC

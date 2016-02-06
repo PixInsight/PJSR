@@ -4,7 +4,7 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/Slider.jsh - Released 2015/07/23 10:07:13 UTC
+// pjsr/Slider.jsh - Released 2015/11/09 15:21:11 UTC
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
@@ -86,4 +86,4 @@ VerticalSlider.prototype = new Slider;
 #endif   // __PJSR_Slider_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/Slider.jsh - Released 2015/07/23 10:07:13 UTC
+// EOF pjsr/Slider.jsh - Released 2015/11/09 15:21:11 UTC

@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenParameters.js - Released 2015/10/07 15:20:17 UTC
+// MakGenParameters.js - Released 2015/11/26 08:53:10 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.96
+// This file is part of PixInsight Makefile Generator Script version 1.100
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
 //
@@ -481,7 +481,7 @@ function GeneratorParameters()
       if ( isCpp == undefined ) // assume C++ compilation by default
          isCpp = true;
 
-      let s = "-c -pipe" + this.gccArchFlags() + this.gccPICFlags();
+      let s = "-c -pipe -pthread" + this.gccArchFlags() + this.gccPICFlags();
 
       if ( this.isMacOSXPlatform() )
       {
@@ -665,8 +665,8 @@ function GeneratorParameters()
       if ( isCpp )
       {
          // Clang generates *really* useless and nasty warnings about different
-         // representations of empty structures on C and C++.
-         if ( this.isMacOSXPlatform() )
+         // representations of empty structures in C and C++.
+         if ( this.isMacOSXPlatform() || this.isFreeBSDPlatform() )
             s += " -Wno-extern-c-compat";
 
          // SpiderMonkey on g++ and clang generates warnings about applying
@@ -705,7 +705,7 @@ function GeneratorParameters()
       {
          // On Linux, always use the gold linker.
          if ( this.isLinuxPlatform() )
-            s += " -Wl,-fuse-ld=gold"
+            s += " -pthread -Wl,-fuse-ld=gold"
          // On Linux and FreeBSD, mark all executables and shared objects as
          // not requiring an executable stack.
          s += " -Wl,-z,noexecstack";
@@ -714,13 +714,13 @@ function GeneratorParameters()
       }
 
       // Exclude unused sections.
-      s += " -Wl,--gc-sections";
+      s += " -Wl," + (this.isMacOSXPlatform() ? "-dead_strip" : "--gc-sections");
 
       // Strip all symbols by default, or optionally allow for significant
       // backtraces with demangled function names.
       if ( this.gccUnstrippedBinaries )
          s += " -rdynamic";
-      else
+      else if ( !this.isMacOSXPlatform() ) // -s declared obsolete in latest versions of clang
          s += " -s";
 
       if ( this.isModule() || this.isDynamicLibrary() )
@@ -760,8 +760,19 @@ function GeneratorParameters()
       {
          if ( this.isMacOSXPlatform() )
             s += " -framework CoreFoundation"; // required since PI 1.8.0
-         for ( let i = 0; i < this.extraLibraries.length; ++i )
-            s += " -l" + this.extraLibraries[i];
+         if ( this.isMacOSXPlatform() )
+         {
+            for ( let i = 0; i < this.extraLibraries.length; ++i )
+               if ( this.extraLibraries[i].startsWith( "Qt" ) )
+                  s += " -framework " + this.extraLibraries[i].replace( "Qt5", "Qt" );
+               else
+                  s += " -l" + this.extraLibraries[i];
+         }
+         else
+         {
+            for ( let i = 0; i < this.extraLibraries.length; ++i )
+               s += " -l" + this.extraLibraries[i];
+         }
          if ( this.isModule() )
             s += " -lpthread -lPCL-pxi";
       }
@@ -872,4 +883,4 @@ function GeneratorParameters()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenParameters.js - Released 2015/10/07 15:20:17 UTC
+// EOF MakGenParameters.js - Released 2015/11/26 08:53:10 UTC
