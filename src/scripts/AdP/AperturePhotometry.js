@@ -30,6 +30,8 @@
 /*
  Changelog:
 
+ 1.2.2: * Added support for XISF files
+
  1.2.1: * Fixed button "Browse output directory"
 
  1.2:   * The script now measures all the stars in an area 50% bigger than the field
@@ -61,7 +63,7 @@
 <br/>\
 Copyright &copy;2013 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.2.1"
+#define VERSION "1.2.2"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -212,7 +214,9 @@ function ImagesTab(parent, engine)
       ofd.caption = "Select files";
       //ofd.loadImageFilters();
       ofd.filters = [
-         [ "FITS Files", ".fit", ".fits", ".fts" ]
+         [ "All supported formats", ".xisf", ".fit", ".fits", ".fts" ],
+         [ "FITS Files", ".fit", ".fits", ".fts" ],
+         [ "XISF Files",  ".xisf"]
       ];
       if (ofd.execute())
       {
