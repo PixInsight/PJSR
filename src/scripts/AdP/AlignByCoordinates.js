@@ -31,6 +31,8 @@
 
  Changelog:
 
+ 1.3.1:* Added support for XISF files
+
  1.3:  * Keep the keywords of the images
        * Better error management
 
@@ -65,7 +67,7 @@ Copyright &copy; 2013-2015 Andr&eacute;s del Pozo
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define VERSION "1.3"
+#define VERSION "1.3.1"
 #define TITLE "AlignByCoordinates"
 #define SETTINGS_MODULE "AlignCoord"
 
@@ -177,7 +179,9 @@ function AlignByCoordsDialog(engine)
       ofd.initialPath = engine.referPath;
       ofd.caption = "Select reference image path";
       ofd.filters = [
-         [ "FITS Files", ".fit", ".fits", ".fts" ]
+         [ "All supported formats", ".xisf", ".fit", ".fits", ".fts" ],
+         [ "FITS Files", ".fit", ".fits", ".fts" ],
+         [ "XISF Files",  ".xisf"]
       ];
       if (ofd.execute())
       {
@@ -279,7 +283,9 @@ function AlignByCoordsDialog(engine)
       ofd.caption = "Select files";
       //ofd.loadImageFilters();
       ofd.filters = [
-         [ "FITS Files", ".fit", ".fits", ".fts" ]
+         [ "All supported formats", ".xisf", ".fit", ".fits", ".fts" ],
+         [ "FITS Files", ".fit", ".fits", ".fts" ],
+         [ "XISF Files",  ".xisf"]
       ];
       if (ofd.execute())
       {

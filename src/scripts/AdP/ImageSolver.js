@@ -30,6 +30,8 @@
 /*
    Changelog:
 
+   4.1.1: * Added support for XISF files
+
    4.1:   * Fixed layout for high DPI displays
           * Use the new dialog for selecting the VizieR mirror
           * Limited the maximum number of stars
@@ -174,7 +176,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.1"
+#define SOLVERVERSION "4.1.1"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -356,7 +358,9 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
          ofd.caption = "Select files";
          //ofd.loadImageFilters();
          ofd.filters = [
-            [ "FITS Files", ".fit", ".fits", ".fts" ]
+            [ "All supported formats", ".xisf", ".fit", ".fits", ".fts" ],
+            [ "FITS Files", ".fit", ".fits", ".fts" ],
+            [ "XISF Files",  ".xisf"]
          ];
          if (ofd.execute())
          {

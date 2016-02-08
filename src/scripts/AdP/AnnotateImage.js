@@ -3,7 +3,7 @@
 
    Annotation of astronomical images.
 
-   Copyright (C) 2012-2015, Andres del Pozo
+   Copyright (C) 2012-2016, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,10 @@
 
 /*
    Changelog:
+
+   1.8.3:* Fixed a bug in a bad interaction between the catalog cache and the
+           remove of duplicates
+         * Fixed the coordinates of Mintaka in the catalog NamedStars
 
    1.8.2:* Fixed the configuration panel of Custom Catalog Layer
          * The layers Messier and IC/NGC can now read files with any endline code
@@ -154,7 +158,7 @@
 
 #feature-info  A script for annotating astronomical images.<br/>\
                <br/>\
-               Copyright &copy; 2012-2015 Andr&eacute;s del Pozo
+               Copyright &copy; 2012-2016 Andr&eacute;s del Pozo
 
 #include <pjsr/DataType.jsh>
 #include <pjsr/FontFamily.jsh>
@@ -171,7 +175,7 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.8.2"
+#define VERSION "1.8.3"
 #define TITLE "Annotate Image"
 #define SETTINGS_MODULE "ANNOT"
 
@@ -555,10 +559,10 @@ function Layer()
    this.visible = true;
    this.gprops = new GraphicProperties( SETTINGS_MODULE, this.layerName );
 
-   this.GetObjects = function()
+   this.GetObjects = function ()
    {
-      if( this.catalog )
-         return this.catalog.objects;
+      if (this.visible && this.objects)
+         return this.objects;
       else
          return null;
    }
@@ -1084,6 +1088,9 @@ function CatalogLayer(catalog)
    this.Load = function (metadata, mirrorServer)
    {
       this.catalog.Load(metadata, mirrorServer);
+      // "objects" stores a shallow duplicate of the array of objects of the
+      // catalog. RemoveDuplicates removes stars from this array.
+      this.objects = this.catalog.objects.slice();
    }
 
    this.Validate = function ()
@@ -1119,7 +1126,7 @@ function CatalogLayer(catalog)
 
    this.Draw = function (g, metadata, bounds, imageWnd, graphicsScale)
    {
-      var objects = this.catalog.objects;
+      var objects = this.GetObjects();
       var penMarker = new Pen(this.gprops.lineColor, this.gprops.lineWidth * graphicsScale);
       var penLabel = new Pen(this.gprops.labelColor, 0);
       var font = new Font(this.gprops.labelFace, this.gprops.labelSize * graphicsScale);
@@ -2594,7 +2601,7 @@ function AnnotationEngine()
       for (var c = 0; c < this.layers.length; c++)
       {
          if (this.layers[c].visible && this.layers[c].Load)
-            this.layers[c].objects = this.layers[c].Load(this.metadata, this.vizierServer);
+            this.layers[c].Load(this.metadata, this.vizierServer);
       }
 
       try
@@ -2692,7 +2699,7 @@ function AnnotationEngine()
       for (var c = 0; c < this.layers.length; c++)
       {
          if (this.layers[c].visible && this.layers[c].Load)
-            this.layers[c].objects = this.layers[c].Load(this.metadata, this.vizierServer);
+            this.layers[c].Load(this.metadata, this.vizierServer);
       }
 
       try
