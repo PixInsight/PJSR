@@ -32,6 +32,8 @@
 
  Changelog:
 
+  1.2.1:* Added support for XISF files
+
   1.2:  * Keep the keywords of the images
         * Better error management
 
@@ -63,7 +65,7 @@ Copyright &copy; 2013-2015 Andr&eacute;s del Pozo
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define VERSION "1.2"
+#define VERSION "1.2.1"
 #define TITLE "MosaicByCoordinates"
 #define SETTINGS_MODULE "MosaicCoord"
 
@@ -164,7 +166,9 @@ function MosaicByCoordsDialog(engine)
          ofd.caption = "Select files";
          //ofd.loadImageFilters();
          ofd.filters = [
-            [ "FITS Files", ".fit", ".fits", ".fts" ]
+            [ "All supported formats", ".xisf", ".fit", ".fits", ".fts" ],
+            [ "FITS Files", ".fit", ".fits", ".fts" ],
+            [ "XISF Files",  ".xisf"]
          ];
          if (ofd.execute())
          {
