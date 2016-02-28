@@ -2612,13 +2612,13 @@ function ImageSolver()
             {
                lastImprovement = 0;
                this.distortModel = null;
-               console.writeln("\x1b[38;2;128;255;128mThe solution with distortion model has converged. Trying to optimize it without the model.\x1b[0m");
+               console.noteln("The solution with distortion model has converged. Trying to optimize it without the model.");
             }
 
             // Finish condition
             finish = true;
             if (iteration > this.solverCfg.maxIterations)
-               console.writeln("\x1b[38;2;255;128;128mMaximum number of iterations reached\x1b[0m");
+               console.warningln("Maximum number of iterations reached");
             else if (lastImprovement > maxItersNoImprovement)
                console.writeln("Maximum number of iterations without improvement reached");
             else

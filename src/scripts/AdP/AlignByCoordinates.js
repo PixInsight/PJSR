@@ -938,7 +938,8 @@ function AlignByCoordsEngine()
          }
          catch (exception)
          {
-            console.writeln("**********************\n\x1b[38;2;255;128;128mError: " + exception.toString() + "\x1b[0m");
+            console.writln("**********************");
+            console.criticalln("Error: " + exception.toString());
             new MessageBox(exception, TITLE, StdIcon_Error, StdButton_Ok).execute();
          }
       }
