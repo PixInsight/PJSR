@@ -1995,6 +1995,74 @@ ARPCatalog.prototype=new VizierCatalog;
 __catalogRegister__.Register( new ARPCatalog );
 
 // ******************************************************************
+// GCVS Catalog
+// ******************************************************************
+function GCVSCatalog()
+{
+   this.name="GCVS";
+   this.description = "General Catalog of Variable Stars (47969 stars)";
+
+   this.__base__ = VizierCatalog;
+   this.__base__( this.name );
+
+   this.catalogMagnitude = 17;
+
+   this.fields = [ "Name", "Coordinates", "MaxMagnitude", "MinMagnitude1", "MinMagnitude2", "Period", "VarType", "SpectralType" ];
+
+   this.properties.push( ["magMin", DataType_Double] );
+   this.properties.push( ["magMax", DataType_Double] );
+   this.properties.push( ["magnitudeFilter", DataType_UCString ] );
+
+   this.filters = [ "magMax" ];
+   this.magnitudeFilter = "magMax";
+
+   this.GetConstructor = function()
+   {
+      return "new GCVSCatalog()";
+   }
+
+   this.UrlBuilder = function(center, fov, mirrorServer)
+   {
+      var url=mirrorServer+"viz-bin/asu-tsv?-source=B/gcvs/gcvs_cat&-c=" +
+         format("%f %f",center.x, center.y) +
+         "&-c.r=" + format("%f",fov) +
+         "&-c.u=deg&-out.form=|"+
+         "&-out=GCVS&-out=RAJ2000&-out=DEJ2000" +
+         "&-out=VarType&-out=magMax&-out=Min1&-out=Min2&-out=Period&-out=SpType"+
+         this.CreateMagFilter( this.magnitudeFilter, this.magMin, this.magMax ) ;
+      return url;
+   }
+
+   this.ParseRecord = function( tokens, epoch )
+   {
+      if( tokens.length>=3 && parseFloat(tokens[1])>0 )
+      {
+         var x=DMSangle.FromString(tokens[1]).GetValue()*360/24;
+         var y=DMSangle.FromString(tokens[2]).GetValue();
+         if( !(x>=0 && x<=360 && y>=-90 && y<=90) )
+            return null;
+
+         var record = new CatalogRecord( new Point( x, y ), null, tokens[0].trim(), parseFloat(tokens[4]));
+         //record["Code"] = tokens[0].trim();
+         record["MaxMagnitude"] = tokens[4].trim();
+         record["MinMagnitude1"] = tokens[5].trim();
+         record["MinMagnitude2"] = tokens[6].trim();
+         record["Period"] = tokens[7].trim();
+         if(record["Period"].length)
+            record["Period"] = parseFloat(record["Period"]).toString();
+         record["VarType"] = tokens[3].trim();
+         record["SpectralType"] = tokens[8].trim();
+         //record.magnitude = parseFloat( record[this.magnitudeFilter] );
+         return record;
+      } else
+         return null;
+   }
+}
+
+GCVSCatalog.prototype=new VizierCatalog;
+__catalogRegister__.Register( new GCVSCatalog );
+
+// ******************************************************************
 // CustomCatalog: Uses a file to store the info
 // ******************************************************************
 function CustomCatalog()

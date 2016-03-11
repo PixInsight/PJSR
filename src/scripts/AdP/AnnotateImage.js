@@ -31,6 +31,8 @@
    Changelog:
 
    1.8.4:* Fixed: The grid layer didn't use the selected font
+         * Improved star marker figure
+         * Catalog GCVS
 
    1.8.3:* Fixed a bug in a bad interaction between the catalog cache and the
            remove of duplicates
@@ -1067,12 +1069,13 @@ function CatalogLayer(catalog)
             continue;
 
          var size = 5;
-         if (objects[i].magnitude != null)
-            size = Math.max(0, maglimit - objects[i].magnitude) + 1;
+//         if (objects[i].magnitude != null)
+//            size = Math.max(0, maglimit - objects[i].magnitude) + 1;
          size *= this.gprops.lineWidth * graphicsScale;
          drawInfo[i] = {pI:pI, size:size};
       }
 
+      var hole = 5 * ((graphicsScale - 1) / 2 + 1);
       if (this.gprops.showMarkers)
       {
          g.pen = penMarker;
@@ -1087,10 +1090,10 @@ function CatalogLayer(catalog)
                g.strokeEllipse(pI.x - diameter / 2, pI.y - diameter / 2, pI.x + diameter / 2, pI.y + diameter / 2, penMarker);
             else
             {
-               g.drawLine(pI.x - size - 5, pI.y, pI.x - 5, pI.y);
-               g.drawLine(pI.x + size + 5, pI.y, pI.x + 5, pI.y);
-               g.drawLine(pI.x, pI.y + size + 5, pI.x, pI.y + 5);
-               g.drawLine(pI.x, pI.y - size - 5, pI.x, pI.y - 5);
+               g.drawLine(pI.x - size - hole, pI.y, pI.x - hole, pI.y);
+               g.drawLine(pI.x + size + hole, pI.y, pI.x + hole, pI.y);
+               g.drawLine(pI.x, pI.y + size + hole, pI.x, pI.y + hole);
+               g.drawLine(pI.x, pI.y - size - hole, pI.x, pI.y - hole);
             }
          }
       }
@@ -1101,7 +1104,7 @@ function CatalogLayer(catalog)
          {
             if (drawInfo[i])
                for (var l = 0; l < 8; l++)
-                  this.DrawLabel(g, objects[i], this.gprops.labelFields[l], l, font, drawInfo[i].size + 5, drawInfo[i].pI, graphicsScale);
+                  this.DrawLabel(g, objects[i], this.gprops.labelFields[l], l, font, drawInfo[i].size + hole, drawInfo[i].pI, graphicsScale);
          }
       }
    }
@@ -1134,11 +1137,11 @@ function CatalogLayer(catalog)
 
          var posX;
          if (align == 0 || align == 3 || align == 5) // Left
-            posX = pI.x - size - rect.width;
+            posX = pI.x - size - rect.width - graphicsScale;
          else if (align == 1 || align == 6) // HCenter
             posX = pI.x - rect.width / 2;
          else // Right
-            posX = pI.x + size;
+            posX = pI.x + size + graphicsScale;
 
          //         var offsetY = (align==1 || align==6) ? size : 0;
          var offsetY = Math.max(size, this.gprops.labelSize * graphicsScale);
