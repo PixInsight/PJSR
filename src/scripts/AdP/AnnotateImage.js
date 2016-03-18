@@ -30,6 +30,10 @@
 /*
    Changelog:
 
+   1.8.4:* Fixed: The grid layer didn't use the selected font
+         * Improved star marker figure
+         * Catalog GCVS
+
    1.8.3:* Fixed a bug in a bad interaction between the catalog cache and the
            remove of duplicates
          * Fixed the coordinates of Mintaka in the catalog NamedStars
@@ -175,7 +179,7 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.8.3"
+#define VERSION "1.8.4"
 #define TITLE "Annotate Image"
 #define SETTINGS_MODULE "ANNOT"
 
@@ -183,6 +187,7 @@
 #include "AstronomicalCatalogs.jsh"
 //#include "SpectrophotometricCatalogs.js"
 #include "PreviewControl.js"
+#include "CommonUIControls.js"
 
 // Output modes
 #define Output_Image    0  // Image annotated
@@ -204,71 +209,6 @@ function FindLayer( layerId )
    return null;
 }
 
-
-// ******************************************************************
-// TransparentColorControl: Configuration control for colors
-// ******************************************************************
-function TransparentColorControl( parent, initialValue, toolTip )
-{
-   this.__base__ = Control;
-   if ( parent )
-      this.__base__( parent );
-   else
-      this.__base__();
-
-   this.color = initialValue;
-   this.onColorChanged = null;
-
-   this.color_ComboBox = new ColorComboBox( parent );
-   this.color_ComboBox.setCurrentColor( this.color );
-   this.color_ComboBox.toolTip = toolTip;
-   this.color_ComboBox.onColorSelected = function( rgba )
-   {
-      this.parent.color = Color.setAlpha( rgba, Color.alpha( this.parent.color ) );
-      if( this.parent.onColorChanged )
-         this.parent.onColorChanged( this.parent.color );
-   };
-
-   this.transparency_SpinBox = new SpinBox( parent );
-   this.transparency_SpinBox.minValue = 0;
-   this.transparency_SpinBox.maxValue = 255;
-   this.transparency_SpinBox.setFixedWidth(parent.font.width("8888888"))
-   this.transparency_SpinBox.value = Color.alpha( this.color );
-   this.transparency_SpinBox.toolTip = toolTip + ": Alpha value (0=transparent, 255=opaque)";
-   this.transparency_SpinBox.onValueUpdated = function( value )
-   {
-      this.parent.color = Color.setAlpha( this.parent.color, value );
-      if( this.parent.onColorChanged )
-         this.parent.onColorChanged( this.parent.color );
-   };
-
-   this.color_Button = new ToolButton( parent );
-   this.color_Button.icon = this.scaledResource( ":/icons/select-color.png" );
-   this.color_Button.setScaledFixedSize( 20, 20 );
-   this.color_Button.toolTip = toolTip + ": Define a custom color.";
-   this.color_Button.onClick = function()
-   {
-      //console.writeln( format("%x",this.parent.color),  this.parent.color_ComboBox);
-      var scd = new SimpleColorDialog( this.parent.color );
-      scd.windowTitle = toolTip + ": Custom RGBA Color";
-      if ( scd.execute() )
-      {
-         this.parent.color = scd.color;
-         this.parent.color_ComboBox.setCurrentColor( scd.color );
-         this.parent.transparency_SpinBox.value = Color.alpha( scd.color );
-         if( this.parent.onColorChanged )
-            this.parent.onColorChanged( this.parent.color );
-      }
-   };
-
-   this.sizer = new HorizontalSizer;
-   this.sizer.scaledSpacing = 4;
-   this.sizer.add( this.color_ComboBox );
-   this.sizer.add( this.transparency_SpinBox );
-   this.sizer.add( this.color_Button );
-}
-
-TransparentColorControl.prototype = new Control;
 
 // ******************************************************************
 // LabelCombo: Label field selection
@@ -379,60 +319,31 @@ function GraphicProperties( module, layer )
       showMarker_Frame.frameStyle = FrameStyle_Box;
 
       // Font
-      var labelSize_Label = new Label( parent );
+      var labelSize_Label = new Label(parent);
       labelSize_Label.text = "Font:";
-      labelSize_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+      labelSize_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
       labelSize_Label.minWidth = parent.labelWidth2;
 
-      var labelFace_Combo = new ComboBox( parent );
-      labelFace_Combo.editEnabled = false;
-      labelFace_Combo.addItem("SansSerif");
-      labelFace_Combo.addItem("Serif");
-      labelFace_Combo.addItem("Script");
-      labelFace_Combo.addItem("TypeWriter");
-      labelFace_Combo.addItem("Decorative");
-      labelFace_Combo.addItem("Symbol");
-      labelFace_Combo.currentItem = this.labelFace-1;
-      labelFace_Combo.onItemSelected = function()
+      this.label_FontControl = new FontControl(parent, this,
+         {
+            face:   this.labelFace,
+            size:   this.labelSize,
+            bold:   this.labelBold,
+            italic: this.labelItalic
+         });
+      this.label_FontControl.onChanged = function (fontDef)
       {
-         this.dialog.activeFrame.object.gprops.labelFace = labelFace_Combo.currentItem+1;
-      }
-
-      var labelSize_SpinBox = new SpinBox( parent );
-      labelSize_SpinBox.minValue = 6;
-      labelSize_SpinBox.maxValue = 72;
-      labelSize_SpinBox.setFixedWidth(parent.spinWidth);
-      labelSize_SpinBox.value = this.labelSize;
-      labelSize_SpinBox.toolTip = "<p>Font size of the labels.</p>";
-      labelSize_SpinBox.onValueUpdated = function( value ) { this.dialog.activeFrame.object.gprops.labelSize = value; };
-
-      var labelBold_Check = new CheckBox(parent);
-      labelBold_Check.checked = this.labelBold;
-      labelBold_Check.text = "Bold";
-      labelBold_Check.toolTip = "<p>Bold font.</p>";
-      labelBold_Check.onCheck = function( checked )
-      {
-         this.dialog.activeFrame.object.gprops.labelBold = checked;
-      };
-
-      var labelItalic_Check = new CheckBox(parent);
-      labelItalic_Check.checked = this.labelItalic;
-      labelItalic_Check.text = "Italic";
-      labelItalic_Check.toolTip = "<p>Italic font.</p>";
-      labelItalic_Check.onCheck = function( checked )
-      {
-         this.dialog.activeFrame.object.gprops.labelItalic = checked;
+         this.labelFace = fontDef.face;
+         this.labelSize = fontDef.size;
+         this.labelBold = fontDef.bold;
+         this.labelItalic = fontDef.italic;
       };
 
       var font_Sizer = new HorizontalSizer;
       font_Sizer.scaledSpacing = 4;
-      //font_Sizer.addSpacing( 25 );
-      font_Sizer.add( labelSize_Label );
-      font_Sizer.add( labelFace_Combo );
-      font_Sizer.add( labelSize_SpinBox );
-      font_Sizer.add( labelBold_Check );
-      font_Sizer.add( labelItalic_Check );
-      font_Sizer.addStretch( );
+      font_Sizer.add(labelSize_Label);
+      font_Sizer.add(this.label_FontControl);
+      font_Sizer.addStretch();
 
       // Label Color
       var labelColor_Label = new Label( parent );
@@ -724,7 +635,7 @@ function GridLayer()
       if(this.gprops.showLabels)
       {
          g.pen = new Pen( this.gprops.labelColor, 1 );
-         var font = new Font( FontFamily_SansSerif, this.gprops.labelSize*graphicsScale );
+         var font = new Font( this.gprops.labelFace, this.gprops.labelSize*graphicsScale );
          font.bold = this.gprops.labelBold;
          font.italic = this.gprops.labelItalic;
          g.font = font;
@@ -1158,12 +1069,13 @@ function CatalogLayer(catalog)
             continue;
 
          var size = 5;
-         if (objects[i].magnitude != null)
-            size = Math.max(0, maglimit - objects[i].magnitude) + 1;
+//         if (objects[i].magnitude != null)
+//            size = Math.max(0, maglimit - objects[i].magnitude) + 1;
          size *= this.gprops.lineWidth * graphicsScale;
          drawInfo[i] = {pI:pI, size:size};
       }
 
+      var hole = 5 * ((graphicsScale - 1) / 2 + 1);
       if (this.gprops.showMarkers)
       {
          g.pen = penMarker;
@@ -1178,10 +1090,10 @@ function CatalogLayer(catalog)
                g.strokeEllipse(pI.x - diameter / 2, pI.y - diameter / 2, pI.x + diameter / 2, pI.y + diameter / 2, penMarker);
             else
             {
-               g.drawLine(pI.x - size - 5, pI.y, pI.x - 5, pI.y);
-               g.drawLine(pI.x + size + 5, pI.y, pI.x + 5, pI.y);
-               g.drawLine(pI.x, pI.y + size + 5, pI.x, pI.y + 5);
-               g.drawLine(pI.x, pI.y - size - 5, pI.x, pI.y - 5);
+               g.drawLine(pI.x - size - hole, pI.y, pI.x - hole, pI.y);
+               g.drawLine(pI.x + size + hole, pI.y, pI.x + hole, pI.y);
+               g.drawLine(pI.x, pI.y + size + hole, pI.x, pI.y + hole);
+               g.drawLine(pI.x, pI.y - size - hole, pI.x, pI.y - hole);
             }
          }
       }
@@ -1192,7 +1104,7 @@ function CatalogLayer(catalog)
          {
             if (drawInfo[i])
                for (var l = 0; l < 8; l++)
-                  this.DrawLabel(g, objects[i], this.gprops.labelFields[l], l, font, drawInfo[i].size + 5, drawInfo[i].pI, graphicsScale);
+                  this.DrawLabel(g, objects[i], this.gprops.labelFields[l], l, font, drawInfo[i].size + hole, drawInfo[i].pI, graphicsScale);
          }
       }
    }
@@ -1225,11 +1137,11 @@ function CatalogLayer(catalog)
 
          var posX;
          if (align == 0 || align == 3 || align == 5) // Left
-            posX = pI.x - size - rect.width;
+            posX = pI.x - size - rect.width - graphicsScale;
          else if (align == 1 || align == 6) // HCenter
             posX = pI.x - rect.width / 2;
          else // Right
-            posX = pI.x + size;
+            posX = pI.x + size + graphicsScale;
 
          //         var offsetY = (align==1 || align==6) ? size : 0;
          var offsetY = Math.max(size, this.gprops.labelSize * graphicsScale);
@@ -2904,7 +2816,6 @@ function main()
             TITLE,
             StdIcon_Error,
             StdButton_Ok)).execute();
-         /*###*/
          return;
       }
 

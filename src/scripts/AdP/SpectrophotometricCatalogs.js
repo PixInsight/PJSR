@@ -1,5 +1,5 @@
 /*
- Circle Square Intersection Area Calculator
+ Photometric catalogs
 
  This file is part of the Photometry script
 

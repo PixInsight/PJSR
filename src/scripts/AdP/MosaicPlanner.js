@@ -3,7 +3,7 @@
 
  Tool for planning mosaics.
 
- Copyright (C) 2015, Andres del Pozo
+ Copyright (C) 2015-16, Andres del Pozo
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,9 @@
 /*
  Changelog:
 
+ 1.1:  * Configuration of graphical properties
+       * Option for drawing the coordinates of the tiles on the image
+
  1.0:  * Initial version
 
 */
@@ -38,7 +41,7 @@
 
 #feature-info Tool for helping to define the tiles of a mosaic. <br/>\
               <br/>\
-              Copyright &copy; 2015 Andr&eacute;s del Pozo
+              Copyright &copy; 2015-16 Andr&eacute;s del Pozo
 
 
 #include <pjsr/DataType.jsh>
@@ -54,7 +57,7 @@
 #endif
 
 
-#define VERSION "1.0"
+#define VERSION "1.1"
 #define TITLE "Mosaic Planner"
 #define SETTINGS_MODULE "MosaicPlan"
 #define STAR_CSV_FILE   File.systemTempDirectory + "/stars.csv"
@@ -185,8 +188,10 @@ function TileGeometry(data)
       // Create polygons
       this.polylinesMain = [];
       this.polylinesGuider = [];
-      if (cameraGeometry.mainSensor.active)
+      if (cameraGeometry.mainSensor.active){
          this.PolygonToPolylines(this.polylinesMain, cameraGeometry.mainSensorPolygon, windowMetadata);
+         this.centerI = windowMetadata.Convert_RD_I(this.center);
+      }
       if (cameraGeometry.guideSensor && cameraGeometry.guideSensor.active)
       {
          this.PolygonToPolylines(this.polylinesGuider, cameraGeometry.guideSensorPolygon, windowMetadata);
@@ -300,7 +305,6 @@ function MosaicDialog(engine)
    var labelWidth1 = Math.max(this.font.width("Pixel size:"),this.font.width("Dec(dms):"));
    var editWidth = this.font.width("8888.8888");
    var editWidth2 = this.font.width("8888.8888");
-   var selectedTilePen = new Pen(0xffffff20, 2.5);
 
    this.UpdateMosaic = function ()
    {
@@ -320,6 +324,7 @@ function MosaicDialog(engine)
       engine.PaintTiles(graphics);
 
       var tilesList = this.tiles_List;
+      var selectedTilePen = new Pen(0xffffff20, engine.tileLineWidth);
       tilesList.selectedNodes.forEach(function (node)
       {
          var tileIdx = tilesList.childIndex(node);
@@ -1218,25 +1223,6 @@ function MosaicDialog(engine)
    };
    this.catalogTimer = null;
 
-   // Marker size
-   this.markerSize_Control = new NumericControl(this);
-   this.markerSize_Control.real = false;
-   this.markerSize_Control.label.text = "Label size:";
-   this.markerSize_Control.label.minWidth = labelWidth1;
-   this.markerSize_Control.setRange(4, 30);
-   this.markerSize_Control.slider.setRange(4, 30);
-   this.markerSize_Control.slider.scaledMinWidth = 100;
-   this.markerSize_Control.setPrecision(0);
-   this.markerSize_Control.edit.minWidth = editWidth;
-   this.markerSize_Control.setValue(engine.markerSize);
-   this.markerSize_Control.toolTip =
-      "<p>Font size of the guide star's labels.</p>";
-   this.markerSize_Control.onValueUpdated = function (value)
-   {
-      engine.markerSize = value;
-      this.dialog.previewControl.forceRedraw();
-   };
-
    // Guide stars section
    this.guideStars_Control = new Control(this);
    this.guideStars_Control.enabled = engine.showGuideStars == true;
@@ -1247,7 +1233,6 @@ function MosaicDialog(engine)
    this.guideStars_Control.sizer.add(this.dbPath_Sizer);
    this.guideStars_Control.sizer.add(this.vizierSizer);
    this.guideStars_Control.sizer.add(this.maxMag_Control);
-   this.guideStars_Control.sizer.add(this.markerSize_Control);
    this.guide_Section = new SectionBar(this, "Guide stars");
    this.guide_Section.setSection(this.guideStars_Control);
    this.guide_Section.enableCheckBox(true);
@@ -1266,8 +1251,158 @@ function MosaicDialog(engine)
    {
       engine.showGuideStars = sectionbar.checkBox.checked;
       engine.LoadCatalog();
+      this.dialog.guideGraphics.enabled = engine.showGuideStars;
       this.dialog.previewControl.forceRedraw();
-   }
+   };
+
+
+   // Tile Font
+   this.tileText_CheckBox = new CheckBox(this);
+   this.tileText_CheckBox.checked = engine.showTileCoords;
+   this.tileText_CheckBox.text = "Coordinates:";
+   this.tileText_CheckBox.minWidth = labelWidth1;
+   this.tileText_CheckBox.toolTip = "<p>If checked it draws on the image the coordinates of the center of the tiles.</p>"
+   this.tileText_CheckBox.onCheck = function (checked)
+   {
+      engine.showTileCoords = checked;
+      this.dialog.tile_FontControl.enabled = checked;
+      this.dialog.previewControl.forceRedraw();
+   };
+
+   this.tile_FontControl = new FontControl(this, this, engine.tileFont);
+   this.tile_FontControl.enabled = engine.showTileCoords;
+   this.tile_FontControl.onChanged = function (fontDef)
+   {
+      engine.tileFont = fontDef;
+      this.dialog.previewControl.forceRedraw();
+   };
+
+   this.tileFont_Sizer = new HorizontalSizer;
+   this.tileFont_Sizer.scaledSpacing = 4;
+   this.tileFont_Sizer.add(this.tileText_CheckBox);
+   this.tileFont_Sizer.add(this.tile_FontControl);
+   this.tileFont_Sizer.addStretch();
+
+   // Color
+   this.tileColor_Label = new Label(this);
+   this.tileColor_Label.text = "Color:";
+   this.tileColor_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+   this.tileColor_Label.minWidth = labelWidth1;
+
+   this.tile_ColorControl = new TransparentColorControl(this, engine.tileColor, "Tile color");
+   this.tile_ColorControl.onColorChanged = function (color)
+   {
+      engine.tileColor = color;
+      this.dialog.previewControl.forceRedraw();
+   };
+
+   this.tileColor_Sizer = new HorizontalSizer;
+   this.tileColor_Sizer.scaledSpacing = 4;
+   this.tileColor_Sizer.add(this.tileColor_Label);
+   this.tileColor_Sizer.add(this.tile_ColorControl);
+   this.tileColor_Sizer.addStretch();
+
+   // Line width
+   this.tileLine_Label = new Label(this);
+   this.tileLine_Label.text = "Line width:";
+   this.tileLine_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+   this.tileLine_Label.minWidth = labelWidth1;
+
+   this.tileLine_SpinBox = new SpinBox(this);
+   this.tileLine_SpinBox.minValue = 0;
+   this.tileLine_SpinBox.maxValue = 20;
+   this.tileLine_SpinBox.setFixedWidth(editWidth2);
+   this.tileLine_SpinBox.value = engine.tileLineWidth;
+   this.tileLine_SpinBox.toolTip = "<p>Width of the lines of the tiles</p>";
+   this.tileLine_SpinBox.onValueUpdated = function (value)
+   {
+      engine.tileLineWidth = value;
+      this.dialog.previewControl.forceRedraw();
+   };
+
+   this.tileLine_Sizer = new HorizontalSizer;
+   this.tileLine_Sizer.scaledSpacing = 4;
+   this.tileLine_Sizer.add(this.tileLine_Label);
+   this.tileLine_Sizer.add(this.tileLine_SpinBox);
+   this.tileLine_Sizer.addStretch();
+
+   this.tileGraphics = new GroupBox(this);
+   this.tileGraphics.title = "Tiles";
+   this.tileGraphics.sizer = new VerticalSizer;
+   this.tileGraphics.sizer.scaledMargin = 6;
+   this.tileGraphics.sizer.scaledSpacing = 4;
+   this.tileGraphics.sizer.add(this.tileFont_Sizer);
+   this.tileGraphics.sizer.add(this.tileColor_Sizer);
+   this.tileGraphics.sizer.add(this.tileLine_Sizer);
+
+   // Tile Font
+   this.guideFont_Label = new Label(this);
+   this.guideFont_Label.text = "Font:";
+   this.guideFont_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+   this.guideFont_Label.minWidth = labelWidth1;
+
+   this.guide_FontControl = new FontControl(this, this, engine.guideFont);
+   this.guide_FontControl.onChanged = function (fontDef)
+   {
+      engine.guideFont = fontDef;
+      this.dialog.previewControl.forceRedraw();
+   };
+
+   this.guideFont_Sizer = new HorizontalSizer;
+   this.guideFont_Sizer.scaledSpacing = 4;
+   this.guideFont_Sizer.add(this.guideFont_Label);
+   this.guideFont_Sizer.add(this.guide_FontControl);
+   this.guideFont_Sizer.addStretch();
+
+   // Color
+   this.guideColor_Label = new Label(this);
+   this.guideColor_Label.text = "Color:";
+   this.guideColor_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+   this.guideColor_Label.minWidth = labelWidth1;
+
+   this.guide_ColorControl = new TransparentColorControl(this, engine.guideColor, "Tile color");
+   this.guide_ColorControl.onColorChanged = function (color)
+   {
+      engine.guideColor = color;
+      this.dialog.previewControl.forceRedraw();
+   };
+
+   this.guideColor_Sizer = new HorizontalSizer;
+   this.guideColor_Sizer.scaledSpacing = 4;
+   this.guideColor_Sizer.add(this.guideColor_Label);
+   this.guideColor_Sizer.add(this.guide_ColorControl);
+   this.guideColor_Sizer.addStretch();
+
+   this.guideGraphics = new GroupBox(this);
+   this.guideGraphics.title = "Guide stars";
+   this.guideGraphics.sizer = new VerticalSizer;
+   this.guideGraphics.sizer.scaledMargin = 6;
+   this.guideGraphics.sizer.scaledSpacing = 4;
+   this.guideGraphics.sizer.add(this.guideFont_Sizer);
+   this.guideGraphics.sizer.add(this.guideColor_Sizer);
+   this.guideGraphics.enabled = engine.showGuideStars
+
+   // GraphicProps section
+   this.graphicProps_Control = new Control(this);
+   this.graphicProps_Control.sizer = new VerticalSizer;
+   this.graphicProps_Control.sizer.scaledMargin = 6;
+   this.graphicProps_Control.sizer.scaledSpacing = 4;
+   this.graphicProps_Control.hide();
+   this.graphicProps_Control.sizer.add(this.tileGraphics);
+   this.graphicProps_Control.sizer.add(this.guideGraphics);
+   this.graphicProps_Section = new SectionBar(this, "Graphic properties");
+   this.graphicProps_Section.setSection(this.graphicProps_Control);
+   this.graphicProps_Section.toggleSection = function ()
+   {
+      if (this.section.visible)
+         this.section.hide();
+      else
+      {
+         this.section.adjustToContents();
+         this.section.show();
+      }
+   };
+
 
    this.config_Frame = new Control(this);
    //this.config_Frame.setFixedWidth(320);
@@ -1285,6 +1420,8 @@ function MosaicDialog(engine)
    this.config_Frame.sizer.add(this.tiles_Control);
    this.config_Frame.sizer.add(this.guide_Section);
    this.config_Frame.sizer.add(this.guideStars_Control);
+   this.config_Frame.sizer.add(this.graphicProps_Section);
+   this.config_Frame.sizer.add(this.graphicProps_Control);
    this.config_Frame.sizer.addStretch();
 
 
@@ -1414,7 +1551,6 @@ function MosaicPlannerEngine()
          ["colsRight", DataType_Int32 ],
          ["rowsTop", DataType_Int32 ],
          ["rowsBottom", DataType_Int32 ],
-         ["markerSize", DataType_Int32 ],
          ["rotation", DataType_Double ],
          ["overlap", DataType_Double ],
          ["showMain", DataType_Boolean ],
@@ -1422,10 +1558,15 @@ function MosaicPlannerEngine()
          ["adjustRotation", DataType_Boolean ],
          ["catalogMode", DataType_UInt8],
          ["databasePath", DataType_UCString],
-         //["catalog", Ext_DataType_Complex ],
          ["vizierServer", DataType_UCString],
          ["maxMagnitude", DataType_Double],
-         ["customTileRot", Ext_DataType_JSON]
+         ["customTileRot", Ext_DataType_JSON],
+         ["tileColor", DataType_UInt32 ],
+         ["tileLineWidth", DataType_Int32 ],
+         ["showTileCoords", DataType_Boolean ],
+         ["tileFont", Ext_DataType_JSON],
+         ["guideColor", DataType_UInt32 ],
+         ["guideFont", Ext_DataType_JSON]
       ]
    );
 
@@ -1463,7 +1604,12 @@ function MosaicPlannerEngine()
    this.catalogMode = 1;
    this.maxMagnitude = 7;
    this.catalogStars = null;
-   this.markerSize = 8;
+   this.tileColor = 0xff80ffff;
+   this.tileLineWidth = 2;
+   this.showTileCoords = false;
+   this.tileFont = {face: 1, size: 10, bold: false, italic: false};
+   this.guideColor = 0xC0FFFF00;
+   this.guideFont = {face: 1, size: 8, bold: false, italic: false};
 
    this.availableCatalogs = [new PPMXLCatalog(), new GSCCatalog(), new TychoCatalog(), new HR_Catalog()];
 
@@ -1632,16 +1778,34 @@ function MosaicPlannerEngine()
    {
       if (this.tiles)
       {
-         var tilePen = new Pen(0xff80ffff, 2);
+         var tilePen = new Pen(this.tileColor, this.tileLineWidth);
+         graphics.pen = tilePen;
+         if(this.showTileCoords){
+            var font = new Font( this.tileFont.face, this.tileFont.size );
+            font.bold = this.tileFont.bold;
+            font.italic = this.tileFont.italic;
+            graphics.font = font;
+         }
+
          this.tiles.forEach(function (tile)
          {
-            graphics.pen = tilePen;
             if (this.showMain)
+            {
                tile.polylinesMain.forEach(function (polyline)
                   {
                      graphics.drawPolyline(polyline);
                   }
                );
+
+               if (this.showTileCoords)
+               {
+                  var coords1 = DMSangle.FromAngle(tile.center.x * 24 / 360).ToString(true);
+                  var coords2 = DMSangle.FromAngle(tile.center.y).ToString();
+                  var bounds = graphics.font.tightBoundingRect(coords1);
+                  graphics.drawText(tile.centerI.x - bounds.width / 2, tile.centerI.y, coords1);
+                  graphics.drawText(tile.centerI.x - bounds.width / 2, tile.centerI.y + bounds.height, coords2);
+               }
+            }
             tile.polylinesGuider.forEach(function (polyline)
                {
                   graphics.drawPolyline(polyline);
@@ -1701,10 +1865,10 @@ function MosaicPlannerEngine()
       if (this.catalogStars == null)
          return;
       var stars = this.catalogStars.stars;
-      var size = Math.max(4, this.markerSize / 2);
-      var hole = Math.max(4, this.markerSize / 3);
+      var size = Math.max(4, this.guideFont.size / 2);
+      var hole = Math.max(4, this.guideFont.size / 3);
 
-      g.pen = new Pen(0xC0FFFF00, Math.max(1, this.markerSize / 8));
+      g.pen = new Pen(this.guideColor, Math.max(1, this.guideFont.size / 8));
       for (var i = 0; i < Math.min(stars.length, 10000); i++)
       {
          if (stars[i].magnitude > this.maxMagnitude)
@@ -1716,8 +1880,11 @@ function MosaicPlannerEngine()
          g.drawLine(pI.x, pI.y - hole - size, pI.x, pI.y - hole);
       }
 
-      g.pen = new Pen(0xC0FFFF00, 0);
-      g.font = new Font(1, this.markerSize);
+      g.pen = new Pen(this.guideColor, 0);
+      var font =new Font(this.guideFont.face, this.guideFont.size);
+      font.bold = this.guideFont.bold;
+      font.italic= this.guideFont.italic;
+      g.font = font;
       for (var i = 0; i < Math.min(stars.length, 10000); i++)
       {
          if (stars[i].magnitude > this.maxMagnitude)
