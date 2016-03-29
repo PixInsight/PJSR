@@ -505,7 +505,7 @@ function ImageMetadata(module)
 
                var controlPointsBArray = window.mainView.propertyValue("Transformation_ImageToProjection");
                if(wcs.refSpline && (controlPointsBArray==null || !(controlPointsBArray instanceof ByteArray)))
-                  console.writeln("\x1b[38;2;255;128;128mWARNING: The astrometric solution has lost the distortion correction.\x1b[0m")
+                  console.warningln("WARNING: The astrometric solution has lost the distortion correction.")
                if (wcs.refSpline && controlPointsBArray && controlPointsBArray instanceof ByteArray)
                {
                   this.loadControlPoints(controlPointsBArray);

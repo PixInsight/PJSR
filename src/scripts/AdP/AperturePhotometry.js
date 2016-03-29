@@ -2618,7 +2618,7 @@ function PhotometryEngine(w)
       // ASSERT: Checks that the square/circle intersection algorithm is OK.
       if (Math.abs(totalArea - apertureArea) > 1e-5)
       {
-         console.writeln("\x1b[35mWarning: Precision problem in the aperture algorithm\x1b[0m");
+         console.warningln("Warning: Precision problem in the aperture algorithm");
          console.writeln(totalArea, " ", apertureArea);
          //console.writeln(left," ",top," ",right," ",bottom);
          //console.writeln(star.imgPosPx," ",aperture/2);
@@ -3072,7 +3072,7 @@ function PhotometryEngine(w)
       } catch (ex)
       {
          console.flush();
-         console.writeln("\x1b[31mError writing table\x1b[0m");
+         console.criticalln("Error writing table");
          console.flush();
          this.errorList.push({id: filename, message: ex});
       }
@@ -3145,7 +3145,7 @@ function PhotometryEngine(w)
       var prefix = this.outputPrefix == null ? "Table_" : this.outputPrefix;
       var outDir = this.GetOutputDir();
       var path = outDir + "/" + prefix + "Errors.txt";
-      console.writeln("\x1b[31mWriting error log: ", path, "\x1b[0m");
+      console.criticalln("Writing error log: ", path);
 
       // Create file
       var file = new File;
@@ -3357,9 +3357,8 @@ function PhotometryEngine(w)
             numImagesOK++;
          } catch (ex)
          {
-            console.writeln("\x1b[31m*******************************")
-            console.writeln("Error in image " + this.currentWindow.mainView.id + ": " + ex);
-            console.write("\x1b[0m");
+            console.writeln("*******************************")
+            console.criticalln("Error in image " + this.currentWindow.mainView.id + ": " + ex);
             this.errorList.push({id:this.currentWindow.mainView.id, message:ex});
          }
          this.CloseTemporalWindows();
@@ -3385,9 +3384,7 @@ function PhotometryEngine(w)
                numImagesOK++;
             } catch (ex)
             {
-               console.writeln("\x1b[31m*******************************")
-               console.writeln("Error in image " + this.files[i] + ": " + ex);
-               console.write("\x1b[0m");
+               console.criticalln("Error in image " + this.files[i] + ": " + ex);
                this.errorList.push({id:this.files[i], message:ex});
             }
             this.CloseTemporalWindows();
@@ -3442,12 +3439,12 @@ function PhotometryEngine(w)
             }, "Flags");
       }
 
-      console.writeln("\n\x1b[36m*******************************\x1b[0m")
-      console.writeln("\x1b[0mPhotometry process finished:");
+      console.writeln("\n*******************************")
+      console.noteln("Photometry process finished:");
       console.writeln("   <b>" + numImagesOK, " of ", numImages, " images processed successfully.</b>");
       console.writeln("   <b>", numImages - numImagesOK, " images with errors.</b>");
       if(this.errorList.length>0)
-         console.writeln("\x1b[31m   <b>", this.errorList.length, " errors and warnings.</b>\x1b[0m");
+         console.criticalln("   <b>", this.errorList.length, " errors and warnings.</b>");
       if (this.generateErrorLog && this.errorList.length > 0)
          this.WriteErrorList(this.errorList);
    }
