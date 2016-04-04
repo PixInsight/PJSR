@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelector.js - Released 2016/01/24 00:00:00 UTC
+// SubframeSelector.js - Released 2016/04/06 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.4
+// This file is part of SubframeSelector Script version 1.5
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,7 +48,7 @@
 // ****************************************************************************
 
 #define TITLE "SubframeSelector"
-#define VERSION "1.4"
+#define VERSION "1.5"
 
 #feature-id Batch Processing > SubframeSelector
 
@@ -1846,6 +1846,18 @@ function outputMapsProcess(dialog) {
    );
 }
 
+function copyWeightKeywordExtension(extension) {
+   var regExp = /^\.(?:fit)|(?:fits)|(?:fts)|(?:xisf)$/;
+   if (regExp.test(extension)) {
+      return extension;
+   }
+   extension = (new Preferences).ImageWindow_defaultFileExtension;
+   if (regExp.test(extension)) {
+      return extension;
+   }
+   return ".xisf";
+}
+
 function outputSubframesProcess(dialog) {
    if (parameters.approvedDirectory != "") {
       if (!File.directoryExists(parameters.approvedDirectory)) {
@@ -2008,8 +2020,8 @@ function outputSubframesProcess(dialog) {
 
       if (action == parameters.copyAction && parameters.weightKeyword != "") {
          var copyFilePath = description.checked ?
-            makeApprovedSubframeFilePath(filePath, File.extractExtension(filePath)) :
-            makeRejectedSubframeFilePath(filePath, File.extractExtension(filePath));
+            makeApprovedSubframeFilePath(filePath, copyWeightKeywordExtension(File.extractExtension(filePath))) :
+            makeRejectedSubframeFilePath(filePath, copyWeightKeywordExtension(File.extractExtension(filePath)));
 
          var imageWindow = readImage(filePath, "");
          if (imageWindow == null) {
@@ -2183,4 +2195,4 @@ function main() {
 main();
 
 // ****************************************************************************
-// EOF SubframeSelector.js - Released 2016/01/24 00:00:00 UTC
+// EOF SubframeSelector.js - Released 2016/04/06 00:00:00 UTC
