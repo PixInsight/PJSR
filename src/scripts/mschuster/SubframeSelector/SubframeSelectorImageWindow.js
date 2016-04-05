@@ -4,7 +4,7 @@
 // SubframeSelectorImageWindow.js - Released 2016/04/06 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.5
+// This file is part of SubframeSelector Script version 1.6
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.

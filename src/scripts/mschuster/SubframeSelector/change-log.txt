@@ -3,6 +3,11 @@ SubframeSelector Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2016.04.06 - v1.6
+
+- Fixed Save Plots As file extension problem on newer Win versions.
+
+-------------------------------------------------------------------------------
 2016.04.06 - v1.5
 
 - Fixed non .fit/.fits/.fts/.xisf file copy with weight keyword bugs.
