@@ -3,6 +3,16 @@ MureDenoise Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2016.02.24 - Version 1.15
+
+- Modified Load variance scale button to load Combination count in addition to
+  Variance scale.
+
+- Improved documentation and tooltips.
+
+- Updated copyright.
+
+-------------------------------------------------------------------------------
 2015.12.04 - Version 1.14
 
 - Improved documentation and tooltips.
