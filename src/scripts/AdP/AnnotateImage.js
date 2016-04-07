@@ -30,6 +30,9 @@
 /*
    Changelog:
 
+   1.8.5:* Fixed: When the script was executed from the console it ignored the
+           parameters in the command and it used the saved parameters
+
    1.8.4:* Fixed: The grid layer didn't use the selected font
          * Improved star marker figure
          * Catalog GCVS
@@ -179,7 +182,7 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.8.4"
+#define VERSION "1.8.5"
 #define TITLE "Annotate Image"
 #define SETTINGS_MODULE "ANNOT"
 
@@ -2462,7 +2465,7 @@ function AnnotationEngine()
          {
             var layer = eval(layerDef.constructor);
             layer.SetId(l);
-            layer.LoadSettings();
+            layer.LoadParameters();
             this.layers.push(layer);
          }
       }

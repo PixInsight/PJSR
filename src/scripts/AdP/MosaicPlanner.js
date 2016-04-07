@@ -30,6 +30,8 @@
 /*
  Changelog:
 
+ 1.1.1:* Fixed: The script didn't include two files
+
  1.1:  * Configuration of graphical properties
        * Option for drawing the coordinates of the tiles on the image
 
@@ -51,13 +53,14 @@
 #include <pjsr/StdButton.jsh>
 #include <pjsr/StdIcon.jsh>
 #include <pjsr/NumericControl.jsh>
+#include <pjsr/ColorComboBox.jsh>
 
 #ifndef __PJSR_SectionBar_jsh
 #include <pjsr/SectionBar.jsh>
 #endif
 
 
-#define VERSION "1.1"
+#define VERSION "1.1.1"
 #define TITLE "Mosaic Planner"
 #define SETTINGS_MODULE "MosaicPlan"
 #define STAR_CSV_FILE   File.systemTempDirectory + "/stars.csv"
@@ -66,6 +69,7 @@
 #include "AstronomicalCatalogs.jsh"
 #include "PreviewControl.js"
 #include "SearchCoordinatesDialog.js"
+#include "CommonUIControls.js"
 ;
 
 // ******************************************************************
