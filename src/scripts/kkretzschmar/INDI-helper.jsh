@@ -77,11 +77,30 @@ if ( !File.loadFITSKeywordArray )
 
 
 function indexOfFITSKeyword(keywords,name) {
-   for (index in keywords){
+   for (var index in keywords){
       if (keywords[index].name===name)
          return index;
    }
-   return keywords.length;
+   return -1;
+}
+
+function indexOfDevice(devices,name) {
+   for (var index in devices) {
+      if (devices[index][0]===name)
+         return index;
+   }
+   return -1;
+}
+
+function propertyEquals(propertyTable,propertyKey,value) {
+   for (var index in propertyTable) {
+      if (propertyTable[index][0]===propertyKey) {
+         if (propertyTable[index][1]===value){
+            return true;
+         }
+      }
+   }
+   return false;
 }
 
 #endif //_INDI_helper_jsh

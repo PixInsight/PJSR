@@ -24,6 +24,8 @@ Logger.prototype.toString = function(){
 // create a global logger object
 Testing.logger =  new Logger();
 
+
+
 function MainTest(name){
    this.name      = name;
    this.tests     = [];
@@ -33,17 +35,24 @@ MainTest.prototype.addTest = function (test){
    this.tests.push(test);
 }
 
+MainTest.prototype.setUp = function (){
+}
+
+MainTest.prototype.tearDown= function (){
+}
+
 MainTest.prototype.run = function(){
    Testing.logger.log("<br>======================================================================");
-   Testing.logger.log("<br>Test suite:" + this.name);
+   Testing.logger.log("<br>Test suite: " + this.name);
    Testing.logger.log("<br>======================================================================");
 
-   for (test in this.tests){
+   this.setUp();
+   for (var test in this.tests){
       var testObject=this.tests[test];
-      testObject.setUp();
       testObject.runTests();
-      testObject.tearDown();
    }
+   this.tearDown();
+
 }
 
 function TestCase(name){
@@ -64,30 +73,36 @@ TestCase.prototype.addTestCase = function(testCase) {
 TestCase.prototype.runTests = function() {
    var testSuccess=true;
    var numOfTests=0;
-   var testNr=0;
+   var testNrOfSuccess=0;
+   var testNrOfFailed=0;
    Testing.logger.log("<br><u>Test:" + this.name+"</u>");
    numOfTests=this.testCases.length;
-   for (testCase in this.testCases){
+   for (var testCase in this.testCases){
+      this.setUp()
       try {
          this.testCases[testCase].call();
          Testing.logger.log("<br><b>PASSED:</b> Test case " + this.testCases[testCase].name);
+         testNrOfSuccess++;
       } catch (err) {
          Testing.logger.log("<br><b>FAILED:</b> Test case " + this.testCases[testCase].name + ":" + " ---- " + err);
-       console.criticalln(err.stack);
-       testSuccess=false;
+         console.criticalln(err.stack);
+         testNrOfFailed++;
+         testSuccess=false;
+     } finally {
+        this.tearDown();
      }
-     testNr++;
+
    }
    Testing.logger.log("<br>======================================================================");
    if (testSuccess) {
       console.writeln(Testing.logger.toString());
       console.noteln("SUCCESS");
-      console.noteln(testNr + "/" + numOfTests + " tests successfully passed.");
+      console.noteln(testNrOfSuccess + "/" + numOfTests + " tests successfully passed.");
 
    } else {
       console.writeln(Testing.logger.toString());
       console.criticalln("FAILURE");
-      console.criticalln(testNr + "/" + numOfTests + " tests failed.");
+      console.criticalln(testNrOfFailed + "/" + numOfTests + " tests failed.");
    }
    Testing.logger.reset();
 }
