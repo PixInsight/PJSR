@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorParametersDialog.js - Released 2016/04/06 00:00:00 UTC
+// SubframeSelectorParametersDialog.js - Released 2016/04/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.6
+// This file is part of SubframeSelector Script version 1.8
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -125,44 +125,7 @@ function parametersDialogPrototype() {
 #endif                                                                           // ### 01.08.00.1065
    };                                                                            // ### 01.08.00.1065
 
-   var aboutSectionBar = new SectionBar(this);
-   aboutSectionBar.onToggleSection = this.onToggleSection;                       // ### 01.08.00.1065
-   aboutSectionBar.setTitle("About");
-
-   var aboutSection = new Label(this);
-
-   aboutSection.onShow = function()                                              // ### 01.08.00.1065
-   {                                                                             // ### 01.08.00.1065
-      this.restyle();                                                            // ### 01.08.00.1065
-      this.setFixedWidth();                                                      // ### 01.08.00.1065
-      this.adjustToContents();                                                   // ### 01.08.00.1065
-      this.setFixedHeight();                                                     // ### 01.08.00.1065
-   };                                                                            // ### 01.08.00.1065
-
-   with (aboutSection) {
-      frameStyle = FrameStyle_Box;
-      margin = 4;
-      useRichText = true;
-      wordWrapping = true;
-      text =
-"<p><b>" + TITLE + " Version " + VERSION + "</b> &mdash; " +
-"Facilitates subframe evaluation, selection and weighting based on several subframe " +
-"quality related measurements, including estimates of star profile <i>full width at " +
-"half maximum</i> (FWHM), star profile <i>eccentricity</i> and subframe " +
-"<i>signal to noise ratio weight</i>. Approved/rejected subframes may be copied/moved " +
-"to output directories for postprocessing. Subframe weights may be recorded in the " +
-"FITS header of the copies.</p>" +
-"<p>For more information see the script documentation.</p>" +
-"<p>Copyright &copy; 2012-2016 Mike Schuster. All Rights Reserved.<br>" +        // ### 01.08.00.1065
-"Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.</p>";  // ### 01.08.00.1065
-   }
    var sizerMargin = 6;
-   //aboutSection.setMinWidth(dialogMinWidth - 2 * sizerMargin);                 // ### 01.08.00.1065
-   //aboutSection.adjustToContents();                                            // ### 01.08.00.1065
-   //aboutSection.setFixedHeight();                                              // ### 01.08.00.1065
-   aboutSection.hide();
-   this.aboutSection = aboutSection;
-   aboutSectionBar.setSection(aboutSection);
 
    /*
     * ### NB: Unfortunately, this SectionBar control cannot be collapsible in
@@ -306,6 +269,7 @@ function parametersDialogPrototype() {
    targetSubframesSection.adjustToContents();
    //targetSubframesSection.setFixedHeight(0.9 * targetSubframesSection.height); // ### 01.08.00.1065
    //targetSubframesSection.show();                                              // ### 01.08.00.1065
+   this.targetSubframesSection = targetSubframesSection;
    targetSubframesSectionBar.setSection(targetSubframesSection);
 
    var systemParametersSectionBar = new SectionBar(this);
@@ -744,6 +708,39 @@ function parametersDialogPrototype() {
             }
             add(hotPixelFilterRadius);
 
+            var applyHotPixelFilterToDetectionImage = new HorizontalSizer;
+            with (applyHotPixelFilterToDetectionImage) {
+               spacing = 4;
+               addSpacing(labelMinWidth);
+               addSpacing(spacing);
+
+               var checkBox = new CheckBox(this);
+               with (checkBox) {
+                  font = this.font;
+                  text = "Apply hot pixel filter to detection image";
+                  checked = parameters.applyHotPixelFilterToDetectionImage;
+                  onCheck = function(checked) {
+                     if (parameters.applyHotPixelFilterToDetectionImage != checked) {
+                        parameters.applyHotPixelFilterToDetectionImage = checked;
+                        tabulationClear(this.dialog);
+                     }
+                  };
+                  toolTip =
+"<p>Whether the hot pixel filter removal should be applied to the image " +
+"used for star detection, or only to the working image used to build the " +
+"structure map.</p>" +
+"<p>By setting this parameter to true, the detection algorithm is completely " +
+"robust to hot pixels (of sizes not larger than hot pixel filter radius), but " +
+"it is also less sensitive, so less stars will in general be detected. " +
+"With the default value of false, some hot pixels may be wrongly detected " +
+"as stars but the number of true stars detected will generally be larger.</p>";
+               }
+               add(checkBox);
+               this.applyHotPixelFilterToDetectionImageCheckBox = checkBox;
+               addStretch();
+            }
+            add(applyHotPixelFilterToDetectionImage);
+
             var logStarDetectionSensitivity = new HorizontalSizer;
             with (logStarDetectionSensitivity) {
                spacing = 4;
@@ -1115,6 +1112,7 @@ function parametersDialogPrototype() {
             with (circularModel) {
                spacing = 4;
                addSpacing(labelMinWidth);
+               addSpacing(spacing);
 
                var checkBox = new CheckBox(this);
                with (checkBox) {
@@ -2034,6 +2032,7 @@ function parametersDialogPrototype() {
          with (overwriteExistingFiles) {
             spacing = 4;
             addSpacing(labelMinWidth);
+            addSpacing(spacing);
 
             var checkBox = new CheckBox(this);
             with (checkBox) {
@@ -2225,7 +2224,37 @@ function parametersDialogPrototype() {
             )).execute();
       };
       add( this.browseDocButton );
-      addSpacing( 4 );
+
+   this.addLabel = function(pane, text, toolTip) {
+      var label = new Label(this);
+      pane.add(label);
+
+      //label.setFixedWidth(this.labelWidth);
+      label.text = text;
+      label.toolTip = toolTip;
+      label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+
+      return label;
+   };
+
+      this.versionLabel = this.addLabel(
+         buttonPane,
+         "Version " + VERSION,
+         "<p><b>" + TITLE + " Version " + VERSION + "</b></p>" +
+
+"<p>Facilitates subframe evaluation, selection and weighting based on several subframe " +
+"quality related measurements, including estimates of star profile <i>full width at " +
+"half maximum</i> (FWHM), star profile <i>eccentricity</i> and subframe " +
+"<i>signal to noise ratio weight</i>. Approved/rejected subframes may be copied/moved " +
+"to output directories for postprocessing. Subframe weights may be recorded in the " +
+"FITS header of the copies.</p>" +
+
+         "<p>Copyright &copy; 2012-2016 Mike Schuster. All Rights " +
+         "Reserved.<br>" +
+         "Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights " +
+         "Reserved.</p>"
+      );
+
       addStretch();
 
       var measureButton = new PushButton(this);
@@ -2298,6 +2327,8 @@ function parametersDialogPrototype() {
                parameters.noiseReductionLayers;
             this.dialog.hotPixelFilterRadiusSpinBox.value =
                parameters.hotPixelFilterRadius;
+            this.dialog.applyHotPixelFilterToDetectionImageCheckBox.checked =
+               parameters.applyHotPixelFilterToDetectionImage;
             this.dialog.logStarDetectionSensitivityNumericControl.setValue(
                Math.log10(parameters.starDetectionSensitivity
             ));
@@ -2392,8 +2423,6 @@ function parametersDialogPrototype() {
    with (this.sizer) {
       margin = sizerMargin;
       spacing = 6;
-      add(aboutSectionBar);
-      add(aboutSection);
       add(targetSubframesSectionBar);
       add(targetSubframesSection);
       add(systemParametersSectionBar);
@@ -2427,4 +2456,4 @@ function parametersDialogPrototype() {
 parametersDialogPrototype.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF SubframeSelectorParametersDialog.js - Released 2016/04/06 00:00:00 UTC
+// EOF SubframeSelectorParametersDialog.js - Released 2016/04/30 00:00:00 UTC
