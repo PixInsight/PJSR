@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/StarDetector.jsh - Released 2015/11/09 15:21:11 UTC
+// pjsr/StarDetector.jsh - Released 2016/04/28 10:09:39 UTC
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -54,12 +54,19 @@
 #define __PJSR_StarDetector_jsh
 
 /******************************************************************************
- * StarDetector.jsh version 1.24 (November 2015)
+ * StarDetector.jsh version 1.25 (April 2016)
  *
  * A JavaScript star detection engine. Adapted from the StarAlignment tool.
  * Written by Juan Conejero, PTeam
  *
  * Changelog:
+ *
+ * 1.25  - New applyHotPixelFilterToDetectionImage parameter for increased
+ *         robustness to hot pixels and other spurious small-scale structures.
+ *       - Fixed a bug in the generation of circular structural elements, used
+ *         for hot pixel removal.
+ *       - Fixed createStructureMapWindow() test routine, which was not giving
+ *         reliable results.
  *
  * 1.24  - Language optimization: All occurrences of 'var' replaced with 'let'.
  *
@@ -80,7 +87,7 @@
  *
  *****************************************************************************/
 
-#define __PJSR_STAR_DETECTOR_VERSION   1.23
+#define __PJSR_STAR_DETECTOR_VERSION   1.25
 
 #include <pjsr/ImageOp.jsh>
 #include <pjsr/MorphOp.jsh>
@@ -131,8 +138,24 @@ function StarDetector()
    this.hotPixelFilterRadius = 1;
 
    /*
+    * Whether the hot pixel filter removal should be applied to the image used
+    * for star detection, or only to the working image used to build the
+    * structure map. (default=false)
+    *
+    * By setting this parameter to true, the detection algorithm is completely
+    * robust to hot pixels (of sizes not larger than hotPixelFilterRadius), but
+    * it is also less sensitive, so less stars will in general be detected.
+    * With the default value of false, some hot pixels may be wrongly detected
+    * as stars but the number of true stars detected will generally be larger.
+    */
+   this.applyHotPixelFilterToDetectionImage = false;
+
+   /*
     * Half size in pixels of a Gaussian convolution filter applied for noise
     * reduction. Useful for star detection in low-SNR images. (default=0)
+    *
+    * Setting the value of this parameter > 0 implies
+    * applyHotPixelFilterToDetectionImage=true.
     */
    this.noiseReductionFilterRadius = 0;
 
@@ -218,19 +241,27 @@ function StarDetector()
     */
    function CircularStructure( size )
    {
+      size |= 1;
       let C = new Array( size*size );
-      let n2 = size >> 1;
+      let s2 = size >> 1;
+      let n2 = size/2;
       let n22 = n2*n2;
-      for ( let i = 0; i < size; ++i )
+      for ( let i = 0; i < s2; ++i )
       {
-         let di = i - n2;
+         let di = i+0.5 - n2;
          let di2 = di*di;
-         for ( let j = 0; j < size; ++j )
+         let i2 = i*size;
+         let i1 = i2 + size - 1;
+         let i3 = (size - i - 1)*size;
+         let i4 = i3 + size - 1;
+         for ( let j = 0; j < s2; ++j )
          {
-            let dj = j - n2;
-            C[i*size + j] = (di2 + dj*dj <= n22) ? 1 : 0;
+            let dj = j+0.5 - n2;
+            C[i1-j] = C[i2+j] = C[i3+j] = C[i4-j] = (di2 + dj*dj <= n22) ? 1 : 0;
          }
       }
+      for ( let i = 0; i < size; ++i )
+         C[i*size + s2] = C[s2*size + i] = 1;
       let S = new Array;
       S.push( C );
       return S;
@@ -254,10 +285,6 @@ function StarDetector()
     */
    this.getStructureMap = function( map )
    {
-      // Hot pixel removal
-      if ( !this.alreadyFixedHotPixels ) // flag set by stars()
-         this.hotPixelFilter( map );
-
       // Noise reduction with a low-pass filter
       if ( this.noiseLayers > 0 )
       {
@@ -377,6 +404,17 @@ function StarDetector()
       let wrk = Image.newFloatImage();
       image.getIntensity( wrk );
 
+      // Hot pixel removal, if applied to the image where we are going to find
+      // stars, not just to the image used to build the structure map.
+      // When noise reduction is enabled, always remove hot pixels first, or
+      // hot pixels would be promoted to "stars".
+      let alreadyFixedHotPixels = false;
+      if ( this.applyHotPixelFilterToDetectionImage || this.noiseReductionFilterRadius > 0 )
+      {
+         this.hotPixelFilter( wrk );
+         alreadyFixedHotPixels = true;
+      }
+
       // If the invert flag is set, then we are looking for dark structures on
       // a bright background.
       if ( this.invert )
@@ -385,11 +423,6 @@ function StarDetector()
       // Optional noise reduction
       if ( this.noiseReductionFilterRadius > 0 )
       {
-         // If noise reduction is enabled, remove hot pixels first - Otherwise
-         // hot pixels would be promoted to "stars".
-         this.hotPixelFilter( wrk );
-         this.alreadyFixedHotPixels = true; // prevent a second hot pixel removal in getStructureMap()
-
          let G = Matrix.gaussianFilterBySize( (this.noiseReductionFilterRadius << 1)|1 );
          wrk.convolveSeparable( G.rowVector( G.rows >> 1 ), G.rowVector( G.rows >> 1 ) );
       }
@@ -397,10 +430,11 @@ function StarDetector()
       // Structure map
       let map = Image.newFloatImage();
       map.assign( wrk );
+      // Hot pixel removal, if applied just to the image used to build the
+      // structure map.
+      if ( !alreadyFixedHotPixels )
+         this.hotPixelFilter( map );
       this.getStructureMap( map );
-
-      // Don't propagate control flag outside this function
-      this.alreadyFixedHotPixels = false;
 
       // Use matrices instead of images for faster access
       let M = map.toMatrix();
@@ -579,7 +613,16 @@ function StarDetector()
     */
    this.createStructureMapWindow = function( image )
    {
-      let map = new Image( image );
+      let map = Image.newFloatImage();
+      image.getIntensity( map );
+      this.hotPixelFilter( map );
+      if ( this.invert )
+         map.invert();
+      if ( this.noiseReductionFilterRadius > 0 )
+      {
+         let G = Matrix.gaussianFilterBySize( (this.noiseReductionFilterRadius << 1)|1 );
+         map.convolveSeparable( G.rowVector( G.rows >> 1 ), G.rowVector( G.rows >> 1 ) );
+      }
       this.getStructureMap( map );
 
       let w = new ImageWindow( 1, 1,
@@ -676,4 +719,4 @@ StarDetector.prototype = new Object;
 #endif   // __PJSR_StarDetector_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/StarDetector.jsh - Released 2015/11/09 15:21:11 UTC
+// EOF pjsr/StarDetector.jsh - Released 2016/04/28 10:09:39 UTC
