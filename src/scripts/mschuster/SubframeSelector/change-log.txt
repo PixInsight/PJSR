@@ -3,6 +3,15 @@ SubframeSelector Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2016.04.30 - v1.8
+
+- Added apply hot pixel filter to detection image parameter.
+
+- Replaced the About section with a version label button and tool tip.
+
+- Fixed minor dialog layout bugs.
+
+-------------------------------------------------------------------------------
 2016.04.06 - v1.6
 
 - Fixed Save Plots As file extension problem on newer Win versions.

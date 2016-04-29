@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorMeasure.js - Released 2016/04/06 00:00:00 UTC
+// SubframeSelectorMeasure.js - Released 2016/04/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.6
+// This file is part of SubframeSelector Script version 1.8
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -154,7 +154,7 @@ function FWHMEccentricityResidualOfStarsImageWindow(imageWindow) {
    }
    else if (USE_STAR_DETECTOR) {
       console.writeln();
-      console.writeln("<b>StarDetector</b>: Processing view: ", imageWindow.mainView.fullId);
+      console.writeln("<b>StarDetector ", #__PJSR_STAR_DETECTOR_VERSION, "</b>: Processing view: ", imageWindow.mainView.fullId);
       console.flush();
       var startTime = new Date();
 
@@ -164,6 +164,7 @@ function FWHMEccentricityResidualOfStarsImageWindow(imageWindow) {
          parameters.noiseReductionLayers, parameters.starDetectionLayers - 1
       );
       starDetector.hotPixelFilterRadius = parameters.hotPixelFilterRadius;
+      starDetector.applyHotPixelFilterToDetectionImage = parameters.applyHotPixelFilterToDetectionImage;
       starDetector.sensitivity = parameters.starDetectionSensitivity;
       starDetector.peakResponse = parameters.starPeakResponse;
       starDetector.maxDistortion = parameters.maximumStarDistortion;
@@ -421,4 +422,4 @@ function FWHMEccentricityResidualOfStarsImageWindow(imageWindow) {
 }
 
 // ****************************************************************************
-// EOF SubframeSelectorMeasure.js - Released 2016/04/06 00:00:00 UTC
+// EOF SubframeSelectorMeasure.js - Released 2016/04/30 00:00:00 UTC

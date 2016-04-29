@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelector.js - Released 2016/04/06 00:00:00 UTC
+// SubframeSelector.js - Released 2016/04/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.6
+// This file is part of SubframeSelector Script version 1.8
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,7 +48,7 @@
 // ****************************************************************************
 
 #define TITLE "SubframeSelector"
-#define VERSION "1.6"
+#define VERSION "1.8"
 
 #feature-id Batch Processing > SubframeSelector
 
@@ -90,7 +90,6 @@ Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 #include "SubframeSelectorParametersDialog.js"
 #include "SubframeSelectorPropertyPlot.js"
 #include "SubframeSelectorReadWriteImage.js"
-//#include "SubframeSelectorSectionBar.js"
 #include "SubframeSelectorSubframeDescription.js"
 
 // Dynamic methods for core Control object.
@@ -1006,7 +1005,7 @@ function propertyPlotUpdate(dialog) {
       generatePropertyPlotData(parameters.propertyPlotOrdinate);
    parameters.currentPropertyPlotDescripition =
       generatePropertyPlotDescription(
-         new Font(FontFamily_Helvetica, dialog.aboutSection.font.pointSize),
+         new Font(FontFamily_Helvetica, dialog.targetSubframesSection.font.pointSize),
          dialog.propertyPlotBitmapBox.width -
             dialog.propertyPlotBitmapBox.scrollBarWidth,
          dialog.propertyPlotBitmapBox.height -
@@ -1101,7 +1100,7 @@ function outputPropertyPlotsProcess(dialog) {
          generatePropertyPlotData(i);
       var propertyPlotDescripition =
          generatePropertyPlotDescription(
-            new Font(FontFamily_Helvetica, dialog.aboutSection.font.pointSize),
+            new Font(FontFamily_Helvetica, dialog.targetSubframesSection.font.pointSize),
             dialog.propertyPlotBitmapBox.width,
             dialog.propertyPlotBitmapBox.height,
             propertyPlotData
@@ -1697,7 +1696,7 @@ function outputMapsProcess(dialog) {
                columns,
                imageWindow.mainView.image.width,
                imageWindow.mainView.image.height,
-               new Font(FontFamily_Helvetica, dialog.aboutSection.font.pointSize),
+               new Font(FontFamily_Helvetica, dialog.targetSubframesSection.font.pointSize),
                "FWHM (" +
                   parameters.modelFunctions[parameters.modelFunction] +
                   ", Median " +
@@ -1721,7 +1720,7 @@ function outputMapsProcess(dialog) {
                columns,
                imageWindow.mainView.image.width,
                imageWindow.mainView.image.height,
-               new Font(FontFamily_Helvetica, dialog.aboutSection.font.pointSize),
+               new Font(FontFamily_Helvetica, dialog.targetSubframesSection.font.pointSize),
                "Eccentricity (" +
                   parameters.modelFunctions[parameters.modelFunction] +
                   ", Median " +
@@ -2195,4 +2194,4 @@ function main() {
 main();
 
 // ****************************************************************************
-// EOF SubframeSelector.js - Released 2016/04/06 00:00:00 UTC
+// EOF SubframeSelector.js - Released 2016/04/30 00:00:00 UTC
