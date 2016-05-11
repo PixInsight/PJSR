@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelector.js - Released 2016/04/30 00:00:00 UTC
+// SubframeSelector.js - Released 2016/05/12 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.8
+// This file is part of SubframeSelector Script version 1.10
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,7 +48,7 @@
 // ****************************************************************************
 
 #define TITLE "SubframeSelector"
-#define VERSION "1.8"
+#define VERSION "1.10"
 
 #feature-id Batch Processing > SubframeSelector
 
@@ -67,6 +67,7 @@ Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 #include <pjsr/ButtonCodes.jsh>
 #include <pjsr/Color.jsh>
 #include <pjsr/ColorSpace.jsh>
+#include <pjsr/CryptographicHash.jsh>
 #include <pjsr/DataType.jsh>
 #include <pjsr/FocusStyle.jsh>
 #include <pjsr/FontFamily.jsh>
@@ -84,7 +85,6 @@ Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 #include "SubframeSelectorEditDialog.js"
 #include "SubframeSelectorEvaluator.js"
 #include "SubframeSelectorImageWindow.js"
-#include "SubframeSelectorMD5.js"
 #include "SubframeSelectorMeasure.js"
 #include "SubframeSelectorParameters.js"
 #include "SubframeSelectorParametersDialog.js"
@@ -1850,6 +1850,10 @@ function copyWeightKeywordExtension(extension) {
    if (regExp.test(extension)) {
       return extension;
    }
+   extension = Settings.readGlobal("ImageWindow/DefaultFileExtension", DataType_UCString);
+   if (regExp.test(extension)) {
+      return extension;
+   }
    extension = (new Preferences).ImageWindow_defaultFileExtension;
    if (regExp.test(extension)) {
       return extension;
@@ -2194,4 +2198,4 @@ function main() {
 main();
 
 // ****************************************************************************
-// EOF SubframeSelector.js - Released 2016/04/30 00:00:00 UTC
+// EOF SubframeSelector.js - Released 2016/05/12 00:00:00 UTC

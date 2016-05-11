@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorMeasure.js - Released 2016/04/30 00:00:00 UTC
+// SubframeSelectorMeasure.js - Released 2016/05/12 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.8
+// This file is part of SubframeSelector Script version 1.10
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -361,7 +361,13 @@ function FWHMEccentricityResidualOfStarsImageWindow(imageWindow) {
    }
 
    //console.abortEnabled = false;
-   dynamicPSF.executeGlobal();
+   // Workaround for 1195 Win 7 DynamicPSF failure on images with clipped backgrounds
+   if (imageWindow.mainView.image.median() != 0) {
+      dynamicPSF.executeGlobal();
+   }
+   else {
+      console.writeln("0 PSF fittings");
+   }
    console.abortEnabled = true;
 
    #define DYNAMICPSF_PSF_StarIndex 0
@@ -422,4 +428,4 @@ function FWHMEccentricityResidualOfStarsImageWindow(imageWindow) {
 }
 
 // ****************************************************************************
-// EOF SubframeSelectorMeasure.js - Released 2016/04/30 00:00:00 UTC
+// EOF SubframeSelectorMeasure.js - Released 2016/05/12 00:00:00 UTC
