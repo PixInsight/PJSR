@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorParametersDialog.js - Released 2016/04/30 00:00:00 UTC
+// SubframeSelectorParametersDialog.js - Released 2016/05/12 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.8
+// This file is part of SubframeSelector Script version 1.10
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -53,10 +53,6 @@ function parametersDialogPrototype() {
 
    this.displayPixelRatio;
 
-   //if (__PI_BUILD__ >= 990 ) {                                                 // ### 01.08.00.1065
-   //   this.restyle();                                                          // ### 01.08.00.1065
-   //}                                                                           // ### 01.08.00.1065
-
    this.normalCheckedColor = 0xffffffff;
    this.alternateCheckedColor = 0xfff6f6f6;
    this.normalUncheckedColor = 0xffd0d0b8;
@@ -93,7 +89,7 @@ function parametersDialogPrototype() {
       end();
    }
 
-   var platformFontWidthFactor = 1.0; // corePlatform == "MSWindows" ? 1.0 : 1.2;
+   var platformFontWidthFactor = 1.0;
    var dialogMinWidth =
       Math.round(platformFontWidthFactor * 45.0 * this.font.width('M'));
 
@@ -109,33 +105,9 @@ function parametersDialogPrototype() {
 
    this.dialog.onEditCompletedActive = false;
 
-   this.onToggleSection = function( sectionBar, toggleBegin )                    // ### 01.08.00.1065
-   {                                                                             // ### 01.08.00.1065
-      if ( sectionBar.dialog.targetSubframesTreeBox.visible )                    // ### 01.08.00.1065
-         if ( toggleBegin )                                                      // ### 01.08.00.1065
-            sectionBar.dialog.targetSubframesTreeBox.setFixedHeight();           // ### 01.08.00.1065
-         else                                                                    // ### 01.08.00.1065
-         {                                                                       // ### 01.08.00.1065
-            sectionBar.dialog.targetSubframesTreeBox.setVariableHeight();        // ### 01.08.00.1065
-            sectionBar.dialog.targetSubframesTreeBox.minHeight =                 // ### 01.08.00.1065
-                     sectionBar.dialog.targetSubframesTreeBox.savedMinHeight;    // ### 01.08.00.1065
-         }                                                                       // ### 01.08.00.1065
-#ifneq __PI_PLATFORM__ MACOSX                                                    // ### 01.08.00.1065
-      sectionBar.dialog.height = sectionBar.dialog.smartMinHeight;               // ### 01.08.00.1065
-#endif                                                                           // ### 01.08.00.1065
-   };                                                                            // ### 01.08.00.1065
-
    var sizerMargin = 6;
 
-   /*
-    * ### NB: Unfortunately, this SectionBar control cannot be collapsible in
-    *         the current version of PixInsight. If this section is made
-    *         collapsible, there is no way to guarantee a correct behavior of
-    *         this dialog on all platforms. Dialog windows are controlled by
-    *         the underlying windowing system, and hence have limitations
-    *         beyond our control.
-    */
-   var targetSubframesSectionBar = new SectionBar( this, "Target Subframes", false/*collapsible*/ ); // ### 01.08.00.1065
+   var targetSubframesSectionBar = new SectionBar( this, "Target Subframes");
 
    var targetSubframesSection = new Control(this);
    with (targetSubframesSection) {
@@ -166,11 +138,11 @@ function parametersDialogPrototype() {
             };
          }
          var treeBoxRows = 10;
-         treeBox.setFixedHeight(
+         treeBox.setMinHeight(
             this.displayPixelRatio * treeBoxRows * (treeBox.font.lineSpacing + 6) +
             treeBox.borderWidth
          );
-         add(treeBox, 100);                                                      // ### 01.08.00.1065
+         add(treeBox);
          this.targetSubframesTreeBox = treeBox;
 
          var controlPane = new VerticalSizer;
@@ -267,13 +239,10 @@ function parametersDialogPrototype() {
       }
    }
    targetSubframesSection.adjustToContents();
-   //targetSubframesSection.setFixedHeight(0.9 * targetSubframesSection.height); // ### 01.08.00.1065
-   //targetSubframesSection.show();                                              // ### 01.08.00.1065
    this.targetSubframesSection = targetSubframesSection;
    targetSubframesSectionBar.setSection(targetSubframesSection);
 
    var systemParametersSectionBar = new SectionBar(this);
-   systemParametersSectionBar.onToggleSection = this.onToggleSection;            // ### 01.08.00.1065
    systemParametersSectionBar.setTitle("System Parameters");
 
    var systemParametersSection = new Control(this);
@@ -283,7 +252,7 @@ function parametersDialogPrototype() {
          spacing = 6;
 
          var labelMinWidth = Math.round(
-            this.font.width("Camera resolution:M") // platformFontWidthFactor * 11.0 * this.font.width('M')
+            this.font.width("Camera resolution:M")
          );
          var editWidth = Math.round(
             platformFontWidthFactor * 6.0 * this.font.width('M')
@@ -576,7 +545,6 @@ function parametersDialogPrototype() {
    systemParametersSectionBar.setSection(systemParametersSection);
 
    var starDetectionAndFittingSectionBar = new SectionBar(this);
-   starDetectionAndFittingSectionBar.onToggleSection = this.onToggleSection;     // ### 01.08.00.1065
    starDetectionAndFittingSectionBar.setTitle("Star Detection and Fitting");
 
    var starDetectionAndFittingSection = new Control(this);
@@ -590,7 +558,7 @@ function parametersDialogPrototype() {
             spacing = 6;
 
             var labelMinWidth = Math.round(
-               this.font.width("Maximum star distortion:M") // platformFontWidthFactor * 14.0 * this.font.width('M')
+               this.font.width("Maximum star distortion:M")
             );
             var spinBoxWidth = Math.round(
                platformFontWidthFactor * 6.0 * this.font.width('M')
@@ -1147,7 +1115,6 @@ function parametersDialogPrototype() {
    starDetectionAndFittingSectionBar.setSection(starDetectionAndFittingSection);
 
    var expressionsSectionBar = new SectionBar(this);
-   expressionsSectionBar.onToggleSection = this.onToggleSection;                 // ### 01.08.00.1065
    expressionsSectionBar.setTitle("Expressions");
 
    var expressionsSection = new Control(this);
@@ -1157,7 +1124,7 @@ function parametersDialogPrototype() {
          spacing = 6;
 
          var labelMinWidth = Math.round(
-            this.font.width("Weighting:M") // platformFontWidthFactor * 5.5 * this.font.width('M')
+            this.font.width("Weighting:M")
          );
 
          var selectorExpression = new HorizontalSizer;
@@ -1314,7 +1281,6 @@ function parametersDialogPrototype() {
    expressionsSectionBar.setSection(expressionsSection);
 
    var tabulationSectionBar = new SectionBar(this);
-   tabulationSectionBar.onToggleSection = this.onToggleSection;                  // ### 01.08.00.1065
    tabulationSectionBar.setTitle("Table");
 
    var tabulationSection = new Control(this);
@@ -1427,7 +1393,7 @@ function parametersDialogPrototype() {
             };
          }
          var treeBoxRows = 10;
-         treeBox.setFixedHeight(
+         treeBox.setMinHeight(
             this.displayPixelRatio * treeBoxRows * (treeBox.font.lineSpacing + 6) +
             treeBox.borderWidth
          );
@@ -1527,12 +1493,10 @@ function parametersDialogPrototype() {
       }
    }
    tabulationSection.adjustToContents();
-   tabulationSection.setFixedHeight();
    tabulationSection.show();
    tabulationSectionBar.setSection(tabulationSection);
 
    var propertyPlotSectionBar = new SectionBar(this);
-   propertyPlotSectionBar.onToggleSection = this.onToggleSection;                // ### 01.08.00.1065
    propertyPlotSectionBar.setTitle("Plots");
 
    var propertyPlotSection = new Control(this);
@@ -1546,7 +1510,7 @@ function parametersDialogPrototype() {
             spacing = 6;
 
             var labelMinWidth = Math.round(
-               this.font.width("Ordinate:M") // platformFontWidthFactor * 6.0 * this.font.width('M')
+               this.font.width("Ordinate:M")
             );
 
             var propertyPlotOrdinate = new HorizontalSizer;
@@ -1645,7 +1609,6 @@ function parametersDialogPrototype() {
    propertyPlotSectionBar.setSection(propertyPlotSection);
 
    var outputSectionBar = new SectionBar(this);
-   outputSectionBar.onToggleSection = this.onToggleSection;                      // ### 01.08.00.1065
    outputSectionBar.setTitle("Output");
 
    var outputSection = new Control(this);
@@ -2114,102 +2077,6 @@ function parametersDialogPrototype() {
       }
       add(newInstance);
 
-      // ### 2013 SEP 02 - Replace tooltip information with a Browse
-      //                   Documentation button. (see below)
-/*
-      var helpButton = new ToolButton(this);
-      with (helpButton) {
-         icon = this.setScaledFixedSize( 20, 20 );":/icons/comment.png");
-         setScaledFixedSize( 20, 20 );
-         toolTip =
-"<p><b>1</b>. Add all target subframes. Subframes may be raw, calibrated or " +
-"registered, but all should be the same type and be compatible for integration.</p>" +
-
-"<p><b>2</b>. Set the parameters in the <i>System Parameters</i> section.</p>" +
-
-"<p><b>3</b>. Adjust the <i>Star Detection and Fitting</i> parameters if necessary so " +
-"that between several hundred and several thousand stars are detected and fitted per " +
-"subframe. Select a <i>point spread function</i> (PSF).</p>" +
-
-"<p><b>4</b>. Click <i>Measure</i>. Review the measurements presented in the table and " +
-"the plots. Save the table and plots for postprocessing and archival by clicking the " +
-"appropriate <i>Save As</i> buttons. The remaining steps are optional.</p>" +
-
-"<p><b>5</b>. Approve or reject subframes by either toggling their checkboxes, " +
-"clicking their points, or specifying a subframe approval expression. An example " +
-"expression is <i>FWHM &lt; 3 && SNRWeight > 50</i>. " +
-
-"Subframes approved or rejected by toggling checkboxes or clicking points will be " +
-"locked to prevent their disposition from being overwritten by the subframe approval " +
-"expression. Unlock subframes by shift-clicking their points or by clicking <i>Unlock " +
-"Selected</i> or <i>Unlock All</i>.</p>" +
-
-"<p><b>6</b>. Specify a subframe weighting expression to assign subframe weights. " +
-"The default expression is <i>SNRWeight</i>.</p>" +
-
-"<p><b>7</b>. In the <i>Output</i> section, specify output actions, directories and " +
-"postfixes. Specify a FITS weight keyword if you wish to record subframe " +
-"weights.</p>" +
-
-"<p><b>8</b>. Click <i>Output Subframes</i> to copy/move the approved/rejected " +
-"subframes to output directories. Click <i>Output Maps</i> to output target subframe " +
-"star maps.</p>" +
-
-"<p><b>Properties</b>  (append <i>Sigma</i> for mean absolute deviation from the " +
-"median normalized values):<br>" +
-
-"<i>Index</i> &mdash; The <i>index</i> number of the subframe in the target " +
-"subframes list.<br>" +
-
-"<i>Weight</i> &mdash; The <i>weight</i> of the subframe as determined by the " +
-"subframe weighting expression.<br>" +
-
-"<i>FWHM</i> &mdash; The median star profile <i>full width at half maximum</i> (FWHM) " +
-"estimate for the subframe in arcseconds or pixels.<br>" +
-
-"<i>Eccentricity</i> &mdash; The median star profile <i>eccentricity</i> estimate for " +
-"the subframe.<br>" +
-
-"<i>SNRWeight</i> &mdash; The <i>signal to noise ratio weight</i> estimate for " +
-"the subframe.<br>" +
-
-"<i>Median</i> &mdash; The <i>median</i> of the subframe in electrons or Data " +
-"Numbers.<br>" +
-
-"<i>MeanDeviation</i> &mdash; The <i>mean absolute deviation from the median</i> of " +
-"the subframe in electrons or Data Numbers.<br>" +
-
-"<i>Noise</i> &mdash; An estimate of the <i>standard deviation of Gaussian noise</i> " +
-"for the subframe in electrons or Data Numbers.<br>" +
-
-"<i>StarSupport</i> &mdash; The number of stars detected and fitted in the subframe " +
-"and used to estimate <i>FWHM</i> and <i>Eccentricity</i>.<br>" +
-
-"<i>StarResidual</i> &mdash; The median <i>residual</i> of the star fitting process " +
-"for the subframe.<br>" +
-
-"<i>NoiseSupport</i> &mdash; The fractional number of pixels in the subframe deemed " +
-"free of image structure and used to estimate <i>Noise</i>.<br>" +
-
-"<i>FWHMMeanDev</i> &mdash; The mean absolute deviation from the median star profile " +
-"<i>full width at half maximum</i> (FWHM) estimate for the subframe in arcseconds " +
-"or pixels.<br>" +
-
-"<i>EccentricityMeanDev</i> &mdash; The mean absolute deviation from the median star " +
-"profile <i>eccentricity</i> estimate for the subframe.<br>" +
-
-"<i>StarResidualMeanDev</i> &mdash; The mean absolute deviation from the median " +
-"<i>residual</i> of the star fitting process for the subframe.<br>" +
-
-"<i>Date</i> &mdash; The observation date and Coordinated Universal Time (UTC) of the " +
-"subframe.</p>";
-      }
-      add(helpButton);
-      addStretch();
-*/
-
-      // ### 2013 SEP 02 - Replace tooltip information with a Browse
-      //                   Documentation button.
       this.browseDocButton = new ToolButton(this);
       this.browseDocButton.icon = this.scaledResource(":/process-interface/browse-documentation.png");
       this.browseDocButton.setScaledFixedSize( 20, 20 );
@@ -2229,7 +2096,6 @@ function parametersDialogPrototype() {
       var label = new Label(this);
       pane.add(label);
 
-      //label.setFixedWidth(this.labelWidth);
       label.text = text;
       label.toolTip = toolTip;
       label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
@@ -2441,14 +2307,8 @@ function parametersDialogPrototype() {
    }
 
    this.adjustToContents();
-   /*
-    * ### We cannot allow horizontal resizing for the same reasons described
-    *     above.
-    */
-   this.setScaledFixedWidth( 800 );                                              // ### Forum PM of 2013 December 21
-   this.targetSubframesTreeBox.savedMinHeight = targetSubframesSection.height;   // ### 01.08.00.1065
-   //this.setMinWidth(dialogMinWidth);                                           // ### 01.08.00.1065
-   //this.setFixedHeight();                                                      // ### 01.08.00.1065
+
+   this.setScaledMinWidth(800);
 
    targetSubframesUpdateTreeBox(this);
    tabulationUpdateTreeBox(this);
@@ -2456,4 +2316,4 @@ function parametersDialogPrototype() {
 parametersDialogPrototype.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF SubframeSelectorParametersDialog.js - Released 2016/04/30 00:00:00 UTC
+// EOF SubframeSelectorParametersDialog.js - Released 2016/05/12 00:00:00 UTC

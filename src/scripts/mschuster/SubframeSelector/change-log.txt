@@ -3,6 +3,20 @@ SubframeSelector Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2016.05.12 - v1.10
+
+- Fixed bugs on images with zero measured noise.
+
+- Fixed bugs on images with clipped backgrounds (DynamicPSF failure).
+
+- Added support for dialog resizing.
+
+- Switched to pjsr/CryptographicHash for faster file caching.
+
+- Use Global Preferences > File I/O Settings > Default Save As image file
+  extension when copying non-fit/non-xisf files with added weight keyword.
+
+-------------------------------------------------------------------------------
 2016.04.30 - v1.8
 
 - Added apply hot pixel filter to detection image parameter.
