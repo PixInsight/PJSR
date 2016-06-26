@@ -30,6 +30,8 @@
 /*
  Changelog:
 
+ 1.2:  * Use downloaded catalogs
+
  1.1.1:* Fixed: The script didn't include two files
 
  1.1:  * Configuration of graphical properties
@@ -60,7 +62,7 @@
 #endif
 
 
-#define VERSION "1.1.1"
+#define VERSION "1.2"
 #define TITLE "Mosaic Planner"
 #define SETTINGS_MODULE "MosaicPlan"
 #define STAR_CSV_FILE   File.systemTempDirectory + "/stars.csv"
@@ -70,6 +72,7 @@
 #include "PreviewControl.js"
 #include "SearchCoordinatesDialog.js"
 #include "CommonUIControls.js"
+#include "CatalogDownloader.js"
 ;
 
 // ******************************************************************
@@ -1059,8 +1062,9 @@ function MosaicDialog(engine)
       this.dbPath_Edit.text = engine.databasePath;
    this.dbPath_Edit.setScaledMinWidth(150);
    this.dbPath_Edit.enabled = engine.catalogMode == 0;
-   this.dbPath_Edit.toolTip = "<p>Path to a star database file in StarGenerator format.<br />" +
-      "The currently available star database files can be downloaded from: http://pixinsight.com/download/</p>";
+   this.dbPath_Edit.toolTip = "<p>Path to a star database file in StarGenerator or text formats.</p>" +
+      "<p>The text files can be downloaded from an online server using the download button.</p>" +
+      "<p>The StarGenerator database file can be downloaded from: http://pixinsight.com/download/</p>";
    this.dbPath_Edit.onTextUpdated = function (value)
    {
       engine.databasePath = value;
@@ -1071,28 +1075,52 @@ function MosaicDialog(engine)
    this.dbPath_Button = new ToolButton(this);
    this.dbPath_Button.icon = this.scaledResource(":/icons/select-file.png");
    this.dbPath_Button.setScaledFixedSize(20, 20);
-   this.dbPath_Button.toolTip = "<p>Select a StarGenerator database file.</p>";
+   this.dbPath_Button.toolTip = "<p>Select a catalog file.</p>";
    this.dbPath_Button.enabled = engine.catalogMode == 0;
    this.dbPath_Button.onClick = function ()
    {
       var gdd = new OpenFileDialog;
       gdd.initialPath = this.dialog.dbPath_Edit.text;
       gdd.caption = "Select Star Database Path";
-      gdd.filters = [
-         ["Star database files", "*.bin"]
+      gdd.filters = [["All supported catalog files", "*.bin,*.txt"],
+         ["Star database files", "*.bin"],
+         ["Custom catalog files", "*.txt"]
       ];
       if (gdd.execute())
       {
          engine.databasePath = gdd.fileName;
          this.dialog.dbPath_Edit.text = gdd.fileName;
+         engine.LoadCatalog();
+         this.dialog.previewControl.forceRedraw();
       }
    };
+
+   this.download_Button = new ToolButton(this);
+   this.download_Button.icon = this.scaledResource(":/icons/download.png");
+   this.download_Button.setScaledFixedSize(20, 20);
+   this.download_Button.toolTip = "<p>Download from an online catalog.</p>";
+   this.download_Button.onClick = function ()
+   {
+      var mosaicMetadata = engine.metadata ? engine.metadata.Clone() : new ImageMetadata();
+      mosaicMetadata.ra = engine.originRA;
+      mosaicMetadata.dec = engine.originDec;
+      var dlg = new CatalogDownloaderDialog(mosaicMetadata, engine.vizierServer);
+      if (dlg.execute())
+      {
+         this.dialog.dbPath_Edit.text = dlg.path;
+         engine.databasePath = dlg.path;
+         engine.LoadCatalog();
+         this.dialog.previewControl.forceRedraw();
+      }
+   };
+
 
    this.dbPath_Sizer = new HorizontalSizer;
    this.dbPath_Sizer.spacing = 4;
    this.dbPath_Sizer.add(this.dbPath_RadioButton);
    this.dbPath_Sizer.add(this.dbPath_Edit, 100);
    this.dbPath_Sizer.add(this.dbPath_Button);
+   this.dbPath_Sizer.add(this.download_Button);
 
    // VizieR Catalog
    this.vizier_RadioButton = new RadioButton(this);
@@ -1935,68 +1963,99 @@ function MosaicPlannerEngine()
       }
       else
       {
-         // Local catalog
-         // var mag = -1.5 -2.5 * Math.log10(flux);
-
          if (this.databasePath == null || this.databasePath == "")
             return;
-         var generator = new StarGenerator;
-         generator.starDatabasePath = this.databasePath;
-         generator.centerRA = this.metadata.ra;
-         generator.centerDec = this.metadata.dec;
-         if (!this.metadata.epoch)
+         if (File.extractExtension(this.databasePath) == ".bin")
          {
-            var epoch = new Date(Date.now());
-            generator.epoch = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+            // Local catalog in StarGenerator format
+            // var mag = -1.5 -2.5 * Math.log10(flux);
+
+            var generator = new StarGenerator;
+            generator.starDatabasePath = this.databasePath;
+            generator.centerRA = this.metadata.ra;
+            generator.centerDec = this.metadata.dec;
+            if (!this.metadata.epoch)
+            {
+               var epoch = new Date(Date.now());
+               generator.epoch = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+            }
+            else
+               generator.epoch = this.metadata.epoch;
+            generator.projectionSystem = StarGenerator.prototype.Gnomonic;
+
+            var resolution = this.metadata.resolution;
+            if (this.metadata.xpixsz > 0)
+            {
+               generator.pixelSize = this.metadata.xpixsz;
+               generator.focalLength = this.metadata.FocalFromResolution(resolution);
+            }
+            else
+            {
+               generator.pixelSize = 10;
+               generator.focalLength = generator.pixelSize / resolution * 0.18 / Math.PI;
+            }
+
+            generator.limitMagnitude = this.maxMagnitude;
+            generator.outputMode = StarGenerator.prototype.Output_CSVFile;
+            generator.outputFilePath = STAR_CSV_FILE;
+            generator.sensorWidth = Math.max(this.metadata.width, this.metadata.height) * 1.45;
+            generator.sensorHeight = generator.sensorWidth;
+            generator.executeGlobal();
+            generator.starDatabasePath = null;
+
+            var projection = new Gnomonic(180 / Math.PI, this.metadata.ra, this.metadata.dec);
+            var ref_S_G = new Matrix(
+               -resolution, 0, resolution * generator.sensorWidth / 2,
+               0, -resolution, resolution * generator.sensorHeight / 2,
+               0, 0, 1);
+
+            // Read the positions of the stars from the file written by StarGenerator
+            var lines = File.readLines(STAR_CSV_FILE);
+            for (var i = 0; i < lines.length; i++)
+            {
+               //console.writeln("Line: ", lines[i]);
+               var tokens = lines[i].split(",");
+               if (tokens.length != 3)
+                  continue;
+
+               var posS = new Point(parseFloat(tokens[0]), parseFloat(tokens[1]));
+               var flux = parseFloat(tokens[2]);
+               var posG = ref_S_G.Apply(posS);
+               var posRD = projection.Inverse(posG);
+               var mag = -1.5 - 2.5 * Math.log10(flux);
+               var star = {
+                  catPosPx:  this.metadata.Convert_RD_I(posRD),
+                  magnitude: -1.5 - 2.5 * Math.log10(flux)
+               };
+               this.catalogStars.stars.push(star);
+            }
          }
          else
-            generator.epoch = this.metadata.epoch;
-         generator.projectionSystem = StarGenerator.prototype.Gnomonic;
+         { // Catalog in CustomCatalog format
+            var catalog = new CustomCatalog();
+            catalog.catalogPath = this.databasePath;
 
-         var resolution = this.metadata.resolution;
-         if (this.metadata.xpixsz > 0)
-         {
-            generator.pixelSize = this.metadata.xpixsz;
-            generator.focalLength = this.metadata.FocalFromResolution(resolution);
-         }
-         else
-         {
-            generator.pixelSize = 10;
-            generator.focalLength = generator.pixelSize / resolution * 0.18 / Math.PI;
-         }
+            // catalog.magMax = this.maxMagnitude;
+            //catalog.Load(this.metadata, this.vizierServer);
+            catalog.Load();
 
-         generator.limitMagnitude = this.maxMagnitude;
-         generator.outputMode = StarGenerator.prototype.Output_CSVFile;
-         generator.outputFilePath = STAR_CSV_FILE;
-         generator.sensorWidth = Math.max(this.metadata.width, this.metadata.height) * 1.45;
-         generator.sensorHeight = generator.sensorWidth;
-         generator.executeGlobal();
+            for (var i = 0; i < catalog.objects.length; i++)
+            {
+               if (catalog.objects[i] == null)
+                  continue;
+               var posPx = this.metadata.Convert_RD_I(catalog.objects[i].posRD);
+               if (posPx && posPx.x >= 0 && posPx.x <= this.metadata.width && posPx.y >= 0 && posPx.y <= this.metadata.height)
+               {
+                  var star = {};
+                  //               star.name = catalog.objects[i].name;
+                  //               star.catPosEq = catalog.objects[i].posRD;
+                  star.catPosPx = posPx;
+                  star.magnitude = catalog.objects[i].magnitude;
+                  this.catalogStars.stars.push(star);
+               }
+               // if(stars.length>200) break;
+            }
 
-         var projection = new Gnomonic(180 / Math.PI, this.metadata.ra, this.metadata.dec);
-         var ref_S_G = new Matrix(
-            -resolution, 0, resolution * generator.sensorWidth / 2,
-            0, -resolution, resolution * generator.sensorHeight / 2,
-            0, 0, 1);
-
-         // Read the positions of the stars from the file written by StarGenerator
-         var lines = File.readLines(STAR_CSV_FILE);
-         for (var i = 0; i < lines.length; i++)
-         {
-            //console.writeln("Line: ", lines[i]);
-            var tokens = lines[i].split(",");
-            if (tokens.length != 3)
-               continue;
-
-            var posS = new Point(parseFloat(tokens[0]), parseFloat(tokens[1]));
-            var flux = parseFloat(tokens[2]);
-            var posG = ref_S_G.Apply(posS);
-            var posRD = projection.Inverse(posG);
-            var mag = -1.5 - 2.5 * Math.log10(flux);
-            var star = {
-               catPosPx:  this.metadata.Convert_RD_I(posRD),
-               magnitude: -1.5 - 2.5 * Math.log10(flux)
-            };
-            this.catalogStars.stars.push(star);
          }
       }
       this.catalogStars.stars.sort(function (a, b)
