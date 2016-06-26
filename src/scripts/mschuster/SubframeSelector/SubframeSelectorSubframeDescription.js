@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorSubframeDescription.js - Released 2016/04/06 00:00:00 UTC
+// SubframeSelectorSubframeDescription.js - Released 2016/05/12 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.6
+// This file is part of SubframeSelector Script version 1.10
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -353,7 +353,7 @@ var evaluationDescriptionCompare = [
 ];
 
 function SNRWeightFunction(meanDeviation, noise, cameraGain, cameraResolution) {
-   return Math.pow(meanDeviation, 2.0) / Math.pow(noise, 2.0);
+   return noise != 0 ? Math.pow(meanDeviation, 2.0) / Math.pow(noise, 2.0) : 0;
 }
 
 function pedestalFunction(value) {
@@ -369,73 +369,39 @@ function subframeCacheMD5(filePath) {
       return null;
    }
 
-   var c = MD5Initialize();
-
-   c = MD5AppendString(
-      c, TITLE + "." + VERSION
-   );
-
    try {
-      c = MD5AppendFileMaxBytes(c, filePath, parameters.MD5MaxBytes);
+      var c = new CryptographicHash(CryptographicHash_MD5);
+
+      c.update(new ByteArray(TITLE + "." + VERSION));
+
+      c.update(File.readFile(filePath));
+
+      c.update(new ByteArray(format("%d", parameters.subframeRegionLeft)));
+      c.update(new ByteArray(format("%d", parameters.subframeRegionTop)));
+      c.update(new ByteArray(format("%d", parameters.subframeRegionWidth)));
+      c.update(new ByteArray(format("%d", parameters.subframeRegionHeight)));
+      c.update(new ByteArray(format("%d", parameters.pedestal)));
+
+      c.update(new ByteArray(format("%d", parameters.starDetectionLayers)));
+      c.update(new ByteArray(format("%d", parameters.noiseReductionLayers)));
+      c.update(new ByteArray(format("%d", parameters.hotPixelFilterRadius)));
+      c.update(new ByteArray(format("%d", parameters.applyHotPixelFilterToDetectionImage ? 1 : 0)));
+      c.update(new ByteArray(format("%.2f", Math.log10(parameters.starDetectionSensitivity))));
+      c.update(new ByteArray(format("%.2f", parameters.starPeakResponse)));
+      c.update(new ByteArray(format("%.2f", parameters.maximumStarDistortion)));
+      c.update(new ByteArray(format("%.2f", parameters.upperLimit)));
+      c.update(new ByteArray("\"" + parameters.modelFunctions[parameters.modelFunction] + "\""));
+      c.update(new ByteArray(format("%d", parameters.circularModel ? 1 : 0)));
    }
    catch (error) {
       return null;
    }
 
-   c = MD5AppendString(
-      c, format("%d", parameters.subframeRegionLeft)
-   );
-   c = MD5AppendString(
-      c, format("%d", parameters.subframeRegionTop)
-   );
-   c = MD5AppendString(
-      c, format("%d", parameters.subframeRegionWidth)
-   );
-   c = MD5AppendString(
-      c, format("%d", parameters.subframeRegionHeight)
-   );
-   c = MD5AppendString(
-      c, format("%d", parameters.pedestal)
-   );
-
-   c = MD5AppendString(
-      c, format("%d", parameters.starDetectionLayers)
-   );
-   c = MD5AppendString(
-      c, format("%d", parameters.noiseReductionLayers)
-   );
-   c = MD5AppendString(
-      c, format("%d", parameters.hotPixelFilterRadius)
-   );
-   c = MD5AppendString(
-      c, format("%.2f", Math.log10(parameters.starDetectionSensitivity))
-   );
-   c = MD5AppendString(
-      c, format("%.2f", parameters.starPeakResponse)
-   );
-   c = MD5AppendString(
-      c, format("%.2f", parameters.maximumStarDistortion
-   ));
-   c = MD5AppendString(
-      c, format("%.2f", parameters.upperLimit
-   ));
-   c = MD5AppendString(
-      c, "\"" + parameters.modelFunctions[parameters.modelFunction] + "\""
-   );
-   c = MD5AppendString(
-      c, format("%d", parameters.circularModel ? 1 : 0)
-   );
-
-   return MD5Finalize(c);
+   return c.finalize();
 }
 
 function subframeCacheLine(MD5) {
-   var cacheLine = 0;
-   for (var i = 0; i != 4; ++i) {
-      cacheLine = 64 * cacheLine + MD5[i];
-   }
-   //console.writeln("cacheLine: ", Math.abs(cacheLine) % parameters.cacheSize);
-   return Math.abs(cacheLine) % parameters.cacheSize;
+   return Math.abs(MD5.hash32() % parameters.cacheSize) % parameters.cacheSize;
 }
 
 function subframeCacheStore(description) {
@@ -447,9 +413,8 @@ function subframeCacheStore(description) {
       TITLE + "." + VERSION + "_cache_" + subframeCacheLine(description.MD5) + "_";
 
    var i = 0;
-   for (; i != 4; ++i) {
-      Settings.write(prefix + i, DataType_Int32, description.MD5[i]);
-   }
+   Settings.write(prefix + i, DataType_ByteArray, description.MD5);
+   ++i;
    Settings.write(prefix + i, DataType_Float, description.FWHM);
    ++i;
    Settings.write(prefix + i, DataType_Float, description.FWHMMeanDeviation);
@@ -488,15 +453,14 @@ function subframeCacheLoad(MD5) {
       TITLE + "." + VERSION + "_cache_" + subframeCacheLine(MD5) + "_";
 
    var i = 0;
-   for (; i != 4; ++i) {
-      var value = Settings.read(prefix + i, DataType_Int32);
-      if (value == null) {
-         return null;
-      }
-      if (value != MD5[i]) {
-         return null;
-      }
+   var value = Settings.read(prefix + i, DataType_ByteArray);
+   if (value == null) {
+      return null;
    }
+   if (value.toHex() != MD5.toHex()) {
+      return null;
+   }
+   ++i;
    var value = Settings.read(prefix + i, DataType_Float);
    if (value == null) {
       return null;
@@ -609,4 +573,4 @@ function subframeCacheFlush() {
 }
 
 // ****************************************************************************
-// EOF SubframeSelectorSubframeDescription.js - Released 2016/04/06 00:00:00 UTC
+// EOF SubframeSelectorSubframeDescription.js - Released 2016/05/12 00:00:00 UTC
