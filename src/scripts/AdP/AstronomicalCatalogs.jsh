@@ -343,19 +343,19 @@ function VizierCatalog(name)
    this.epoch = null;
    this.maxRecords = 200000;
    this.queryMargin = 1.2;
+   this.maxFov = null;
 
    this.Load = function (metadata, mirrorServer)
    {
+      var center = new Point(metadata.ra, metadata.dec);
+      var fov = this.CalculateFOV(metadata);
+
       if (metadata.epoch != null)
          this.epoch = (metadata.epoch - Math.complexTimeToJD(2000, 1, 1)) / 365.25 + 2000;
       else
          this.epoch = null;
 
-      var center = new Point(metadata.ra, metadata.dec);
-      var fov = this.CalculateFOV(metadata);
       var cacheid = this.GetCacheDescriptor();
-
-      //console.writeln("<raw>" + cacheid + "</raw>");
 
       if (__vizier_cache__ == undefined)
          __vizier_cache__ = new VizierCache();
@@ -367,88 +367,20 @@ function VizierCatalog(name)
       }
       else
       {
-         this.objects = new Array;
-         this.bounds = null;
-
          // Increase the size of the query by a small factor in order to be able to use it in similar images
          fov = Math.min(180, fov * this.queryMargin);
 
-         var url = this.UrlBuilder(center, fov, mirrorServer);
-
-         var outputFileName = File.systemTempDirectory + "/VizierQueryResult.tsv";
-
-         console.writeln("<end>\n<b>Downloading Vizier data:</b>");
-         console.writeln("<raw>" + url + "</raw>");
-         var consoleAbort = console.abortEnabled
-         console.abortEnabled = true;
-         console.show();
-
-         // Send request
-         var download = new FileDownload(url, outputFileName);
-         try
-         {
-            download.perform();
-         }
-         catch (e)
-         {
-            (new MessageBox(e.toString(), TITLE, StdIcon_Error, StdButton_Ok)).execute();
-         }
-
-         console.abortEnabled = consoleAbort;
-         //console.hide();
-
-         if (!download.ok)
-            return;
-
-         var file = new File();
-         file.openForReading(outputFileName);
-         if (!file.isOpen)
-            return;
-         var s = file.read(DataType_ByteArray, file.size);
-         file.close();
-         this.catalogLines = s.toString().split("\n");
-
-         var querySize = 0;
-         try
-         {
-            for (var i = 0; i < this.catalogLines.length; i++)
-            {
-               var line = this.catalogLines[i];
-               if (line.length == 0 || line.charAt(0) == "#") //comment
-                  continue;
-               var tokens = line.split("|");
-               var object = this.ParseRecord(tokens, this.epoch);
-               if (object && object.posRD.x >= 0 && object.posRD.x <= 360 && object.posRD.y >= -90 && object.posRD.y <= 90)
-               {
-                  this.objects.push(object);
-                  if (this.bounds)
-                     this.bounds = this.bounds.union(object.posRD.x, object.posRD.y, object.posRD.x, object.posRD.y);
-                  else
-                     this.bounds = new Rect(object.posRD.x, object.posRD.y, object.posRD.x, object.posRD.y);
-               }
-               querySize++;
-               // processEvents();
-               // if ( console.abortRequested )
-               // throw "Process aborted";
-            }
-         } catch (e)
-         {
-            new MessageBox(e.toString(), TITLE, StdIcon_Error, StdButton_Ok).execute();
-            return;
-         }
-         if (this.PostProcessObjects)
-            this.PostProcessObjects(this.objects, metadata);
-
-         if (querySize > this.maxRecords - 100)
-            console.writeln("<b>WARNING</b>: The server has returned an incomplete query. Please reduce the value of the magnitude filter");
+         this.DoLoad(center, metadata.epoch, fov, mirrorServer);
 
          var actual_fov = 0;
-         for(var i=0; i<this.objects.length; i++){
+         for (var i = 0; i < this.objects.length; i++)
+         {
             var dist = ImageMetadata.Distance(center, this.objects[i].posRD);
-            if(dist>actual_fov)
-               actual_fov=dist;
+            if (dist > actual_fov)
+               actual_fov = dist;
          }
          console.writeln(format("fov:%f actual:%f", fov, actual_fov));
+
          __vizier_cache__.Add(center, actual_fov, cacheid, this.objects);
       }
 
@@ -468,6 +400,91 @@ function VizierCatalog(name)
       }
       else
          console.writeln("<b>Catalog ", this.name, " size</b>: ", this.objects.length, " objects\n");
+   };
+
+   this.DoLoad = function (center, epoch, fov, mirrorServer)
+   {
+      if (epoch != null)
+         this.epoch = (epoch - Math.complexTimeToJD(2000, 1, 1)) / 365.25 + 2000;
+      else
+         this.epoch = null;
+
+
+      this.objects = new Array;
+      this.bounds = null;
+
+
+      var url = this.UrlBuilder(center, fov, mirrorServer);
+
+      var outputFileName = File.systemTempDirectory + "/VizierQueryResult.tsv";
+
+      console.writeln("<end>\n<b>Downloading Vizier data:</b>");
+      console.writeln("<raw>" + url + "</raw>");
+      var consoleAbort = console.abortEnabled
+      console.abortEnabled = true;
+      console.show();
+
+      // Send request
+      var download = new FileDownload(url, outputFileName);
+      try
+      {
+         download.perform();
+      }
+      catch (e)
+      {
+         (new MessageBox(e.toString(), TITLE, StdIcon_Error, StdButton_Ok)).execute();
+      }
+
+      console.abortEnabled = consoleAbort;
+      //console.hide();
+
+      if (!download.ok)
+         return;
+
+      var file = new File();
+      file.openForReading(outputFileName);
+      if (!file.isOpen)
+         return;
+      var s = file.read(DataType_ByteArray, file.size);
+      file.close();
+      this.catalogLines = s.toString().split("\n");
+
+      var querySize = 0;
+      try
+      {
+         for (var i = 0; i < this.catalogLines.length; i++)
+         {
+            var line = this.catalogLines[i];
+            if (line.length == 0 || line.charAt(0) == "#") //comment
+               continue;
+            var tokens = line.split("|");
+            var object = this.ParseRecord(tokens, this.epoch);
+            if (object && object.posRD.x >= 0 && object.posRD.x <= 360 && object.posRD.y >= -90 && object.posRD.y <= 90)
+            {
+               this.objects.push(object);
+               if (this.bounds)
+                  this.bounds = this.bounds.union(object.posRD.x, object.posRD.y, object.posRD.x, object.posRD.y);
+               else
+                  this.bounds = new Rect(object.posRD.x, object.posRD.y, object.posRD.x, object.posRD.y);
+            }
+            querySize++;
+            // processEvents();
+            // if ( console.abortRequested )
+            // throw "Process aborted";
+         }
+      } catch (e)
+      {
+         new MessageBox(e.toString(), TITLE, StdIcon_Error, StdButton_Ok).execute();
+         return;
+      }
+      //if(this.bounds)
+      //   console.writeln(format("Bounds: %f;%f;%f;%f / %f;%f;%f;%f", this.bounds.x0, this.bounds.x1, this.bounds.y0, this.bounds.y1,
+      //      this.bounds.x0 - center.x, this.bounds.x1 - center.x, this.bounds.y0 - center.y, this.bounds.y1 - center.y));
+      if (this.PostProcessObjects)
+         this.PostProcessObjects(this.objects);
+
+      if (querySize > this.maxRecords - 100)
+         console.writeln("<b>WARNING</b>: The server has returned an incomplete query. Please reduce the value of the magnitude filter");
    };
 
    this.GetCacheDescriptor = function()
@@ -933,6 +950,7 @@ function PPMXCatalog()
 
    this.filters = [ "Cmag", "Rmag", "Bmag", "Vmag", "Jmag", "Hmag", "Kmag" ];
    this.magnitudeFilter = "Vmag";
+   this.maxFov = 60;
 
    this.GetConstructor = function()
    {
@@ -943,7 +961,8 @@ function PPMXCatalog()
    {
       var url=mirrorServer+"viz-bin/asu-tsv?-source=I/312/sample&-c=" +
          format("%f %f",center.x, center.y) +
-         "&-c.r=" + format("%f",fov) +
+         //"&-c.r=" + format("%f",fov) +
+         "&-c.bd="+format("%f",fov)+
          "&-c.u=deg&-out.form=|"+
          format("&-out.max=%d", this.maxRecords)+
          "&-out=PPMX&-out=RAJ2000&-out=DEJ2000&-out=pmRA&-out=pmDE&-out=Cmag&-out=Rmag&-out=Bmag&-out=Vmag&-out=Jmag&-out=Hmag&-out=Kmag"+
@@ -1010,6 +1029,7 @@ function PPMXLCatalog()
 
    this.filters = [ "Jmag", "Hmag", "Kmag", "b1mag", "b2mag", "r1mag", "r2mag", "imag" ];
    this.magnitudeFilter = "r1mag";
+   this.maxFov = 45;
 
    this.GetConstructor = function()
    {
@@ -1088,6 +1108,7 @@ function USNOB1Catalog()
 
    this.filters = [ "B1mag", "B2mag", "R1mag", "R2mag", "Imag" ];
    this.magnitudeFilter = "R1mag";
+   this.maxFov = 45;
 
    this.GetConstructor = function()
    {
@@ -1163,6 +1184,7 @@ function UCAC3Catalog()
 
    this.filters = [ "f.mag", "a.mag", "Jmag", "Hmag", "Kmag", "Bmag", "R2mag", "Imag" ];
    this.magnitudeFilter = "f.mag";
+   this.maxFov = 45;
 
    this.GetConstructor = function()
    {
@@ -1419,6 +1441,7 @@ function BVCatalog()
    this.fields = [ "Name", "Coordinates", "Vmag", "Bmag", "Rmag", "B-V index", "V-R index" ];
    this.filters = [ "Vmag", "Bmag", "Rmag" ];
    this.magnitudeFilter = "Vmag";
+   this.maxFov = 45;
 
    this.properties.push( ["magMin", DataType_Double] );
    this.properties.push( ["magMax", DataType_Double] );
@@ -1636,6 +1659,7 @@ function SDSSCatalog()
    this.filters = [ "umag", "gmag", "rmag", "imag", "zmag" ];
    this.magnitudeFilter = "rmag";
    this.classFilter = 0;
+   this.maxFov = 45;
 
    this.GetConstructor = function()
    {
@@ -2241,11 +2265,35 @@ function CustomCatalog()
          }
       };
 
+      var download_Button = new ToolButton(parent);
+      download_Button.icon = parent.scaledResource(":/icons/download.png");
+      download_Button.setScaledFixedSize(20, 20);
+      download_Button.toolTip = "<p>Download from an online catalog.</p>";
+      download_Button.onClick = function ()
+      {
+         var metadata = null;
+         var server = parent.engine.vizierServer;
+         if (parent.engine)
+         {
+            if (parent.engine.metadata)
+               metadata = parent.engine.metadata;
+            if (parent.engine.vizierServer)
+               server = parent.engine.vizierServer;
+         }
+         var dlg = new CatalogDownloaderDialog(metadata, server);
+         if (dlg.execute())
+         {
+            this.dialog.activeFrame.object.catalog.catalogPath = dlg.path;
+            path_Edit.text = dlg.path;
+         }
+      };
+
       var pathSizer = new HorizontalSizer;
       pathSizer.scaledSpacing = 4;
       pathSizer.add(path_Label);
-      pathSizer.add(path_Edit,100);
+      pathSizer.add(path_Edit, 100);
       pathSizer.add(path_Button);
+      pathSizer.add(download_Button);
 
       return [pathSizer];
    };
@@ -2299,6 +2347,25 @@ function VizierMirrorDialog(serverAddress)
       __vizier_cache__ = new VizierCache();
    };
 
+   // TERMS OF USE of VizieR catalogs
+   this.terms_Button = new ToolButton(this);
+   this.terms_Button.text = "Terms of use of VizieR data";
+   this.terms_Font = new Font(this.font.family, this.font.pointSize);
+   this.terms_Font.underline = true;
+   this.terms_Button.font = this.terms_Font;
+   this.terms_Button.onClick = function()
+   {
+      Dialog.openBrowser("http://cds.u-strasbg.fr/vizier-org/licences_vizier.html");
+   }
+
+   this.buttons1_Sizer = new HorizontalSizer;
+   this.buttons1_Sizer.scaledSpacing = 6;
+   this.buttons1_Sizer.addStretch();
+   this.buttons1_Sizer.add(this.resetCache_Button);
+   this.buttons1_Sizer.addStretch();
+   this.buttons1_Sizer.add(this.terms_Button);
+
+
    // Buttons
 
    this.ok_Button = new PushButton(this);
@@ -2338,7 +2405,7 @@ function VizierMirrorDialog(serverAddress)
    this.sizer.scaledSpacing = 6;
    this.sizer.add(this.helpLabel);
    this.sizer.add(this.server_List);
-   this.sizer.add(this.resetCache_Button);
+   this.sizer.add(this.buttons1_Sizer);
    this.sizer.addScaledSpacing(6);
    this.sizer.add(this.buttons_Sizer);
 
