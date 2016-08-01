@@ -213,11 +213,7 @@ function CatStarGeneratorDialog(engine)
          this.dialog.projection_Combo.currentItem = engine.projection;
       }
 
-      var epochArray = engine.metadata.epoch == null ? [ 2000, 1, 1] : Math.jdToComplexTime(engine.metadata.epoch);
-      epoch = new Date(epochArray[0], epochArray[1] - 1, epochArray[2]);
-      this.dialog.epoch_year_SpinBox.value = epoch.getFullYear();
-      this.dialog.epoch_mon_SpinBox.value = epoch.getMonth() + 1;
-      this.dialog.epoch_day_SpinBox.value = epoch.getDate();
+      this.dialog.epoch_Editor.setEpoch(engine.metadata.epoch);
 
       engine.width = engine.metadata.width;
       this.dialog.width_Edit.text = format("%d", engine.width);
@@ -242,7 +238,7 @@ function CatStarGeneratorDialog(engine)
    this.search_Button.onClick = function ()
    {
       var search = new SearchCoordinatesDialog(null, true, false);
-      search.windowTitle = "Online Coordinates Search"
+      search.windowTitle = "Online Coordinates Search";
       if (search.execute())
       {
          var object = search.object;
@@ -273,56 +269,8 @@ function CatStarGeneratorDialog(engine)
    this.customGeom_Frame.sizer.add(this.coordsSizer);
 
    // Epoch
-
-   var epochTooltip =
-      "<p>Date of the star field. This value is used for computing the proper motion of the stars.</p>";
-
-   this.epoch_Label = new fieldLabel(this, "Epoch (ymd):", this.labelWidth);
-
-   var epochArray = engine.epoch == null ? [ 2000, 1, 1] : Math.jdToComplexTime(engine.epoch);
-   var epoch = new Date(epochArray[0], epochArray[1] - 1, epochArray[2]);
-
-   this.epoch_year_SpinBox = new SpinBox(this);
-   this.epoch_year_SpinBox.minValue = 0;
-   this.epoch_year_SpinBox.maxValue = 3000;
-   this.epoch_year_SpinBox.value = epoch.getFullYear();
-   this.epoch_year_SpinBox.toolTip = epochTooltip;
-   this.epoch_year_SpinBox.setFixedWidth(spinBoxWidth);
-   this.epoch_year_SpinBox.onValueUpdated = function (value)
-   {
-      epoch.setFullYear(value);
-   };
-
-   this.epoch_mon_SpinBox = new SpinBox(this);
-   this.epoch_mon_SpinBox.minValue = 1;
-   this.epoch_mon_SpinBox.maxValue = 12;
-   this.epoch_mon_SpinBox.value = epoch.getMonth() + 1;
-   this.epoch_mon_SpinBox.toolTip = epochTooltip;
-   this.epoch_mon_SpinBox.setFixedWidth(spinBoxWidth);
-   this.epoch_mon_SpinBox.onValueUpdated = function (value)
-   {
-      epoch.setMonth(value - 1);
-   };
-
-   this.epoch_day_SpinBox = new SpinBox(this);
-   this.epoch_day_SpinBox.minValue = 1;
-   this.epoch_day_SpinBox.maxValue = 31;
-   this.epoch_day_SpinBox.value = epoch.getDate();
-   this.epoch_day_SpinBox.toolTip = epochTooltip;
-   this.epoch_day_SpinBox.setFixedWidth(spinBoxWidth);
-   this.epoch_day_SpinBox.onValueUpdated = function (value)
-   {
-      epoch.setDate(value);
-   };
-
-   this.epoch_Sizer = new HorizontalSizer;
-   this.epoch_Sizer.spacing = 4;
-   this.epoch_Sizer.add(this.epoch_Label);
-   this.epoch_Sizer.add(this.epoch_year_SpinBox);
-   this.epoch_Sizer.add(this.epoch_mon_SpinBox);
-   this.epoch_Sizer.add(this.epoch_day_SpinBox);
-   this.epoch_Sizer.addStretch();
-   this.customGeom_Frame.sizer.add(this.epoch_Sizer);
+   this.epoch_Editor = new EpochEditor(this, engine.epoch, this.labelWidth, spinBoxWidth);
+   this.customGeom_Frame.sizer.add(this.epoch_Editor);
 
    //
    this.dimensions_label = new Label(this);
@@ -967,7 +915,7 @@ function CatStarGeneratorDialog(engine)
          var coords = this.dialog.coords_Editor.GetCoords();
          engine.ra = coords.x;
          engine.dec = coords.y;
-         engine.epoch = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+         engine.epoch = this.dialog.epoch_Editor.getEpoch();
          this.dialog.ok();
       }
    };
@@ -1013,7 +961,7 @@ function CatStarGeneratorDialog(engine)
          return false;
       }
 
-      var coords = this.coords_Editor.GetCoords();
+      var coords = this.coords_Editor.GetCoords(false);
       if (coords.x < 0 || coords.x > 360)
       {
          new MessageBox("Invalid right ascension", CSG_TITLE, StdIcon_Error).execute();
@@ -1027,7 +975,7 @@ function CatStarGeneratorDialog(engine)
       }
 
       // Validate parsing of epoch
-      var epochJD = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+      var epochJD = this.epoch_Editor.getEpoch();
 
       if (engine.backgroundMagnitude - engine.minMagnitude > 10)
          new MessageBox("The resulting image will have a very high dynamic range.\n" +

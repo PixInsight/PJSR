@@ -3,7 +3,7 @@
 
  Script for measuring the flux of the known stars in astronomical images.
 
- Copyright (C) 2013-2014, Andres del Pozo, Vicent Peris (OAUV)
+ Copyright (C) 2013-2016, Andres del Pozo, Vicent Peris (OAUV)
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,9 @@
 
 /*
  Changelog:
+
+ 1.2.3: * Option for choosing in the solver between using the image metadata
+          or the configuration of the solver dialog.
 
  1.2.2: * Added support for XISF files
 
@@ -61,9 +64,9 @@
 
 #feature-info  Script for measuring the flux of the known stars in astronomical images.<br/>\
 <br/>\
-Copyright &copy;2013 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
+Copyright &copy;2013-2016 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.2.2"
+#define VERSION "1.2.3"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -287,6 +290,8 @@ function ImagesTab(parent, engine)
       this.saveSolve_Check.enabled = engine.autoSolve || engine.forceSolve;
       this.suffix_Edit.enabled = (engine.autoSolve || engine.forceSolve) && engine.saveSolve;
       this.configSolver_Button.enabled = engine.autoSolve || engine.forceSolve;
+      this.UseImageMetadata_Radio.enabled = engine.autoSolve || engine.forceSolve;
+      this.UseSolverMetadata_Radio.enabled = engine.autoSolve || engine.forceSolve;
    }
 
    //
@@ -339,6 +344,38 @@ function ImagesTab(parent, engine)
    this.solver_Sizer.add(this.autoSolve_Check);
    this.solver_Sizer.add(this.configSolver_Button);
    this.solver_Sizer.addStretch();
+
+   //
+   this.UseImageMetadata_Radio = new RadioButton(this);
+   this.UseImageMetadata_Radio.text = "Use image metadata";
+   this.UseImageMetadata_Radio.checked = engine.solverUseImageMetadata == true;
+   this.UseImageMetadata_Radio.toolTip = "<p>When solving an image the solver will prioritize the image metadata (Coordinates, focal length, epoch)." +
+      " If any of the parameters is not available the solver will substitute them with the values in the solver dialog.</p>";
+   this.UseImageMetadata_Radio.enabled = engine.autoSolve || engine.forceSolve;
+   this.UseImageMetadata_Radio.onCheck = function (value)
+   {
+      engine.solverUseImageMetadata = true;
+      this.dialog.images_Tab.EnableSolveControls();
+   }
+
+   this.UseSolverMetadata_Radio = new RadioButton(this);
+   this.UseSolverMetadata_Radio.text = "Use solver configuration";
+   this.UseSolverMetadata_Radio.checked = engine.solverUseImageMetadata != true;
+   this.UseSolverMetadata_Radio.toolTip = "<p>When solving an image the solver will use the configuration in the solver dialog" +
+      " while ignoring the values (coordinates, focal length, epoch, ...) that the images could have.</p>";
+   this.UseSolverMetadata_Radio.enabled = engine.autoSolve || engine.forceSolve;
+   this.UseSolverMetadata_Radio.onCheck = function (value)
+   {
+      engine.solverUseImageMetadata = false;
+      this.dialog.images_Tab.EnableSolveControls();
+   }
+
+   this.solverMetadata_Sizer = new HorizontalSizer;
+   this.solverMetadata_Sizer.spacing = 6;
+   this.solverMetadata_Sizer.add(this.UseImageMetadata_Radio);
+   this.solverMetadata_Sizer.add(this.UseSolverMetadata_Radio);
+   this.solverMetadata_Sizer.addStretch();
+
 
    //
    this.forceSolve_Check = new CheckBox(this);
@@ -410,6 +447,7 @@ function ImagesTab(parent, engine)
    this.solve_Control.sizer.spacing = 4;
    this.solve_Control.sizer.add(this.solver_Sizer);
    this.solve_Control.sizer.add(this.forceSolve_Check);
+   this.solve_Control.sizer.add(this.solverMetadata_Sizer);
    this.solve_Control.sizer.add(this.saveSolve_Check);
    this.solve_Control.sizer.add(this.suffix_Sizer);
 
@@ -1677,7 +1715,7 @@ function PhotometryDialog(engine)
    this.helpLabel.text =
       "<p><b>" + TITLE + " v" + VERSION + "</b> &mdash; A script for measuring the flux of the known stars in astronomical images.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2013-2014 Andr&eacute;s del Pozo, Vicent Peris (OAUV)</p>";
+         "Copyright &copy; 2013-2016 Andr&eacute;s del Pozo, Vicent Peris (OAUV)</p>";
 
 
    this.images_Tab = new ImagesTab(this, engine);
@@ -1917,6 +1955,7 @@ function PhotometryEngine(w)
          ["saveDiagnostic", DataType_Boolean],
          ["autoSolve", DataType_Boolean],
          ["forceSolve", DataType_Boolean],
+         ["solverUseImageMetadata", DataType_Boolean],
          ["saveSolve", DataType_Boolean],
          ["solveSuffix", DataType_UCString],
          ["generateErrorLog", DataType_Boolean],
@@ -1972,6 +2011,7 @@ function PhotometryEngine(w)
    this.saveDiagnostic = false;
    this.autoSolve = true;
    this.forceSolve = false;
+   this.solverUseImageMetadata = true;
    this.saveSolve = false;
    this.solveSuffix = "_WCS";
 
@@ -3093,7 +3133,7 @@ function PhotometryEngine(w)
                console.writeln("<end><cbr><br>* Forced image solving");
             var solver = new ImageSolver();
 
-            solver.Init(window, true);
+            solver.Init(window, !this.solverUseImageMetadata);
             solver.solverCfg.showStars = false;
             solver.solverCfg.showDistortion = false;
             solver.solverCfg.generateErrorImg = false;

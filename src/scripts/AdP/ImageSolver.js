@@ -3,7 +3,7 @@
 
    Plate solving of astronomical images.
 
-   Copyright (C) 2012-2015, Andres del Pozo
+   Copyright (C) 2012-2016, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 
 /*
    Changelog:
+
+   4.2:   * Use downloaded catalogs
 
    4.1.1: * Added support for XISF files
 
@@ -159,7 +161,7 @@
 
 #feature-info  A script for plate-solving astronomical images.<br/>\
                <br/>\
-               Copyright &copy; 2012-2015 Andr&eacute;s del Pozo
+               Copyright &copy; 2012-2016 Andr&eacute;s del Pozo
 
 #include <pjsr/DataType.jsh>
 #include <pjsr/Sizer.jsh>
@@ -176,7 +178,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.1.1"
+#define SOLVERVERSION "4.2"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -187,6 +189,7 @@
 #include "AstronomicalCatalogs.jsh"
 #include "SearchCoordinatesDialog.js"
 #include "OptimizeSplineCoordinates.js"
+#include "CatalogDownloader.js"
 
 #define STAR_CSV_FILE   File.systemTempDirectory + "/stars.csv"
 #endif
@@ -294,7 +297,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.helpLabel.useRichText = true;
    this.helpLabel.text =
       "<p><b>Image Plate Solver v" + SOLVERVERSION + "</b> &mdash; A script for plate-solving astronomical images.<br/>" +
-      "Copyright &copy; 2012-2015 Andr&eacute;s del Pozo</p>";
+      "Copyright &copy; 2012-2016 Andr&eacute;s del Pozo</p>";
 
    if(showTargetImage)
    {
@@ -533,54 +536,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.coords_Sizer.addStretch();
 
    // Epoch
-
-   var epochTooltip = "<p>Date on which the image was taken.<br/>It is initialized from the DATE_OBS keyword.</p>";
-
-   this.epoch_Label = new fieldLabel( this, "Epoch (ymd):", labelWidth1 );
-
-   var epochArray = metadata.epoch == null ? [ 2000, 1, 1] : Math.jdToComplexTime( metadata.epoch );
-   var epoch = new Date( epochArray[0], epochArray[1]-1, epochArray[2] );
-
-   this.epoch_year_SpinBox = new SpinBox( this );
-   this.epoch_year_SpinBox.minValue = 0;
-   this.epoch_year_SpinBox.maxValue = 3000;
-   this.epoch_year_SpinBox.value = epoch.getFullYear();
-   this.epoch_year_SpinBox.toolTip = epochTooltip;
-   this.epoch_year_SpinBox.setFixedWidth( spinBoxWidth );
-   this.epoch_year_SpinBox.onValueUpdated = function( value )
-   {
-      epoch.setFullYear( value );
-   };
-
-   this.epoch_mon_SpinBox = new SpinBox( this );
-   this.epoch_mon_SpinBox.minValue = 1;
-   this.epoch_mon_SpinBox.maxValue = 12;
-   this.epoch_mon_SpinBox.value = epoch.getMonth() + 1;
-   this.epoch_mon_SpinBox.toolTip = epochTooltip;
-   this.epoch_mon_SpinBox.setFixedWidth( spinBoxWidth );
-   this.epoch_mon_SpinBox.onValueUpdated = function( value )
-   {
-      epoch.setMonth( value - 1 );
-   };
-
-   this.epoch_day_SpinBox = new SpinBox( this );
-   this.epoch_day_SpinBox.minValue = 1;
-   this.epoch_day_SpinBox.maxValue = 31;
-   this.epoch_day_SpinBox.value = epoch.getDate();
-   this.epoch_day_SpinBox.toolTip = epochTooltip;
-   this.epoch_day_SpinBox.setFixedWidth( spinBoxWidth );
-   this.epoch_day_SpinBox.onValueUpdated = function( value )
-   {
-      epoch.setDate( value );
-   };
-
-   this.epoch_Sizer = new HorizontalSizer;
-   this.epoch_Sizer.spacing = 4;
-   this.epoch_Sizer.add( this.epoch_Label );
-   this.epoch_Sizer.add( this.epoch_year_SpinBox );
-   this.epoch_Sizer.add( this.epoch_mon_SpinBox );
-   this.epoch_Sizer.add( this.epoch_day_SpinBox );
-   this.epoch_Sizer.addStretch();
+   this.epoch_Editor = new EpochEditor(this, metadata.epoch, labelWidth1, spinBoxWidth);
 
    metadata.useFocal = metadata.useFocal && metadata.xpixsz!=null && metadata.xpixsz>0;
 
@@ -740,7 +696,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dmParPanel.sizer.margin = 0;
    this.dmParPanel.sizer.spacing = 4;
    this.dmParPanel.sizer.add( this.coords_Sizer );
-   this.dmParPanel.sizer.add( this.epoch_Sizer );
+   this.dmParPanel.sizer.add( this.epoch_Editor );
    this.dmParPanel.sizer.add( this.scale_Sizer );
    this.dmParPanel.sizer.add( this.pixelSize_Sizer );
    this.dmParPanel.enabled = !solverCfg.onlyOptimize;
@@ -775,7 +731,10 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dbPath_RadioButton.textAlignment = TextAlign_Right|TextAlign_VertCenter;
    this.dbPath_RadioButton.setMinWidth( labelWidth1 );
    this.dbPath_RadioButton.checked = this.solverCfg.catalogMode==0;
-   this.dbPath_RadioButton.toolTip = "Use a locally stored star catalog";
+   this.dbPath_RadioButton.toolTip = "<p>Use a locally stored star catalog.</p>"+
+      "It admits the database files for StarGenerator that can be downloaded from http://pixinsight.com/download/</p>"+
+   "<p>It also admits custom text files that can be created with a spreadsheet or that can be downloaded " +
+      "from an online catalog server.</p>";
    this.dbPath_RadioButton.onCheck = function( value )
    {
       this.dialog.dbPath_Edit.enabled = value;
@@ -788,8 +747,9 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
       this.dbPath_Edit.text = this.solverCfg.databasePath;
    this.dbPath_Edit.setScaledMinWidth(200);
    this.dbPath_Edit.enabled = this.solverCfg.catalogMode==0;
-   this.dbPath_Edit.toolTip = "<p>Path to a star database file in StarGenerator format.<br />" +
-      "The currently available star database files can be downloaded from: http://pixinsight.com/download/</p>";
+   this.dbPath_Edit.toolTip = "<p>Path to a star database file in StarGenerator or text formats.</p>" +
+      "<p>The text files can be downloaded from an online server using the download button.</p>" +
+      "<p>The StarGenerator database file can be downloaded from: http://pixinsight.com/download/</p>";
    this.dbPath_Edit.onTextUpdated = function( value )
    {
      solverCfg.databasePath = value;
@@ -798,18 +758,35 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dbPath_Button = new ToolButton( this );
    this.dbPath_Button.icon = this.scaledResource( ":/icons/select-file.png" );
    this.dbPath_Button.setScaledFixedSize( 20, 20 );
-   this.dbPath_Button.toolTip = "<p>Select a StarGenerator database file.</p>";
+   this.dbPath_Button.toolTip = "<p>Select a catalog file.</p>";
    this.dbPath_Button.enabled = this.solverCfg.catalogMode==0;
    this.dbPath_Button.onClick = function()
    {
       var gdd = new OpenFileDialog;
       gdd.initialPath = this.dialog.dbPath_Edit.text;
       gdd.caption = "Select Star Database Path";
-      gdd.filters = [["Star database files", "*.bin"]];
+      gdd.filters = [["All supported catalog files", "*.bin,*.txt"],
+         ["Star database files", "*.bin"],
+         ["Custom catalog files", "*.txt"]
+      ];
       if ( gdd.execute() )
       {
          solverCfg.databasePath = gdd.fileName;
          this.dialog.dbPath_Edit.text = gdd.fileName;
+      }
+   };
+
+   this.download_Button = new ToolButton(this);
+   this.download_Button.icon = this.scaledResource(":/icons/download.png");
+   this.download_Button.setScaledFixedSize(20, 20);
+   this.download_Button.toolTip = "<p>Download from an online catalog.</p>";
+   this.download_Button.onClick = function ()
+   {
+      var dlg = new CatalogDownloaderDialog(metadata, solverCfg.vizierServer);
+      if (dlg.execute())
+      {
+         this.dialog.dbPath_Edit.text = dlg.path;
+         solverCfg.databasePath = dlg.path;
       }
    };
 
@@ -818,6 +795,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dbPath_Sizer.add( this.dbPath_RadioButton );
    this.dbPath_Sizer.add( this.dbPath_Edit, 100 );
    this.dbPath_Sizer.add( this.dbPath_Button );
+   this.dbPath_Sizer.add( this.download_Button );
 
    // VizieR Catalog
    //this.dbPath_Label = new fieldLabel( this, "Star database:", labelWidth1 );
@@ -881,14 +859,25 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
          solverCfg.vizierServer = dlg.server;
    };
 
+   // TERMS OF USE of VizieR catalogs
+   this.terms_Button = new ToolButton(this);
+   this.terms_Button.text = "Terms of use of VizieR data";
+   this.terms_Font = new Font(this.font.family, 6.5);
+   this.terms_Font.underline = true;
+   this.terms_Button.font = this.terms_Font;
+   this.terms_Button.onClick = function()
+   {
+      Dialog.openBrowser("http://cds.u-strasbg.fr/vizier-org/licences_vizier.html");
+   }
 
    this.vizierSizer = new HorizontalSizer;
    this.vizierSizer.spacing = 4;
-   this.vizierSizer.add( this.vizier_RadioButton );
-   this.vizierSizer.add( this.catalog_Combo );
+   this.vizierSizer.add(this.vizier_RadioButton);
+   this.vizierSizer.add(this.catalog_Combo);
    //this.vizierSizer.add( this.mirror_Combo);
-   this.vizierSizer.add( this.server_Button);
+   this.vizierSizer.add(this.server_Button);
    this.vizierSizer.addStretch();
+   this.vizierSizer.add(this.terms_Button);
 
    // Magnitude
 
@@ -1253,6 +1242,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dseParGroupBox.sizer.add(this.vizierSizer);
    this.dseParGroupBox.sizer.add(this.magnitude_Sizer);
 
+
    this.dsePar_Section = new SectionBar(this, "Model Parameters");
    this.dsePar_Section.onToggleSection = function (section, toggleBegin)
    {
@@ -1292,7 +1282,8 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
          metadata.ra = coords.x;
          metadata.dec = coords.y;
 
-         metadata.epoch = Math.complexTimeToJD( epoch.getFullYear(), epoch.getMonth()+1, epoch.getDate() );
+         //metadata.epoch = Math.complexTimeToJD( epoch.getFullYear(), epoch.getMonth()+1, epoch.getDate() );
+         metadata.epoch = this.epoch_Editor.getEpoch();
 
          return true;
       } catch (ex){
@@ -1544,7 +1535,8 @@ function ImageSolver()
 
       metadata.projection = ProjectionFactory(this.solverCfg, metadata.ra, metadata.dec );
 
-      if ( this.solverCfg.catalogMode==0 )
+      //if ( this.solverCfg.catalogMode==0 )
+      if(this.useStarGeneratorCatalog)
       {
          var generator = new StarGenerator;
 
@@ -1591,22 +1583,32 @@ function ImageSolver()
          if(!generator.executeGlobal())
             throw "There was a problem reading the local catalog";
       } else {
-         if( !this.catalog )
-            this.catalog = __catalogRegister__.GetCatalog(this.solverCfg.catalog);
+         if (!this.catalog)
+         {
+            if (this.solverCfg.catalogMode == 0)
+            {
+               this.catalog = new CustomCatalog();
+               this.catalog.catalogPath = this.solverCfg.databasePath;
+            }
+            else
+            {
+               this.catalog = __catalogRegister__.GetCatalog(this.solverCfg.catalog);
+               this.catalog.magMax = this.solverCfg.magnitude;
+            }
+         }
+         this.catalog.Load(metadata, this.solverCfg.vizierServer);
 
-         this.catalog.magMax = this.solverCfg.magnitude;
-         this.catalog.Load( metadata, this.solverCfg.vizierServer );
          var ref_G_S = metadata.ref_S_G.inverse();
 
          var file = new File;
-         file.createForWriting( STAR_CSV_FILE );
-         file.outTextLn( templateWidth+","+templateHeight );
+         file.createForWriting(STAR_CSV_FILE);
+         file.outTextLn(templateWidth + "," + templateHeight);
          var elements = this.catalog.objects;
-         for( var i=0; i<elements.length; i++ )
+         for (var i = 0; i < elements.length; i++)
          {
-            if ( elements[i] )
+            if (elements[i])
             {
-               var flux = Math.pow(2.512, -1.5 - elements [i].magnitude);
+               var flux = elements [i].magnitude == null ? 0 : Math.pow(2.512, -1.5 - elements [i].magnitude);
                var pos_G = metadata.projection.Direct(elements [i].posRD);
                if (pos_G)
                {
@@ -2078,7 +2080,8 @@ function ImageSolver()
          clipArea = new Rect(0, 0, metadata.width, metadata.height);
       // Load stars
       var catalogObjects;
-      if ( this.solverCfg.catalogMode==0 )
+      //if ( this.solverCfg.catalogMode==0 )
+      if ( this.useStarGeneratorCatalog )
       {
          var templateSize = Math.max(metadata.width, metadata.height) * Math.sqrt(2);
          var generator = new StarGenerator;
@@ -2130,10 +2133,18 @@ function ImageSolver()
          }
       } else {
          if (!this.catalog)
-            this.catalog = __catalogRegister__.GetCatalog(this.solverCfg.catalog);
-
-         //catalog.magMin = 15;
-         this.catalog.magMax = this.solverCfg.magnitude;
+         {
+            if (this.solverCfg.catalogMode == 0)
+            {
+               this.catalog = new CustomCatalog();
+               this.catalog.catalogPath = this.solverCfg.databasePath;
+            }
+            else
+            {
+               this.catalog = __catalogRegister__.GetCatalog(this.solverCfg.catalog);
+               this.catalog.magMax = this.solverCfg.magnitude;
+            }
+         }
          this.catalog.Load(metadata, this.solverCfg.vizierServer);
          catalogObjects = this.catalog.objects;
       }
@@ -2421,6 +2432,9 @@ function ImageSolver()
       {
          console.show();
          console.abortEnabled = true;
+
+         this.useStarGeneratorCatalog = this.solverCfg.catalogMode==0 &&
+            File.extractExtension(this.solverCfg.databasePath) == ".bin";
 
          var denoisedWindow = targetWindow;
          if (this.solverCfg.noiseLayers > 0)

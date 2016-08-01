@@ -25,6 +25,199 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#ifndef __ADP_COMMONUICONTROLS_js
+#define __ADP_COMMONUICONTROLS_js
+
+function fieldLabel(parent, text, width)
+{
+   this.label = new Label(parent);
+   this.label.text = text;
+   this.label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
+   if (width != null)
+      this.label.setFixedWidth(width);
+   return this.label;
+}
+
+function coordSpinBox(parent, value, maxVal, width, tooltip, onValueUpdated)
+{
+   this.spinBox = new SpinBox(parent);
+   this.spinBox.minValue = 0;
+   this.spinBox.maxValue = maxVal;
+   if (value)
+      this.spinBox.value = value;
+   this.spinBox.toolTip = tooltip;
+   this.spinBox.setFixedWidth(width);
+   this.spinBox.onValueUpdated = onValueUpdated;
+   return this.spinBox;
+}
+
+// ******************************************************************
+// CoordinatesEditor: Editor of RA/Dec coordinates
+// ******************************************************************
+function CoordinatesEditor(parent, coords, // Point in deg/deg
+   labelWidth, spinBoxWidth, tooltip)
+{
+   this.__base__ = Control;
+   this.__base__(parent);
+
+   var spinBoxWidth1,spinBoxWidth2;
+   if (spinBoxWidth == null)
+   {
+      spinBoxWidth1 = parent.font.width("888888");
+      spinBoxWidth2 = parent.font.width("88888888");
+   } else {
+      spinBoxWidth1=spinBoxWidth2=spinBoxWidth;
+   }
+
+   this.ra = (coords != null && coords.x != null) ? DMSangle.FromAngle(coords.x / 15) : new DMSangle;
+   this.dec = (coords != null && coords.y != null) ? DMSangle.FromAngle(coords.y) : new DMSangle;
+   var thisObj = this;
+
+   var onChange = function()
+   {
+      if(thisObj.onChangeCallback)
+         thisObj.onChangeCallback.call(thisObj.onChangeCallbackScope, thisObj.GetCoords());
+   };
+
+   // RA
+
+   this.ra_Label = new fieldLabel(this, "Right Ascension (hms):", labelWidth);
+
+   this.ra_h_SpinBox = new coordSpinBox(this, this.ra.deg, 23, spinBoxWidth1, tooltip,
+      function (value)
+      {
+         thisObj.ra.deg = value;
+         onChange();
+      });
+   this.ra_min_SpinBox = new coordSpinBox(this, this.ra.min, 59, spinBoxWidth1, tooltip,
+      function (value)
+      {
+         thisObj.ra.min = value;
+         onChange();
+      });
+   this.ra_sec_Edit = new Edit(this);
+   this.ra_sec_Edit.text = format("%.3f", this.ra.sec);
+   this.ra_sec_Edit.toolTip = tooltip;
+   this.ra_sec_Edit.setFixedWidth(spinBoxWidth2);
+   this.ra_sec_Edit.onTextUpdated = function (value)
+   {
+      thisObj.ra.sec = parseFloat(value);
+      onChange();
+   };
+
+   /*this.search_Button = new PushButton( this );
+    this.search_Button.text = "Search";
+    this.search_Button.icon = this.scaledResource( ":/icons/find.png" );*/
+
+   this.ra_Sizer = new HorizontalSizer;
+   this.ra_Sizer.spacing = 4;
+   this.ra_Sizer.add(this.ra_Label);
+   this.ra_Sizer.add(this.ra_h_SpinBox);
+   this.ra_Sizer.add(this.ra_min_SpinBox);
+   this.ra_Sizer.add(this.ra_sec_Edit);
+   this.ra_Sizer.addStretch();
+   //this.ra_Sizer.add( this.search_Button );
+
+   // DEC
+
+   this.dec_Label = new fieldLabel(this, "Declination (dms):", labelWidth);
+
+   this.dec_h_SpinBox = new coordSpinBox(this, this.dec.deg, 90, spinBoxWidth1, tooltip,
+      function (value)
+      {
+         thisObj.dec.deg = value;
+         onChange();
+      });
+   this.dec_min_SpinBox = new coordSpinBox(this, this.dec.min, 59, spinBoxWidth1, tooltip,
+      function (value)
+      {
+         thisObj.dec.min = value;
+         onChange();
+      });
+   this.dec_sec_Edit = new Edit(this);
+   this.dec_sec_Edit.text = format("%.2f", this.dec.sec);
+   this.dec_sec_Edit.toolTip = tooltip;
+   this.dec_sec_Edit.setFixedWidth(spinBoxWidth2);
+   this.dec_sec_Edit.onTextUpdated = function (value)
+   {
+      thisObj.dec.sec = parseFloat(value);
+      onChange();
+   };
+
+   this.isSouth_CheckBox = new CheckBox(this);
+   this.isSouth_CheckBox.text = "S";
+   this.isSouth_CheckBox.checked = this.dec.sign < 0;
+   this.isSouth_CheckBox.toolTip = "<p>When checked, the declination is negative (Southern hemisphere).</p>";
+   //this.isSouth_CheckBox.setScaledFixedWidth(40);
+   this.isSouth_CheckBox.onCheck = function (checked)
+   {
+      thisObj.dec.sign = checked ? -1 : 1;
+      onChange();
+   };
+
+   this.dec_Sizer = new HorizontalSizer;
+   this.dec_Sizer.spacing = 4;
+   this.dec_Sizer.add(this.dec_Label);
+   this.dec_Sizer.add(this.dec_h_SpinBox);
+   this.dec_Sizer.add(this.dec_min_SpinBox);
+   this.dec_Sizer.add(this.dec_sec_Edit);
+   this.dec_Sizer.add(this.isSouth_CheckBox);
+   this.dec_Sizer.addStretch();
+
+   this.sizer = new VerticalSizer;
+   this.sizer.margin = 0;
+   this.sizer.spacing = 4;
+   this.sizer.add(this.ra_Sizer);
+   this.sizer.add(this.dec_Sizer);
+}
+CoordinatesEditor.prototype = new Control();
+
+CoordinatesEditor.prototype.SetCoords = function (coords)
+{
+   this.ra = (coords != null && coords.x != null) ? DMSangle.FromAngle(coords.x / 15) : new DMSangle;
+   this.ra_h_SpinBox.value = this.ra.deg;
+   this.ra_min_SpinBox.value = this.ra.min;
+   this.ra_sec_Edit.text = format("%.3f", this.ra.sec);
+
+   this.dec = (coords != null && coords.y != null) ? DMSangle.FromAngle(coords.y) : new DMSangle;
+   this.dec_h_SpinBox.value = this.dec.deg;
+   this.dec_min_SpinBox.value = this.dec.min;
+   this.dec_sec_Edit.text = format("%.2f", this.dec.sec);
+   this.isSouth_CheckBox.checked = this.dec.sign < 0;
+};
+
+CoordinatesEditor.prototype.GetCoords = function (validate)
+{
+   var raVal = this.ra.GetValue();
+   if ((validate == null || validate) && (raVal < 0 || raVal > 24))
+   {
+      new MessageBox("Invalid right ascension", TITLE, StdIcon_Error).execute();
+      return null;
+   }
+
+   var decVal = this.dec.GetValue();
+   if ((validate == null || validate) && (decVal < -90 || decVal > +90))
+   {
+      new MessageBox("Invalid declination", TITLE, StdIcon_Error).execute();
+      return null;
+   }
+
+   return new Point(raVal * 15, decVal);
+};
+
+CoordinatesEditor.prototype.setLabels = function(raText, decText)
+{
+   this.ra_Label.text = raText;
+   this.dec_Label.text = decText;
+};
+
+CoordinatesEditor.prototype.setOnChange = function(callback, scope)
+{
+   this.onChangeCallback = callback;
+   this.onChangeCallbackScope = scope;
+};
+
 // ******************************************************************
 // TransparentColorControl: Configuration control for colors
 // ******************************************************************
@@ -172,3 +365,79 @@ function FontControl(parent, callbackScope, fontDef)
 }
 
 FontControl.prototype = new Control;
+
+
+// ******************************************************************
+// EpochEditor
+// ******************************************************************
+function EpochEditor(parent, epochJD, // Julian date of the epoch
+   labelWidth, spinBoxWidth)
+{
+   this.__base__ = Control;
+   this.__base__(parent);
+
+   var self = this;
+
+   var epochTooltip =
+      "<p>Date of the star field. This value is used for computing the proper motion of the stars.</p>";
+
+   this.epoch_Label = new fieldLabel(this, "Epoch (ymd):", labelWidth);
+
+   this.epoch_year_SpinBox = new SpinBox(this);
+   this.epoch_year_SpinBox.minValue = 0;
+   this.epoch_year_SpinBox.maxValue = 3000;
+   this.epoch_year_SpinBox.toolTip = epochTooltip;
+   this.epoch_year_SpinBox.setFixedWidth(spinBoxWidth);
+   this.epoch_year_SpinBox.onValueUpdated = function (value)
+   {
+      self.epoch.setFullYear(value);
+   };
+
+   this.epoch_mon_SpinBox = new SpinBox(this);
+   this.epoch_mon_SpinBox.minValue = 1;
+   this.epoch_mon_SpinBox.maxValue = 12;
+   this.epoch_mon_SpinBox.toolTip = epochTooltip;
+   this.epoch_mon_SpinBox.setFixedWidth(spinBoxWidth);
+   this.epoch_mon_SpinBox.onValueUpdated = function (value)
+   {
+      self.epoch.setMonth(value - 1);
+   };
+
+   this.epoch_day_SpinBox = new SpinBox(this);
+   this.epoch_day_SpinBox.minValue = 1;
+   this.epoch_day_SpinBox.maxValue = 31;
+   this.epoch_day_SpinBox.toolTip = epochTooltip;
+   this.epoch_day_SpinBox.setFixedWidth(spinBoxWidth);
+   this.epoch_day_SpinBox.onValueUpdated = function (value)
+   {
+      self.epoch.setDate(value);
+   };
+
+   this.sizer = new HorizontalSizer();
+   this.sizer.spacing = 4;
+   this.sizer.add(this.epoch_Label);
+   this.sizer.add(this.epoch_year_SpinBox);
+   this.sizer.add(this.epoch_mon_SpinBox);
+   this.sizer.add(this.epoch_day_SpinBox);
+   this.sizer.addStretch();
+
+   this.setEpoch(epochJD);
+}
+
+EpochEditor.prototype = new Control();
+
+EpochEditor.prototype.getEpoch = function ()
+{
+   return Math.complexTimeToJD(this.epoch.getFullYear(), this.epoch.getMonth() + 1, this.epoch.getDate());
+};
+
+EpochEditor.prototype.setEpoch = function (epochJD)
+{
+   var epochArray = epochJD == null ? [ 2000, 1, 1] : Math.jdToComplexTime(epochJD);
+   this.epoch = new Date(epochArray[0], epochArray[1] - 1, epochArray[2]);
+   this.epoch_year_SpinBox.value = this.epoch.getFullYear();
+   this.epoch_mon_SpinBox.value = this.epoch.getMonth() + 1;
+   this.epoch_day_SpinBox.value = this.epoch.getDate();
+};
+
+#endif

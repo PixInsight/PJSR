@@ -90,9 +90,9 @@ function III_126_Catalog()
       }
       else
          return null;
-   }
+   };
 
-   this.PostProcessObjects = function (objects, metadata)
+   this.PostProcessObjects = function (objects)
    {
       // Remove the objects with the same name
       var prev = null;
@@ -108,7 +108,7 @@ function III_126_Catalog()
                objects[j] = null;
          }
       }
-   }
+   };
 
 }
 

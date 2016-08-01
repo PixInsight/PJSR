@@ -30,6 +30,8 @@
 /*
    Changelog:
 
+   1.9:  * Use downloaded catalogs
+
    1.8.5:* Fixed: When the script was executed from the console it ignored the
            parameters in the command and it used the saved parameters
 
@@ -182,15 +184,17 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.8.5"
+#define VERSION "1.9"
 #define TITLE "Annotate Image"
 #define SETTINGS_MODULE "ANNOT"
 
 #include "WCSmetadata.jsh"
+#include "SearchCoordinatesDialog.js"
+#include "CommonUIControls.js"
+#include "CatalogDownloader.js"
 #include "AstronomicalCatalogs.jsh"
 //#include "SpectrophotometricCatalogs.js"
 #include "PreviewControl.js"
-#include "CommonUIControls.js"
 
 // Output modes
 #define Output_Image    0  // Image annotated
@@ -1732,7 +1736,7 @@ function AnnotateDialog(engine)
          "The script requires the image to have coordinates stored in FITS header keywords following the WCS convention.<br/>" +
          "The Image Plate Solver script can be used to generate these coordinates and keywords.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2012-2015 Andr&eacute;s del Pozo</p>";
+         "Copyright &copy; 2012-2016 Andr&eacute;s del Pozo</p>";
 
    // Layers
    this.layer_TreeBox = new TreeBox(this);
@@ -1859,6 +1863,17 @@ function AnnotateDialog(engine)
       this.pushed = false;
    }
 
+   // TERMS OF USE of VizieR catalogs
+   this.terms_Button = new ToolButton(this);
+   this.terms_Button.text = "Terms of use of VizieR data";
+   this.terms_Font = new Font(this.font.family, this.font.pointSize);
+   this.terms_Font.underline = true;
+   this.terms_Button.font = this.terms_Font;
+   this.terms_Button.onClick = function()
+   {
+      Dialog.openBrowser("http://cds.u-strasbg.fr/vizier-org/licences_vizier.html");
+   }
+
    this.layerButtonsSizer = new HorizontalSizer;
    this.layerButtonsSizer.scaledSpacing = 6;
    this.layerButtonsSizer.add(this.addLayer_Button);
@@ -1867,6 +1882,7 @@ function AnnotateDialog(engine)
    this.layerButtonsSizer.add(this.moveUpLayer_Button);
    this.layerButtonsSizer.add(this.moveDownLayer_Button);
    this.layerButtonsSizer.addStretch();
+   this.layerButtonsSizer.add(this.terms_Button);
 
    this.layersSizer = new VerticalSizer;
    this.layersSizer.scaledSpacing = 4;
@@ -1895,56 +1911,7 @@ function AnnotateDialog(engine)
    this.ActivateLayer(this.layer_TreeBox.child(0));
 
    // Epoch
-   var epochToolTip = "<p>Date on which the image was taken.<br/>" +
-      "It is used by the catalogs that support proper motion computation.</p>"
-   this.epoch_Label = new Label(this);
-   this.epoch_Label.text = "Epoch (ymd):";
-   this.epoch_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
-   this.epoch_Label.setFixedWidth(this.labelWidth1);
-
-   var epochArray = engine.epoch == null ? [ 2000, 1, 1] : Math.jdToComplexTime(engine.epoch);
-   var epoch = new Date(epochArray[0], epochArray[1] - 1, epochArray[2]);
-
-   this.epoch_year_SpinBox = new SpinBox(this);
-   this.epoch_year_SpinBox.minValue = 0;
-   this.epoch_year_SpinBox.maxValue = 3000;
-   this.epoch_year_SpinBox.value = epoch.getFullYear();
-   this.epoch_year_SpinBox.toolTip = epochToolTip;
-   this.epoch_year_SpinBox.setFixedWidth(this.spinWidth * 1.5);
-   this.epoch_year_SpinBox.onValueUpdated = function (value)
-   {
-      epoch.setFullYear(value);
-   };
-
-   this.epoch_mon_SpinBox = new SpinBox(this);
-   this.epoch_mon_SpinBox.minValue = 1;
-   this.epoch_mon_SpinBox.maxValue = 12;
-   this.epoch_mon_SpinBox.value = epoch.getMonth() + 1;
-   this.epoch_mon_SpinBox.toolTip = epochToolTip;
-   this.epoch_mon_SpinBox.setFixedWidth(this.spinWidth);
-   this.epoch_mon_SpinBox.onValueUpdated = function (value)
-   {
-      epoch.setMonth(value - 1);
-   };
-
-   this.epoch_day_SpinBox = new SpinBox(this);
-   this.epoch_day_SpinBox.minValue = 1;
-   this.epoch_day_SpinBox.maxValue = 31;
-   this.epoch_day_SpinBox.value = epoch.getDate();
-   this.epoch_day_SpinBox.toolTip = epochToolTip;
-   this.epoch_day_SpinBox.setFixedWidth(this.spinWidth);
-   this.epoch_day_SpinBox.onValueUpdated = function (value)
-   {
-      epoch.setDate(value);
-   };
-
-   this.epoch_Sizer = new HorizontalSizer;
-   this.epoch_Sizer.scaledSpacing = 4;
-   this.epoch_Sizer.add(this.epoch_Label);
-   this.epoch_Sizer.add(this.epoch_year_SpinBox);
-   this.epoch_Sizer.add(this.epoch_mon_SpinBox);
-   this.epoch_Sizer.add(this.epoch_day_SpinBox);
-   this.epoch_Sizer.addStretch();
+   this.epoch_Editor = new EpochEditor(this, engine.epoch, this.labelWidth1, this.spinWidth * 1.5);
 
    // Server mirror
    this.mirror_Label = new Label(this);
@@ -2135,7 +2102,7 @@ function AnnotateDialog(engine)
    this.generalGroup.sizer.scaledSpacing = 4;
    this.generalGroup.sizer.scaledMargin = 6;
    this.generalGroup.sizer.add(this.outputSizer);
-   this.generalGroup.sizer.add(this.epoch_Sizer);
+   this.generalGroup.sizer.add(this.epoch_Editor);
    this.generalGroup.sizer.add(this.mirrorSizer);
    this.generalGroup.sizer.add(this.duplicatesSizer);
    this.generalGroup.sizer.add(this.writeObjectsSizer);
@@ -2163,7 +2130,8 @@ function AnnotateDialog(engine)
          engine.layers.push(node.frame.object);
       }
 
-      this.dialog.engine.epoch = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+      //this.dialog.engine.epoch = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+      this.dialog.engine.epoch = this.dialog.epoch_Editor.getEpoch();
 
       this.hasFocus = true;
       engine.SaveParameters();
@@ -2208,7 +2176,8 @@ function AnnotateDialog(engine)
          }
          engine.layers.push(node.frame.object);
       }
-      engine.epoch = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+      //engine.epoch = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+      engine.epoch = this.dialog.epoch_Editor.getEpoch();
 
       var image = engine.RenderPreview();
       var previewDlg = new PreviewDialog(image, engine.metadata);
@@ -2235,7 +2204,8 @@ function AnnotateDialog(engine)
          engine.layers.push(node.frame.object);
       }
 
-      this.dialog.engine.epoch = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+      //this.dialog.engine.epoch = Math.complexTimeToJD(epoch.getFullYear(), epoch.getMonth() + 1, epoch.getDate());
+      engine.epoch = this.dialog.epoch_Editor.getEpoch();
       this.dialog.ok();
    };
 
