@@ -1,12 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// WCSHeader.js - Released 2015/11/21 00:00:00 UTC
+// WCSHeader.js - Released 2016/07/31 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WCSHeader Script version 1.5
+// This file is part of WCSHeader Script version 1.6
 //
-// Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -47,17 +48,17 @@
 // ****************************************************************************
 
 #define TITLE "WCSHeader"
-#define VERSION "1.5"
+#define VERSION "1.6"
 
 #feature-id Utilities > WCSHeader
 
-#feature-info <b>WCSHeader Version 1.5</b><br/>\
+#feature-info <b>WCSHeader Version 1.6</b><br/>\
    <br/>\
-   Script for displaying an image's FITS World Coordinate System astrometric \
-   (WCS) header information.<br/>\
+   Script for displaying an image's FITS World Coordinate System (WCS) \
+   astrometric header information.<br/>\
    <br/>\
-   Copyright &copy; 2012-2015 Mike Schuster. All Rights Reserved.<br/>\
-   Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+   Copyright &copy; 2012-2016 Mike Schuster. All Rights Reserved.<br/>\
+   Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
 
 #include <pjsr/FrameStyle.jsh>
 #include <pjsr/Sizer.jsh>
@@ -515,27 +516,20 @@ function parametersDialogPrototype() {
    this.buttonPane = new HorizontalSizer;
    this.buttonPane.spacing = 6;
 
-   this.commentButton = new ToolButton(this);
-   this.buttonPane.add(this.commentButton);
+   this.versionLabel = new Label(this);
+   this.buttonPane.add(this.versionLabel);
 
-   this.commentButton.icon = this.scaledResource(":/icons/comment.png");
-   this.commentButton.setScaledFixedSize(20, 20);
-   this.commentButton.toolTip =
+   this.versionLabel.text = "Version " + VERSION;
+   this.versionLabel.toolTip =
       "<p><b>" + TITLE + " Version " + VERSION + "</b></p>" +
 
       "<p>Script for displaying an image's FITS World Coordinate System " +
       "(WCS) astrometric header information.</p>" +
 
-      "<p>Copyright &copy; 2012-2015 Mike Schuster. All Rights " +
+      "<p>Copyright &copy; 2012-2016 Mike Schuster. All Rights " +
       "Reserved.<br>" +
-      "Copyright &copy; 2003-2015 Pleiades Astrophoto S.L. All Rights " +
+      "Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights " +
       "Reserved.</p>";
-
-   this.versionLabel = new Label(this);
-   this.buttonPane.add(this.versionLabel);
-
-   this.versionLabel.text = "Version " + VERSION;
-   this.versionLabel.toolTip = this.commentButton.toolTip;
    this.versionLabel.textAlignment = TextAlign_Right | TextAlign_VertCenter;
 
    this.buttonPane.addStretch();
@@ -593,4 +587,4 @@ main();
 gc();
 
 // ****************************************************************************
-// EOF WCSHeader.js - Released 2015/11/21 00:00:00 UTC
+// EOF WCSHeader.js - Released 2016/07/31 00:00:00 UTC
