@@ -77,6 +77,9 @@ function main()
             if ( !engine.showIntegrationWarning() )
                return;
 
+      if(engine.saveProcessLog)
+         console.beginLog();
+
       try
       {
          console.show();
@@ -101,6 +104,23 @@ function main()
       {
          (new MessageBox( x.message, TITLE + " " + VERSION, StdIcon_Error, StdButton_Ok )).execute();
          console.hide();
+      }
+
+      if(engine.saveProcessLog)
+      {
+         var logData = console.endLog();
+         var logName = "Log-" + (new Date(Date.now())).toISOString() + ".txt";
+         logName = logName.replace( /:/g, "-" );
+         var logPath = engine.outputDirectory + "/" +logName;
+         try{
+            var file = File.createFileForWriting( logPath );
+            file.write( logData );
+            file.close();
+         }
+         catch ( x )
+         {
+            (new MessageBox( x.message, TITLE + " " + VERSION, StdIcon_Error, StdButton_Ok )).execute();
+         }
       }
    }
 
