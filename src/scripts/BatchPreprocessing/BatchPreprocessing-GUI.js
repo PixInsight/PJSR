@@ -2093,7 +2093,17 @@ function StackDialog()
       engine.exportCalibrationFiles = checked;
    };
 
-   //
+    //
+
+    this.saveProcessLogCheckBox = new CheckBox( this );
+    this.saveProcessLogCheckBox.text = "Save process log";
+    this.saveProcessLogCheckBox.toolTip = "<p>When checked, the log of the process will be saved in the output directory.</p>";
+    this.saveProcessLogCheckBox.onCheck = function( checked )
+    {
+        engine.saveProcessLog = checked;
+    };
+
+    //
 
    this.upBottomFITSCheckBox = new CheckBox( this );
    this.upBottomFITSCheckBox.text = "Up-bottom FITS";
@@ -2171,6 +2181,7 @@ function StackDialog()
    this.optionsSizer1.add( this.optimizeDarksCheckBox );
    this.optionsSizer1.add( this.generateRejectionMapsCheckBox );
    this.optionsSizer1.add( this.exportCalibrationFilesCheckBox );
+   this.optionsSizer1.add( this.saveProcessLogCheckBox );
    this.optionsSizer1.add( this.outputSuffixLabel );
 
    this.optionsSizer2 = new VerticalSizer;
@@ -2179,6 +2190,7 @@ function StackDialog()
    this.optionsSizer2.add( this.useAsMasterBiasCheckBox );
    this.optionsSizer2.add( this.useAsMasterDarkCheckBox );
    this.optionsSizer2.add( this.useAsMasterFlatCheckBox );
+   this.optionsSizer2.add( new Label(this) );
    this.optionsSizer2.add( this.outputSuffixEdit );
 
    this.optionsSizer = new HorizontalSizer;
@@ -2380,6 +2392,7 @@ StackDialog.prototype.updateControls = function()
    this.optimizeDarksCheckBox.checked          = engine.optimizeDarks;
    this.generateRejectionMapsCheckBox.checked  = engine.generateRejectionMaps;
    this.exportCalibrationFilesCheckBox.checked = engine.exportCalibrationFiles;
+   this.saveProcessLogCheckBox.checked         = engine.saveProcessLog;
    this.upBottomFITSCheckBox.checked           = engine.upBottomFITS;
    this.useAsMasterBiasCheckBox.checked        = engine.useAsMaster[ImageType.BIAS];
    this.useAsMasterDarkCheckBox.checked        = engine.useAsMaster[ImageType.DARK];

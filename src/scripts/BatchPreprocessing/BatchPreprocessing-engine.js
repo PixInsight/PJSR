@@ -262,6 +262,7 @@ function StackEngine()
    this.cfaImages = DEFAULT_CFA_IMAGES;
    this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
    this.exportCalibrationFiles = DEFAULT_EXPORT_CALIBRATION_FILES;
+   this.saveProcessLog = DEFAULT_SAVE_PROCESS_LOG;
    this.generateRejectionMaps = DEFAULT_GENERATE_REJECTION_MAPS;
    this.useAsMaster = new Array( 3 );
 
@@ -1714,6 +1715,8 @@ StackEngine.prototype.loadSettings = function()
       this.upBottomFITS = o;
    if ( (o = load( "exportCalibrationFiles",    DataType_Boolean )) != null )
       this.exportCalibrationFiles = o;
+   if ( (o = load( "saveProcessLog",            DataType_Boolean )) != null )
+      this.saveProcessLog = o;
    if ( (o = load( "generateRejectionMaps",     DataType_Boolean )) != null )
       this.generateRejectionMaps = o;
    if ( (o = load( "optimizeDarks",             DataType_Boolean )) != null )
@@ -1824,6 +1827,7 @@ StackEngine.prototype.saveSettings = function()
    save( "cfaImages",                 DataType_Boolean, this.cfaImages );
    save( "upBottomFITS",              DataType_Boolean, this.upBottomFITS );
    save( "exportCalibrationFiles",    DataType_Boolean, this.exportCalibrationFiles );
+   save( "saveProcessLog",            DataType_Boolean, this.saveProcessLog );
    save( "generateRejectionMaps",     DataType_Boolean, this.generateRejectionMaps );
    save( "optimizeDarks",             DataType_Boolean, this.optimizeDarks );
    save( "darkOptimizationLow",       DataType_Float,   this.darkOptimizationLow );
@@ -1883,6 +1887,7 @@ StackEngine.prototype.setDefaultParameters = function()
    this.cfaImages = DEFAULT_CFA_IMAGES;
    this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
    this.exportCalibrationFiles = DEFAULT_EXPORT_CALIBRATION_FILES;
+   this.saveProcessLog = DEFAULT_SAVE_PROCESS_LOG;
    this.generateRejectionMaps = DEFAULT_GENERATE_REJECTION_MAPS;
 
    this.optimizeDarks = DEFAULT_OPTIMIZE_DARKS;
@@ -1958,6 +1963,9 @@ StackEngine.prototype.importParameters = function()
 
    if ( Parameters.has( "exportCalibrationFiles" ) )
       this.exportCalibrationFiles = Parameters.getBoolean( "exportCalibrationFiles" );
+
+   if ( Parameters.has( "saveProcessLog" ) )
+      this.saveProcessLog = Parameters.getBoolean( "saveProcessLog" );
 
    if ( Parameters.has( "generateRejectionMaps" ) )
       this.generateRejectionMaps = Parameters.getBoolean( "generateRejectionMaps" );
@@ -2156,6 +2164,8 @@ StackEngine.prototype.exportParameters = function()
    Parameters.set( "cfaImages",                 this.cfaImages );
    Parameters.set( "upBottomFITS",              this.upBottomFITS );
    Parameters.set( "exportCalibrationFiles",    this.exportCalibrationFiles );
+   Parameters.set( "saveProcessLog",            this.saveProcessLog );
+
    Parameters.set( "generateRejectionMaps",     this.generateRejectionMaps );
 
    Parameters.set( "optimizeDarks",             this.optimizeDarks );

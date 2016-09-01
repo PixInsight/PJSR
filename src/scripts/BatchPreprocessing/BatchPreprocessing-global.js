@@ -67,6 +67,7 @@ var ImageType = { UNKNOWN : -1, BIAS : 0, DARK : 1, FLAT : 2, LIGHT : 3 };
 #define DEFAULT_CFA_IMAGES                   false
 #define DEFAULT_UP_BOTTOM_FITS               true
 #define DEFAULT_EXPORT_CALIBRATION_FILES     true
+#define DEFAULT_SAVE_PROCESS_LOG             true
 #define DEFAULT_GENERATE_REJECTION_MAPS      true
 #define DEFAULT_INTEGRATE                    true
 #define DEFAULT_DARK_OPTIMIZATION_WINDOW     1024
