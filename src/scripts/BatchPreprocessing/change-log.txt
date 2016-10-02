@@ -3,6 +3,15 @@ Batch Preprocessing Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2016.09.01 - v1.43
+
+- Added an option to save the console log of the BPP process as a plain text
+  file on the 'log' subdirectory of the output directory tree. Contributed by
+  Andres del Pozo.
+
+- Minor fixes to several GUI text elements.
+
+-------------------------------------------------------------------------------
 2015.10.29 - v1.42
 
 - The script now requires PixInsight Core version 1.8.4.1187 or higher.
