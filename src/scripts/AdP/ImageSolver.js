@@ -1897,6 +1897,11 @@ function ImageSolver()
       if(!stars)
          return;
       console.writeln("Creating error map");
+      if (metadata.width * metadata.height * 4 >= 2 * 1024 * 1024 * 1024)
+      {
+         console.warningln("Cannot draw the image: The size is too big");
+         return;
+      }
 
       // Draw errors in a new bitmap
       var bmp = new Bitmap(metadata.width, metadata.height);
@@ -1969,6 +1974,11 @@ function ImageSolver()
    this.DrawDistortions = function(targetWindow, metadata)
    {
       console.writeln("Creating distortion map");
+      if (metadata.width * metadata.height * 4 >= 2 * 1024 * 1024 * 1024)
+      {
+         console.warningln("Cannot draw the image: The size is too big");
+         return;
+      }
 
       var ref_I_G_lineal = metadata.ref_I_G_lineal;
       if(metadata.controlPoints){
