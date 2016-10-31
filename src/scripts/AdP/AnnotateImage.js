@@ -30,6 +30,8 @@
 /*
    Changelog:
 
+   1.9.1:* Added test for too big images (>0.5GigaPixels)
+
    1.9:  * Use downloaded catalogs
 
    1.8.5:* Fixed: When the script was executed from the console it ignored the
@@ -184,7 +186,7 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.9"
+#define VERSION "1.9.1"
 #define TITLE "Annotate Image"
 #define SETTINGS_MODULE "ANNOT"
 
@@ -2294,6 +2296,9 @@ function AnnotationEngine()
       if (this.metadata.epoch)
          this.epoch = this.metadata.epoch;
       this.metadata.Print();
+
+      if(this.metadata.width * this.metadata.height *4 >= 2*1024*1024*1024)
+         throw Error("The script can not annotate images bigger than 536,870,912 pixels");
    };
 
    this.SetDefaults = function ()
@@ -2532,6 +2537,8 @@ function AnnotationEngine()
          else
             bmp.fill(0x00000000);
          var g = new VectorGraphics(bmp);
+         if (!g.isPainting)
+            throw Error("The script can not draw on the image");
 
          console.writeln("Rendering annotation");
          this.RenderGraphics(g, width, height);
@@ -2620,6 +2627,8 @@ function AnnotationEngine()
       else
          bmp.fill(0x00000000);
       var g = new VectorGraphics(bmp);
+      if (!g.isPainting)
+         throw Error("The script can not draw on the image");
 
       console.writeln("Rendering annotation");
       this.RenderGraphics(g, width, height);

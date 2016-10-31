@@ -188,7 +188,7 @@ function ProjectionZenithalEqualArea()
       var y = (np1.y + np2.y) / 2;
       var dist = Math.min(Math.abs(np1.x - np2.x - 360) % 360, Math.abs(np1.x - np2.x + 360) % 360);
       return dist < DMath.sin(45 + y / 2) * 180;
-   }
+   };
 }
 ProjectionZenithalEqualArea.prototype = new ProjectionZenithalBase();
 

@@ -464,6 +464,9 @@ function ImageMetadata(module)
       this.epoch = wcs.epoch;
       this.width = window.mainView.image.width;
       this.height = window.mainView.image.height;
+      this.ref_I_G_lineal = null;
+      this.ref_I_G = null;
+      this.ref_G_I = null;
 
       if (wcs.ctype1 && wcs.ctype1.substr(0, 5) == "'RA--" &&
          wcs.ctype2 && wcs.ctype2.substr(0, 5) == "'DEC-" &&
