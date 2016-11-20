@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-GUI.js - Released 2015/10/30 18:51:47 UTC
+// BatchPreprocessing-GUI.js - Released 2016/09/01 15:47:44 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.42
+// This file is part of Batch Preprocessing Script version 1.43
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2016 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -1821,7 +1821,7 @@ function StackDialog()
    this.fileAddButton.text = "Add Files";
    this.fileAddButton.icon = this.scaledResource( ":/icons/add.png" );
    this.fileAddButton.toolTip = "<p>Add files to the input files list.</p>" +
-         "<p>Image types will be selected automatically based on FITS keywords.</p>";
+         "<p>Image types will be selected automatically based on XISF image properties and/or FITS keywords.</p>";
    this.fileAddButton.onClick = function()
    {
       var ofd = new OpenFileDialog;
@@ -2077,7 +2077,7 @@ function StackDialog()
    this.generateRejectionMapsCheckBox.text = "Generate rejection maps"
    this.generateRejectionMapsCheckBox.toolTip = "<p>Generate rejection map images during integration of bias, dark, flat and " +
       "light frames.</p>" +
-      "<p>Rejection maps are stored as multiple image files using IMAGE FITS extensions.</p>";
+      "<p>Rejection maps are stored as multiple-image XISF files.</p>";
    this.generateRejectionMapsCheckBox.onCheck = function( checked )
    {
       engine.generateRejectionMaps = checked;
@@ -2093,7 +2093,18 @@ function StackDialog()
       engine.exportCalibrationFiles = checked;
    };
 
-   //
+    //
+
+    this.saveProcessLogCheckBox = new CheckBox( this );
+    this.saveProcessLogCheckBox.text = "Save process log";
+    this.saveProcessLogCheckBox.toolTip = "<p>When checked, the log of the process will be saved as a plain text file on the " +
+      "output directory tree.</p>";
+    this.saveProcessLogCheckBox.onCheck = function( checked )
+    {
+        engine.saveProcessLog = checked;
+    };
+
+    //
 
    this.upBottomFITSCheckBox = new CheckBox( this );
    this.upBottomFITSCheckBox.text = "Up-bottom FITS";
@@ -2171,6 +2182,7 @@ function StackDialog()
    this.optionsSizer1.add( this.optimizeDarksCheckBox );
    this.optionsSizer1.add( this.generateRejectionMapsCheckBox );
    this.optionsSizer1.add( this.exportCalibrationFilesCheckBox );
+   this.optionsSizer1.add( this.saveProcessLogCheckBox );
    this.optionsSizer1.add( this.outputSuffixLabel );
 
    this.optionsSizer2 = new VerticalSizer;
@@ -2179,6 +2191,7 @@ function StackDialog()
    this.optionsSizer2.add( this.useAsMasterBiasCheckBox );
    this.optionsSizer2.add( this.useAsMasterDarkCheckBox );
    this.optionsSizer2.add( this.useAsMasterFlatCheckBox );
+   this.optionsSizer2.add( new Label( this ) );
    this.optionsSizer2.add( this.outputSuffixEdit );
 
    this.optionsSizer = new HorizontalSizer;
@@ -2380,6 +2393,7 @@ StackDialog.prototype.updateControls = function()
    this.optimizeDarksCheckBox.checked          = engine.optimizeDarks;
    this.generateRejectionMapsCheckBox.checked  = engine.generateRejectionMaps;
    this.exportCalibrationFilesCheckBox.checked = engine.exportCalibrationFiles;
+   this.saveProcessLogCheckBox.checked         = engine.saveProcessLog;
    this.upBottomFITSCheckBox.checked           = engine.upBottomFITS;
    this.useAsMasterBiasCheckBox.checked        = engine.useAsMaster[ImageType.BIAS];
    this.useAsMasterDarkCheckBox.checked        = engine.useAsMaster[ImageType.DARK];
@@ -2493,4 +2507,4 @@ StackDialog.prototype.refreshTreeBoxes = function()
 };
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-GUI.js - Released 2015/10/30 18:51:47 UTC
+// EOF BatchPreprocessing-GUI.js - Released 2016/09/01 15:47:44 UTC

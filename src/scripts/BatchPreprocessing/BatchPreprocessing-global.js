@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-global.js - Released 2015/10/30 18:51:47 UTC
+// BatchPreprocessing-global.js - Released 2016/09/01 15:47:44 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.42
+// This file is part of Batch Preprocessing Script version 1.43
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2016 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -53,7 +53,7 @@
 
 // ----------------------------------------------------------------------------
 
-#define VERSION            "1.42"
+#define VERSION            "1.43"
 
 #define TITLE              "Batch Preprocessing Script"
 
@@ -67,6 +67,7 @@ var ImageType = { UNKNOWN : -1, BIAS : 0, DARK : 1, FLAT : 2, LIGHT : 3 };
 #define DEFAULT_CFA_IMAGES                   false
 #define DEFAULT_UP_BOTTOM_FITS               true
 #define DEFAULT_EXPORT_CALIBRATION_FILES     true
+#define DEFAULT_SAVE_PROCESS_LOG             true
 #define DEFAULT_GENERATE_REJECTION_MAPS      true
 #define DEFAULT_INTEGRATE                    true
 #define DEFAULT_DARK_OPTIMIZATION_WINDOW     1024
@@ -88,4 +89,4 @@ var ImageType = { UNKNOWN : -1, BIAS : 0, DARK : 1, FLAT : 2, LIGHT : 3 };
 #define DEFAULT_SA_USE_TRIANGLE_SIMILARITY   true
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-global.js - Released 2015/10/30 18:51:47 UTC
+// EOF BatchPreprocessing-global.js - Released 2016/09/01 15:47:44 UTC

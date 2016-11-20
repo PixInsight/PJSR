@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-helper.js - Released 2015/10/30 18:51:47 UTC
+// BatchPreprocessing-helper.js - Released 2016/09/01 15:47:44 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.42
+// This file is part of Batch Preprocessing Script version 1.43
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2016 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -426,4 +426,4 @@ function ScaledButtonIcon( parent, iconFilePath )
 }
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-helper.js - Released 2015/10/30 18:51:47 UTC
+// EOF BatchPreprocessing-helper.js - Released 2016/09/01 15:47:44 UTC

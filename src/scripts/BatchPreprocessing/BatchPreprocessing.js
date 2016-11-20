@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing.js - Released 2015/10/30 18:51:47 UTC
+// BatchPreprocessing.js - Released 2016/09/01 15:47:44 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.42
+// This file is part of Batch Preprocessing Script version 1.43
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2016 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -77,9 +77,17 @@ function main()
             if ( !engine.showIntegrationWarning() )
                return;
 
+      if ( engine.saveProcessLog )
+         console.beginLog();
+
       try
       {
          console.show();
+
+         console.noteln( "<end><cbr><br>",
+                         "************************************************************" );
+         console.noteln( "BatchPreprocessing " + VERSION );
+         console.noteln( "************************************************************" );
 
          var T = new ElapsedTime;
 
@@ -92,7 +100,7 @@ function main()
 
          engine.doLight();
 
-         console.writeln( "<end><cbr><br>* BatchPreprocessing script: ", ElapsedTime.toString( T.value ) );
+         console.writeln( "<end><cbr><br>* BatchPreprocessing: ", ElapsedTime.toString( T.value ) );
 
          console.flush();
          console.hide();
@@ -101,6 +109,26 @@ function main()
       {
          (new MessageBox( x.message, TITLE + " " + VERSION, StdIcon_Error, StdButton_Ok )).execute();
          console.hide();
+      }
+
+      if ( engine.saveProcessLog )
+      {
+         let logData = console.endLog();
+         let logDate = new Date;
+         let logPath = File.existingDirectory( engine.outputDirectory + "/logs" )
+            + format( "/%04d%02d%02d%02d%02d%02d.log",
+                      logDate.getUTCFullYear(), logDate.getUTCMonth()+1, logDate.getUTCDate(),
+                      logDate.getUTCHours(), logDate.getUTCMinutes(), logDate.getUTCSeconds() );
+         try
+         {
+            var file = File.createFileForWriting( logPath );
+            file.write( logData );
+            file.close();
+         }
+         catch ( x )
+         {
+            (new MessageBox( x.message, TITLE + " " + VERSION, StdIcon_Error, StdButton_Ok )).execute();
+         }
       }
    }
 
@@ -140,4 +168,4 @@ function main()
 main();
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing.js - Released 2015/10/30 18:51:47 UTC
+// EOF BatchPreprocessing.js - Released 2016/09/01 15:47:44 UTC

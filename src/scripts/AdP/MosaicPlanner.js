@@ -30,6 +30,8 @@
 /*
  Changelog:
 
+ 1.2.1:* Added test for too big images (>0.5GigaPixels)
+
  1.2:  * Use downloaded catalogs
 
  1.1.1:* Fixed: The script didn't include two files
@@ -62,7 +64,7 @@
 #endif
 
 
-#define VERSION "1.2"
+#define VERSION "1.2.1"
 #define TITLE "Mosaic Planner"
 #define SETTINGS_MODULE "MosaicPlan"
 #define STAR_CSV_FILE   File.systemTempDirectory + "/stars.csv"
@@ -1667,6 +1669,9 @@ function MosaicPlannerEngine()
       if (this.metadata.ref_I_G == null)
          throw Error("The image has not WCS coordinates");
 
+      if (this.metadata.width * this.metadata.height * 4 >= 2 * 1024 * 1024 * 1024)
+         throw Error("The script can not work with images bigger than 536,870,912 pixels");
+
       if (this.showGuideStars)
          this.LoadCatalog();
    };
@@ -1852,6 +1857,13 @@ function MosaicPlannerEngine()
       var width = this.imageWindow.mainView.image.width;
       var height = this.imageWindow.mainView.image.height;
 
+      console.writeln("Rendering mosaic plan");
+      if (width * height * 4 >= 2 * 1024 * 1024 * 1024)
+      {
+         console.warningln("Cannot draw the image: The size is too big");
+         return;
+      }
+
       var bmp = new Bitmap(width, height);
       var imageOrg = this.imageWindow.mainView.image;
       var tmpW = new ImageWindow(width, height, imageOrg.numberOfChannels, this.imageWindow.bitsPerSample, this.imageWindow.isFloatSample, imageOrg.isColor, "MosaicPlan");
@@ -1866,8 +1878,8 @@ function MosaicPlannerEngine()
 
       this.PaintGuideStars(g);
 
-      console.writeln("Rendering mosaic plan");
       this.PaintTiles(g);
+
       g.end();
 
       var newid = "Mosaic_Plan";

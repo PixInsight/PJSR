@@ -30,6 +30,11 @@
 /*
    Changelog:
 
+   4.2.1: * When solving a list of files the seed parameters for each image are now set with the following priority:
+            (1) The previous astrometric solution (if it exists)
+            (2) The keywords OBJCTRA, OBJCTDEC, FOCALLEN and XPIXSZ
+            (3) The values in the "Image parameters" section of the configuration dialog.
+
    4.2:   * Use downloaded catalogs
 
    4.1.1: * Added support for XISF files
@@ -178,7 +183,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.2"
+#define SOLVERVERSION "4.2.1"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -1892,6 +1897,11 @@ function ImageSolver()
       if(!stars)
          return;
       console.writeln("Creating error map");
+      if (metadata.width * metadata.height * 4 >= 2 * 1024 * 1024 * 1024)
+      {
+         console.warningln("Cannot draw the image: The size is too big");
+         return;
+      }
 
       // Draw errors in a new bitmap
       var bmp = new Bitmap(metadata.width, metadata.height);
@@ -1964,6 +1974,11 @@ function ImageSolver()
    this.DrawDistortions = function(targetWindow, metadata)
    {
       console.writeln("Creating distortion map");
+      if (metadata.width * metadata.height * 4 >= 2 * 1024 * 1024 * 1024)
+      {
+         console.warningln("Cannot draw the image: The size is too big");
+         return;
+      }
 
       var ref_I_G_lineal = metadata.ref_I_G_lineal;
       if(metadata.controlPoints){
@@ -2830,6 +2845,14 @@ function main()
                console.writeln("\n*******************************")
                console.writeln("Processing image ", filePath);
                fileWindow = ImageWindow.open(filePath)[0];
+               if(!fileWindow){
+                  errorList.push({
+                     id:File.extractNameAndExtension(filePath),
+                     message: "The file could not be opened"
+                  });
+                  continue;
+               }
+               solver.Init(fileWindow, false);
                solver.metadata.width = fileWindow.mainView.image.width;
                solver.metadata.height = fileWindow.mainView.image.height;
                if (solver.SolveImage(fileWindow))
@@ -2861,10 +2884,11 @@ function main()
          }
 
          console.writeln("");
-         if(errorList.length > 0)
+         if(errorList.length > 0){
+            console.warningln("Process finished with errors:");
             for (var i = 0; i < errorList.length; i++)
-               console.writeln(errorList[i].id + ": " + errorList[i].message);
-         else
+               console.criticalln("  "+ errorList[i].id + ": " + errorList[i].message);
+         } else
             console.writeln("Process finished without errors");
       }
    }
