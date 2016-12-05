@@ -30,6 +30,9 @@
 /*
  Changelog:
 
+ 1.2:   * Copy the pixel size and focal length of the reference image when the resolution
+          is the same as the target image
+
  1.1:   * Simple copy of coordinates
 
  1.0:   * Distortion correction using surface splines
@@ -55,7 +58,7 @@ Copyright &copy; 2013-15 Andr&eacute;s del Pozo
 #include <pjsr/NumericControl.jsh>
 
 
-#define COPYCOORDSVERSION "1.1"
+#define COPYCOORDSVERSION "1.2"
 
 #define TITLE "Copy Coordinates"
 #define SETTINGS_MODULE "COPYWCS"
@@ -414,8 +417,18 @@ function CopyCoordsEngine()
       var resx = Math.sqrt(ref.at(0, 0) * ref.at(0, 0) + ref.at(0, 1) * ref.at(0, 1));
       var resy = Math.sqrt(ref.at(1, 0) * ref.at(1, 0) + ref.at(1, 1) * ref.at(1, 1));
       newMetadata.resolution = (resx + resy) / 2;
-      newMetadata.focal = newMetadata.FocalFromResolution(newMetadata.resolution);
-      newMetadata.useFocal = false;
+      // Check if the resolution has not changed
+      if (metadata0.resolution > 0 && Math.abs(1 - newMetadata.resolution / metadata0.resolution) < 1e-4)
+      {
+         newMetadata.useFocal = metadata0.useFocal;
+         newMetadata.xpixsz = metadata0.xpixsz;
+         newMetadata.focal = newMetadata.FocalFromResolution(newMetadata.resolution);
+      }
+      else
+      {
+         newMetadata.useFocal = false;
+         newMetadata.focal = 0;
+      }
 
       return newMetadata;
    };

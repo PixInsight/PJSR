@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-engine.js - Released 2015/10/30 18:51:47 UTC
+// BatchPreprocessing-engine.js - Released 2016/09/01 15:47:44 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.42
+// This file is part of Batch Preprocessing Script version 1.43
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2016 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -262,6 +262,7 @@ function StackEngine()
    this.cfaImages = DEFAULT_CFA_IMAGES;
    this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
    this.exportCalibrationFiles = DEFAULT_EXPORT_CALIBRATION_FILES;
+   this.saveProcessLog = DEFAULT_SAVE_PROCESS_LOG;
    this.generateRejectionMaps = DEFAULT_GENERATE_REJECTION_MAPS;
    this.useAsMaster = new Array( 3 );
 
@@ -1029,9 +1030,9 @@ StackEngine.prototype.doLight = function()
          if ( this.cosmeticCorrection )
          {
             console.noteln( "<end><cbr><br>",
-                            "*********************************************************************" );
+                            "************************************************************" );
             console.noteln( "* Begin cosmetic correction of light frames" );
-            console.noteln( "*********************************************************************" );
+            console.noteln( "************************************************************" );
 
             var CC = ProcessInstance.fromIcon( this.cosmeticCorrectionTemplateId );
             if ( CC == null )
@@ -1069,9 +1070,9 @@ StackEngine.prototype.doLight = function()
             }
 
             console.noteln( "<end><cbr><br>",
-                            "*********************************************************************" );
+                            "************************************************************" );
             console.noteln( "* End cosmetic correction of light frames" );
-            console.noteln( "*********************************************************************" );
+            console.noteln( "************************************************************" );
          }
 
          if ( this.cfaImages )
@@ -1079,9 +1080,9 @@ StackEngine.prototype.doLight = function()
             if ( this.bayerDrizzle )
             {
                console.noteln( "<end><cbr><br>",
-                               "*********************************************************************" );
+                               "************************************************************" );
                console.noteln( "* Begin generation of Bayer drizzle source frames" );
-               console.noteln( "*********************************************************************" );
+               console.noteln( "************************************************************" );
 
                var P = new PixelMath;
 
@@ -1153,15 +1154,15 @@ StackEngine.prototype.doLight = function()
                }
 
                console.noteln( "<end><cbr><br>",
-                               "*********************************************************************" );
+                               "************************************************************" );
                console.noteln( "* End generation of Bayer drizzle source frames" );
-               console.noteln( "*********************************************************************" );
+               console.noteln( "************************************************************" );
             }
 
             console.noteln( "<end><cbr><br>",
-                            "*********************************************************************" );
+                            "************************************************************" );
             console.noteln( "* Begin deBayering of light frames" );
-            console.noteln( "*********************************************************************" );
+            console.noteln( "************************************************************" );
 
             var DB = new Debayer;
 
@@ -1199,17 +1200,17 @@ StackEngine.prototype.doLight = function()
             images = debayerImages;
 
             console.noteln( "<end><cbr><br>",
-                            "*********************************************************************" );
+                            "************************************************************" );
             console.noteln( "* End deBayering of light frames" );
-            console.noteln( "*********************************************************************" );
+            console.noteln( "************************************************************" );
          }
 
          if ( !this.calibrateOnly )
          {
             console.noteln( "<end><cbr><br>",
-                            "*********************************************************************" );
+                            "************************************************************" );
             console.noteln( "* Begin registration of light frames" );
-            console.noteln( "*********************************************************************" );
+            console.noteln( "************************************************************" );
 
             var SA = new StarAlignment;
 
@@ -1240,18 +1241,18 @@ StackEngine.prototype.doLight = function()
                throw new Error( "Error registering light frames." );
 
             console.noteln( "<end><cbr><br>",
-                            "*********************************************************************" );
+                            "************************************************************" );
             console.noteln( "* End registration of light frames" );
-            console.noteln( "*********************************************************************" );
+            console.noteln( "************************************************************" );
 
             if ( this.cfaImages )
                if ( this.generateDrizzleData )
                   if ( this.bayerDrizzle )
                   {
                      console.noteln( "<end><cbr><br>",
-                                     "*********************************************************************" );
+                                     "************************************************************" );
                      console.noteln( "* Begin generation of Bayer drizzle data files" );
-                     console.noteln( "*********************************************************************" );
+                     console.noteln( "************************************************************" );
 
                      var bayerDrizzleDirectory = registerDirectory + "/bayer";
                      bayerDrizzleDirectory = File.existingDirectory( bayerDrizzleDirectory );
@@ -1294,9 +1295,9 @@ StackEngine.prototype.doLight = function()
                      }
 
                      console.noteln( "<end><cbr><br>",
-                                     "*********************************************************************" );
+                                     "************************************************************" );
                      console.noteln( "* End generation of Bayer drizzle data files" );
-                     console.noteln( "*********************************************************************" );
+                     console.noteln( "************************************************************" );
                   }
 
             if ( this.integrate )
@@ -1335,9 +1336,9 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
       throw new Error( "Cannot integrate less than three frames." );
 
    console.noteln( "<end><cbr><br>",
-                   "*********************************************************************" );
+                   "************************************************************" );
    console.noteln( "* Begin integration of ", StackEngine.imageTypeToString( imageType ), " frames" );
-   console.noteln( "*********************************************************************" );
+   console.noteln( "************************************************************" );
 
    var II = new ImageIntegration;
 
@@ -1402,9 +1403,9 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
    var ok = II.executeGlobal();
 
    console.noteln( "<end><cbr><br>",
-                   "*********************************************************************" );
+                   "************************************************************" );
    console.noteln( "* End integration of ", StackEngine.imageTypeToString( imageType ), " frames" );
-   console.noteln( "*********************************************************************" );
+   console.noteln( "************************************************************" );
 
    if ( !ok )
       return "";
@@ -1562,9 +1563,9 @@ StackEngine.prototype.doCalibrate = function( frameGroup )
    var filter = frameGroup.filter;
 
    console.noteln( "<end><cbr><br>",
-                   "*********************************************************************" );
+                   "************************************************************" );
    console.noteln( "* Begin calibration of ", StackEngine.imageTypeToString( imageType ), " frames" );
-   console.noteln( "*********************************************************************" );
+   console.noteln( "************************************************************" );
 
    var IC = new ImageCalibration;
 
@@ -1659,9 +1660,9 @@ StackEngine.prototype.doCalibrate = function( frameGroup )
    var ok = IC.executeGlobal();
 
    console.noteln( "<end><cbr><br>",
-                   "*********************************************************************" );
+                   "************************************************************" );
    console.noteln( "* End calibration of ", StackEngine.imageTypeToString( imageType ), " frames" );
-   console.noteln( "*********************************************************************" );
+   console.noteln( "************************************************************" );
 
    if ( ok )
    {
@@ -1714,6 +1715,8 @@ StackEngine.prototype.loadSettings = function()
       this.upBottomFITS = o;
    if ( (o = load( "exportCalibrationFiles",    DataType_Boolean )) != null )
       this.exportCalibrationFiles = o;
+   if ( (o = load( "saveProcessLog",            DataType_Boolean )) != null )
+      this.saveProcessLog = o;
    if ( (o = load( "generateRejectionMaps",     DataType_Boolean )) != null )
       this.generateRejectionMaps = o;
    if ( (o = load( "optimizeDarks",             DataType_Boolean )) != null )
@@ -1824,6 +1827,7 @@ StackEngine.prototype.saveSettings = function()
    save( "cfaImages",                 DataType_Boolean, this.cfaImages );
    save( "upBottomFITS",              DataType_Boolean, this.upBottomFITS );
    save( "exportCalibrationFiles",    DataType_Boolean, this.exportCalibrationFiles );
+   save( "saveProcessLog",            DataType_Boolean, this.saveProcessLog );
    save( "generateRejectionMaps",     DataType_Boolean, this.generateRejectionMaps );
    save( "optimizeDarks",             DataType_Boolean, this.optimizeDarks );
    save( "darkOptimizationLow",       DataType_Float,   this.darkOptimizationLow );
@@ -1883,6 +1887,7 @@ StackEngine.prototype.setDefaultParameters = function()
    this.cfaImages = DEFAULT_CFA_IMAGES;
    this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
    this.exportCalibrationFiles = DEFAULT_EXPORT_CALIBRATION_FILES;
+   this.saveProcessLog = DEFAULT_SAVE_PROCESS_LOG;
    this.generateRejectionMaps = DEFAULT_GENERATE_REJECTION_MAPS;
 
    this.optimizeDarks = DEFAULT_OPTIMIZE_DARKS;
@@ -1958,6 +1963,9 @@ StackEngine.prototype.importParameters = function()
 
    if ( Parameters.has( "exportCalibrationFiles" ) )
       this.exportCalibrationFiles = Parameters.getBoolean( "exportCalibrationFiles" );
+
+   if ( Parameters.has( "saveProcessLog" ) )
+      this.saveProcessLog = Parameters.getBoolean( "saveProcessLog" );
 
    if ( Parameters.has( "generateRejectionMaps" ) )
       this.generateRejectionMaps = Parameters.getBoolean( "generateRejectionMaps" );
@@ -2156,6 +2164,8 @@ StackEngine.prototype.exportParameters = function()
    Parameters.set( "cfaImages",                 this.cfaImages );
    Parameters.set( "upBottomFITS",              this.upBottomFITS );
    Parameters.set( "exportCalibrationFiles",    this.exportCalibrationFiles );
+   Parameters.set( "saveProcessLog",            this.saveProcessLog );
+
    Parameters.set( "generateRejectionMaps",     this.generateRejectionMaps );
 
    Parameters.set( "optimizeDarks",             this.optimizeDarks );
@@ -2433,4 +2443,4 @@ StackEngine.prototype.getPath = function( filePath, imageType )
 };
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-engine.js - Released 2015/10/30 18:51:47 UTC
+// EOF BatchPreprocessing-engine.js - Released 2016/09/01 15:47:44 UTC

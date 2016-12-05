@@ -2426,6 +2426,11 @@ function PhotometryEngine(w)
       console.writeln("Generating detected stars image");
       var width = window.mainView.image.width;
       var height = window.mainView.image.height;
+      if (width * height * 4 >= 2 * 1024 * 1024 * 1024)
+      {
+         console.warningln("Cannot draw the image: The size is too big");
+         return;
+      }
 
       var newid = window.mainView.fullId + suffix;
 
