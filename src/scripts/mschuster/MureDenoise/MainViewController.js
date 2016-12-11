@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainViewController.js - Released 2016/02/24 00:00:00 UTC
+// MainViewController.js - Released 2016/12/12 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.15
+// This file is part of MureDenoise Script Version 1.16
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -55,15 +55,24 @@ function MainController(model) {
    };
 
    this.setImageView = function(view) {
-      if (view.isView) {
+      if (view != null && view.isView) {
          model.imageView = view;
          this.view.imageViewList.currentView = model.imageView;
+         if (
+            model.flatfieldView != null &&
+            model.flatfieldView.isView &&
+            !this.checkFlatfieldView(true)
+         ) {
+            model.flatfieldView = null;
+            this.view.flatfieldViewList.currentView =
+               this.view.flatfieldViewListNull;
+         }
          this.enableControls();
          this.checkImageView();
       }
    };
 
-   this.checkImageView = function() {
+   this.checkImageView = function(silent = false) {
       var message = null;
       if (
          model.imageView != null &&
@@ -98,14 +107,16 @@ function MainController(model) {
          message = "<p><b>Warning</b>: The sizes of the image selected for " +
             "denoising and the flatfield must be equal.";
       }
-      if (message != null) {
+      if (message != null && !silent) {
          (new MessageBox(
             message, TITLE, StdIcon_Warning, StdButton_Ok
          )).execute();
       }
+
+      return message == null;
    };
 
-   this.checkFlatfieldView = function() {
+   this.checkFlatfieldView = function(silent = false) {
       var message = null;
       if (
          model.flatfieldView != null &&
@@ -140,11 +151,13 @@ function MainController(model) {
          message = "<p><b>Warning</b>: The sizes of the image selected for " +
             "denoising and the flatfield must be equal.";
       }
-      if (message != null) {
+      if (message != null && !silent) {
          (new MessageBox(
             message, TITLE, StdIcon_Warning, StdButton_Ok
          )).execute();
       }
+
+      return message == null;
    };
 
    this.execute = function() {
@@ -165,6 +178,13 @@ function MainController(model) {
       this.view.imageInterpolationMethodComboBox.currentItem =
          model.imageInterpolationMethod;
 
+      model.darkfieldCombinationCount =
+         model.darkfieldCombinationCountDefault;
+      this.view.darkfieldCombinationCountEdit.text = format(
+         model.darkfieldCombinationCountFormat,
+         model.darkfieldCombinationCount
+      );
+
       model.flatfieldView = null;
       this.view.flatfieldViewList.currentView = this.view.flatfieldViewListNull;
 
@@ -184,6 +204,9 @@ function MainController(model) {
          model.detectorOffset
       );
 
+      model.denoiseMethod = model.denoiseMethodDefault;
+      this.view.denoiseMethodComboBox.currentItem =
+         model.denoiseMethod;
       model.denoiseVarianceScale = model.denoiseVarianceScaleDefault;
       this.view.denoiseVarianceScaleEdit.text = format(
          model.denoiseVarianceScaleFormat,
@@ -207,12 +230,15 @@ function MainController(model) {
       this.view.imageCombinationCountEdit.enabled = false;
       this.view.imageInterpolationMethodComboBox.enabled = false;
 
+      this.view.darkfieldCombinationCountEdit.enabled = false;
+
       this.view.flatfieldViewList.enabled = false;
 
       this.view.detectorGainEdit.enabled = false;
       this.view.detectorGaussianNoiseEdit.enabled = false;
       this.view.detectorOffsetEdit.enabled = false;
 
+      this.view.denoiseMethodComboBox.enabled = false;
       this.view.denoiseVarianceScaleEdit.enabled = false;
       this.view.loadVarianceScaleButton.enabled = false;
       this.view.denoiseCycleSpinCountEdit.enabled = false;
@@ -232,12 +258,16 @@ function MainController(model) {
       this.view.imageInterpolationMethodComboBox.enabled =
          model.imageCombinationCount != 1;
 
+      this.view.darkfieldCombinationCountEdit.enabled =
+         model.denoiseMethod != model.denoiseMethodLate2016;
+
       this.view.flatfieldViewList.enabled = true;
 
       this.view.detectorGainEdit.enabled = true;
       this.view.detectorGaussianNoiseEdit.enabled = true;
       this.view.detectorOffsetEdit.enabled = true;
 
+      this.view.denoiseMethodComboBox.enabled = true;
       this.view.denoiseVarianceScaleEdit.enabled = true;
       this.view.loadVarianceScaleButton.enabled = true;
       this.view.denoiseCycleSpinCountEdit.enabled = true;
@@ -292,6 +322,16 @@ function MainController(model) {
       this.enableControls();
    };
 
+   this.darkfieldCombinationCountOnTextUpdated = function(text) {
+      model.darkfieldCombinationCount = model.defaultNumeric(
+         parseInt(text),
+         model.darkfieldCombinationCountMinimum,
+         model.darkfieldCombinationCountMaximum,
+         model.darkfieldCombinationCountDefault
+      );
+      this.enableControls();
+   };
+
    this.flatfieldViewOnViewSelected = function(view) {
       model.flatfieldView = view;
       this.enableControls();
@@ -325,6 +365,11 @@ function MainController(model) {
          model.detectorOffsetMaximum,
          model.detectorOffsetDefault
       );
+      this.enableControls();
+   };
+
+   this.denoiseMethodOnItemSelected = function(item) {
+      model.denoiseMethod = item;
       this.enableControls();
    };
 
@@ -406,7 +451,8 @@ function MainController(model) {
             }
             if (
                weightingMode != null &&
-               weightingMode != "noise evaluation"
+               weightingMode != "noise evaluation" &&
+               weightingMode.search("custom keyword") < 0
             ) {
                for (var i = 0; i != imageCombinationCount; ++i) {
                   weights[i] = 1;
@@ -516,6 +562,12 @@ function MainController(model) {
          ));
       }
 
+      console.writeln(format(
+         "Darkfield combination count: " +
+         model.darkfieldCombinationCountFormat,
+         model.darkfieldCombinationCount
+      ));
+
       if (model.flatfieldView != null && model.flatfieldView.isView) {
          console.writeln(format(
             "Flatfield: " + model.flatfieldViewFormat,
@@ -540,6 +592,11 @@ function MainController(model) {
       ));
 
       console.writeln(format(
+         "Denoise method: " +
+         model.denoiseMethodFormat,
+         model.denoiseMethodNames[model.denoiseMethod]
+      ));
+      console.writeln(format(
          "Denoise variance scale: " + model.denoiseVarianceScaleFormat,
          model.denoiseVarianceScale
       ));
@@ -561,7 +618,7 @@ function MainController(model) {
       console.show();
       if (false) {
          console.writeln();
-         console.writeln("FrameMatrix count: ", globalFrameMatrixCount);
+         console.warningln("FrameMatrix count: ", globalFrameMatrixCount);
       }
       console.flush();
 
@@ -596,7 +653,7 @@ function MainController(model) {
 
       if (false) {
          console.writeln();
-         console.writeln("FrameMatrix count: ", globalFrameMatrixCount);
+         console.warningln("FrameMatrix count: ", globalFrameMatrixCount);
       }
       console.flush();
       console.hide();
@@ -685,11 +742,14 @@ function MainView(model, controller) {
       return buttonPane;
    };
 
-   this.addViewList = function(pane, onViewSelected) {
+   this.addViewList = function(pane, view, onViewSelected) {
       var viewList = new ViewList(this);
       pane.add(viewList);
 
       viewList.getAll();
+      if (view != null && view.isView) {
+         viewList.currentView = view;
+      }
       viewList.onViewSelected = onViewSelected;
 
       return viewList;
@@ -812,6 +872,7 @@ function MainView(model, controller) {
 
          this.imageViewList = this.addViewList(
             this.imageViewPane,
+            null,
             function(view) {
                controller.imageViewOnViewSelected(view);
             }
@@ -909,6 +970,74 @@ function MainView(model, controller) {
    }
 
    {
+      this.biasDarkfieldGroupBox = this.addGroupBox("Darkfield");
+
+      {
+         this.darkfieldCombinationCountPane =
+            this.addPane(this.biasDarkfieldGroupBox);
+
+         this.darkfieldCombinationCountLabel = this.addLabel(
+            this.darkfieldCombinationCountPane,
+            "Combination count:",
+
+            "<p>The average combination count of the darkfield calibration " +
+            "image used for image bias or dark-subtraction.</p>" +
+
+            "<p>Combination count must be set to 0 for images that have not " +
+            "been bias or dark-subtracted.</p>" +
+
+            "<p>If the image has been bias-subtracted with a bias master, " +
+            "set combination count to that of the bias master. If the image " +
+            "has been dark-subtracted with a dark master, set combination " +
+            "count to that of the dark master. If the image has been " +
+            "dark-subtracted with dark frame optimization, set combination " +
+            "count to that of the dark master, and not of the bias " +
+            "master.</p>" +
+
+            "<p>Darkfield noise modeling improves denoising quality when " +
+            "darkfield noise is buried by neither shot-noise in the sky " +
+            "background nor detector Gaussian noise in the image.</p>" +
+
+            "<p>Rule of thumb. An uncalibrated frame may be considered sky " +
+            "background noise limited if the sky background exposure in DN " +
+            "is no less than 9 &alpha; &sigma;^2 + &delta;, where &alpha; " +
+            "is detector gain in e-/DN, &sigma; is detector standard " +
+            "deviation of detector additive white Gaussian noise in DN, and " +
+            "&delta; is detector offset in DN.</p>" +
+
+            "<p>Rule of thumb. Darkfield noise may be considered buried by " +
+            "detector Gaussian noise in the image if darkfield combination " +
+            "count is no less than image combination count.</p>"
+         );
+
+         this.darkfieldCombinationCountEdit = this.addEdit(
+            this.darkfieldCombinationCountPane,
+            format(
+               model.darkfieldCombinationCountFormat,
+               model.darkfieldCombinationCount
+            ),
+            this.darkfieldCombinationCountLabel.toolTip,
+            function(text) {
+               controller.darkfieldCombinationCountOnTextUpdated(text);
+            },
+            function() {
+               this.text = format(
+                  model.darkfieldCombinationCountFormat,
+                  model.darkfieldCombinationCount
+               );
+            }
+         );
+
+         this.darkfieldCombinationCountUnits = this.addUnits(
+            this.darkfieldCombinationCountPane,
+            model.darkfieldCombinationCountUnits
+         );
+
+         this.darkfieldCombinationCountPane.addStretch();
+      }
+   }
+
+   {
       this.flatfieldGroupBox = this.addGroupBox("Flatfield");
 
       {
@@ -916,11 +1045,12 @@ function MainView(model, controller) {
 
          this.flatfieldViewList = this.addViewList(
             this.flatfieldViewPane,
+            model.flatfieldView,
             function(view) {
                controller.flatfieldViewOnViewSelected(view);
             }
          );
-         this.flatfieldViewListNull = this.flatfieldViewList.currentView;
+         this.flatfieldViewListNull = View.viewById("");
 
          this.flatfieldViewHelpButton = this.addToolButton(
             this.flatfieldViewPane,
@@ -933,7 +1063,12 @@ function MainView(model, controller) {
             "<p>Flatfield compensation is useful for telescopes with more " +
             "than ~10% optical vignetting. For telescopes with less " +
             "vignetting, flatfield compensation results in negligible " +
-            "denoising quality improvement.</p>",
+            "denoising quality improvement.</p>" +
+
+            "<p>The standard deviation of the smoothed flatfield is written " +
+            "to the process console as the Flatfield scale value. The value " +
+            "is normalized as a percentage of the mean of the smoothed " +
+            "flatfield.</p>",
             function() {}
          );
       }
@@ -1071,6 +1206,30 @@ function MainView(model, controller) {
       this.denoiseGroupBox = this.addGroupBox("Denoise");
 
       {
+         this.denoiseMethodPane = this.addPane(this.denoiseGroupBox);
+
+         this.denoiseMethodLabel = this.addLabel(
+            this.denoiseMethodPane,
+            "Denoise method:",
+            "<p>Specifies the denoise method, either the current method " +
+            "or a legacy method identified by prior date and script " +
+            "version.</p>"
+        );
+
+         this.denoiseMethodComboBox = this.addComboBox(
+            this.denoiseMethodPane,
+            model.denoiseMethodNames,
+            model.denoiseMethod,
+            this.denoiseMethodLabel.toolTip,
+            function(item) {
+               controller.denoiseMethodOnItemSelected(item)
+            }
+         );
+
+         this.denoiseMethodPane.addStretch();
+      }
+
+      {
          this.denoiseVarianceScalePane = this.addPane(this.denoiseGroupBox);
 
          this.denoiseVarianceScaleLabel = this.addLabel(
@@ -1120,7 +1279,11 @@ function MainView(model, controller) {
             this.denoiseVarianceScalePane,
             "Load variance scale...",
             "<p>Loads the variance scale and combination count from " +
-            "information in an <i>ImageIntegration</i> process log file.</p>" +
+            "information in an <i>ImageIntegration</i> process log file. " +
+            "Provides support for the Output normalization options Additive " +
+            "with scaling and No normalization, and the Weights options " +
+            "Noise evaluation, FITS keyword, and Don't care (all weights = " +
+            "1).</p>" +
 
             "<p>The log file is a manually created .txt file containing a " +
             "copy of the Process Console log generated by the " +
@@ -1191,7 +1354,10 @@ function MainView(model, controller) {
             "hypothesis noise statistics, and is strongly signal dependent " +
             "due to the presence of Poisson noise. Method noise departs " +
             "from hypothesis noise statistics in areas where image gradient " +
-            "magnitude exceeds the noise level significantly.</p>",
+            "magnitude exceeds the noise level significantly.</p>" +
+
+            "<p>The standard deviation of the method noise image is written " +
+            "to the process console as the Method noise value in DN units.</p>",
             model.generateMethodNoiseImage,
             function(checked) {
                controller.generateMethodNoiseImageOnCheck(checked);
@@ -1329,4 +1495,4 @@ function MainView(model, controller) {
 MainView.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF MainViewController.js - Released 2016/02/24 00:00:00 UTC
+// EOF MainViewController.js - Released 2016/12/12 00:00:00 UTC

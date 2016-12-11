@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MureEstimator.js - Released 2016/02/24 00:00:00 UTC
+// MureEstimator.js - Released 2016/12/12 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.15
+// This file is part of MureDenoise Script Version 1.16
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -375,7 +375,12 @@ function MureEstimator(model, view) {
    this.denoiseImage = function(
       image, gaussianNoise, levelsOfRefinement, level, locations
    ) {
-      var imageDecompose = image.unnormalizedHaarDecompose();
+      var noiseScale =
+         1 / Math.sqrt(model.subbandVarianceScalingRatio(level));
+
+      var imageScaled = image.multiplyScalar(noiseScale);
+      var imageDecompose = imageScaled.unnormalizedHaarDecompose();
+      imageScaled.clear();
       view.throwAbort();
 
       var s = imageDecompose[0];
@@ -391,14 +396,26 @@ function MureEstimator(model, view) {
          var dp = hp.filterColumns([-1, 0, 1]);
          view.throwAbort();
 
-         var vat = this.alphaThresholds(v1, c1, vp, 2 * gaussianNoise);
-         var hat = this.alphaThresholds(h1, c1, hp, 2 * gaussianNoise);
-         var dat = this.alphaThresholds(d1, c1, dp, 2 * gaussianNoise);
+         var vat = this.alphaThresholds(
+            v1, c1, vp, 2 * noiseScale * gaussianNoise
+            );
+         var hat = this.alphaThresholds(
+            h1, c1, hp, 2 * noiseScale * gaussianNoise
+            );
+         var dat = this.alphaThresholds(
+            d1, c1, dp, 2 * noiseScale * gaussianNoise
+            );
          view.throwAbort();
 
-         var vbt = this.betaThresholds(v1, c1, vp, 2 * gaussianNoise);
-         var hbt = this.betaThresholds(h1, c1, hp, 2 * gaussianNoise);
-         var dbt = this.betaThresholds(d1, c1, dp, 2 * gaussianNoise);
+         var vbt = this.betaThresholds(
+            v1, c1, vp, 2 * noiseScale * gaussianNoise
+            );
+         var hbt = this.betaThresholds(
+            h1, c1, hp, 2 * noiseScale * gaussianNoise
+            );
+         var dbt = this.betaThresholds(
+            d1, c1, dp, 2 * noiseScale * gaussianNoise
+            );
          view.throwAbort();
       }
 
@@ -469,7 +486,7 @@ function MureEstimator(model, view) {
          else {
             var c2 = this.denoiseImage(
                c1,
-               2 * gaussianNoise,
+               2 * noiseScale * gaussianNoise,
                levelsOfRefinement,
                level + 1,
                locations
@@ -500,7 +517,7 @@ function MureEstimator(model, view) {
                vp,
                hp,
                dp,
-               2 * gaussianNoise
+               2 * noiseScale * gaussianNoise
             );
          }
 
@@ -525,7 +542,10 @@ function MureEstimator(model, view) {
          s.clear();
       }
 
-      return reconstruct;
+      var reconstructDescaled = reconstruct.multiplyScalar(1 / noiseScale);
+      reconstruct.clear();
+
+      return reconstructDescaled;
    };
 
    // Performs one cycle-spin of denoising.
@@ -827,4 +847,4 @@ function MureEstimator(model, view) {
 };
 
 // ****************************************************************************
-// EOF MureEstimator.js - Released 2016/02/24 00:00:00 UTC
+// EOF MureEstimator.js - Released 2016/12/12 00:00:00 UTC

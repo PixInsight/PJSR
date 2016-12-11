@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2016/02/24 00:00:00 UTC
+// MainModel.js - Released 2016/12/12 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.15
+// This file is part of MureDenoise Script Version 1.16
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -85,29 +85,72 @@ function MainModel() {
       "Lanczos-4"
    ];
 
-   // Interpolation method covariance scales.
-   this.imageInterpolationMethodCovarianceScales = [
-      1,           // Nearest Neighbor
-      4 / 9,       // Bilinear
-      3249 / 4900, // Bicubic Spline
-      0.798660,    // Lanczos-3
-      0.835437     // Lanczos-4
+   // Subband variance scalings.
+   this.subbandVarianceScalings = [
+      // Nearest Neighbor
+         [1, 4, 16, 64, 256, 1024],
+      // Bilinear
+         [4 / 9, 2.78632, 13.4632, 58.8079, 245.504, 1002.73],
+      // Bicubic Spline
+         [3249 / 4900, 3.5393, 15.0356, 62.0577, 252.053, 1016.59],
+      // Lanczos-3
+         [0.798660, 3.94876, 15.6062, 63.217, 254.434, 1020.38],
+      // Lanczos-4
+         [0.835437, 3.93833, 15.6542, 63.2285, 254.462, 1021.0]
    ];
 
-   // Base variance scaling function.
-   this.baseVarianceScale = function() {
-      return this.denoiseVarianceScale / this.imageCombinationCount;
+   // Base gain variance scaling function.
+   this.baseGainVarianceScale = function() {
+      return this.denoiseVarianceScale;
    };
 
-   // Base covariance scaling function.
-   this.baseCovarianceScale = function() {
-      var r = this.imageInterpolationMethodCovarianceScales[
+   // Base Gaussian noise variance scaling function.
+   this.baseGaussianNoiseVarianceScale = function() {
+      if (
+         this.darkfieldCombinationCount == 0 ||
+         this.denoiseMethod == this.denoiseMethodLate2016
+      ) {
+         return this.denoiseVarianceScale / this.imageCombinationCount;
+      }
+
+      return this.denoiseVarianceScale / (
+         (this.imageCombinationCount * this.darkfieldCombinationCount) /
+         (this.imageCombinationCount + this.darkfieldCombinationCount)
+      );
+   };
+
+   // Base subband variance scaling.
+   this.baseSubbandVarianceScaling = function() {
+      var r = this.subbandVarianceScalings[
          this.imageInterpolationMethod
-      ];
+      ][0];
       var n = this.imageCombinationCount;
 
       return (1 + (n - 1) * r) / n;
    };
+
+   // Subband variance scaling ratio.
+   this.subbandVarianceScalingRatio = function(level) {
+      if (this.denoiseMethod == this.denoiseMethodLate2016) {
+         return 1;
+      }
+
+      var q0 = this.subbandVarianceScalings[
+         0
+      ][level - 1];
+      var q1 = this.subbandVarianceScalings[
+         0
+      ][level];
+      var r0 = this.subbandVarianceScalings[
+         this.imageInterpolationMethod
+      ][level - 1];
+      var r1 = this.subbandVarianceScalings[
+         this.imageInterpolationMethod
+      ][level];
+      var n = this.imageCombinationCount;
+
+      return (q1 + (n - 1) * r1) / (q0 + (n - 1) * r0) / 4;
+   }
 
    // Interpolation method of the combination.
    this.imageInterpolationMethodMinimum = 0;
@@ -117,6 +160,15 @@ function MainModel() {
    this.imageInterpolationMethodFormat = "%s";
    this.imageInterpolationMethodUnits = "";
    this.imageInterpolationMethod = this.imageInterpolationMethodDefault;
+
+   // Combination count of the darkfield.
+   this.darkfieldCombinationCountMinimum = 0;
+   this.darkfieldCombinationCountMaximum = 10000;
+   this.darkfieldCombinationCountDefault = 0;
+   this.darkfieldCombinationCountFormat = "%d";
+   this.darkfieldCombinationCountUnits = "";
+   this.darkfieldCombinationCount =
+      this.darkfieldCombinationCountDefault;
 
    // Gain of the detector in e-/DN.
    this.detectorGainMinimum = 0;
@@ -128,8 +180,21 @@ function MainModel() {
 
    // Base gain.
    this.baseGain = function() {
-      return this.detectorGain /
-         (this.baseVarianceScale() * this.baseCovarianceScale());
+      if (this.denoiseMethod == this.denoiseMethodLate2016) {
+         // Note: the lack of Math.sqrt on the variance product is a bug.
+         // Note: this bug is maintained for legacy compatibility reasons.
+         return this.detectorGain * this.imageCombinationCount /
+            (
+               this.baseGainVarianceScale() *
+               this.baseSubbandVarianceScaling()
+            );
+      }
+
+      return this.detectorGain * this.imageCombinationCount /
+         Math.sqrt(
+            this.baseGainVarianceScale() *
+            this.baseSubbandVarianceScaling()
+         );
    };
 
    // Standard deviation of additive white Gaussian noise of the detector in
@@ -144,7 +209,10 @@ function MainModel() {
    // Base standard deviation of additive white Gaussian noise.
    this.baseGaussianNoise = function() {
       return this.detectorGaussianNoise *
-         Math.sqrt(this.baseVarianceScale() * this.baseCovarianceScale());
+         Math.sqrt(
+            this.baseGaussianNoiseVarianceScale() *
+            this.baseSubbandVarianceScaling()
+         );
    };
 
    // Offset of the detector in DN.
@@ -159,6 +227,23 @@ function MainModel() {
    this.baseOffset = function() {
       return this.detectorOffset;
    };
+
+   // Denoise method names.
+   this.denoiseMethodNames = [
+      "Current",
+      "Legacy late 2016 (Version 1.15)"
+   ];
+   this.denoiseMethodCurrent = 0;
+   this.denoiseMethodLate2016 = 1;
+
+   // Denoise method.
+   this.denoiseMethodMinimum = 0;
+   this.denoiseMethodMaximum =
+      this.denoiseMethodNames.length - 1;
+   this.denoiseMethodDefault = 0;
+   this.denoiseMethodFormat = "%s";
+   this.denoiseMethodUnits = "";
+   this.denoiseMethod = this.denoiseMethodDefault;
 
    // Denoise variance scale.
    this.denoiseVarianceScaleMinimum = 0.1;
@@ -195,8 +280,18 @@ function MainModel() {
       return bool != null && (bool == false || bool == true) ? bool : def;
    };
 
+   // Gives string if well defined, otherwise a default.
+   this.defaultString = function(str, def) {
+      return str != null ? str : def;
+   }
+
    // Loads core settings.
    this.loadSettings = function() {
+      this.flatfieldView = View.viewById(this.defaultString(
+         Settings.read("flatfieldView", DataType_String8),
+         ""
+      ));
+
       this.imageCombinationCount = this.defaultNumeric(
          Settings.read("imageCombinationCount", DataType_Int32),
          this.imageCombinationCountMinimum,
@@ -208,6 +303,13 @@ function MainModel() {
          this.imageInterpolationMethodMinimum,
          this.imageInterpolationMethodMaximum,
          this.imageInterpolationMethodDefault
+      );
+
+      this.darkfieldCombinationCount = this.defaultNumeric(
+         Settings.read("darkfieldCombinationCount", DataType_Int32),
+         this.darkfieldCombinationCountMinimum,
+         this.darkfieldCombinationCountMaximum,
+         this.darkfieldCombinationCountDefault
       );
 
       this.detectorGain = this.defaultNumeric(
@@ -229,6 +331,12 @@ function MainModel() {
          this.detectorOffsetDefault
       );
 
+      this.denoiseMethod = this.defaultNumeric(
+         Settings.read("denoiseMethod", DataType_Int32),
+         this.denoiseMethodMinimum,
+         this.denoiseMethodMaximum,
+         this.denoiseMethodDefault
+      );
       this.denoiseVarianceScale = this.defaultNumeric(
          Settings.read("denoiseVarianceScale", DataType_Real32),
          this.denoiseVarianceScaleMinimum,
@@ -250,6 +358,13 @@ function MainModel() {
    // Stores core settings.
    this.storeSettings = function() {
       Settings.write(
+         "flatfieldView",
+         DataType_String8,
+         this.flatfieldView != null && this.flatfieldView.isView ?
+            this.flatfieldView.fullId :
+            ""
+      );
+      Settings.write(
          "imageCombinationCount",
          DataType_Int32,
          this.imageCombinationCount
@@ -258,6 +373,12 @@ function MainModel() {
          "imageInterpolationMethod",
          DataType_Int32,
          this.imageInterpolationMethod
+      );
+
+      Settings.write(
+         "darkfieldCombinationCount",
+         DataType_Int32,
+         this.darkfieldCombinationCount
       );
 
       Settings.write(
@@ -277,6 +398,11 @@ function MainModel() {
       );
 
       Settings.write(
+         "denoiseMethod",
+         DataType_Int32,
+         this.denoiseMethod
+      );
+      Settings.write(
          "denoiseVarianceScale",
          DataType_Real32,
          this.denoiseVarianceScale
@@ -295,6 +421,13 @@ function MainModel() {
 
    // Loads instance parameters.
    this.loadParameters = function() {
+      if (Parameters.has("flatfieldView")) {
+         this.flatfieldView = View.viewById(this.defaultString(
+            Parameters.getString("flatfieldView"),
+            ""
+         ));
+      }
+
       if (Parameters.has("imageCombinationCount")) {
          this.imageCombinationCount = this.defaultNumeric(
             Parameters.getInteger("imageCombinationCount"),
@@ -309,6 +442,15 @@ function MainModel() {
             this.imageInterpolationMethodMinimum,
             this.imageInterpolationMethodMaximum,
             this.imageInterpolationMethodDefault
+         );
+      }
+
+      if (Parameters.has("darkfieldCombinationCount")) {
+         this.darkfieldCombinationCount = this.defaultNumeric(
+            Parameters.getInteger("darkfieldCombinationCount"),
+            this.darkfieldCombinationCountMinimum,
+            this.darkfieldCombinationCountMaximum,
+            this.darkfieldCombinationCountDefault
          );
       }
 
@@ -337,6 +479,14 @@ function MainModel() {
          );
       }
 
+      if (Parameters.has("denoiseMethod")) {
+         this.denoiseMethod = this.defaultNumeric(
+            Parameters.getInteger("denoiseMethod"),
+            this.denoiseMethodMinimum,
+            this.denoiseMethodMaximum,
+            this.denoiseMethodDefault
+         );
+      }
       if (Parameters.has("denoiseVarianceScale")) {
          this.denoiseVarianceScale = this.defaultNumeric(
             Parameters.getReal("denoiseVarianceScale"),
@@ -367,15 +517,29 @@ function MainModel() {
 
       Parameters.set("version", VERSION);
 
+      Parameters.set(
+         "flatfieldView",
+         this.flatfieldView != null && this.flatfieldView.isView ?
+            this.flatfieldView.fullId :
+            ""
+      );
+
       Parameters.set("imageCombinationCount", this.imageCombinationCount);
       Parameters.set(
          "imageInterpolationMethod", this.imageInterpolationMethod
+      );
+
+      Parameters.set(
+         "darkfieldCombinationCount", this.darkfieldCombinationCount
       );
 
       Parameters.set("detectorGain", this.detectorGain);
       Parameters.set("detectorGaussianNoise", this.detectorGaussianNoise);
       Parameters.set("detectorOffset", this.detectorOffset);
 
+      Parameters.set(
+         "denoiseMethod", this.denoiseMethod
+      );
       Parameters.set("denoiseVarianceScale", this.denoiseVarianceScale);
       Parameters.set("denoiseCycleSpinCount", this.denoiseCycleSpinCount);
       Parameters.set(
@@ -391,4 +555,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2016/02/24 00:00:00 UTC
+// EOF MainModel.js - Released 2016/12/12 00:00:00 UTC
