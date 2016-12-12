@@ -3,25 +3,6 @@ MureDenoise Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
-2016.12.12 - Version 1.16
-
-- Added darkfield noise modeling.
-
-- Added correlation locality modeling.
-
-- Added darkfield combination count parameter.
-
-- Added denoise method parameter.
-
-- Fixed variance scale parameter bug.
-
-- Added flatfield parameter save and restore.
-
-- Added support for ImageIntegration Weights option FITS keyword.
-
-- Improved documentation and tooltips.
-
--------------------------------------------------------------------------------
 2016.02.24 - Version 1.15
 
 - Modified Load variance scale button to load Combination count in addition to
