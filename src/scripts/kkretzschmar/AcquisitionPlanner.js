@@ -46,6 +46,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // ----------------------------------------------------------------------------
 
+/*
+ * TODO
+ *  - load solver parameters (aperture, focal length) from INDI client
+ *  - add coordinate search dialog to target list
+ *  - redesign mount parametes
+ *  - add synch action
+ */
+
+
 #feature-id    Batch Processing > BatchFrameAcquisition
 
 #feature-info  An acquisition planner utility.
@@ -54,18 +63,73 @@
 #include <pjsr/Sizer.jsh>
 #include <pjsr/DataType.jsh>
 #include <pjsr/TextAlign.jsh>
+#include <pjsr/UndoFlag.jsh>
 //#include <pjsr/NumericControl.jsh>
 
 #define USE_SOLVER_LIBRARY true
-
+#define SETTINGS_MODULE "ACQUISITION"
+#define STAR_CSV_FILE   File.systemTempDirectory + "/stars.csv"
+#define TITLE "Batch Frame Acquisition"
+#include "../AdP/WCSmetadata.jsh"
+#include "../AdP/AstronomicalCatalogs.jsh"
+#include "../AdP/CommonUIControls.js"
 #include "../AdP/ImageSolver.js"
+#include "../AdP/SearchCoordinatesDialog.js"
 
 
 #include "CoordUtils.jsh"
 #include "INDI-helper.jsh"
 
 #define VERSION "0.1.0"
-#define TITLE   "BatchFrameAcquisition"
+
+
+
+
+function ContinueDialog()
+{
+   this.__base__ = Dialog;
+   this.__base__();
+
+   this.continue_Label = new Label( this );
+   this.continue_Label.text = "Continue ?";
+   this.continue_Label.textAlignment = TextAlign_Center|TextAlign_VertCenter;
+
+   this.ok_Button = new PushButton( this );
+   this.ok_Button.text = "OK";
+   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
+   this.ok_Button.onClick = function()
+   {
+      this.dialog.ok();
+   };
+
+   this.cancel_Button = new PushButton( this );
+   this.cancel_Button.text = "Cancel";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
+   this.cancel_Button.onClick = function()
+   {
+      this.dialog.cancel();
+   };
+
+   this.buttons_Sizer = new HorizontalSizer;
+   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.addStretch();
+   this.buttons_Sizer.add( this.ok_Button );
+   this.buttons_Sizer.add( this.cancel_Button );
+
+   this.sizer = new VerticalSizer;
+   this.sizer.margin = 8;
+   this.sizer.spacing = 8;
+   this.sizer.add( this.continue_Label );
+   this.sizer.add( this.buttons_Sizer );
+
+
+   this.windowTitle = "Continue processing";
+   this.userResizable = true;
+   this.adjustToContents();
+}
+
+// Our dialog inherits all properties and methods from the core Dialog object.
+ContinueDialog.prototype = new Dialog;
 
 /*
  * Batch Format Conversion engine
@@ -76,10 +140,13 @@ function BatchFrameAcquisitionEngine()
 
    this.timer = new ElapsedTime;
 
-   this.mountDevice       = "";
-   this.ccdDevice         = "";
-   this.filterWheelDevice = "";
-   this.focuserDevice     = "";
+   this.continueDialog = new ContinueDialog;
+
+   this.mountDevice          = "";
+   this.ccdDevice            = "";
+   this.filterWheelDevice    = "";
+   this.extFilterWheelDevice = ""; // external filter wheel device
+   this.focuserDevice        = "";
 
    // mount parameters
    this.center             = false;
@@ -104,6 +171,7 @@ function BatchFrameAcquisitionEngine()
    this.overwriteClientFiles = false;
    this.serverDownloadDir    = "";
    this.serverFileTemplate   = "";
+   this.uploadMode           = 0;
 
 
    // target list
@@ -137,7 +205,12 @@ function BatchFrameAcquisitionEngine()
 
    this.supportsFilter = function()
    {
-      return this.filterWheelDevice != "";
+      return this.filterWheelDevice != "" || this.extFilterWheelDevice != "";
+   }
+
+   this.getFilterWheelDeviceName = function ()
+   {
+      return (this.extFilterWheelDevice != "" ) ? this.extFilterWheelDevice : this.filterWheelDevice;
    }
 
    this.print = function ()
@@ -146,7 +219,7 @@ function BatchFrameAcquisitionEngine()
       console.noteln("INDI devices:");
       console.writeln("Mount device:         " + this.mountDevice);
       console.writeln("Camera device:        " + this.ccdDevice);
-      console.writeln("Filter device:        " + this.filterWheelDevice);
+      console.writeln("Filter device:        " + this.getFilterWheelDeviceName());
       console.writeln("Focus device:         " + this.focuserDevice);
       console.writeln("------------------------------------------------");
       console.noteln("Mount parameters:");
@@ -163,7 +236,7 @@ function BatchFrameAcquisitionEngine()
       console.noteln("Filter wheel parameters:");
       console.write(  "Filter:               ");
       for (var i = 0; i < this.filterKeys.length; ++i){
-         console.write(this.filterKeys[i] + ", ");
+         console.write(this.filterKeys[i] + "("+  this.filterDict[this.filterKeys[i]]+  ")" + ", ");
       }
       console.writeln(" ");
       console.writeln("------------------------------------------------");
@@ -199,6 +272,33 @@ function BatchFrameAcquisitionEngine()
       return this.worklist;
    }
 
+   this.centerImage = function (window,mountController)
+   {
+
+      var solver = new ImageSolver();
+
+      solver.Init(window);
+      solver.solverCfg.showStars = false;
+      solver.solverCfg.showDistortion = false;
+      solver.solverCfg.generateErrorImg = false;
+
+      if (solver.SolveImage(window))
+      {
+         // Print result
+         console.writeln("===============================================================================");
+         solver.metadata.Print();
+         console.writeln("===============================================================================");
+
+         // center object
+         if (!mountController.executeOn(window.mainView)){
+            return false;
+         }
+         return true;
+      } else {
+         return false;
+      }
+   }
+
    this.startProcessing = function (treeBox)
    {
       // configure mount controller
@@ -207,6 +307,12 @@ function BatchFrameAcquisitionEngine()
       mountController.computeApparentPosition   = this.computeApparentPos;
       mountController.enableAlignmentCorrection = this.align;
       mountController.alignmentModelFile        = this.alignModelFile;
+      if (this.alignModelFile!=""){
+         mountController.alignmentConfig = 127;
+      }
+      // unpark mount
+      mountController.Command                   = 0; // Unpark
+      mountController.executeGlobal();
       mountController.Command                   = 10; // Goto
 
       // configure camera controller
@@ -220,8 +326,10 @@ function BatchFrameAcquisitionEngine()
       cameraController.serverUploadDirectory     = this.serverDownloadDir;
       cameraController.clientFileNameTemplate    = this.clientFileTemplate;
       cameraController.clientOutputFormatHints   = this.clientOutputHints;
+      cameraController.uploadMode                = this.uploadMode;
 
       // loop worklist items
+      var previousTarget = "";
       for (var i = 0 ; i < this.worklist.length ; ++i){
          var node = treeBox.child(i);
          node.setIcon(5,":/bullets/bullet-ball-glass-yellow.png");
@@ -229,10 +337,18 @@ function BatchFrameAcquisitionEngine()
          mountController.targetRA  = this.worklist[i].ra;
          mountController.targetDec = this.worklist[i].dec;
          console.writeln(format("Moving to target %s", this.worklist[i].targetName));
-         if (!mountController.executeGlobal()){
+
+         var doMove = false;//previousTarget!=this.worklist[i].targetName;
+         if (doMove  && !this.continueDialog.execute()){
+            break;
+         }
+
+         if (doMove && !mountController.executeGlobal()){
             node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
             break;
          }
+
+
          // start frame acquisition
          cameraController.objectName          = this.worklist[i].targetName;
          cameraController.binningX            = this.worklist[i].binningX;
@@ -240,17 +356,53 @@ function BatchFrameAcquisitionEngine()
          cameraController.exposureTime        = this.worklist[i].expTime;
          cameraController.exposureCount       = this.worklist[i].numOfFrames;
          cameraController.newImageIdTemplate  = format("%s_",this.worklist[i].targetName);
-         cameraController.clientFileNameTemplate = format("%s_%s",this.worklist[i].targetName,cameraController.clientFileNameTemplate);
-         cameraController.serverFileNameTemplate = format("%s_%s",this.worklist[i].targetName,cameraController.serverFileNameTemplate);
+         cameraController.clientFileNameTemplate = format("%s_%s",this.worklist[i].targetName,this.clientFileTemplate);
+         cameraController.serverFileNameTemplate = format("%s_%s",this.worklist[i].targetName,this.serverFileTemplate);
          if (this.supportsFilter()){
-            cameraController.filterSlot          = this.worklist[i].filterID;
-            cameraController.newImageIdTemplate  = format("%s_%s_",this.worklist[i].targetName,this.worklist[i].filterName);
+            cameraController.externalFilterWheelDeviceName = this.extFilterWheelDevice;
+            cameraController.filterSlot                    = this.worklist[i].filterID;
+            cameraController.newImageIdTemplate            = format("%s_%s_",this.worklist[i].targetName,this.worklist[i].filterName);
+            cameraController.clientFileNameTemplate        = format("%s_%s_%s",this.worklist[i].targetName,this.worklist[i].filterName,this.clientFileTemplate);
+            cameraController.serverFileNameTemplate        = format("%s_%s_%s",this.worklist[i].targetName,this.worklist[i].filterName,this.serverFileTemplate);
+         }
+         if (this.center){
+            cameraController.saveClientImages = false;
+            cameraController.openClientImages = true;
+            cameraController.uploadMode       = 0;
+            cameraController.exposureTime     = this.worklist[i].expTime / 10;
+            cameraController.exposureCount    = 1;
+            cameraController.binningX         = 2;
+            cameraController.binningY         = 2;
+
+            if (!cameraController.executeGlobal()){
+               node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
+               break;
+            }
+
+            var window = ImageWindow.activeWindow;
+            if (!this.centerImage(window,mountController)){
+               node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
+               //window.close();
+               break;
+            }
+
+            cameraController.saveClientImages = this.saveClientImages;
+            cameraController.openClientImages = this.openClientImages;
+            cameraController.uploadMode       = this.uploadMode;
+            cameraController.exposureTime     = this.worklist[i].expTime ;
+            cameraController.exposureCount    = this.worklist[i].numOfFrames;
+            cameraController.binningX         = this.worklist[i].binningX;
+            cameraController.binningY         = this.worklist[i].binningY;
+
+            //window.close();
          }
          if (!cameraController.executeGlobal()){
             node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
             break;
          }
+
          node.setIcon(5,":/bullets/bullet-ball-glass-green.png");
+         previousTarget = this.worklist[i].targetName;
       }
    }
 }
@@ -269,6 +421,41 @@ function MountParametersDialog(dialog)
    this.centering_Checkbox = new CheckBox(this);
    this.centering_Checkbox.text = "Center object"
    this.centering_Checkbox.toolTip = "<p>Enable centering of targets by applying differential alignment correction.</p>"
+
+   this.configSolver_Button = new PushButton(this);
+   this.configSolver_Button.text = "Configure solver";
+   this.configSolver_Button.toolTip = "<p>Opens the configuration dialog for the script ImageSolver</p>";
+   //this.configSolver_Button.enabled = this.centering_Checkbox.checked;
+   this.configSolver_Button.onClick = function ()
+   {
+      var solver = new ImageSolver();
+
+      do {
+         var solverWindow = null;
+         /*if (engine.useActive)
+            solverWindow = ImageWindow.activeWindow;
+         else if (engine.files != null && engine.files.length > 0)
+            solverWindow = ImageWindow.open(engine.files[0])[0];
+         if (solverWindow == null)
+            return new MessageBox("There is not any selected file or window", TITLE, StdIcon_Error, StdButton_Ok).execute();
+            */
+         solver.Init(solverWindow);
+         var dialog = new ImageSolverDialog(solver.solverCfg, solver.metadata, false);
+         var res = dialog.execute();
+         if (!res)
+         {
+            if (dialog.resetRequest)
+               solver = new ImageSolver();
+            else
+               return null;
+         }
+         solver.solverCfg.SaveSettings();
+         solver.metadata.SaveSettings();
+ /*        if (!engine.useActive)
+            solverWindow.close();*/
+      } while (!res);
+      return null;
+   };
 
    this.alignmentCorrection_Checkbox = new CheckBox(this);
    this.alignmentCorrection_Checkbox.text = "Telescope pointing alignment correction"
@@ -300,6 +487,12 @@ function MountParametersDialog(dialog)
       }
    }
 
+   this.centering_Sizer = new HorizontalSizer;
+   this.centering_Sizer.margin = 6;
+   this.centering_Sizer.spacing = 4;
+   this.centering_Sizer.add( this.centering_Checkbox );
+   this.centering_Sizer.add( this.configSolver_Button );
+
    this.alignmentModel_Sizer = new HorizontalSizer;
    this.alignmentModel_Sizer.margin = 6;
    this.alignmentModel_Sizer.spacing = 4;
@@ -313,7 +506,7 @@ function MountParametersDialog(dialog)
    this.mountParameters_GroupBox.sizer = new VerticalSizer;
    this.mountParameters_GroupBox.sizer.margin = 6;
    this.mountParameters_GroupBox.sizer.spacing = 4;
-   this.mountParameters_GroupBox.sizer.add( this.centering_Checkbox);
+   this.mountParameters_GroupBox.sizer.add( this.centering_Sizer);
    this.mountParameters_GroupBox.sizer.add( this.alignmentCorrection_Checkbox );
    this.mountParameters_GroupBox.sizer.add( this.computeApparentPos_Checkbox );
    this.mountParameters_GroupBox.sizer.add( this.alignmentModel_Sizer );
@@ -448,6 +641,18 @@ function CameraParametersDialog(dialog)
    this.uploadMode_ComboBox.addItem("Server only");
    this.uploadMode_ComboBox.addItem("Client and server");
    this.uploadMode_ComboBox.toolTip = "<p>...</p>";
+   this.uploadMode_ComboBox.onItemSelected = function ( index ) {
+
+      if ( index == 1 ) {
+         this.dialog.openImages_Checkbox.checked  = false;
+         this.dialog.client_GroupBox.enabled      = false;
+      } else {
+         this.dialog.client_GroupBox.enabled      = true;
+         this.dialog.openImages_Checkbox.checked  = true;
+      }
+
+   }
+   //
 
 //
 
@@ -873,10 +1078,72 @@ CameraParametersDialog.prototype = new Dialog;
 /*
  * Mount parameters dialog
  */
+
+function FilerNameDialog(dialog)
+{
+   this.__base__ = Dialog;
+   this.__base__();
+
+   var labelWidth = this.font.width( "Filter name" + 'T' );
+
+   this.filterName_Label = new Label( this );
+   this.filterName_Label.text = "Filter name";
+   this.filterName_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.filterName_Label.minWidth = labelWidth;
+   this.filterName_Label.toolTip = "<p>Specify a filter name.</p>";
+
+   this.filterName_Edit = new Edit(this);
+   this.filterName_Edit.toolTip = "<p>Specify a filter name.</p>";
+
+   this.filterName_Sizer = new HorizontalSizer;
+   this.filterName_Sizer.margin = 6;
+   this.filterName_Sizer.spacing = 4;
+   this.filterName_Sizer.add(this.filterName_Label);
+   this.filterName_Sizer.add(this.filterName_Edit);
+
+   this.ok_Button = new PushButton( this );
+   this.ok_Button.text = "OK";
+   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
+   this.ok_Button.onClick = function()
+   {
+      this.dialog.ok();
+   };
+
+   this.cancel_Button = new PushButton( this );
+   this.cancel_Button.text = "Cancel";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
+   this.cancel_Button.onClick = function()
+   {
+      this.dialog.cancel();
+   };
+
+   this.buttons_Sizer = new HorizontalSizer;
+   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.addStretch();
+   this.buttons_Sizer.add( this.ok_Button );
+   this.buttons_Sizer.add( this.cancel_Button );
+
+   this.sizer = new VerticalSizer;
+   this.sizer.margin = 8;
+   this.sizer.spacing = 8;
+   this.sizer.add( this.filterName_Sizer );
+   this.sizer.add( this.buttons_Sizer );
+
+
+   this.windowTitle = "Filter name";
+   this.userResizable = true;
+   this.adjustToContents();
+
+}
+
+FilerNameDialog.prototype = new Dialog;
+
 function FilterWheelParametersDialog(dialog)
 {
    this.__base__ = Dialog;
    this.__base__();
+
+   this.filterNameDialog = new FilerNameDialog(this);
 
 //
    this.filterType_TreeBox = new TreeBox(this);
@@ -884,7 +1151,8 @@ function FilterWheelParametersDialog(dialog)
    this.filterType_TreeBox.multipleSelection = false;
    this.filterType_TreeBox.alternateRowColor = true;
    this.filterType_TreeBox.setFixedSize( 200, 100 );
-   this.filterType_TreeBox.numberOfColumns = 1;
+   this.filterType_TreeBox.numberOfColumns = 2;
+   this.filterType_TreeBox.showColumn(1,false);
    this.filterType_TreeBox.setHeaderText(0, "Filter");
    this.filterType_TreeBox.headerVisible = true;
 
@@ -900,6 +1168,19 @@ function FilterWheelParametersDialog(dialog)
          this.dialog.filterType_TreeBox.remove(idx);
       }
    }
+
+   this.filterAdd_ToolButton = new ToolButton(this);
+   this.filterAdd_ToolButton.icon = ":/icons/add.png";
+   this.filterAdd_ToolButton.setScaledFixedSize(22, 22);
+   this.filterAdd_ToolButton.toolTip = "<p>Add filter</p>";
+   this.filterAdd_ToolButton.onClick = function ()
+   {
+      if (this.dialog.filterNameDialog.execute()){
+         var node = new TreeBoxNode( this.dialog.filterType_TreeBox );
+         node.setText(0,this.dialog.filterNameDialog.filterName_Edit.text);
+      }
+   }
+
 
    this.filterMoveUp_ToolButton = new ToolButton(this);
    this.filterMoveUp_ToolButton.icon = ":/arrows/arrow-up.png";
@@ -936,6 +1217,7 @@ function FilterWheelParametersDialog(dialog)
 //
    this.filterTool_Sizer = new VerticalSizer;
    this.filterTool_Sizer.spacing = 4;
+   this.filterTool_Sizer.add( this.filterAdd_ToolButton );
    this.filterTool_Sizer.add( this.filterDelete_ToolButton );
    this.filterTool_Sizer.add( this.filterMoveUp_ToolButton );
    this.filterTool_Sizer.add( this.filterMoveDown_ToolButton );
@@ -967,7 +1249,7 @@ function FilterWheelParametersDialog(dialog)
       for (var i = 0 ; i < this.dialog.filterType_TreeBox.numberOfChildren; ++i){
          var childNode = this.dialog.filterType_TreeBox.child(i);
          engine.filterKeys[i] = childNode.text(0);
-         engine.filterDict[childNode.text(0)] = i + 1;
+         engine.filterDict[childNode.text(0)] = parseInt(childNode.text(1));
       }
       this.dialog.ok();
    };
@@ -1003,6 +1285,135 @@ function FilterWheelParametersDialog(dialog)
 // Our dialog inherits all properties and methods from the core Dialog object.
 FilterWheelParametersDialog.prototype = new Dialog;
 
+function UpdateWorklistDialog(dialog, selectedIdx)
+{
+   this.__base__ = Dialog;
+   this.__base__();
+
+   this.selectedItemIdx = selectedIdx;
+
+   var labelWidth1 = this.font.width( "Upload Mode:" + 'T' );
+
+   this.binningX_Label = new Label( this );
+   this.binningX_Label.text = "Binning X:";
+   this.binningX_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.binningX_Label.minWidth = labelWidth1;
+   this.binningX_Label.toolTip = "<p>...</p>";
+
+//
+   this.binningX_ComboBox = new ComboBox(this);
+   this.binningX_ComboBox.addItem("1");
+   this.binningX_ComboBox.addItem("2");
+   this.binningX_ComboBox.addItem("3");
+   this.binningX_ComboBox.addItem("4");
+   this.binningX_ComboBox.currentItem = engine.worklist[this.dialog.selectedItemIdx].binningX - 1;
+   this.binningX_ComboBox.toolTip = "<p>...</p>";
+
+//
+   this.binningY_Label = new Label( this );
+   this.binningY_Label.text = "Binning Y:";
+   this.binningY_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.binningY_Label.minWidth = labelWidth1;
+   this.binningY_Label.toolTip = "<p>...</p>";
+
+//
+
+   this.binningY_ComboBox = new ComboBox(this);
+   this.binningY_ComboBox.addItem("1");
+   this.binningY_ComboBox.addItem("2");
+   this.binningY_ComboBox.addItem("3");
+   this.binningY_ComboBox.addItem("4");
+   this.binningY_ComboBox.currentItem = engine.worklist[this.dialog.selectedItemIdx].binningY - 1;
+   this.binningY_ComboBox.toolTip = "<p>...</p>";
+//
+
+   this.binningX_Sizer = new HorizontalSizer;
+   this.binningX_Sizer.spacing = 4;
+   this.binningX_Sizer.add( this.binningX_Label );
+   this.binningX_Sizer.add( this.binningX_ComboBox );
+   this.binningX_Sizer.addStretch();
+
+//
+
+   this.binningY_Sizer = new HorizontalSizer;
+   this.binningY_Sizer.spacing = 4;
+   this.binningY_Sizer.add( this.binningY_Label );
+   this.binningY_Sizer.add( this.binningY_ComboBox );
+   this.binningY_Sizer.addStretch();
+
+   //
+
+   this.exposureTimeEdit = new NumericEdit( this );
+   this.exposureTimeEdit.label.text = "Exposure time:";
+   this.exposureTimeEdit.label.minWidth = labelWidth1;
+   this.exposureTimeEdit.setRange( 0.001, 60000 );
+   this.exposureTimeEdit.setPrecision( 3 );
+   this.exposureTimeEdit.setValue( engine.worklist[this.dialog.selectedItemIdx].expTime );
+   this.exposureTimeEdit.toolTip = "<p>Exposure time in seconds.</p>";
+   this.exposureTimeEdit.sizer.addStretch();
+
+//
+   this.numOfFramesEdit = new NumericEdit( this );
+   this.numOfFramesEdit.label.text = "Number of frames:";
+   this.numOfFramesEdit.label.minWidth = labelWidth1;
+   this.numOfFramesEdit.setRange( 0, 600 );
+   this.numOfFramesEdit.setReal( false );
+   this.numOfFramesEdit.setValue( engine.worklist[this.dialog.selectedItemIdx].numOfFrames );
+   this.numOfFramesEdit.toolTip = "<p>Number of frames to be acquired.</p>";
+   this.numOfFramesEdit.sizer.addStretch();
+
+   this.workItem_GroupBox = new GroupBox(this);
+   this.workItem_GroupBox.title = "Update worklist";
+   this.workItem_GroupBox.sizer = new VerticalSizer;
+   this.workItem_GroupBox.sizer.margin = 6;
+   this.workItem_GroupBox.sizer.spacing = 4;
+   this.workItem_GroupBox.sizer.add( this.binningX_Sizer);
+   this.workItem_GroupBox.sizer.add( this.binningY_Sizer);
+   this.workItem_GroupBox.sizer.add( this.exposureTimeEdit);
+   this.workItem_GroupBox.sizer.add( this.numOfFramesEdit);
+
+   this.ok_Button = new PushButton( this );
+   this.ok_Button.text = "OK";
+   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
+   this.ok_Button.onClick = function()
+   {
+      engine.worklist[this.dialog.selectedItemIdx].binningX    = this.dialog.binningX_ComboBox.currentItem + 1;
+      engine.worklist[this.dialog.selectedItemIdx].binningY    = this.dialog.binningY_ComboBox.currentItem + 1;
+      engine.worklist[this.dialog.selectedItemIdx].expTime     = this.dialog.exposureTimeEdit.value;
+      engine.worklist[this.dialog.selectedItemIdx].numOfFrames = this.dialog.numOfFramesEdit.value;
+      this.dialog.ok();
+   };
+
+   this.cancel_Button = new PushButton( this );
+   this.cancel_Button.text = "Cancel";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
+   this.cancel_Button.onClick = function()
+   {
+      this.dialog.cancel();
+   };
+
+   this.buttons_Sizer = new HorizontalSizer;
+   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.addStretch();
+   this.buttons_Sizer.add( this.ok_Button );
+   this.buttons_Sizer.add( this.cancel_Button );
+
+//
+   this.sizer = new VerticalSizer;
+   this.sizer.margin = 8;
+   this.sizer.spacing = 8;
+   this.sizer.add( this.workItem_GroupBox );
+   this.sizer.add( this.buttons_Sizer );
+
+   this.windowTitle = "Update Worklist";
+   this.userResizable = true;
+   this.adjustToContents();
+
+}
+
+// Our dialog inherits all properties and methods from the core Dialog object.
+UpdateWorklistDialog.prototype = new Dialog;
+
 /*
  * Batch Frame Acquisition dialog
  */
@@ -1015,6 +1426,7 @@ function BatchFrameAcquisitionDialog()
    this.mountDialog  = new MountParametersDialog(this);
    this.cameraDialog = new CameraParametersDialog(this);
    this.filterDialog = new FilterWheelParametersDialog(this);
+   this.updateDialog = {};
    this.filter = [];
    //
 
@@ -1022,7 +1434,7 @@ function BatchFrameAcquisitionDialog()
       var filter = [];
       for (var i = 0; i < 10; ++i){
          var filterIndex = i + 1;
-         let filterPropertyKey = "/" + engine.filterWheelDevice + "/FILTER_NAME/FILTER_SLOT_NAME_" + filterIndex;
+         let filterPropertyKey = "/" + engine.getFilterWheelDeviceName() + "/FILTER_NAME/FILTER_SLOT_NAME_" + filterIndex;
          engine.deviceController.getCommandParameters = filterPropertyKey;
          engine.deviceController.serverCommand = "GET";
          try {
@@ -1051,7 +1463,7 @@ function BatchFrameAcquisitionDialog()
 
    this.serverhost_Edit = new Edit(this);
    this.serverhost_Edit.text = "localhost";
-   this.serverhost_Edit.setFixedWidth(500);
+   this.serverhost_Edit.setFixedWidth(485);
    this.serverhost_Edit.toolTip = "<p>Enter INDI server host.</p>";
    this.connect_PushButton = new PushButton(this);
    this.connect_PushButton.icon = this.scaledResource( ":/icons/power.png" );
@@ -1074,7 +1486,6 @@ function BatchFrameAcquisitionDialog()
       console.noteln( "done. </p>" );
       // Connecting to devices
       for ( var i = 0 ; i < engine.deviceController.devices.length ; ++i){
-
 
          let device = engine.deviceController.devices[i].toString().replace(',','');
          console.note("<p>Connecting to device '" + device + "' ...")
@@ -1103,12 +1514,15 @@ function BatchFrameAcquisitionDialog()
          try {
             engine.executeController();
             engine.mountDevice = device;
+            this.dialog.mountparam_PushButton.enabled = true;
+            this.dialog.mountparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-green.png" );
+
             var node = new TreeBoxNode( this.dialog.serverDevices_TreeBox );
             node.setText(0,device);
             node.setIcon(1,":/bullets/bullet-ball-glass-green.png");
             node.setText(2,"Mount");
             node.adjustToContents();
-            //node.setText(1,"online");
+
          } catch (err) {
             //console.writeln(err);
          }
@@ -1120,6 +1534,9 @@ function BatchFrameAcquisitionDialog()
          try {
             engine.executeController();
             engine.ccdDevice = device;
+            this.dialog.cameraparam_PushButton.enabled = true;
+            this.dialog.cameraparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-green.png" );
+
             var node = new TreeBoxNode( this.dialog.serverDevices_TreeBox );
             node.setText(0,device);
             node.setIcon(1,":/bullets/bullet-ball-glass-green.png");
@@ -1137,20 +1554,20 @@ function BatchFrameAcquisitionDialog()
 
             engine.executeController();
             engine.filterWheelDevice = device;
+            this.dialog.filterparam_PushButton.enabled = true;
+            this.dialog.filterparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-green.png" );
+
+            engine.extFilterWheelDevice = ( engine.ccdDevice != device ) ? device : "";
             var node = new TreeBoxNode( this.dialog.serverDevices_TreeBox );
             node.setText(0,device);
             node.setIcon(1,":/bullets/bullet-ball-glass-green.png");
             node.setText(2,"Filter wheel");
             node.adjustToContents();
+
          } catch (err) {
             //console.writeln(err);
          }
       }
-
-      for(var i=0; i<this.dialog.serverDevices_TreeBox.numberOfColumns; i++)
-         this.dialog.serverDevices_TreeBox.adjustColumnWidthToContents(i);
-
-
    }
 
    this.serverConnection_Sizer = new HorizontalSizer;
@@ -1159,20 +1576,12 @@ function BatchFrameAcquisitionDialog()
    this.serverConnection_Sizer.add( this.serverhost_Edit);
    this.serverConnection_Sizer.add( this.connect_PushButton );
 
-   this.serverDevices_TreeBox = new TreeBox(this);
-   this.serverDevices_TreeBox.rootDecoration = false;
-   this.serverDevices_TreeBox.alternateRowColor = true;
-   this.serverDevices_TreeBox.setFixedSize( 500, 100 );
-   this.serverDevices_TreeBox.numberOfColumns = 3;
-   this.serverDevices_TreeBox.setHeaderText(0, "Device");
-   this.serverDevices_TreeBox.setHeaderText(1, "Status");
-   this.serverDevices_TreeBox.setHeaderText(2, "Type");
-   this.serverDevices_TreeBox.headerVisible = true;
-
    this.mountparam_PushButton = new PushButton(this);
-   //this.mountparam_PushButton.icon = this.scaledResource( ":/icons/power.png" );
-   this.mountparam_PushButton.text = "Mount Parameters";
+   this.mountparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-grey.png" );
+   this.mountparam_PushButton.text = "Mount Parameters  ";
    this.mountparam_PushButton.toolTip = "<p>Set mount device parameters</p>";
+   this.mountparam_PushButton.adjustToContents();
+   this.mountparam_PushButton.enabled = false;
    this.mountparam_PushButton.onClick = function()
    {
       if (this.dialog.mountDialog.execute()){
@@ -1184,9 +1593,10 @@ function BatchFrameAcquisitionDialog()
    }
 
    this.cameraparam_PushButton = new PushButton(this);
-   //this.mountparam_PushButton.icon = this.scaledResource( ":/icons/power.png" );
+   this.cameraparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-grey.png" );
    this.cameraparam_PushButton.text = "Camera Parameters";
    this.cameraparam_PushButton.toolTip = "<p>Set camera device parameters</p>";
+   this.cameraparam_PushButton.enabled = false;
    this.cameraparam_PushButton.onClick = function()
    {
       var serverDir = this.dialog.getServerDownloadDir();
@@ -1206,26 +1616,41 @@ function BatchFrameAcquisitionDialog()
          engine.overwriteClientFiles = this.dialog.cameraDialog.overwriteImages_Checkbox.checked;
          engine.serverDownloadDir    = this.dialog.cameraDialog.serverDownloadDir_Edit.text;
          engine.serverFileTemplate   = this.dialog.cameraDialog.serverFileTemplate_Edit.text;
+         engine.uploadMode           = this.dialog.cameraDialog.uploadMode_ComboBox.currentItem;
+
+         // diable target treebox if frame type not "LIGHT"
+         if ( engine.frameType.idx  != 0) {
+            this.dialog.mountParam_TreeBox.enabled     = false;
+            this.dialog.loadTargetCoord_Button.enabled = false;
+            engine.targets[0] = {"name" : engine.frameType.text, "ra" : 0.0, "dec" : 0.0};
+         } else {
+            this.dialog.mountParam_TreeBox.enabled     = true;
+            this.dialog.loadTargetCoord_Button.enabled = true;
+         }
       }
    }
 
    this.filterparam_PushButton = new PushButton(this);
-   this.filterparam_PushButton.text = "Filter Parameters";
+   this.filterparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-grey.png" );
+   this.filterparam_PushButton.text = "Filter Parameters    ";
    this.filterparam_PushButton.toolTip = "<p>Set filterwheel device parameters</p>";
+   this.filterparam_PushButton.enabled = false;
    this.filterparam_PushButton.onClick = function()
    {
       var filterList = this.dialog.getFilterParameters();
       // fill table
       this.dialog.filterDialog.filterType_TreeBox.clear();
       for (var i = 0; i < filterList.length ; ++i) {
+         var filterIdx = i + 1;
          var node = new TreeBoxNode( this.dialog.filterDialog.filterType_TreeBox );
          node.setText(0,filterList[i]);
+         node.setText(1,filterIdx.toString());
       }
       if (this.dialog.filterDialog.execute()){
       }
    }
 
-   this.serverDevicesButton_Sizer = new VerticalSizer;
+   this.serverDevicesButton_Sizer = new HorizontalSizer;
    this.serverDevicesButton_Sizer.margin = 6;
    this.serverDevicesButton_Sizer.spacing = 4;
    this.serverDevicesButton_Sizer.add( this.mountparam_PushButton );
@@ -1236,7 +1661,7 @@ function BatchFrameAcquisitionDialog()
    this.serverDevices_Sizer = new HorizontalSizer;
    this.serverDevices_Sizer.margin = 6;
    this.serverDevices_Sizer.spacing = 4;
-   this.serverDevices_Sizer.add( this.serverDevices_TreeBox);
+   //this.serverDevices_Sizer.add( this.serverDevices_TreeBox);
    this.serverDevices_Sizer.add( this.serverDevicesButton_Sizer );
 
    this.connection_GroupBox = new GroupBox(this);
@@ -1259,7 +1684,7 @@ function BatchFrameAcquisitionDialog()
    //
 
    this.mountParam_TreeBox = new TreeBox( this );
-   this.mountParam_TreeBox.multipleSelection = true;
+   this.mountParam_TreeBox.multipleSelection = false;
    this.mountParam_TreeBox.rootDecoration = false;
    this.mountParam_TreeBox.alternateRowColor = true;
    this.mountParam_TreeBox.setScaledMinSize( 500, 200 );
@@ -1272,8 +1697,18 @@ function BatchFrameAcquisitionDialog()
 
    //
 
-   this.loadTargetCoord_Button = new PushButton( this );
-   this.loadTargetCoord_Button.text = "Add Targets";
+   this.updateTargets  = function (targetTreeBox) {
+      for (var i = 0 ; i < targetTreeBox.numberOfChildren; ++i){
+         var childNode = targetTreeBox.child(i);
+         var targetItem = {"name": "", "ra" : 0.0, "dec": 0.0};
+         targetItem.name = childNode.text(0);
+         targetItem.ra   = sexadecimalStringToDouble(childNode.text(1),":");
+         targetItem.dec  = sexadecimalStringToDouble(childNode.text(2),":");
+         engine.targets[i] = targetItem;
+      }
+   }
+
+   this.loadTargetCoord_Button = new ToolButton( this );
    this.loadTargetCoord_Button.icon = this.scaledResource( ":/icons/add.png" );
    this.loadTargetCoord_Button.toolTip = "<p>Add target coordinates from csv file.</p>";
    this.loadTargetCoord_Button.onClick = function()
@@ -1316,11 +1751,70 @@ function BatchFrameAcquisitionDialog()
       }
    };
 
+   //
+
+   this.moveUpTargetCoord_Button = new ToolButton( this );
+   this.moveUpTargetCoord_Button.icon = this.scaledResource( ":/arrows/arrow-up.png" );
+   this.moveUpTargetCoord_Button.toolTip = "<p>Move up target.</p>";
+   this.moveUpTargetCoord_Button.onClick = function()
+   {
+      if (this.dialog.mountParam_TreeBox.selectedNodes.length == 1){
+         var selectedNode = this.dialog.mountParam_TreeBox.selectedNodes[0];
+         var idx = this.dialog.mountParam_TreeBox.childIndex(selectedNode);
+         if (idx > 0) {
+            this.dialog.mountParam_TreeBox.remove(idx);
+            this.dialog.mountParam_TreeBox.insert(idx - 1,selectedNode);
+         }
+         this.dialog.updateTargets(this.dialog.mountParam_TreeBox);
+      }
+   }
+
+   //
+
+   this.moveDownTargetCoord_Button = new ToolButton( this );
+   this.moveDownTargetCoord_Button.icon = this.scaledResource( ":/arrows/arrow-down.png" );
+   this.moveDownTargetCoord_Button.toolTip = "<p>Move down target.</p>";
+   this.moveDownTargetCoord_Button.onClick = function()
+   {
+      if (this.dialog.mountParam_TreeBox.selectedNodes.length == 1){
+         var selectedNode = this.dialog.mountParam_TreeBox.selectedNodes[0];
+         var idx = this.dialog.mountParam_TreeBox.childIndex(selectedNode);
+         if (idx < this.dialog.mountParam_TreeBox.numberOfChildren - 1){
+            this.dialog.mountParam_TreeBox.remove(idx);
+            this.dialog.mountParam_TreeBox.insert(idx + 1,selectedNode);
+         }
+         this.dialog.updateTargets(this.dialog.mountParam_TreeBox);
+      }
+   }
+
+   //
+
+   this.clearTargetCoord_Button = new ToolButton( this );
+   this.clearTargetCoord_Button.icon = this.scaledResource( ":/icons/clear.png" );
+   this.clearTargetCoord_Button.toolTip = "<p>Clear targets.</p>";
+   this.clearTargetCoord_Button.onClick = function()
+   {
+      if (this.dialog.mountParam_TreeBox.selectedNodes.length == 0)
+      {
+         this.dialog.mountParam_TreeBox.clear();
+      } else {
+         var selectedNode = this.dialog.mountParam_TreeBox.selectedNodes[0];
+         var idx = this.dialog.mountParam_TreeBox.childIndex(selectedNode);
+         this.dialog.mountParam_TreeBox.remove(idx);
+      }
+      this.dialog.updateTargets(this.dialog.mountParam_TreeBox);
+   }
+
+
+
 
    this.mountParam_ButtonSizer = new VerticalSizer;
    this.mountParam_ButtonSizer.margin = 6;
    this.mountParam_ButtonSizer.spacing = 4;
    this.mountParam_ButtonSizer.add(this.loadTargetCoord_Button);
+   this.mountParam_ButtonSizer.add(this.moveUpTargetCoord_Button);
+   this.mountParam_ButtonSizer.add(this.moveDownTargetCoord_Button);
+   this.mountParam_ButtonSizer.add(this.clearTargetCoord_Button);
    this.mountParam_ButtonSizer.addStretch();
 
    //
@@ -1338,7 +1832,7 @@ function BatchFrameAcquisitionDialog()
    // acquisition queue treebox
 
    this.worklist_TreeBox = new TreeBox( this );
-   this.worklist_TreeBox.multipleSelection = true;
+   this.worklist_TreeBox.multipleSelection = false;
    this.worklist_TreeBox.rootDecoration = false;
    this.worklist_TreeBox.alternateRowColor = true;
    this.worklist_TreeBox.setScaledMinSize( 500, 300 );
@@ -1372,6 +1866,46 @@ function BatchFrameAcquisitionDialog()
       }
    };
 
+
+   this.updateWorklist_Button = new PushButton( this );
+   this.updateWorklist_Button.text = "Update";
+   this.updateWorklist_Button.icon = this.scaledResource( ":/icons/write.png" );
+   this.updateWorklist_Button.toolTip = "<p>Update worklist</p>";
+   this.updateWorklist_Button.onClick = function()
+   {
+      var selectedNode = this.dialog.worklist_TreeBox.selectedNodes[0];
+      var idx = this.dialog.worklist_TreeBox.childIndex(selectedNode);
+      this.dialog.updateDialog = new UpdateWorklistDialog(this,idx);
+      if (this.dialog.updateDialog.execute()){
+         this.dialog.worklist_TreeBox.clear();
+         for (var i = 0; i < engine.worklist.length; ++i){
+            var node = new TreeBoxNode( this.dialog.worklist_TreeBox );
+            node.setText(0,engine.worklist[i].targetName);
+            node.setText(1,engine.worklist[i].filterName);
+            node.setText(2,format("%dx%d",engine.worklist[i].binningX,engine.worklist[i].binningY));
+            node.setText(3,engine.worklist[i].expTime.toString());
+            node.setText(4,engine.worklist[i].numOfFrames.toString());
+            node.setIcon(5,":/bullets/bullet-ball-glass-grey.png");
+         }
+      }
+   };
+
+   this.clearWorklist_Button = new PushButton( this );
+   this.clearWorklist_Button.text = "Clear";
+   this.clearWorklist_Button.icon = this.scaledResource( ":/icons/clear.png" );
+   this.clearWorklist_Button.toolTip = "<p>Clear worklist</p>";
+   this.clearWorklist_Button.onClick = function()
+   {
+      if (this.dialog.worklist_TreeBox.selectedNodes.length == 0)
+      {
+         this.dialog.worklist_TreeBox.clear();
+      } else {
+         var selectedNode = this.dialog.worklist_TreeBox.selectedNodes[0];
+         var idx = this.dialog.worklist_TreeBox.childIndex(selectedNode);
+         this.dialog.worklist_TreeBox.remove(idx);
+      }
+   };
+
    this.startProcessing_Button = new PushButton( this );
    this.startProcessing_Button.text = "Start";
    this.startProcessing_Button.icon = this.scaledResource( ":/icons/power.png" );
@@ -1394,6 +1928,8 @@ function BatchFrameAcquisitionDialog()
    this.worklist_ButtonSizer.margin = 6;
    this.worklist_ButtonSizer.spacing = 4;
    this.worklist_ButtonSizer.add(this.createWorklist_Button);
+   this.worklist_ButtonSizer.add(this.updateWorklist_Button);
+   this.worklist_ButtonSizer.add(this.clearWorklist_Button);
    this.worklist_ButtonSizer.addStretch();
    this.worklist_ButtonSizer.add(this.startProcessing_Button);
    this.worklist_ButtonSizer.add(this.cancelProcessing_Button);
