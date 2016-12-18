@@ -3,6 +3,20 @@ MureDenoise Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2016.12.19 - Version 1.18
+
+- Added a Haar-wavelet correlation structure exploit that provides a small
+denoising quality improvement by partially addressing the correlation introduced
+by frame registration.
+
+- Added support for ImageIntegration Weights option custom FITS keyword in the
+load variance scale import.
+
+- Added Flatfield parameter view name save and restore.
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
 2016.02.24 - Version 1.15
 
 - Modified Load variance scale button to load Combination count in addition to
