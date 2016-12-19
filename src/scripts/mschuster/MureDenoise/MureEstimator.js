@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MureEstimator.js - Released 2016/02/24 00:00:00 UTC
+// MureEstimator.js - Released 2016/12/19 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.15
+// This file is part of MureDenoise Script Version 1.18
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -391,14 +391,26 @@ function MureEstimator(model, view) {
          var dp = hp.filterColumns([-1, 0, 1]);
          view.throwAbort();
 
-         var vat = this.alphaThresholds(v1, c1, vp, 2 * gaussianNoise);
-         var hat = this.alphaThresholds(h1, c1, hp, 2 * gaussianNoise);
-         var dat = this.alphaThresholds(d1, c1, dp, 2 * gaussianNoise);
+         var vat = this.alphaThresholds(
+            v1, c1, vp, 2 * gaussianNoise
+            );
+         var hat = this.alphaThresholds(
+            h1, c1, hp, 2 * gaussianNoise
+            );
+         var dat = this.alphaThresholds(
+            d1, c1, dp, 2 * gaussianNoise
+            );
          view.throwAbort();
 
-         var vbt = this.betaThresholds(v1, c1, vp, 2 * gaussianNoise);
-         var hbt = this.betaThresholds(h1, c1, hp, 2 * gaussianNoise);
-         var dbt = this.betaThresholds(d1, c1, dp, 2 * gaussianNoise);
+         var vbt = this.betaThresholds(
+            v1, c1, vp, 2 * gaussianNoise
+            );
+         var hbt = this.betaThresholds(
+            h1, c1, hp, 2 * gaussianNoise
+            );
+         var dbt = this.betaThresholds(
+            d1, c1, dp, 2 * gaussianNoise
+            );
          view.throwAbort();
       }
 
@@ -467,13 +479,20 @@ function MureEstimator(model, view) {
             var c2 = c1.clone();
          }
          else {
-            var c2 = this.denoiseImage(
-               c1,
-               2 * gaussianNoise,
+            var ratio = 1 / model.subbandVarianceScalingRatio(level);
+            var c1r = c1.multiplyScalar(ratio);
+
+            var c2r = this.denoiseImage(
+               c1r,
+               2 * Math.sqrt(ratio) * gaussianNoise,
                levelsOfRefinement,
                level + 1,
                locations
             );
+            c1r.clear();
+
+            var c2 = c2r.multiplyScalar(1 / ratio);
+            c2r.clear();
          }
          view.throwAbort();
 
@@ -547,7 +566,7 @@ function MureEstimator(model, view) {
             },
          function(frame) {
             return frame.fusedMultiplyAddScalar(
-               65535 * baseGain, -baseGain * baseOffset
+               65535 * baseGain, -baseOffset
             );
          },
          function(frame) {
@@ -560,7 +579,7 @@ function MureEstimator(model, view) {
             view.throwAbort();
             return self.denoiseImage(
                frame,
-               baseGain * baseGaussianNoise,
+               baseGaussianNoise,
                levelsOfRefinement,
                1,
                self.padShiftLogLocations(
@@ -579,7 +598,7 @@ function MureEstimator(model, view) {
          },
          function(frame) {
             return frame.fusedAddMultiplyScalar(
-               baseGain * baseOffset, 1 / (65535 * baseGain)
+               baseOffset, 1 / (65535 * baseGain)
             );
          },
          flatfield == null ? null :
@@ -655,14 +674,14 @@ function MureEstimator(model, view) {
       var baseGaussianNoise = model.baseGaussianNoise();
       console.writeln(format(
          "Base Gaussian noise: " + model.detectorGaussianNoiseFormat +
-         " " + model.detectorGaussianNoiseUnits,
+         " " + "e-",
          baseGaussianNoise
       ));
 
       var baseOffset = model.baseOffset();
       console.writeln(format(
          "Base offset: " + model.detectorOffsetFormat +
-         " " + model.detectorOffsetUnits,
+         " " + "e-",
          baseOffset
       ));
 
@@ -827,4 +846,4 @@ function MureEstimator(model, view) {
 };
 
 // ****************************************************************************
-// EOF MureEstimator.js - Released 2016/02/24 00:00:00 UTC
+// EOF MureEstimator.js - Released 2016/12/19 00:00:00 UTC

@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainViewController.js - Released 2016/02/24 00:00:00 UTC
+// MainViewController.js - Released 2016/12/19 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.15
+// This file is part of MureDenoise Script Version 1.18
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -55,15 +55,24 @@ function MainController(model) {
    };
 
    this.setImageView = function(view) {
-      if (view.isView) {
+      if (view != null && view.isView) {
          model.imageView = view;
          this.view.imageViewList.currentView = model.imageView;
+         if (
+            model.flatfieldView != null &&
+            model.flatfieldView.isView &&
+            !this.checkFlatfieldView(true)
+         ) {
+            model.flatfieldView = null;
+            this.view.flatfieldViewList.currentView =
+               this.view.flatfieldViewListNull;
+         }
          this.enableControls();
          this.checkImageView();
       }
    };
 
-   this.checkImageView = function() {
+   this.checkImageView = function(silent = false) {
       var message = null;
       if (
          model.imageView != null &&
@@ -98,14 +107,16 @@ function MainController(model) {
          message = "<p><b>Warning</b>: The sizes of the image selected for " +
             "denoising and the flatfield must be equal.";
       }
-      if (message != null) {
+      if (message != null && !silent) {
          (new MessageBox(
             message, TITLE, StdIcon_Warning, StdButton_Ok
          )).execute();
       }
+
+      return message == null;
    };
 
-   this.checkFlatfieldView = function() {
+   this.checkFlatfieldView = function(silent = false) {
       var message = null;
       if (
          model.flatfieldView != null &&
@@ -140,11 +151,13 @@ function MainController(model) {
          message = "<p><b>Warning</b>: The sizes of the image selected for " +
             "denoising and the flatfield must be equal.";
       }
-      if (message != null) {
+      if (message != null && !silent) {
          (new MessageBox(
             message, TITLE, StdIcon_Warning, StdButton_Ok
          )).execute();
       }
+
+      return message == null;
    };
 
    this.execute = function() {
@@ -406,7 +419,8 @@ function MainController(model) {
             }
             if (
                weightingMode != null &&
-               weightingMode != "noise evaluation"
+               weightingMode != "noise evaluation" &&
+               weightingMode.search("custom keyword") < 0
             ) {
                for (var i = 0; i != imageCombinationCount; ++i) {
                   weights[i] = 1;
@@ -561,7 +575,7 @@ function MainController(model) {
       console.show();
       if (false) {
          console.writeln();
-         console.writeln("FrameMatrix count: ", globalFrameMatrixCount);
+         console.warningln("FrameMatrix count: ", globalFrameMatrixCount);
       }
       console.flush();
 
@@ -596,7 +610,7 @@ function MainController(model) {
 
       if (false) {
          console.writeln();
-         console.writeln("FrameMatrix count: ", globalFrameMatrixCount);
+         console.warningln("FrameMatrix count: ", globalFrameMatrixCount);
       }
       console.flush();
       console.hide();
@@ -685,11 +699,14 @@ function MainView(model, controller) {
       return buttonPane;
    };
 
-   this.addViewList = function(pane, onViewSelected) {
+   this.addViewList = function(pane, view, onViewSelected) {
       var viewList = new ViewList(this);
       pane.add(viewList);
 
       viewList.getAll();
+      if (view != null && view.isView) {
+         viewList.currentView = view;
+      }
       viewList.onViewSelected = onViewSelected;
 
       return viewList;
@@ -812,6 +829,7 @@ function MainView(model, controller) {
 
          this.imageViewList = this.addViewList(
             this.imageViewPane,
+            null,
             function(view) {
                controller.imageViewOnViewSelected(view);
             }
@@ -916,11 +934,12 @@ function MainView(model, controller) {
 
          this.flatfieldViewList = this.addViewList(
             this.flatfieldViewPane,
+            model.flatfieldView,
             function(view) {
                controller.flatfieldViewOnViewSelected(view);
             }
          );
-         this.flatfieldViewListNull = this.flatfieldViewList.currentView;
+         this.flatfieldViewListNull = View.viewById("");
 
          this.flatfieldViewHelpButton = this.addToolButton(
             this.flatfieldViewPane,
@@ -933,7 +952,12 @@ function MainView(model, controller) {
             "<p>Flatfield compensation is useful for telescopes with more " +
             "than ~10% optical vignetting. For telescopes with less " +
             "vignetting, flatfield compensation results in negligible " +
-            "denoising quality improvement.</p>",
+            "denoising quality improvement.</p>" +
+
+            "<p>The standard deviation of the smoothed flatfield is written " +
+            "to the process console as the Flatfield scale value. The value " +
+            "is normalized as a percentage of the mean of the smoothed " +
+            "flatfield.</p>",
             function() {}
          );
       }
@@ -1120,7 +1144,11 @@ function MainView(model, controller) {
             this.denoiseVarianceScalePane,
             "Load variance scale...",
             "<p>Loads the variance scale and combination count from " +
-            "information in an <i>ImageIntegration</i> process log file.</p>" +
+            "information in an <i>ImageIntegration</i> process log file. " +
+            "Provides support for the Output normalization options Additive " +
+            "with scaling and No normalization, and the Weights options " +
+            "Noise evaluation, FITS keyword, and Don't care (all weights = " +
+            "1).</p>" +
 
             "<p>The log file is a manually created .txt file containing a " +
             "copy of the Process Console log generated by the " +
@@ -1191,7 +1219,10 @@ function MainView(model, controller) {
             "hypothesis noise statistics, and is strongly signal dependent " +
             "due to the presence of Poisson noise. Method noise departs " +
             "from hypothesis noise statistics in areas where image gradient " +
-            "magnitude exceeds the noise level significantly.</p>",
+            "magnitude exceeds the noise level significantly.</p>" +
+
+            "<p>The standard deviation of the method noise image is written " +
+            "to the process console as the Method noise value in DN units.</p>",
             model.generateMethodNoiseImage,
             function(checked) {
                controller.generateMethodNoiseImageOnCheck(checked);
@@ -1252,8 +1283,8 @@ function MainView(model, controller) {
          "calibration and optional average combination steps and prior to " +
          "other linear or nonlinear processing steps.</p>" +
 
-         "<p>The script applies an interscale wavelet mixed noise unbiased " +
-         "eisk estimator (MURE) to find a denoised output image that " +
+         "<p>The script applies a Haar-wavelet mixed noise unbiased " +
+         "risk estimator (MURE) to find a denoised output image that " +
          "minimizes an estimate of the oracle mean-squared error (MSE), or  " +
          "\"risk\", between the denoised output image and the unknown " +
          "noise-free image.</p>" +
@@ -1329,4 +1360,4 @@ function MainView(model, controller) {
 MainView.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF MainViewController.js - Released 2016/02/24 00:00:00 UTC
+// EOF MainViewController.js - Released 2016/12/19 00:00:00 UTC

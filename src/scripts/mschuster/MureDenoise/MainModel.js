@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2016/02/24 00:00:00 UTC
+// MainModel.js - Released 2016/12/19 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.15
+// This file is part of MureDenoise Script Version 1.18
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -85,29 +85,48 @@ function MainModel() {
       "Lanczos-4"
    ];
 
-   // Interpolation method covariance scales.
-   this.imageInterpolationMethodCovarianceScales = [
-      1,           // Nearest Neighbor
-      4 / 9,       // Bilinear
-      3249 / 4900, // Bicubic Spline
-      0.798660,    // Lanczos-3
-      0.835437     // Lanczos-4
+   // Subband variance scalings.
+   this.subbandVarianceScalings = [
+      // Nearest Neighbor
+         [1, 4, 16, 64, 256, 1024],
+      // Bilinear
+         [4 / 9, 2.78632, 13.4632, 58.8079, 245.504, 1002.73],
+      // Bicubic Spline
+         [3249 / 4900, 3.5393, 15.0356, 62.0577, 252.053, 1016.59],
+      // Lanczos-3
+         [0.798660, 3.94876, 15.6062, 63.217, 254.434, 1020.38],
+      // Lanczos-4
+         [0.835437, 3.93833, 15.6542, 63.2285, 254.462, 1021.0]
    ];
 
-   // Base variance scaling function.
-   this.baseVarianceScale = function() {
-      return this.denoiseVarianceScale / this.imageCombinationCount;
-   };
-
-   // Base covariance scaling function.
-   this.baseCovarianceScale = function() {
-      var r = this.imageInterpolationMethodCovarianceScales[
+   // Base subband variance scaling.
+   this.baseSubbandVarianceScaling = function() {
+      var r = this.subbandVarianceScalings[
          this.imageInterpolationMethod
-      ];
+      ][0];
       var n = this.imageCombinationCount;
 
       return (1 + (n - 1) * r) / n;
    };
+
+   // Subband variance scaling ratio.
+   this.subbandVarianceScalingRatio = function(level) {
+      var q0 = this.subbandVarianceScalings[
+         0
+      ][level - 1];
+      var q1 = this.subbandVarianceScalings[
+         0
+      ][level];
+      var r0 = this.subbandVarianceScalings[
+         this.imageInterpolationMethod
+      ][level - 1];
+      var r1 = this.subbandVarianceScalings[
+         this.imageInterpolationMethod
+      ][level];
+      var n = this.imageCombinationCount;
+
+      return (q1 + (n - 1) * r1) / (q0 + (n - 1) * r0) / 4;
+   }
 
    // Interpolation method of the combination.
    this.imageInterpolationMethodMinimum = 0;
@@ -128,8 +147,12 @@ function MainModel() {
 
    // Base gain.
    this.baseGain = function() {
-      return this.detectorGain /
-         (this.baseVarianceScale() * this.baseCovarianceScale());
+      return this.detectorGain *
+         this.imageCombinationCount /
+         (
+            this.denoiseVarianceScale *
+            this.baseSubbandVarianceScaling()
+         );
    };
 
    // Standard deviation of additive white Gaussian noise of the detector in
@@ -144,7 +167,14 @@ function MainModel() {
    // Base standard deviation of additive white Gaussian noise.
    this.baseGaussianNoise = function() {
       return this.detectorGaussianNoise *
-         Math.sqrt(this.baseVarianceScale() * this.baseCovarianceScale());
+         this.detectorGain *
+         Math.sqrt(
+            this.imageCombinationCount
+         ) /
+         Math.sqrt(
+            this.denoiseVarianceScale *
+            this.baseSubbandVarianceScaling()
+         );
    };
 
    // Offset of the detector in DN.
@@ -157,7 +187,13 @@ function MainModel() {
 
    // Base offset.
    this.baseOffset = function() {
-      return this.detectorOffset;
+      return this.detectorOffset *
+         this.detectorGain *
+         this.imageCombinationCount /
+         (
+            this.denoiseVarianceScale *
+            this.baseSubbandVarianceScaling()
+         );
    };
 
    // Denoise variance scale.
@@ -195,8 +231,18 @@ function MainModel() {
       return bool != null && (bool == false || bool == true) ? bool : def;
    };
 
+   // Gives string if well defined, otherwise a default.
+   this.defaultString = function(str, def) {
+      return str != null ? str : def;
+   }
+
    // Loads core settings.
    this.loadSettings = function() {
+      this.flatfieldView = View.viewById(this.defaultString(
+         Settings.read("flatfieldView", DataType_String8),
+         ""
+      ));
+
       this.imageCombinationCount = this.defaultNumeric(
          Settings.read("imageCombinationCount", DataType_Int32),
          this.imageCombinationCountMinimum,
@@ -250,6 +296,13 @@ function MainModel() {
    // Stores core settings.
    this.storeSettings = function() {
       Settings.write(
+         "flatfieldView",
+         DataType_String8,
+         this.flatfieldView != null && this.flatfieldView.isView ?
+            this.flatfieldView.fullId :
+            ""
+      );
+      Settings.write(
          "imageCombinationCount",
          DataType_Int32,
          this.imageCombinationCount
@@ -295,6 +348,13 @@ function MainModel() {
 
    // Loads instance parameters.
    this.loadParameters = function() {
+      if (Parameters.has("flatfieldView")) {
+         this.flatfieldView = View.viewById(this.defaultString(
+            Parameters.getString("flatfieldView"),
+            ""
+         ));
+      }
+
       if (Parameters.has("imageCombinationCount")) {
          this.imageCombinationCount = this.defaultNumeric(
             Parameters.getInteger("imageCombinationCount"),
@@ -367,6 +427,13 @@ function MainModel() {
 
       Parameters.set("version", VERSION);
 
+      Parameters.set(
+         "flatfieldView",
+         this.flatfieldView != null && this.flatfieldView.isView ?
+            this.flatfieldView.fullId :
+            ""
+      );
+
       Parameters.set("imageCombinationCount", this.imageCombinationCount);
       Parameters.set(
          "imageInterpolationMethod", this.imageInterpolationMethod
@@ -391,4 +458,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2016/02/24 00:00:00 UTC
+// EOF MainModel.js - Released 2016/12/19 00:00:00 UTC
