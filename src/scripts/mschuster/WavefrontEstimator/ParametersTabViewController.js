@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// ParametersTabViewController.js - Released 2015/11/23 00:00:00 UTC
+// ParametersTabViewController.js - Released 2016/12/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.18
+// This file is part of WavefrontEstimator Script Version 1.19
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -472,12 +472,13 @@ function ParametersTabView(parent, model, controller) {
       this.detectorTypeLabel = this.addLabel(
          this.detectorTypePane,
          "Detector type:",
-         "<p>The type of the detector, either monochrome or Bayer RGB.</p>"
+         "<p>The type of the detector, either monochrome or color filter " +
+         "array.</p>"
       );
 
       this.detectorTypeComboBox = this.addComboBox(
          this.detectorTypePane,
-         [" Monochrome", " Bayer RGB"],
+         [" Monochrome", " Color filter array"],
          model.detectorType,
          this.detectorTypeLabel.toolTip,
          function(item) {controller.detectorTypeOnItemSelected(item);}
@@ -761,4 +762,4 @@ function ParametersTabView(parent, model, controller) {
 ParametersTabView.prototype = new Frame;
 
 // ****************************************************************************
-// EOF ParametersTabViewController.js - Released 2015/11/23 00:00:00 UTC
+// EOF ParametersTabViewController.js - Released 2016/12/30 00:00:00 UTC

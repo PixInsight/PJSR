@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2015/11/23 00:00:00 UTC
+// MainModel.js - Released 2016/12/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.18
+// This file is part of WavefrontEstimator Script Version 1.19
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -89,9 +89,9 @@ function MainModel() {
 
    // Detector type.
    this.monochromeDetectorType = 0;
-   this.bayerRGBDetectorType = 1;
+   this.colorFilterArrayDetectorType = 1;
    this.minimumDetectorType = this.monochromeDetectorType;
-   this.maximumDetectorType = this.bayerRGBDetectorType;
+   this.maximumDetectorType = this.colorFilterArrayDetectorType;
    this.defaultDetectorType = this.monochromeDetectorType;
    this.detectorType = this.defaultDetectorType;
 
@@ -111,8 +111,7 @@ function MainModel() {
    this.formatPixelSize = "%.2f";
    this.pixelSize = this.defaultPixelSize;
    this.effectivePixelSize = function() {
-      return (this.detectorType == this.monochromeDetectorType ? 1 : 2) *
-         this.pixelSize;
+      return this.pixelSize;
    };
 
    // Observation wavelength in meters.
@@ -401,7 +400,7 @@ function MainModel() {
    this.hotPixelRemovalRadius = 1;
 
    // Defocus diameter limits in pixels.
-   this.minimumDefocusDiameter = 48;
+   this.minimumDefocusDiameter = 32;
    this.maximumDefocusDiameter = 320;
 
    // Defocus signal limits in normalized units.
@@ -409,6 +408,8 @@ function MainModel() {
    this.maximumDefocusSignal = 0.8;
 
    // Errors.
+   this.frameIsNotMonochrome =
+      "The frame is not monochrome.";
    this.defocusedImageDiameterTooSmall =
       "The defocused image diameter is too small.";
    this.defocusedImageDiameterTooLarge =
@@ -885,4 +886,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2015/11/23 00:00:00 UTC
+// EOF MainModel.js - Released 2016/12/30 00:00:00 UTC
