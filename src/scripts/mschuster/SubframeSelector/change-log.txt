@@ -3,6 +3,13 @@ SubframeSelector Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2016.12.28 - v1.11
+
+- Disabled GUI messages from Crop process.
+
+- Disabled Use file cache option to avoid setting file performance issues.
+
+-------------------------------------------------------------------------------
 2016.05.12 - v1.10
 
 - Fixed bugs on images with zero measured noise.
