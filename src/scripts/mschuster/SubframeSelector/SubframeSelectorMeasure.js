@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorMeasure.js - Released 2016/05/12 00:00:00 UTC
+// SubframeSelectorMeasure.js - Released 2016/12/28 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.10
+// This file is part of SubframeSelector Script version 1.11
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -428,4 +428,4 @@ function FWHMEccentricityResidualOfStarsImageWindow(imageWindow) {
 }
 
 // ****************************************************************************
-// EOF SubframeSelectorMeasure.js - Released 2016/05/12 00:00:00 UTC
+// EOF SubframeSelectorMeasure.js - Released 2016/12/28 00:00:00 UTC

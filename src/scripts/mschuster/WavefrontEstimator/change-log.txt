@@ -3,6 +3,20 @@ WavefrontEstimator Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2016.12.30 - Version 1.19
+
+- Increased the supported defocused image diameter range to between 32 and 320.
+
+- Added support for color filter array detectors. Frames must be bias-subtracted
+and must not be demosaiced.
+
+- Enforced monochrome frame requirement.
+
+- Fixed Bayer RGB detector type bugs.
+
+- Fixed image window identifer bugs.
+
+-------------------------------------------------------------------------------
 2015.11.23 - Version 1.18
 
 - Improved modulation transfer function plot and console log.

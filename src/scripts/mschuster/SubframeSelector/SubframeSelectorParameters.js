@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorParameters.js - Released 2016/05/12 00:00:00 UTC
+// SubframeSelectorParameters.js - Released 2016/12/28 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.10
+// This file is part of SubframeSelector Script version 1.11
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -653,12 +653,12 @@ parameters.insertParameterDescription(new parameterDescription(
 
 parameters.insertParameterDescription(new parameterDescription(
    "useFileCache",
-   true,
+   false,
    function(parameters) {
-      return parameters.useFileCache;
+      return false; // parameters.useFileCache;
    },
    function(parameters, value) {
-      parameters.useFileCache = value;
+      parameters.useFileCache = false; // value;
    },
    loadSettingsDataTypeBoolean(),
    storeSettingsDataTypeBoolean(),
@@ -1224,4 +1224,4 @@ parameters.insertParameterDescription(new parameterDescription(
 parameters.reset();
 
 // ****************************************************************************
-// EOF SubframeSelectorParameters.js - Released 2016/05/12 00:00:00 UTC
+// EOF SubframeSelectorParameters.js - Released 2016/12/28 00:00:00 UTC

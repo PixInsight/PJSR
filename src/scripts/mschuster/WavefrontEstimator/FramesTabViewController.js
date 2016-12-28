@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// FramesTabViewController.js - Released 2015/11/23 00:00:00 UTC
+// FramesTabViewController.js - Released 2016/12/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.18
+// This file is part of WavefrontEstimator Script Version 1.19
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -474,7 +474,8 @@ function FramesTabView(parent, model, controller) {
          "<p>The list of intra-focal frames selected for combination.</p>" +
 
          "<p>The frames must be bias-subtracted and must not be otherwise " +
-         "processed.</p>";
+         "processed. Frames from color filter array detectors must not be " +
+         "demosaiced.</p>";
 
       this.intraFocalFramesTreeBox = this.addTreeBox(
          this.intraFocalFramesGroupBox,
@@ -525,7 +526,8 @@ function FramesTabView(parent, model, controller) {
          "<p>The list of extra-focal frames selected for combination.</p>" +
 
          "<p>The frames must be bias-subtracted and must not be otherwise " +
-         "processed.</p>";
+         "processed. Frames from color filter array detectors must not be " +
+         "demosaiced.</p>";
 
       this.extraFocalFramesTreeBox = this.addTreeBox(
          this.extraFocalFramesGroupBox,
@@ -613,4 +615,4 @@ function FramesTabView(parent, model, controller) {
 FramesTabView.prototype = new Frame;
 
 // ****************************************************************************
-// EOF FramesTabViewController.js - Released 2015/11/23 00:00:00 UTC
+// EOF FramesTabViewController.js - Released 2016/12/30 00:00:00 UTC
