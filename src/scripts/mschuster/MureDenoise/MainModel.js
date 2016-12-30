@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2016/12/19 00:00:00 UTC
+// MainModel.js - Released 2016/12/31 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.18
+// This file is part of MureDenoise Script Version 1.19
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -218,6 +218,14 @@ function MainModel() {
    this.generateMethodNoiseImageQuantileLow = 0.001;
    this.generateMethodNoiseImageQuantileHigh = 0.999;
    this.generateMethodNoiseImage = this.generateMethodNoiseImageDefault;
+
+   // Variance estimate.
+   this.varianceEstimateQuantile = 0.1;
+   this.varianceEstimateBlockSize = 8;
+   this.varianceEstimateNormalization = 100;
+   this.varianceEstimateFormat = "%.1f";
+   this.varianceEstimateUnits = "%%";
+   this.varianceEstimateQuantileFormat = "%dth";
 
    // Gives numeric if well defined and within range, otherwise a default.
    this.defaultNumeric = function(numeric, min, max, def) {
@@ -458,4 +466,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2016/12/19 00:00:00 UTC
+// EOF MainModel.js - Released 2016/12/31 00:00:00 UTC

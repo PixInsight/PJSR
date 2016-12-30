@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MureDenoise.js - Released 2016/12/19 00:00:00 UTC
+// MureDenoise.js - Released 2016/12/31 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.18
+// This file is part of MureDenoise Script Version 1.19
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,11 +48,11 @@
 // ****************************************************************************
 
 #define TITLE "MureDenoise"
-#define VERSION "1.18"
+#define VERSION "1.19"
 
 #feature-id Noise Reduction > MureDenoise
 
-#feature-info <b>MureDenoise Version 1.18</b><br/>\
+#feature-info <b>MureDenoise Version 1.19</b><br/>\
    <br/>\
    Script for denoising linear monochannel images corrupted by mixed \
    Poisson-Gaussian noise. Applicable to single frame images and average \
@@ -114,7 +114,7 @@ function main() {
    model.loadSettings();
    model.loadParameters();
 
-   var controller = new MainController(model);
+   var controller = new MainController(model, Parameters.isViewTarget);
 
    var view = new MainView(model, controller);
    controller.setView(view);
@@ -148,4 +148,4 @@ main();
 gc();
 
 // ****************************************************************************
-// EOF MureDenoise.js - Released 2016/12/19 00:00:00 UTC
+// EOF MureDenoise.js - Released 2016/12/31 00:00:00 UTC
