@@ -135,9 +135,10 @@ function BatchFrameAcquisitionEngine()
 
    this.executeController = function()
    {
-      if ( !this.deviceController.executeGlobal() )
-         console.errorln("INDIDeviceController.executeGlobal() failed");
-        // throw new Error( "INDIDeviceController.executeGlobal() failed" );
+      if ( !this.deviceController.executeGlobal() ){
+        console.criticalln("INDIDeviceController.executeGlobal() failed");
+        throw new Error( "INDIDeviceController.executeGlobal() failed" );
+      }
    };
 
    this.restartTimer = function()
@@ -162,6 +163,13 @@ function BatchFrameAcquisitionEngine()
    this.getFilterWheelDeviceName = function ()
    {
       return (this.extFilterWheelDevice != "" ) ? this.extFilterWheelDevice : this.filterWheelDevice;
+   }
+
+   this.doesNotNeedFilter = function() {
+      if (this.frameType.text == "Dark" || this.frameType.text == "Bias"){
+         return true;
+      }
+      return false;
    }
 
    this.print = function ()
@@ -218,16 +226,22 @@ function BatchFrameAcquisitionEngine()
          return [];
       }
 
-      if (this.filterKeys.length == 0){
+      if (!this.doesNotNeedFilter() && this.filterKeys.length == 0){
          (new MessageBox("You must specify at least one filter", "Error",StdIcon_Error)).execute();
          return [];
+      }
+
+      if (this.doesNotNeedFilter()){
+         this.filterKeys[0]             = "<no filter>";
+         this.filterDict["<no filter>"] = -1;
+
       }
 
       this.worklist = [];
       var count = 0;
       for (var t = 0; t < this.targets.length; ++t){
          for (var f = 0; f < this.filterKeys.length; ++f){
-            var item = {"targetName":"", "ra":0, "dec":0, "filterName":"", "filterID":0, "binningX":0, "binningY":0, "expTime":0, "numOfFrames":0};
+            var item = {"targetName":"", "ra":0, "dec":0, "filterName":"", "filterID":-1, "binningX":0, "binningY":0, "expTime":0, "numOfFrames":0};
             item.targetName  = this.targets[t].name;
             item.ra          = this.targets[t].ra;
             item.dec         = this.targets[t].dec;
@@ -331,7 +345,7 @@ function BatchFrameAcquisitionEngine()
          cameraController.newImageIdTemplate  = format("%s_",this.worklist[i].targetName);
          cameraController.clientFileNameTemplate = format("%s_%s",this.worklist[i].targetName,this.clientFileTemplate);
          cameraController.serverFileNameTemplate = format("%s_%s",this.worklist[i].targetName,this.serverFileTemplate);
-         if (this.supportsFilter()){
+         if (this.supportsFilter() && this.worklist[i].filterID != -1){
             cameraController.externalFilterWheelDeviceName = this.extFilterWheelDevice;
             cameraController.filterSlot                    = this.worklist[i].filterID;
             cameraController.newImageIdTemplate            = format("%s_%s_",this.worklist[i].targetName,this.worklist[i].filterName);
@@ -1481,11 +1495,11 @@ function BatchFrameAcquisitionDialog()
          var filterIndex = i + 1;
          let filterPropertyKey = "/" + engine.getFilterWheelDeviceName() + "/FILTER_NAME/FILTER_SLOT_NAME_" + filterIndex;
          engine.deviceController.getCommandParameters = filterPropertyKey;
-         engine.deviceController.serverCommand = "GET";
-         try {
-            engine.executeController();
+         engine.deviceController.serverCommand = "TRY_GET";
+
+         engine.executeController();
+         if (engine.deviceController.getCommandResult.length != 0){
             filter[i] = engine.deviceController.getCommandResult;
-         } catch (err) {
          }
       }
       return filter;
@@ -1495,11 +1509,11 @@ function BatchFrameAcquisitionDialog()
       var serverDir = "";
       let propertyKey = "/" + engine.ccdDevice + "/UPLOAD_SETTINGS/UPLOAD_DIR";
       engine.deviceController.getCommandParameters = propertyKey;
-      engine.deviceController.serverCommand = "GET";
-      try {
-         engine.executeController();
+      engine.deviceController.serverCommand = "TRY_GET";
+
+      engine.executeController();
+      if (engine.deviceController.getCommandResult.length != 0){
          serverDir = engine.deviceController.getCommandResult;
-      } catch (err) {
       }
       return serverDir;
    }
@@ -1554,63 +1568,39 @@ function BatchFrameAcquisitionDialog()
          // -- mount device
          let mountPropertyKey = "/" + device + "/EQUATORIAL_EOD_COORD/RA";
          engine.deviceController.getCommandParameters = mountPropertyKey;
-         engine.deviceController.serverCommand = "GET";
+         engine.deviceController.serverCommand = "TRY_GET";
 
-         try {
-            engine.executeController();
+         engine.executeController();
+         if (engine.deviceController.getCommandResult.length != 0){
             engine.mountDevice = device;
             this.dialog.mountparam_PushButton.enabled = true;
             this.dialog.mountparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-green.png" );
-
-            var node = new TreeBoxNode( this.dialog.serverDevices_TreeBox );
-            node.setText(0,device);
-            node.setIcon(1,":/bullets/bullet-ball-glass-green.png");
-            node.setText(2,"Mount");
-            node.adjustToContents();
-
-         } catch (err) {
-            //console.writeln(err);
          }
 
          // -- ccd device
          let ccdPropertyKey = "/" + device + "/CCD_EXPOSURE/CCD_EXPOSURE_VALUE";
          engine.deviceController.getCommandParameters = ccdPropertyKey;
-         engine.deviceController.serverCommand = "GET";
-         try {
-            engine.executeController();
+         engine.deviceController.serverCommand = "TRY_GET";
+
+         engine.executeController();
+         if (engine.deviceController.getCommandResult.length != 0){
             engine.ccdDevice = device;
             this.dialog.cameraparam_PushButton.enabled = true;
             this.dialog.cameraparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-green.png" );
-
-            var node = new TreeBoxNode( this.dialog.serverDevices_TreeBox );
-            node.setText(0,device);
-            node.setIcon(1,":/bullets/bullet-ball-glass-green.png");
-            node.setText(2,"CCD");
-            node.adjustToContents();
-         } catch (err) {
-            //console.writeln(err);
          }
 
          // -- filter wheel device
          let filterWheelPropertyKey = "/" + device + "/FILTER_SLOT/FILTER_SLOT_VALUE";
          engine.deviceController.getCommandParameters = filterWheelPropertyKey;
-         engine.deviceController.serverCommand = "GET";
-         try {
+         engine.deviceController.serverCommand = "TRY_GET";
 
-            engine.executeController();
+         engine.executeController();
+         if (engine.deviceController.getCommandResult.length != 0){
             engine.filterWheelDevice = device;
             this.dialog.filterparam_PushButton.enabled = true;
             this.dialog.filterparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-green.png" );
 
             engine.extFilterWheelDevice = ( engine.ccdDevice != device ) ? device : "";
-            var node = new TreeBoxNode( this.dialog.serverDevices_TreeBox );
-            node.setText(0,device);
-            node.setIcon(1,":/bullets/bullet-ball-glass-green.png");
-            node.setText(2,"Filter wheel");
-            node.adjustToContents();
-
-         } catch (err) {
-            //console.writeln(err);
          }
       }
    }
