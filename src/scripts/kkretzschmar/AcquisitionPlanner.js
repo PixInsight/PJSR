@@ -50,12 +50,11 @@
  * TODO
  *  - load solver parameters (aperture, focal length) from INDI client
  *  - add coordinate search dialog to target list
- *  - redesign mount parametes
  *  - add synch action
  */
 
 
-#feature-id    Batch Processing > BatchFrameAcquisition
+#feature-id    Batch Processing > Batch Frame Acquisition
 
 #feature-info  An acquisition planner utility.
 
@@ -83,54 +82,6 @@
 #define VERSION "0.1.0"
 
 
-
-
-function ContinueDialog()
-{
-   this.__base__ = Dialog;
-   this.__base__();
-
-   this.continue_Label = new Label( this );
-   this.continue_Label.text = "Continue ?";
-   this.continue_Label.textAlignment = TextAlign_Center|TextAlign_VertCenter;
-
-   this.ok_Button = new PushButton( this );
-   this.ok_Button.text = "OK";
-   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
-   this.ok_Button.onClick = function()
-   {
-      this.dialog.ok();
-   };
-
-   this.cancel_Button = new PushButton( this );
-   this.cancel_Button.text = "Cancel";
-   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
-   this.cancel_Button.onClick = function()
-   {
-      this.dialog.cancel();
-   };
-
-   this.buttons_Sizer = new HorizontalSizer;
-   this.buttons_Sizer.spacing = 6;
-   this.buttons_Sizer.addStretch();
-   this.buttons_Sizer.add( this.ok_Button );
-   this.buttons_Sizer.add( this.cancel_Button );
-
-   this.sizer = new VerticalSizer;
-   this.sizer.margin = 8;
-   this.sizer.spacing = 8;
-   this.sizer.add( this.continue_Label );
-   this.sizer.add( this.buttons_Sizer );
-
-
-   this.windowTitle = "Continue processing";
-   this.userResizable = true;
-   this.adjustToContents();
-}
-
-// Our dialog inherits all properties and methods from the core Dialog object.
-ContinueDialog.prototype = new Dialog;
-
 /*
  * Batch Format Conversion engine
  */
@@ -140,8 +91,6 @@ function BatchFrameAcquisitionEngine()
 
    this.timer = new ElapsedTime;
 
-   this.continueDialog = new ContinueDialog;
-
    this.mountDevice          = "";
    this.ccdDevice            = "";
    this.filterWheelDevice    = "";
@@ -149,6 +98,8 @@ function BatchFrameAcquisitionEngine()
    this.focuserDevice        = "";
 
    // mount parameters
+   this.doMove             = false;
+   this.automaticMove      = false;
    this.center             = false;
    this.align              = false;
    this.computeApparentPos = false;
@@ -171,7 +122,7 @@ function BatchFrameAcquisitionEngine()
    this.overwriteClientFiles = false;
    this.serverDownloadDir    = "";
    this.serverFileTemplate   = "";
-   this.uploadMode           = 0;
+   this.uploadMode           = { idx:0, text:"Client only" };
 
 
    // target list
@@ -217,21 +168,32 @@ function BatchFrameAcquisitionEngine()
    {
       console.writeln("================================================");
       console.noteln("INDI devices:");
-      console.writeln("Mount device:         " + this.mountDevice);
-      console.writeln("Camera device:        " + this.ccdDevice);
-      console.writeln("Filter device:        " + this.getFilterWheelDeviceName());
-      console.writeln("Focus device:         " + this.focuserDevice);
+      console.writeln("Mount device:              " + this.mountDevice);
+      console.writeln("Camera device:             " + this.ccdDevice);
+      console.writeln("Filter device:             " + this.getFilterWheelDeviceName());
+      console.writeln("Focus device:              " + this.focuserDevice);
       console.writeln("------------------------------------------------");
       console.noteln("Mount parameters:");
-      console.writeln("Center:               " + (this.center ? "true" : "false"));
-      console.writeln("Compute apparent pos: " + (this.computeApparentPos ? "true" : "false"));
-      console.writeln("Alignment corr:       " + (this.align ? "true" : "false"));
-      console.writeln("Alignment file:       " + this.alignModelFile);
+      console.writeln("Center:                    " + (this.center ? "true" : "false"));
+      console.writeln("Compute apparent pos:      " + (this.computeApparentPos ? "true" : "false"));
+      console.writeln("Alignment corr:            " + (this.align ? "true" : "false"));
+      console.writeln("Alignment file:            " + this.alignModelFile);
       console.writeln("------------------------------------------------");
       console.noteln("Camera parameters:");
-      console.writeln("Binning X:            " + this.binningX.text);
-      console.writeln("Binning Y:            " + this.binningY.text);
-      console.writeln("Frame type:           " + this.frameType.text);
+      console.writeln("Binning X:                 " + this.binningX.text);
+      console.writeln("Binning Y:                 " + this.binningY.text);
+      console.writeln("Frame type:                " + this.frameType.text);
+      console.writeln("Exposure time:             " + this.exposureTime);
+      console.writeln("Exposure delay:            " + this.exposureDelay);
+      console.writeln("Save frames:               " + (this.saveClientImages ? "true" : "false"));
+      console.writeln("Open frames:               " + (this.openClientImages ? "true" : "false"));
+      console.writeln("Client download directory: " + this.clientDownloadDir);
+      console.writeln("Client file template:      " + this.clientFileTemplate);
+      console.writeln("Client output hints:       " + this.clientOutputHints);
+      console.writeln("Overwrite client file:     " + (this.overwriteClientFiles ? "true" : "false"));
+      console.writeln("Upload mode:               " + this.uploadMode.text);
+      console.writeln("Server download directory: " + this.serverDownloadDir);
+      console.writeln("Server file template:      " + this.serverFileTemplate);
       console.writeln("------------------------------------------------");
       console.noteln("Filter wheel parameters:");
       console.write(  "Filter:               ");
@@ -251,6 +213,16 @@ function BatchFrameAcquisitionEngine()
 
    this.createWorklist = function ()
    {
+      if (this.targets.length == 0){
+         (new MessageBox("You must specify at least one target", "Error",  StdIcon_Error)).execute();
+         return [];
+      }
+
+      if (this.filterKeys.length == 0){
+         (new MessageBox("You must specify at least one filter", "Error",StdIcon_Error)).execute();
+         return [];
+      }
+
       this.worklist = [];
       var count = 0;
       for (var t = 0; t < this.targets.length; ++t){
@@ -326,7 +298,7 @@ function BatchFrameAcquisitionEngine()
       cameraController.serverUploadDirectory     = this.serverDownloadDir;
       cameraController.clientFileNameTemplate    = this.clientFileTemplate;
       cameraController.clientOutputFormatHints   = this.clientOutputHints;
-      cameraController.uploadMode                = this.uploadMode;
+      cameraController.uploadMode                = this.uploadMode.idx;
 
       // loop worklist items
       var previousTarget = "";
@@ -338,12 +310,13 @@ function BatchFrameAcquisitionEngine()
          mountController.targetDec = this.worklist[i].dec;
          console.writeln(format("Moving to target %s", this.worklist[i].targetName));
 
-         var doMove = false;//previousTarget!=this.worklist[i].targetName;
-         if (doMove  && !this.continueDialog.execute()){
+
+         var isDifferentTarget = previousTarget!=this.worklist[i].targetName;
+         if (isDifferentTarget && this.doMove  && !this.automaticMove && !(new MessageBox( "Goto next object ?", "Message", StdIcon_Question, StdButton_Yes, StdButton_No).execute() )) {
             break;
          }
 
-         if (doMove && !mountController.executeGlobal()){
+         if (isDifferentTarget && this.doMove && !mountController.executeGlobal()){
             node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
             break;
          }
@@ -365,10 +338,10 @@ function BatchFrameAcquisitionEngine()
             cameraController.clientFileNameTemplate        = format("%s_%s_%s",this.worklist[i].targetName,this.worklist[i].filterName,this.clientFileTemplate);
             cameraController.serverFileNameTemplate        = format("%s_%s_%s",this.worklist[i].targetName,this.worklist[i].filterName,this.serverFileTemplate);
          }
-         if (this.center){
+         if (isDifferentTarget && this.center){
             cameraController.saveClientImages = false;
             cameraController.openClientImages = true;
-            cameraController.uploadMode       = 0;
+            cameraController.uploadMode.idx   = 0;
             cameraController.exposureTime     = this.worklist[i].expTime / 10;
             cameraController.exposureCount    = 1;
             cameraController.binningX         = 2;
@@ -388,7 +361,7 @@ function BatchFrameAcquisitionEngine()
 
             cameraController.saveClientImages = this.saveClientImages;
             cameraController.openClientImages = this.openClientImages;
-            cameraController.uploadMode       = this.uploadMode;
+            cameraController.uploadMode       = this.uploadMode.idx;
             cameraController.exposureTime     = this.worklist[i].expTime ;
             cameraController.exposureCount    = this.worklist[i].numOfFrames;
             cameraController.binningX         = this.worklist[i].binningX;
@@ -416,11 +389,39 @@ function MountParametersDialog(dialog)
    this.__base__ = Dialog;
    this.__base__();
 
-   var labelWidth1 = this.font.width( "Alignment model" + 'T' );
+   var labelWidth1 = this.font.width( "Apparent position correction" + 'T' );
+
+   this.gotoMode_Label = new Label(this);
+   this.gotoMode_Label.text = "Mount Goto mode:";
+   this.gotoMode_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.gotoMode_Label.minWidth = labelWidth1;
+   this.gotoMode_Label.toolTip = "<p>There are three Goto modes:</p> \
+                                   <p><i>None:</i>  Do not move telescope if the target has changed. Especially do not move telescope for first target.</p> \
+                                   <p><i>Interactive:</i>  Always ask the user before moving to the next object.</p>\
+                                   <p><i>Automatic:</i>  Move to the next object automatically without asking the user.</p>";
+
+   this.gotoMode_ComboBox = new ComboBox(this);
+   this.gotoMode_ComboBox.addItem("None");
+   this.gotoMode_ComboBox.addItem("Interactive");
+   this.gotoMode_ComboBox.addItem("Automatic");
+   this.gotoMode_ComboBox.toolTip = this.gotoMode_Label.toolTip ;
+   this.gotoMode_ComboBox.onItemSelected = function ( index ) {
+      this.dialog.enableGotoServices(index != "0");
+      engine.doMove = (index != "0");
+      engine.automaticMove = (index == "2");
+   }
+
+
+
+   this.centering_Label = new Label(this);
+   this.centering_Label.text = "Center object:";
+   this.centering_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.centering_Label.minWidth = labelWidth1;
+   this.centering_Label.toolTip = "<p>Enable centering of targets by applying differential alignment correction.</p>";
+
 
    this.centering_Checkbox = new CheckBox(this);
-   this.centering_Checkbox.text = "Center object"
-   this.centering_Checkbox.toolTip = "<p>Enable centering of targets by applying differential alignment correction.</p>"
+   this.centering_Checkbox.toolTip = this.centering_Label.toolTip;
 
    this.configSolver_Button = new PushButton(this);
    this.configSolver_Button.text = "Configure solver";
@@ -457,14 +458,25 @@ function MountParametersDialog(dialog)
       return null;
    };
 
+
+   this.alignmentCorrection_Label = new Label(this);
+   this.alignmentCorrection_Label.text = "Alignment correction:";
+   this.alignmentCorrection_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.alignmentCorrection_Label.minWidth = labelWidth1;
+   this.alignmentCorrection_Label.toolTip = "<p>Enable correction of telescope pointing misalignment.</p>";
+
    this.alignmentCorrection_Checkbox = new CheckBox(this);
-   this.alignmentCorrection_Checkbox.text = "Telescope pointing alignment correction"
-   this.alignmentCorrection_Checkbox.toolTip = "<p>Enable correction of telescope pointing misalignment.</p>"
+   this.alignmentCorrection_Checkbox.toolTip = this.alignmentCorrection_Label.toolTip;
+
+   this.computeApparentPos_Label = new Label(this);
+   this.computeApparentPos_Label.text = "Apparent position correction";
+   this.computeApparentPos_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.computeApparentPos_Label.minWidth = labelWidth1;
+   this.computeApparentPos_Label.toolTip = "<p>Computes the apparent position of the target and corrects the target coordinates accordingly.</p>";
 
    this.computeApparentPos_Checkbox = new CheckBox(this);
-   this.computeApparentPos_Checkbox.text = "Apparent position correction";
    this.computeApparentPos_Checkbox.checked = true;
-   this.computeApparentPos_Checkbox.toolTip = "<p>Computes the apparent position of the target and corrects the target coordinates accordingly.</p>"
+   this.computeApparentPos_Checkbox.toolTip = this.computeApparentPos_Label.toolTip;
 
    this.alignmentModel_Edit = new Edit(this);
    this.alignmentModel_Edit.text = "<select an alignment model file>";
@@ -487,11 +499,30 @@ function MountParametersDialog(dialog)
       }
    }
 
+   this.gotoMode_Sizer = new HorizontalSizer;
+   this.gotoMode_Sizer.margin = 6;
+   this.gotoMode_Sizer.spacing = 4;
+   this.gotoMode_Sizer.add( this.gotoMode_Label );
+   this.gotoMode_Sizer.add( this.gotoMode_ComboBox );
+
    this.centering_Sizer = new HorizontalSizer;
    this.centering_Sizer.margin = 6;
    this.centering_Sizer.spacing = 4;
+   this.centering_Sizer.add( this.centering_Label );
    this.centering_Sizer.add( this.centering_Checkbox );
    this.centering_Sizer.add( this.configSolver_Button );
+
+   this.alignmentCorrection_Sizer = new HorizontalSizer;
+   this.alignmentCorrection_Sizer.margin = 6;
+   this.alignmentCorrection_Sizer.spacing = 4;
+   this.alignmentCorrection_Sizer.add( this.alignmentCorrection_Label );
+   this.alignmentCorrection_Sizer.add( this.alignmentCorrection_Checkbox );
+
+   this.apparentPosCorrection_Sizer = new HorizontalSizer;
+   this.apparentPosCorrection_Sizer.margin = 6;
+   this.apparentPosCorrection_Sizer.spacing = 4;
+   this.apparentPosCorrection_Sizer.add( this.computeApparentPos_Label );
+   this.apparentPosCorrection_Sizer.add( this.computeApparentPos_Checkbox );
 
    this.alignmentModel_Sizer = new HorizontalSizer;
    this.alignmentModel_Sizer.margin = 6;
@@ -506,9 +537,10 @@ function MountParametersDialog(dialog)
    this.mountParameters_GroupBox.sizer = new VerticalSizer;
    this.mountParameters_GroupBox.sizer.margin = 6;
    this.mountParameters_GroupBox.sizer.spacing = 4;
+   this.mountParameters_GroupBox.sizer.add( this.gotoMode_Sizer);
    this.mountParameters_GroupBox.sizer.add( this.centering_Sizer);
-   this.mountParameters_GroupBox.sizer.add( this.alignmentCorrection_Checkbox );
-   this.mountParameters_GroupBox.sizer.add( this.computeApparentPos_Checkbox );
+   this.mountParameters_GroupBox.sizer.add( this.apparentPosCorrection_Sizer );
+   this.mountParameters_GroupBox.sizer.add( this.alignmentCorrection_Sizer );
    this.mountParameters_GroupBox.sizer.add( this.alignmentModel_Sizer );
 
    this.ok_Button = new PushButton( this );
@@ -544,6 +576,19 @@ function MountParametersDialog(dialog)
    this.userResizable = true;
    this.adjustToContents();
 
+
+   // methods
+   this.enableGotoServices = function(enable) {
+      this.centering_Label.enabled              = enable;
+      this.centering_Checkbox.enabled           = enable;
+      this.configSolver_Button.enabled          = enable;
+      this.alignmentCorrection_Label.enabled    = enable;
+      this.alignmentCorrection_Checkbox.enabled = enable;
+      this.computeApparentPos_Label.enabled     = enable;
+      this.computeApparentPos_Checkbox.enabled  = enable;
+      this.alignmentModel_Edit.enabled          = enable;
+   }
+   this.enableGotoServices(false);
 }
 
 // Our dialog inherits all properties and methods from the core Dialog object.
@@ -746,7 +791,6 @@ function CameraParametersDialog(dialog)
    this.openImages_Sizer.addStretch();
 
 //
-
    this.saveImages_Label = new Label( this );
    this.saveImages_Label.text = "Save frames";
    this.saveImages_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
@@ -862,7 +906,7 @@ function CameraParametersDialog(dialog)
    this.clientFileTemplate_Edit.toolTip = clientFileTemplate_toolTip;
 
    this.clientFileTemplate_Sizer = new HorizontalSizer;
-   this.clientFileTemplate_Sizer.margin = 6;
+   this.clientFileTemplate_Sizer.margin  = 6;
    this.clientFileTemplate_Sizer.spacing = 4;
    this.clientFileTemplate_Sizer.add(this.clientFileTemplate_Label);
    this.clientFileTemplate_Sizer.add(this.clientFileTemplate_Edit);
@@ -1424,6 +1468,7 @@ function BatchFrameAcquisitionDialog()
 
    //this.computeApparentPos_Checkbox.
    this.mountDialog  = new MountParametersDialog(this);
+
    this.cameraDialog = new CameraParametersDialog(this);
    this.filterDialog = new FilterWheelParametersDialog(this);
    this.updateDialog = {};
@@ -1616,7 +1661,9 @@ function BatchFrameAcquisitionDialog()
          engine.overwriteClientFiles = this.dialog.cameraDialog.overwriteImages_Checkbox.checked;
          engine.serverDownloadDir    = this.dialog.cameraDialog.serverDownloadDir_Edit.text;
          engine.serverFileTemplate   = this.dialog.cameraDialog.serverFileTemplate_Edit.text;
-         engine.uploadMode           = this.dialog.cameraDialog.uploadMode_ComboBox.currentItem;
+         engine.uploadMode.idx       = this.dialog.cameraDialog.uploadMode_ComboBox.currentItem;
+         engine.uploadMode.text      = this.dialog.cameraDialog.uploadMode_ComboBox.itemText(engine.uploadMode.idx);
+
 
          // diable target treebox if frame type not "LIGHT"
          if ( engine.frameType.idx  != 0) {
