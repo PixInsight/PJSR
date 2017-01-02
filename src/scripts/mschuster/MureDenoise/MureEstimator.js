@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MureEstimator.js - Released 2016/12/19 00:00:00 UTC
+// MureEstimator.js - Released 2016/12/31 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.18
+// This file is part of MureDenoise Script Version 1.19
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -609,11 +609,85 @@ function MureEstimator(model, view) {
 
       if (!image.isFinite()) {
          throw new Error(
-            "The denoise process did not find a representable result"
+            "The denoise process did not find a representable result."
          );
       }
 
       return image;
+   };
+
+   // Generates the smooth flatfield.
+   this.generateSmoothFlatfield = function() {
+      var flatfield = null;
+      if (model.flatfieldView != null && model.flatfieldView.isView) {
+         var image = new Image(model.flatfieldView.image);
+
+         var layers = [];
+         for (
+            var layer = 0;
+            layer != model.smoothFlatfieldLayerCount + 1;
+            ++layer
+         ) {
+            layers.push([
+               layer == model.smoothFlatfieldLayerCount,
+               true, 0.000, false, 3.000, 1.00, 1
+            ]);
+         }
+
+         var MLT = new MultiscaleLinearTransform;
+         MLT.layers = layers;
+         MLT.transform =
+            MultiscaleLinearTransform.prototype.MultiscaleLinearTransform;
+         MLT.executeOn(image);
+         Console.abortEnabled = view.consoleAbortEnabled();
+
+         var flatfield = (new FrameMatrix(image.toMatrix())).pipeline([
+            function(frame) {
+               return frame.multiplyScalar(1 / frame.matrix().mean());
+            }
+         ]);
+
+         image.free();
+      }
+
+      return flatfield;
+   };
+
+   // Logs the smooth flatfield scale.
+   this.logSmoothFlatfieldScale = function(flatfield) {
+      var flatfieldStdDev = flatfield.matrix().stdDev();
+      console.writeln(format(
+         "Flatfield scale: " + model.flatfieldScaleFormat +
+         " " + model.flatfieldScaleUnits,
+         model.flatfieldScaleNormalization * flatfieldStdDev
+      ));
+      console.flush();
+   };
+
+   // Logs the base parameters.
+   this.logBaseParameters = function() {
+      var baseGain = model.baseGain();
+      console.writeln(format(
+         "Base gain: " + model.detectorGainFormat +
+         " " + model.detectorGainUnits,
+         baseGain
+      ));
+
+      var baseGaussianNoise = model.baseGaussianNoise();
+      console.writeln(format(
+         "Base Gaussian noise: " + model.detectorGaussianNoiseFormat +
+         " " + "e-",
+         baseGaussianNoise
+      ));
+
+      var baseOffset = model.baseOffset();
+      console.writeln(format(
+         "Base offset: " + model.detectorOffsetFormat +
+         " " + "e-",
+         baseOffset
+      ));
+
+      console.flush();
    };
 
    // Generates the method noise image.
@@ -662,32 +736,6 @@ function MureEstimator(model, view) {
       return imageWindow;
    };
 
-   // Logs the base parameters.
-   this.logBaseParameters = function() {
-      var baseGain = model.baseGain();
-      console.writeln(format(
-         "Base gain: " + model.detectorGainFormat +
-         " " + model.detectorGainUnits,
-         baseGain
-      ));
-
-      var baseGaussianNoise = model.baseGaussianNoise();
-      console.writeln(format(
-         "Base Gaussian noise: " + model.detectorGaussianNoiseFormat +
-         " " + "e-",
-         baseGaussianNoise
-      ));
-
-      var baseOffset = model.baseOffset();
-      console.writeln(format(
-         "Base offset: " + model.detectorOffsetFormat +
-         " " + "e-",
-         baseOffset
-      ));
-
-      console.flush();
-   };
-
    // Logs the method noise.
    this.logMethodNoise = function(methodNoise) {
       var methodNoiseStdDev = methodNoise.matrix().stdDev();
@@ -699,6 +747,98 @@ function MureEstimator(model, view) {
       console.flush();
    };
 
+   // Generates the exposure estimate.
+   this.generateExposureEstimate = function(flatfield, quantile) {
+      var image = (
+         new FrameMatrix(model.imageView.image.toMatrix())
+      ).pipeline([
+         flatfield == null ? null :
+            function(frame) {
+               return frame.multiplyFrame(flatfield);
+            }
+      ]);
+
+      var matrix = image.matrix();
+      var size = model.varianceEstimateBlockSize;
+      var rows = Math.floor(matrix.rows / size);
+      var rowOffset = Math.floor(0.5 * (matrix.rows - size * rows));
+      var cols = Math.floor(matrix.cols / size);
+      var colOffset = Math.floor(0.5 * (matrix.cols - size * cols));
+      var blocks = new Vector(0, rows * cols);
+      var block = new Vector(0, size * size);
+      for (var row = 0; row != rows; ++row) {
+         for (var col = 0; col != cols; ++col) {
+            for (var brow = 0; brow != size; ++brow) {
+               for (var bcol = 0; bcol != size; ++bcol) {
+                  block.at(
+                     size * brow + bcol,
+                     matrix.at(
+                        size * row + rowOffset + brow,
+                        size * col + colOffset + bcol
+                     )
+                  );
+               }
+            }
+            blocks.at(cols * row + col, block.median());
+         }
+      }
+      blocks.sort();
+
+      var exposure = 65535 * blocks.at(
+         Math.round(quantile * (blocks.length - 1))
+      );
+
+      block.assign(0, 0);
+      blocks.assign(0, 0);
+      image.clear();
+
+      return exposure;
+   };
+
+   // Generates the variance estimate.
+   this.generateVarianceEstimate = function(flatfield, quantile) {
+      var poissonNoise =
+         this.generateExposureEstimate(flatfield, quantile) /
+         (model.imageCombinationCount * model.detectorGain);
+      var gaussianNoise =
+         model.detectorGaussianNoise * model.detectorGaussianNoise /
+         model.imageCombinationCount;
+      var totalNoise = poissonNoise + gaussianNoise;
+
+      return {
+         quantile: quantile,
+         poissonNoise: poissonNoise / totalNoise,
+         gaussianNoise: gaussianNoise / totalNoise
+      };
+   };
+
+   // Logs the variance estimate.
+   this.logVarianceEstimate = function(varianceEstimate) {
+      console.writeln(format(
+         model.varianceEstimateQuantileFormat +
+            " percentile sky background exposure Poisson noise variance: " +
+            model.varianceEstimateFormat + " " + model.varianceEstimateUnits,
+         Math.round(
+            model.varianceEstimateNormalization *
+            varianceEstimate.quantile
+         ),
+         model.varianceEstimateNormalization *
+            varianceEstimate.poissonNoise
+      ));
+      console.writeln(format(
+         model.varianceEstimateQuantileFormat +
+            " percentile sky background exposure Gaussian noise variance: " +
+            model.varianceEstimateFormat + " " + model.varianceEstimateUnits,
+         Math.round(
+            model.varianceEstimateNormalization *
+            varianceEstimate.quantile
+         ),
+         model.varianceEstimateNormalization *
+            varianceEstimate.gaussianNoise
+      ));
+      console.flush();
+   };
+
    // Assigns the estimate.
    this.assignEstimate = function(estimate) {
       var estimateImage = estimate.matrix().toImage();
@@ -706,53 +846,6 @@ function MureEstimator(model, view) {
       model.imageView.image.assign(estimateImage);
       model.imageView.endProcess();
       estimateImage.free();
-   };
-
-   // Generates the smooth flatfield.
-   this.generateSmoothFlatfield = function() {
-      var flatfield = null;
-      if (model.flatfieldView != null && model.flatfieldView.isView) {
-         var image = new Image(model.flatfieldView.image);
-
-         var layers = [];
-         for (
-            var layer = 0;
-            layer != model.smoothFlatfieldLayerCount + 1;
-            ++layer
-         ) {
-            layers.push([
-               layer == model.smoothFlatfieldLayerCount,
-               true, 0.000, false, 3.000, 1.00, 1
-            ]);
-         }
-
-         var MLT = new MultiscaleLinearTransform;
-         MLT.layers = layers;
-         MLT.transform =
-            MultiscaleLinearTransform.prototype.MultiscaleLinearTransform;
-         MLT.executeOn(image);
-
-         var flatfield = (new FrameMatrix(image.toMatrix())).pipeline([
-            function(frame) {
-               return frame.multiplyScalar(1 / frame.matrix().mean());
-            }
-         ]);
-
-         image.free();
-      }
-
-      return flatfield;
-   };
-
-   // Logs the smooth flatfield scale.
-   this.logSmoothFlatfieldScale = function(flatfield) {
-      var flatfieldStdDev = flatfield.matrix().stdDev();
-      console.writeln(format(
-         "Flatfield scale: " + model.flatfieldScaleFormat +
-         " " + model.flatfieldScaleUnits,
-         model.flatfieldScaleNormalization * flatfieldStdDev
-      ));
-      console.flush();
    };
 
    // Denoises the image.
@@ -821,7 +914,7 @@ function MureEstimator(model, view) {
 
       if (!estimate.isFinite()) {
          throw new Error(
-            "The denoise process did not find a representable result"
+            "The denoise process did not find a representable result."
          );
       }
 
@@ -830,6 +923,12 @@ function MureEstimator(model, view) {
          (this.generateMethodNoiseImage(estimate)).pipeline([
             function(frame) {
                self.logMethodNoise(frame);
+
+               var varianceEstimate = self.generateVarianceEstimate(
+                  flatfield, model.varianceEstimateQuantile
+               );
+
+               self.logVarianceEstimate(varianceEstimate);
 
                return self.generateMethodNoiseImageWindow(frame);
             }
@@ -846,4 +945,4 @@ function MureEstimator(model, view) {
 };
 
 // ****************************************************************************
-// EOF MureEstimator.js - Released 2016/12/19 00:00:00 UTC
+// EOF MureEstimator.js - Released 2016/12/31 00:00:00 UTC
