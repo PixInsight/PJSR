@@ -1,1 +1,1 @@
-This file is part of PixInsight Documentation Compiler Script version 1.6.1
+This file is part of PixInsight Documentation Compiler Script version 1.6.2
