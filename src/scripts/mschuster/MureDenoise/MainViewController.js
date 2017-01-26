@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainViewController.js - Released 2016/12/31 00:00:00 UTC
+// MainViewController.js - Released 2017/01/31 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.19
+// This file is part of MureDenoise Script Version 1.20
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -148,6 +148,14 @@ function MainController(model, isViewTarget) {
       else if (
          model.flatfieldView != null &&
          model.flatfieldView.isView &&
+         !(model.detectorOffset == 0)
+      ) {
+         message = "<b>Error</b>: Detector offset must be 0 when a flatfield " +
+            "is selected.";
+      }
+      else if (
+         model.flatfieldView != null &&
+         model.flatfieldView.isView &&
          !(model.flatfieldSizeMinimum <= Math.min(
             model.flatfieldView.image.width, model.flatfieldView.image.height
          ))
@@ -243,6 +251,10 @@ function MainController(model, isViewTarget) {
          model.denoiseVarianceScaleFormat,
          model.denoiseVarianceScale
       );
+      model.useGradientNoiseThresholds =
+         model.useGradientNoiseThresholdsDefault;
+      this.view.useGradientNoiseThresholdsCheckBox.checked =
+         model.useGradientNoiseThresholds;
       model.denoiseCycleSpinCount = model.denoiseCycleSpinCountDefault;
       this.view.denoiseCycleSpinCountEdit.text = format(
          model.denoiseCycleSpinCountFormat,
@@ -269,6 +281,7 @@ function MainController(model, isViewTarget) {
 
       this.view.denoiseVarianceScaleEdit.enabled = false;
       this.view.loadVarianceScaleButton.enabled = false;
+      this.view.useGradientNoiseThresholdsCheckBox.enabled = false;
       this.view.denoiseCycleSpinCountEdit.enabled = false;
       this.view.generateMethodNoiseImageCheckBox.enabled = false;
 
@@ -294,6 +307,7 @@ function MainController(model, isViewTarget) {
 
       this.view.denoiseVarianceScaleEdit.enabled = true;
       this.view.loadVarianceScaleButton.enabled = true;
+      this.view.useGradientNoiseThresholdsCheckBox.enabled = true;
       this.view.denoiseCycleSpinCountEdit.enabled = true;
       this.view.generateMethodNoiseImageCheckBox.enabled = true;
 
@@ -313,6 +327,7 @@ function MainController(model, isViewTarget) {
             model.flatfieldView == null ||
             !model.flatfieldView.isView || (
                model.flatfieldView.image.numberOfChannels == 1 &&
+               model.detectorOffset == 0 &&
                model.flatfieldSizeMinimum <= Math.min(
                   model.flatfieldView.image.width,
                   model.flatfieldView.image.height
@@ -380,6 +395,7 @@ function MainController(model, isViewTarget) {
          model.detectorOffsetDefault
       );
       this.enableControls();
+      this.checkFlatfieldView();
    };
 
    this.denoiseVarianceScaleOnTextUpdated = function(text) {
@@ -712,6 +728,11 @@ function MainController(model, isViewTarget) {
       this.loadVarianceScaleProcessLogFile();
    };
 
+   this.useGradientNoiseThresholdsOnCheck = function(checked) {
+      model.useGradientNoiseThresholds = checked;
+      this.enableControls();
+   };
+
    this.denoiseCycleSpinCountOnTextUpdated = function(text) {
       model.denoiseCycleSpinCount = model.defaultNumeric(
          parseInt(text),
@@ -774,6 +795,10 @@ function MainController(model, isViewTarget) {
       console.writeln(format(
          "Denoise variance scale: " + model.denoiseVarianceScaleFormat,
          model.denoiseVarianceScale
+      ));
+      console.writeln(format(
+         "Use gradient/noise thresholds: " +
+         (model.useGradientNoiseThresholds ? "true" : "false")
       ));
       console.writeln(format(
          "Denoise cycle-spin count: " + model.denoiseCycleSpinCountFormat,
@@ -1075,7 +1100,7 @@ function MainView(model, controller) {
             "denoising. The image must be a single frame image or an " +
             "average combination of similarly exposed and registered " +
             "frames. The size of the image must be at least 256 pixels " +
-            "in width and height.</p>" +
+            "in width and height. Pedestal must be zero.</p>" +
 
             "<p>For linear multichannel images from monocolor detectors, " +
             "run the monochannel denoiser on each channel separately. The " +
@@ -1176,15 +1201,16 @@ function MainView(model, controller) {
          this.flatfieldViewHelpButton = this.addToolButton(
             this.flatfieldViewPane,
             ":/icons/comment.png",
-            "<p>To enable large spatial scale flatfield compensation, the " +
-            "view of the monochannel image used for flatfield calibration. " +
-            "The flatfield must be bias or dark-subtracted. " +
-            "To disable flatfield compensation, do not select a view.</p>" +
+            "<p>To enable large scale flatfield compensation, the view of " +
+            "the monochannel image used for flatfield calibration. The " +
+            "flatfield must be bias or dark-subtracted. Pedestal must be " +
+            "zero. To disable flatfield compensation, do not select a " +
+            "view.</p>" +
 
             "<p>Flatfield compensation is useful for telescopes with more " +
             "than ~10% optical vignetting. For telescopes with less " +
             "vignetting, flatfield compensation results in negligible " +
-            "denoising quality improvement.</p>" +
+            "output quality improvement.</p>" +
 
             "<p>The standard deviation of the smoothed flatfield is written " +
             "to the process console as the Flatfield scale value. The value " +
@@ -1390,13 +1416,42 @@ function MainView(model, controller) {
       }
 
       {
+         this.useGradientNoiseThresholdsPane =
+            this.addPane(this.denoiseGroupBox);
+
+         this.useGradientNoiseThresholdsPane.addUnscaledSpacing(
+            this.labelWidth
+         );
+
+         this.useGradientNoiseThresholdsPane.addSpacing(
+            this.useGradientNoiseThresholdsPane.spacing
+         );
+
+         this.useGradientNoiseThresholdsCheckBox = this.addCheckBox(
+            this.useGradientNoiseThresholdsPane,
+            "Use gradient/noise thresholds",
+            "<p>Increase the adaptivity of the denoising process by " +
+            "incorporating interscale gradient to local noise ratio " +
+            "relationships into the thresholding functions. Increasing the " +
+            "adaptivity of the denoising process improves output quality, " +
+            "but also increases processing time by about 40\%.</p>",
+            model.useGradientNoiseThresholds,
+            function(checked) {
+               controller.useGradientNoiseThresholdsOnCheck(checked);
+            }
+         );
+
+         this.useGradientNoiseThresholdsPane.addStretch();
+      }
+
+      {
          this.denoiseCycleSpinCountPane = this.addPane(this.denoiseGroupBox);
 
          this.denoiseCycleSpinCountLabel = this.addLabel(
             this.denoiseCycleSpinCountPane,
             "Cycle-spin count:",
             "<p>Cycle-spin count provides an adjustable trade-off between " +
-            "denoising quality and processing time. Increasing the number " +
+            "output quality and processing time. Increasing the number " +
             "of cycle-spins improves denoising quality, but also " +
             "increases (nearly linearly) processing time.</p>" +
 
@@ -1447,18 +1502,15 @@ function MainView(model, controller) {
             "denoising method, defined as the difference between the noisy " +
             "input and the denoised output. Method noise should track " +
             "hypothesis noise statistics, and is strongly signal dependent " +
-            "due to the presence of Poisson noise. Method noise departs " +
-            "from hypothesis noise statistics in areas where image gradient " +
-            "magnitude exceeds the noise level significantly.</p>" +
+            "due to the presence of Poisson noise.</p>" +
 
             "<p>The standard deviation of the method noise image is written " +
             "to the process console as the <i>Method noise</i> value in DN " +
             "units. The process log will also contain an estimate of the " +
             "relative contributions of Poisson noise variance and Gaussian " +
-            "noise variance in the sky background, defined by the 10th " +
-            "percentile exposure. If the Gaussian noise variance " +
-            "contribution is less than 10\%, the image can be considered " +
-            "\"sky background noise limited\".</p>",
+            "noise variance in the 10th percentile exposure. If the Gaussian " +
+            "noise variance contribution is less than 10\%, the image can be " +
+            "considered \"sky background noise limited\".</p>",
             model.generateMethodNoiseImage,
             function(checked) {
                controller.generateMethodNoiseImageOnCheck(checked);
@@ -1544,9 +1596,9 @@ function MainView(model, controller) {
          "have the same pixel resolution, and be registered by projective " +
          "transformation with no distortion correction.</p>" +
 
-         "<p>Copyright &copy; 2012-2016 Mike Schuster. All Rights " +
+         "<p>Copyright &copy; 2012-2017 Mike Schuster. All Rights " +
          "Reserved.<br>" +
-         "Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights " +
+         "Copyright &copy; 2003-2017 Pleiades Astrophoto S.L. All Rights " +
          "Reserved.</p>"
       );
       this.versionLabel.setVariableWidth();
@@ -1596,4 +1648,4 @@ function MainView(model, controller) {
 MainView.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF MainViewController.js - Released 2016/12/31 00:00:00 UTC
+// EOF MainViewController.js - Released 2017/01/31 00:00:00 UTC

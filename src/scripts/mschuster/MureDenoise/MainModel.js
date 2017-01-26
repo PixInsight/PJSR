@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2016/12/31 00:00:00 UTC
+// MainModel.js - Released 2017/01/31 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.19
+// This file is part of MureDenoise Script Version 1.20
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -204,6 +204,11 @@ function MainModel() {
    this.denoiseVarianceScaleUnits = "";
    this.denoiseVarianceScale = this.denoiseVarianceScaleDefault;
 
+   // Use gradient/noise thresholds option.
+   this.useGradientNoiseThresholdsDefault = false;
+   this.useGradientNoiseThresholds =
+      this.useGradientNoiseThresholdsDefault;
+
    // Denoise cycle-spin count.
    this.denoiseCycleSpinCountMinimum = 1;
    this.denoiseCycleSpinCountMaximum = 32;
@@ -246,6 +251,8 @@ function MainModel() {
 
    // Loads core settings.
    this.loadSettings = function() {
+      // this.defaultString(Settings.read("version", DataType_String8), "");
+
       this.flatfieldView = View.viewById(this.defaultString(
          Settings.read("flatfieldView", DataType_String8),
          ""
@@ -265,29 +272,33 @@ function MainModel() {
       );
 
       this.detectorGain = this.defaultNumeric(
-         Settings.read("detectorGain", DataType_Real32),
+         Settings.read("detectorGain", DataType_Real64),
          this.detectorGainMinimum,
          this.detectorGainMaximum,
          this.detectorGainDefault
       );
       this.detectorGaussianNoise = this.defaultNumeric(
-         Settings.read("detectorGaussianNoise", DataType_Real32),
+         Settings.read("detectorGaussianNoise", DataType_Real64),
          this.detectorGaussianNoiseMinimum,
          this.detectorGaussianNoiseMaximum,
          this.detectorGaussianNoiseDefault
       );
       this.detectorOffset = this.defaultNumeric(
-         Settings.read("detectorOffset", DataType_Real32),
+         Settings.read("detectorOffset", DataType_Real64),
          this.detectorOffsetMinimum,
          this.detectorOffsetMaximum,
          this.detectorOffsetDefault
       );
 
       this.denoiseVarianceScale = this.defaultNumeric(
-         Settings.read("denoiseVarianceScale", DataType_Real32),
+         Settings.read("denoiseVarianceScale", DataType_Real64),
          this.denoiseVarianceScaleMinimum,
          this.denoiseVarianceScaleMaximum,
          this.denoiseVarianceScaleDefault
+      );
+      this.useGradientNoiseThresholds = this.defaultBoolean(
+         Settings.read("useGradientNoiseThresholds", DataType_Boolean),
+         this.useGradientNoiseThresholdsDefault
       );
       this.denoiseCycleSpinCount = this.defaultNumeric(
          Settings.read("denoiseCycleSpinCount", DataType_Int32),
@@ -303,6 +314,8 @@ function MainModel() {
 
    // Stores core settings.
    this.storeSettings = function() {
+      Settings.write("version", DataType_String8, VERSION);
+
       Settings.write(
          "flatfieldView",
          DataType_String8,
@@ -310,6 +323,7 @@ function MainModel() {
             this.flatfieldView.fullId :
             ""
       );
+
       Settings.write(
          "imageCombinationCount",
          DataType_Int32,
@@ -323,24 +337,29 @@ function MainModel() {
 
       Settings.write(
          "detectorGain",
-         DataType_Real32,
+         DataType_Real64,
          this.detectorGain
       );
       Settings.write(
          "detectorGaussianNoise",
-         DataType_Real32,
+         DataType_Real64,
          this.detectorGaussianNoise
       );
       Settings.write(
          "detectorOffset",
-         DataType_Real32,
+         DataType_Real64,
          this.detectorOffset
       );
 
       Settings.write(
          "denoiseVarianceScale",
-         DataType_Real32,
+         DataType_Real64,
          this.denoiseVarianceScale
+      );
+      Settings.write(
+         "useGradientNoiseThresholds",
+         DataType_Boolean,
+         this.useGradientNoiseThresholds
       );
       Settings.write(
          "denoiseCycleSpinCount",
@@ -413,6 +432,12 @@ function MainModel() {
             this.denoiseVarianceScaleDefault
          );
       }
+      if (Parameters.has("useGradientNoiseThresholds")) {
+         this.useGradientNoiseThresholds = this.defaultBoolean(
+            Parameters.getBoolean("useGradientNoiseThresholds"),
+            this.useGradientNoiseThresholdsDefault
+         );
+      }
       if (Parameters.has("denoiseCycleSpinCount")) {
          this.denoiseCycleSpinCount = this.defaultNumeric(
             Parameters.getInteger("denoiseCycleSpinCount"),
@@ -452,6 +477,9 @@ function MainModel() {
       Parameters.set("detectorOffset", this.detectorOffset);
 
       Parameters.set("denoiseVarianceScale", this.denoiseVarianceScale);
+      Parameters.set(
+         "useGradientNoiseThresholds", this.useGradientNoiseThresholds
+      );
       Parameters.set("denoiseCycleSpinCount", this.denoiseCycleSpinCount);
       Parameters.set(
          "generateMethodNoiseImage", this.generateMethodNoiseImage
@@ -466,4 +494,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2016/12/31 00:00:00 UTC
+// EOF MainModel.js - Released 2017/01/31 00:00:00 UTC
