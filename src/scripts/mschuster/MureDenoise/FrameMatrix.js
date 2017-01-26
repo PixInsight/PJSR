@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// FrameMatrix.js - Released 2016/12/31 00:00:00 UTC
+// FrameMatrix.js - Released 2017/01/31 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.19
+// This file is part of MureDenoise Script Version 1.20
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -267,7 +267,47 @@ function FrameMatrix(matrix) {
       return new FrameMatrix(matrix.mul(frame.matrix()));
    };
 
-   // Gives a row filtered frame, array kernel must have odd length.
+   // Gives a row centered gradient frame.
+   this.centeredGradientRows = function() {
+      var a = matrix;
+      var rows = a.rows;
+      var cols = a.cols;
+
+      var r = new Matrix(rows, cols);
+      for (var row = 0; row != rows; ++row) {
+         r.at(row, 0, a.at(row, cols - 1) - a.at(row, 1));
+         for (var col = 1; col != cols - 1; ++col) {
+            r.at(row, col, a.at(row, col - 1) - a.at(row, col + 1));
+         }
+         r.at(row, cols - 1, a.at(row, cols - 2) - a.at(row, 0));
+      }
+
+      return new FrameMatrix(r);
+   };
+
+   // Gives a column centered gradient frame.
+   this.centeredGradientColumns = function() {
+      var a = matrix;
+      var rows = a.rows;
+      var cols = a.cols;
+
+      var r = new Matrix(rows, cols);
+      for (var col = 0; col != cols; ++col) {
+         r.at(0, col, a.at(rows - 1, col) - a.at(1, col));
+      }
+      for (var row = 1; row != rows - 1; ++row) {
+         for (var col = 0; col != cols; ++col) {
+            r.at(row, col, a.at(row - 1, col) - a.at(row + 1, col));
+         }
+      }
+      for (var col = 0; col != cols; ++col) {
+         r.at(rows - 1, col, a.at(rows - 2, col) - a.at(0, col));
+      }
+
+      return new FrameMatrix(r);
+   };
+
+   // Gives a row filtered frame, kernel must have odd length.
    this.filterRows = function(kernel) {
       var a = matrix;
       var rows = a.rows;
@@ -314,14 +354,51 @@ function FrameMatrix(matrix) {
 
    // Gives a column filtered frame, kernel must have odd length.
    this.filterColumns = function(kernel) {
-      return this.transpose().pipeline([
-         function(frame) {
-            return frame.filterRows(kernel);
-         },
-         function(frame) {
-            return frame.transpose();
+      var a = matrix;
+      var rows = a.rows;
+      var cols = a.cols;
+      var coes = kernel.length;
+      var coes2 = Math.floor(coes / 2);
+      function low(row) {
+         return 0 <= row ? row : rows + row;
+      }
+      function high(row) {
+         return row < rows ? row : row - rows;
+      }
+
+      var r = new Matrix(rows, cols);
+      for (var row = 0; row != coes2; ++row) {
+         for (var col = 0; col != cols; ++col) {
+            var sum = 0;
+            for (var coe = 0; coe != coes; ++coe) {
+               sum += kernel[coes - 1 - coe] *
+                  a.at(low(row + (coe - coes2)), col);
+            }
+            r.at(row, col, sum);
          }
-      ]);
+      }
+      for (var row = coes2; row != rows - coes2; ++row) {
+         for (var col = 0; col != cols; ++col) {
+            var sum = 0;
+            for (var coe = 0; coe != coes; ++coe) {
+               sum += kernel[coes - 1 - coe] *
+                  a.at(row + (coe - coes2), col);
+            }
+            r.at(row, col, sum);
+         }
+      }
+      for (var row = rows - coes2; row != rows; ++row) {
+         for (var col = 0; col != cols; ++col) {
+            var sum = 0;
+            for (var coe = 0; coe != coes; ++coe) {
+               sum += kernel[coes - 1 - coe] *
+                  a.at(high(row + (coe - coes2)), col);
+            }
+            r.at(row, col, sum);
+         }
+      }
+
+      return new FrameMatrix(r);
    };
 
    // Gives a row and column filtered frame, kernel must have odd length.
@@ -332,6 +409,18 @@ function FrameMatrix(matrix) {
          }
       ]);
    };
+
+   // Gives an approximate row and column filtered frame, kernel must have odd
+   // length and non-negative coefficients. Differences appear in pixels in
+   // edge border of width (kernel.length - 1) / 2.
+   this.filterRowsColumnsApproximate = function(kernel) {
+      var a = matrix.toImage();
+      a.convolveSeparable(kernel, kernel);
+      var r = a.toMatrix();
+      a.free();
+
+      return new FrameMatrix(r);
+   }
 
    // Gives a fused reflection padded and periodic shifted frame.
    this.fusedPadShift = function(pad, shiftRows, shiftCols) {
@@ -495,24 +584,20 @@ function FrameMatrix(matrix) {
       var cole = 0;
 
       var c = new Matrix(rows, cols2c);
-      for (var row = 0; row != rows; ++row) {
-         for (var col = 0; col != cols2f; ++col) {
-            var col2 = 2 * col;
-            c.at(row, col, a.at(row, col2) + a.at(row, col2 + 1));
-         }
-         if (cols2f != cols2c) {
-            c.at(row, cols2f, a.at(row, 2 * cols2f) + a.at(row, cole));
-         }
-      }
-
       var d = new Matrix(rows, cols2c);
       for (var row = 0; row != rows; ++row) {
          for (var col = 0; col != cols2f; ++col) {
             var col2 = 2 * col;
-            d.at(row, col, a.at(row, col2) - a.at(row, col2 + 1));
+            var a0 = a.at(row, col2);
+            var a1 = a.at(row, col2 + 1);
+            c.at(row, col, a0 + a1);
+            d.at(row, col, a0 - a1);
          }
          if (cols2f != cols2c) {
-            d.at(row, cols2f, a.at(row, 2 * cols2f) - a.at(row, cole));
+            var a0 = a.at(row, 2 * cols2f);
+            var a1 = a.at(row, cole);
+            c.at(row, cols2f, a0 + a1);
+            d.at(row, cols2f, a0 - a1);
          }
       }
 
@@ -537,8 +622,10 @@ function FrameMatrix(matrix) {
       for (var row = 0; row != rows; ++row) {
          for (var col = 0; col != cols2f; ++col) {
             var col2 = 2 * col;
-            r.at(row, col2, 0.5 * (c.at(row, col) + d.at(row, col)));
-            r.at(row, col2 + 1, 0.5 * (c.at(row, col) - d.at(row, col)));
+            var c0 = c.at(row, col);
+            var d0 = d.at(row, col);
+            r.at(row, col2, 0.5 * (c0 + d0));
+            r.at(row, col2 + 1, 0.5 * (c0 - d0));
          }
          if (cols2f != cols2c) {
             r.at(
@@ -641,6 +728,20 @@ function FrameMatrix(matrix) {
       var tsd = svdt[3];
       var threshold = thresholdScale * tsd;
 
+      if (false) {
+         console.writeln("pseudoInverse threshold: ", threshold);
+         for (var i = 0; i != w.length; ++i) {
+            console.writeln("w(", i, "): ", w.at(i));
+         }
+      }
+
+      var illConditioned = false;
+      for (var i = 0; i != w.length; ++i) {
+         if (Math.abs(w.at(i)) < threshold) {
+            illConditioned = true;
+         }
+      }
+
       var iw = new Matrix(w.length, w.length);
       for (var row = 0; row != w.length; ++row) {
          for (var col = 0; col != w.length; ++col) {
@@ -666,9 +767,12 @@ function FrameMatrix(matrix) {
       w.assign(0, 0);
       v.assign(0, 0, 0);
 
-      return new FrameMatrix(r);
+      return {
+         pseudoInverse: new FrameMatrix(r),
+         illConditioned: illConditioned
+      };
    };
 }
 
 // ****************************************************************************
-// EOF FrameMatrix.js - Released 2016/12/31 00:00:00 UTC
+// EOF FrameMatrix.js - Released 2017/01/31 00:00:00 UTC

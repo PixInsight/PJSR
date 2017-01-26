@@ -3,6 +3,25 @@ MureDenoise Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2017.01.31 - Version 1.20
+
+- Enabling the use gradient/noise thresholds parameter increases the adaptivity
+of the denoising process by incorporating interscale gradient to local noise
+ratio relationships into the thresholding functions. Increasing the adaptivity
+of the denoising process improves output quality, but also increases processing
+time by about 40%.
+
+- Optimized the filtering, thresholding, and wavelet transform implementations
+for a 10% performance gain.
+
+- Account for detector offset in the 10th percentile exposure component noise
+variance estimates.
+
+- Use DataType_Real64 for floating point settings.
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
 2016.12.31 - Version 1.19
 
 - "Load variance scale..." loads variance scale directly from the image selected
