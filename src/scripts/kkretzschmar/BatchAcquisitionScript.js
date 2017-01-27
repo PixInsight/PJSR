@@ -48,7 +48,6 @@
 
 /*
  * TODO
- *  - load solver parameters (aperture, focal length) from INDI client
  *  - add coordinate search dialog to target list
  *  - add synch action
  */
@@ -98,14 +97,16 @@ function BatchFrameAcquisitionEngine()
    this.focuserDevice        = "";
 
    // mount parameters
-   this.doMove             = false;
-   this.automaticMove      = false;
-   this.center             = false;
-   this.align              = false;
-   this.computeApparentPos = false;
-   this.alignModelFile     = "";
+   this.doMove                   = false;
+   this.automaticMove            = false;
+   this.center                   = false;
+   this.align                    = false;
+   this.computeApparentPos       = false;
+   this.alignModelFile           = "";
+   this.telescopeFocalLen        = 0;
 
    // camera parameters
+   this.ccdPixelSize         = 0;
    this.binningX             = { idx:0, text:"1" };
    this.binningY             = { idx:0, text:"1" };
    this.frameType            = { idx:0, text:"Light" };
@@ -124,6 +125,9 @@ function BatchFrameAcquisitionEngine()
    this.serverFileTemplate   = "";
    this.uploadMode           = { idx:0, text:"Client only" };
 
+   // processing parameters
+   // fraction of exposure time spent for the image used to center the object
+   this.centerImageExpTimeFraction = 10;
 
    // target list
    this.targets = [];
@@ -186,8 +190,10 @@ function BatchFrameAcquisitionEngine()
       console.writeln("Compute apparent pos:      " + (this.computeApparentPos ? "true" : "false"));
       console.writeln("Alignment corr:            " + (this.align ? "true" : "false"));
       console.writeln("Alignment file:            " + this.alignModelFile);
+      console.writeln("Telescope focal length:    " + this.telescopeFocalLen);
       console.writeln("------------------------------------------------");
       console.noteln("Camera parameters:");
+      console.writeln("CCD pixel size             " + this.ccdPixelSize);
       console.writeln("Binning X:                 " + this.binningX.text);
       console.writeln("Binning Y:                 " + this.binningY.text);
       console.writeln("Frame type:                " + this.frameType.text);
@@ -258,7 +264,7 @@ function BatchFrameAcquisitionEngine()
       return this.worklist;
    }
 
-   this.centerImage = function (window,mountController)
+   this.centerImage = function (window,mountController,currentBinningX)
    {
 
       var solver = new ImageSolver();
@@ -268,6 +274,9 @@ function BatchFrameAcquisitionEngine()
       solver.solverCfg.showDistortion = false;
       solver.solverCfg.generateErrorImg = false;
 
+      solver.metadata.xpixsz = currentBinningX * this.ccdPixelSize;
+      solver.metadata.focal  = this.telescopeFocalLen;
+      solver.metadata.resolution = (solver.metadata.focal > 0) ? solver.metadata.xpixsz / solver.metadata.focal * 0.18 / Math.PI : 0;
       if (solver.SolveImage(window))
       {
          // Print result
@@ -356,10 +365,8 @@ function BatchFrameAcquisitionEngine()
             cameraController.saveClientImages = false;
             cameraController.openClientImages = true;
             cameraController.uploadMode.idx   = 0;
-            cameraController.exposureTime     = this.worklist[i].expTime / 10;
+            cameraController.exposureTime     = this.worklist[i].expTime * this.centerImageExpTimeFraction;
             cameraController.exposureCount    = 1;
-            cameraController.binningX         = 2;
-            cameraController.binningY         = 2;
 
             if (!cameraController.executeGlobal()){
                node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
@@ -367,7 +374,7 @@ function BatchFrameAcquisitionEngine()
             }
 
             var window = ImageWindow.activeWindow;
-            if (!this.centerImage(window,mountController)){
+            if (!this.centerImage(window,mountController,this.worklist[i].binningX)){
                node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
                //window.close();
                break;
@@ -403,6 +410,10 @@ function MountParametersDialog(dialog)
    this.__base__ = Dialog;
    this.__base__();
 
+   this.telescopeInfoFocalLength = 0;
+   this.CCDInfoPixelSize         = 0;
+
+
    var labelWidth1 = this.font.width( "Apparent position correction" + 'T' );
 
    this.gotoMode_Label = new Label(this);
@@ -433,43 +444,21 @@ function MountParametersDialog(dialog)
    this.centering_Label.minWidth = labelWidth1;
    this.centering_Label.toolTip = "<p>Enable centering of targets by applying differential alignment correction.</p>";
 
-
    this.centering_Checkbox = new CheckBox(this);
    this.centering_Checkbox.toolTip = this.centering_Label.toolTip;
 
-   this.configSolver_Button = new PushButton(this);
-   this.configSolver_Button.text = "Configure solver";
-   this.configSolver_Button.toolTip = "<p>Opens the configuration dialog for the script ImageSolver</p>";
-   //this.configSolver_Button.enabled = this.centering_Checkbox.checked;
-   this.configSolver_Button.onClick = function ()
-   {
-      var solver = new ImageSolver();
 
-      do {
-         var solverWindow = null;
-         /*if (engine.useActive)
-            solverWindow = ImageWindow.activeWindow;
-         else if (engine.files != null && engine.files.length > 0)
-            solverWindow = ImageWindow.open(engine.files[0])[0];
-         if (solverWindow == null)
-            return new MessageBox("There is not any selected file or window", TITLE, StdIcon_Error, StdButton_Ok).execute();
-            */
-         solver.Init(solverWindow);
-         var dialog = new ImageSolverDialog(solver.solverCfg, solver.metadata, false);
-         var res = dialog.execute();
-         if (!res)
-         {
-            if (dialog.resetRequest)
-               solver = new ImageSolver();
-            else
-               return null;
-         }
-         solver.solverCfg.SaveSettings();
-         solver.metadata.SaveSettings();
- /*        if (!engine.useActive)
-            solverWindow.close();*/
-      } while (!res);
-      return null;
+   this.centering_exposureTimeEdit = new NumericEdit( this );
+   this.centering_exposureTimeEdit.label.text = "Center exposure time fraction:";
+   this.centering_exposureTimeEdit.label.minWidth = labelWidth1;
+   this.centering_exposureTimeEdit.setRange( 0.01, 1 );
+   this.centering_exposureTimeEdit.setPrecision( 2 );
+   this.centering_exposureTimeEdit.setValue( 0.1 );
+   this.centering_exposureTimeEdit.toolTip = "<p>Fraction of exposure time applied for the image used to center the object</p>";
+   this.centering_exposureTimeEdit.sizer.addStretch();
+   this.centering_exposureTimeEdit.onValueUpdated = function( value )
+   {
+      engine.centerImageExpTimeFraction = value;
    };
 
 
@@ -524,7 +513,6 @@ function MountParametersDialog(dialog)
    this.centering_Sizer.spacing = 4;
    this.centering_Sizer.add( this.centering_Label );
    this.centering_Sizer.add( this.centering_Checkbox );
-   this.centering_Sizer.add( this.configSolver_Button );
 
    this.alignmentCorrection_Sizer = new HorizontalSizer;
    this.alignmentCorrection_Sizer.margin = 6;
@@ -553,6 +541,7 @@ function MountParametersDialog(dialog)
    this.mountParameters_GroupBox.sizer.spacing = 4;
    this.mountParameters_GroupBox.sizer.add( this.gotoMode_Sizer);
    this.mountParameters_GroupBox.sizer.add( this.centering_Sizer);
+   this.mountParameters_GroupBox.sizer.add( this.centering_exposureTimeEdit);
    this.mountParameters_GroupBox.sizer.add( this.apparentPosCorrection_Sizer );
    this.mountParameters_GroupBox.sizer.add( this.alignmentCorrection_Sizer );
    this.mountParameters_GroupBox.sizer.add( this.alignmentModel_Sizer );
@@ -595,7 +584,7 @@ function MountParametersDialog(dialog)
    this.enableGotoServices = function(enable) {
       this.centering_Label.enabled              = enable;
       this.centering_Checkbox.enabled           = enable;
-      this.configSolver_Button.enabled          = enable;
+      this.centering_exposureTimeEdit.enabled   = enable;
       this.alignmentCorrection_Label.enabled    = enable;
       this.alignmentCorrection_Checkbox.enabled = enable;
       this.computeApparentPos_Label.enabled     = enable;
@@ -1518,6 +1507,31 @@ function BatchFrameAcquisitionDialog()
       return serverDir;
    }
 
+   this.getTelescopeAndCCDInfo = function() {
+      var info = { "pixSize" : 0, "focalLen" : 0 };
+
+      // get pixelsize from CCD device
+      let propertyKey = "/" + engine.ccdDevice + "/CCD_INFO/CCD_PIXEL_SIZE";
+      engine.deviceController.getCommandParameters = propertyKey;
+      engine.deviceController.serverCommand = "TRY_GET";
+
+      engine.executeController();
+      if (engine.deviceController.getCommandResult.length != 0){
+         info.pixSize = parseFloat(engine.deviceController.getCommandResult);
+      }
+
+      // get telescope focal length from mount device
+      let propertyKey = "/" + engine.mountDevice + "/TELESCOPE_INFO/TELESCOPE_FOCAL_LENGTH";
+      engine.deviceController.getCommandParameters = propertyKey;
+      engine.deviceController.serverCommand = "TRY_GET";
+
+      engine.executeController();
+      if (engine.deviceController.getCommandResult.length != 0){
+         info.focalLen = parseFloat(engine.deviceController.getCommandResult);
+      }
+      return info;
+   }
+
    //
 
    this.serverhost_Edit = new Edit(this);
@@ -1619,12 +1633,18 @@ function BatchFrameAcquisitionDialog()
    this.mountparam_PushButton.enabled = false;
    this.mountparam_PushButton.onClick = function()
    {
+      var telescopeAndCCDInfo = this.dialog.getTelescopeAndCCDInfo();
+
+      this.dialog.mountDialog.CCDInfoPixelSize         = telescopeAndCCDInfo.pixSize;
+      this.dialog.mountDialog.telescopeInfoFocalLength = telescopeAndCCDInfo.focalLen;
       if (this.dialog.mountDialog.execute()){
          engine.center             = this.dialog.mountDialog.centering_Checkbox.checked;
          engine.align              = this.dialog.mountDialog.alignmentCorrection_Checkbox.checked;
          engine.alignModelFile     = this.dialog.mountDialog.alignmentModel_Edit.text;
          engine.computeApparentPos = this.dialog.mountDialog.computeApparentPos_Checkbox.checked;
       }
+      engine.telescopeFocalLen    = this.dialog.mountDialog.telescopeInfoFocalLength;
+      engine.ccdPixelSize         = this.dialog.mountDialog.CCDInfoPixelSize;
    }
 
    this.cameraparam_PushButton = new PushButton(this);
