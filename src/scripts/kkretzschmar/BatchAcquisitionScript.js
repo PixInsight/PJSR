@@ -103,10 +103,8 @@ function BatchFrameAcquisitionEngine()
    this.align                    = false;
    this.computeApparentPos       = false;
    this.alignModelFile           = "";
-   this.telescopeFocalLen        = 0;
 
    // camera parameters
-   this.ccdPixelSize         = 0;
    this.binningX             = { idx:0, text:"1" };
    this.binningY             = { idx:0, text:"1" };
    this.frameType            = { idx:0, text:"Light" };
@@ -159,7 +157,7 @@ function BatchFrameAcquisitionEngine()
       return false;
    };
 
-   this.supportsFilter = function()
+   this.deviceSupportsFilter = function()
    {
       return this.filterWheelDevice != "" || this.extFilterWheelDevice != "";
    }
@@ -168,6 +166,7 @@ function BatchFrameAcquisitionEngine()
    {
       return (this.extFilterWheelDevice != "" ) ? this.extFilterWheelDevice : this.filterWheelDevice;
    }
+
 
    this.doesNotNeedFilter = function() {
       if (this.frameType.text == "Dark" || this.frameType.text == "Bias"){
@@ -190,10 +189,8 @@ function BatchFrameAcquisitionEngine()
       console.writeln("Compute apparent pos:      " + (this.computeApparentPos ? "true" : "false"));
       console.writeln("Alignment corr:            " + (this.align ? "true" : "false"));
       console.writeln("Alignment file:            " + this.alignModelFile);
-      console.writeln("Telescope focal length:    " + this.telescopeFocalLen);
       console.writeln("------------------------------------------------");
       console.noteln("Camera parameters:");
-      console.writeln("CCD pixel size             " + this.ccdPixelSize);
       console.writeln("Binning X:                 " + this.binningX.text);
       console.writeln("Binning Y:                 " + this.binningY.text);
       console.writeln("Frame type:                " + this.frameType.text);
@@ -267,6 +264,9 @@ function BatchFrameAcquisitionEngine()
    this.centerImage = function (window,mountController,currentBinningX)
    {
 
+      var sensorXPixelSize     = window.mainView.propertyValue("Instrument:Sensor:XPixelSize");
+      var telescopeFocalLength = window.mainView.propertyValue("Instrument:Telescope:FocalLength")*1000;
+
       var solver = new ImageSolver();
 
       solver.Init(window);
@@ -274,8 +274,8 @@ function BatchFrameAcquisitionEngine()
       solver.solverCfg.showDistortion = false;
       solver.solverCfg.generateErrorImg = false;
 
-      solver.metadata.xpixsz = currentBinningX * this.ccdPixelSize;
-      solver.metadata.focal  = this.telescopeFocalLen;
+      solver.metadata.xpixsz = currentBinningX * sensorXPixelSize;
+      solver.metadata.focal  = telescopeFocalLength;
       solver.metadata.resolution = (solver.metadata.focal > 0) ? solver.metadata.xpixsz / solver.metadata.focal * 0.18 / Math.PI : 0;
       if (solver.SolveImage(window))
       {
@@ -325,6 +325,7 @@ function BatchFrameAcquisitionEngine()
 
       // loop worklist items
       var previousTarget = "";
+      var previousFilterID = -1;
       for (var i = 0 ; i < this.worklist.length ; ++i){
          var node = treeBox.child(i);
          node.setIcon(5,":/bullets/bullet-ball-glass-yellow.png");
@@ -335,7 +336,7 @@ function BatchFrameAcquisitionEngine()
 
 
          var isDifferentTarget = previousTarget!=this.worklist[i].targetName;
-         if (isDifferentTarget && this.doMove  && !this.automaticMove && !(new MessageBox( "Goto next object ?", "Message", StdIcon_Question, StdButton_Yes, StdButton_No).execute() )) {
+         if (isDifferentTarget && this.doMove  && !this.automaticMove && !(new MessageBox( "Goto next object ?", "Message", StdIcon_Question, StdButton_Yes, StdButton_No).execute()) ) {
             break;
          }
 
@@ -354,9 +355,14 @@ function BatchFrameAcquisitionEngine()
          cameraController.newImageIdTemplate  = format("%s_",this.worklist[i].targetName);
          cameraController.clientFileNameTemplate = format("%s_%s",this.worklist[i].targetName,this.clientFileTemplate);
          cameraController.serverFileNameTemplate = format("%s_%s",this.worklist[i].targetName,this.serverFileTemplate);
-         if (this.supportsFilter() && this.worklist[i].filterID != -1){
-            cameraController.externalFilterWheelDeviceName = this.extFilterWheelDevice;
-            cameraController.filterSlot                    = this.worklist[i].filterID;
+         if (this.worklist[i].filterID != -1){
+            if (this.deviceSupportsFilter()) {
+               cameraController.externalFilterWheelDeviceName = this.extFilterWheelDevice;
+               cameraController.filterSlot                    = this.worklist[i].filterID;
+            } else {
+               var isDifferentFilter = previousFilterID != this.worklist[i].filterID;
+               new MessageBox( "Change filter slot", "Message", StdIcon_Information, StdButton_Ok).execute();
+            }
             cameraController.newImageIdTemplate            = format("%s_%s_",this.worklist[i].targetName,this.worklist[i].filterName);
             cameraController.clientFileNameTemplate        = format("%s_%s_%s",this.worklist[i].targetName,this.worklist[i].filterName,this.clientFileTemplate);
             cameraController.serverFileNameTemplate        = format("%s_%s_%s",this.worklist[i].targetName,this.worklist[i].filterName,this.serverFileTemplate);
@@ -397,6 +403,7 @@ function BatchFrameAcquisitionEngine()
 
          node.setIcon(5,":/bullets/bullet-ball-glass-green.png");
          previousTarget = this.worklist[i].targetName;
+         previousFilterID = this.worklist[i].filterID;
       }
    }
 }
@@ -1214,6 +1221,9 @@ function FilterWheelParametersDialog(dialog)
          var idx = this.dialog.filterType_TreeBox.childIndex(selectedNode);
          this.dialog.filterType_TreeBox.remove(idx);
       }
+      if (this.dialog.filterType_TreeBox.numberOfChildren==0) {
+         dialog.filterparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-yellow.png" );
+      }
    }
 
    this.filterAdd_ToolButton = new ToolButton(this);
@@ -1507,31 +1517,6 @@ function BatchFrameAcquisitionDialog()
       return serverDir;
    }
 
-   this.getTelescopeAndCCDInfo = function() {
-      var info = { "pixSize" : 0, "focalLen" : 0 };
-
-      // get pixelsize from CCD device
-      let propertyKey = "/" + engine.ccdDevice + "/CCD_INFO/CCD_PIXEL_SIZE";
-      engine.deviceController.getCommandParameters = propertyKey;
-      engine.deviceController.serverCommand = "TRY_GET";
-
-      engine.executeController();
-      if (engine.deviceController.getCommandResult.length != 0){
-         info.pixSize = parseFloat(engine.deviceController.getCommandResult);
-      }
-
-      // get telescope focal length from mount device
-      let propertyKey = "/" + engine.mountDevice + "/TELESCOPE_INFO/TELESCOPE_FOCAL_LENGTH";
-      engine.deviceController.getCommandParameters = propertyKey;
-      engine.deviceController.serverCommand = "TRY_GET";
-
-      engine.executeController();
-      if (engine.deviceController.getCommandResult.length != 0){
-         info.focalLen = parseFloat(engine.deviceController.getCommandResult);
-      }
-      return info;
-   }
-
    //
 
    this.serverhost_Edit = new Edit(this);
@@ -1611,11 +1596,12 @@ function BatchFrameAcquisitionDialog()
          engine.executeController();
          if (engine.deviceController.getCommandResult.length != 0){
             engine.filterWheelDevice = device;
-            this.dialog.filterparam_PushButton.enabled = true;
             this.dialog.filterparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-green.png" );
-
             engine.extFilterWheelDevice = ( engine.ccdDevice != device ) ? device : "";
+         } else {
+            this.dialog.filterparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-yellow.png" );
          }
+         this.dialog.filterparam_PushButton.enabled = true;
       }
    }
 
@@ -1633,18 +1619,12 @@ function BatchFrameAcquisitionDialog()
    this.mountparam_PushButton.enabled = false;
    this.mountparam_PushButton.onClick = function()
    {
-      var telescopeAndCCDInfo = this.dialog.getTelescopeAndCCDInfo();
-
-      this.dialog.mountDialog.CCDInfoPixelSize         = telescopeAndCCDInfo.pixSize;
-      this.dialog.mountDialog.telescopeInfoFocalLength = telescopeAndCCDInfo.focalLen;
       if (this.dialog.mountDialog.execute()){
          engine.center             = this.dialog.mountDialog.centering_Checkbox.checked;
          engine.align              = this.dialog.mountDialog.alignmentCorrection_Checkbox.checked;
          engine.alignModelFile     = this.dialog.mountDialog.alignmentModel_Edit.text;
          engine.computeApparentPos = this.dialog.mountDialog.computeApparentPos_Checkbox.checked;
       }
-      engine.telescopeFocalLen    = this.dialog.mountDialog.telescopeInfoFocalLength;
-      engine.ccdPixelSize         = this.dialog.mountDialog.CCDInfoPixelSize;
    }
 
    this.cameraparam_PushButton = new PushButton(this);
@@ -1676,7 +1656,7 @@ function BatchFrameAcquisitionDialog()
 
 
          // diable target treebox if frame type not "LIGHT"
-         if ( engine.frameType.idx  != 0) {
+         if ( engine.frameType.idx != 0) {
             this.dialog.mountParam_TreeBox.enabled     = false;
             this.dialog.loadTargetCoord_Button.enabled = false;
             engine.targets[0] = {"name" : engine.frameType.text, "ra" : 0.0, "dec" : 0.0};
@@ -1690,8 +1670,8 @@ function BatchFrameAcquisitionDialog()
    this.filterparam_PushButton = new PushButton(this);
    this.filterparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-grey.png" );
    this.filterparam_PushButton.text = "Filter Parameters    ";
-   this.filterparam_PushButton.toolTip = "<p>Set filterwheel device parameters</p>";
    this.filterparam_PushButton.enabled = false;
+   this.filterparam_PushButton.toolTip = "<p>Set filterwheel device parameters</p>";
    this.filterparam_PushButton.onClick = function()
    {
       var filterList = this.dialog.getFilterParameters();
@@ -1704,6 +1684,9 @@ function BatchFrameAcquisitionDialog()
          node.setText(1,filterIdx.toString());
       }
       if (this.dialog.filterDialog.execute()){
+      }
+      if (this.dialog.filterDialog.filterType_TreeBox.numberOfChildren != 0){
+         this.dialog.filterparam_PushButton.icon = this.scaledResource( ":/bullets/bullet-ball-glass-green.png" );
       }
    }
 
