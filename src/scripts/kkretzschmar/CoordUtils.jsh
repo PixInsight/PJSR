@@ -40,4 +40,20 @@ function sexadecimalStringToDouble(str,separator) {
    return tokens[0].charAt(0) == "-" ?  -t1 : t1;
 }
 
+function myFrac(f) {
+   return (f < 1.0) ? f : (f % Math.floor(f));
+}
+
+function sexadecimalStringFromDouble(d) {
+   var s1 = Math.abs( d );
+   var s2 = myFrac( s1 )*60;
+   var s3 = myFrac( s2 )*60;
+   s1 = Math.trunc( s1 );
+   s2 = Math.trunc( s2 );
+   s3 = Math.round(s3 * 1000) / 1000;
+
+
+   return (d >=0 ? "+"  : "-") + s1 + ":" + s2 + ":" + s3;
+}
+
 #endif

@@ -1748,6 +1748,38 @@ function BatchFrameAcquisitionDialog()
       }
    }
 
+
+   this.findTargetCoord_Button = new ToolButton( this );
+   this.findTargetCoord_Button.icon = this.scaledResource( ":/icons/find.png" );
+   this.findTargetCoord_Button.toolTip = "<p>Search for target coordinates or add coordinates manually.</p>";
+   this.findTargetCoord_Button.onClick = function()
+   {
+      var search = new SearchCoordinatesDialog(null,true,true);
+      search.windowTitle = "Online Coordinates Search"
+      if (search.execute())
+      {
+         var object = search.object;
+         if (object == null)
+            return;
+
+         var node = new TreeBoxNode( this.dialog.mountParam_TreeBox );
+         node.setText( 0, object.name );
+         node.setText( 1, sexadecimalStringFromDouble(object.posEq.x / 15) );
+         node.setText( 2, sexadecimalStringFromDouble(object.posEq.y) );
+         node.setText( 3, "0" );
+
+         var targetItem = {"name": "", "ra" : 0.0, "dec": 0.0};
+
+         targetItem.name = object.name.replace(/\s/g, ''); ;
+         targetItem.ra   = object.posEq.x / 15;
+         targetItem.dec  = object.posEq.y;
+         engine.targets.push(targetItem);
+
+         //console.writeln("Name: " + object.name + ", posEq (x,y): " + sexadecimalStringFromDouble(object.posEq.x / 15) + "," +  sexadecimalStringFromDouble(object.posEq.y));
+         //this.dialog.coords_Editor.SetCoords(object.posEq);
+      }
+   }
+
    this.loadTargetCoord_Button = new ToolButton( this );
    this.loadTargetCoord_Button.icon = this.scaledResource( ":/icons/add.png" );
    this.loadTargetCoord_Button.toolTip = "<p>Add target coordinates from csv file.</p>";
@@ -1851,6 +1883,7 @@ function BatchFrameAcquisitionDialog()
    this.mountParam_ButtonSizer = new VerticalSizer;
    this.mountParam_ButtonSizer.margin = 6;
    this.mountParam_ButtonSizer.spacing = 4;
+   this.mountParam_ButtonSizer.add(this.findTargetCoord_Button);
    this.mountParam_ButtonSizer.add(this.loadTargetCoord_Button);
    this.mountParam_ButtonSizer.add(this.moveUpTargetCoord_Button);
    this.mountParam_ButtonSizer.add(this.moveDownTargetCoord_Button);
