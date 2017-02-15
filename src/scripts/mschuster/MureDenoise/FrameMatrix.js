@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// FrameMatrix.js - Released 2017/01/31 00:00:00 UTC
+// FrameMatrix.js - Released 2017/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.20
+// This file is part of MureDenoise Script Version 1.21
 //
 // Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -775,4 +775,4 @@ function FrameMatrix(matrix) {
 }
 
 // ****************************************************************************
-// EOF FrameMatrix.js - Released 2017/01/31 00:00:00 UTC
+// EOF FrameMatrix.js - Released 2017/02/16 00:00:00 UTC

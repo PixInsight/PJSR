@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainViewController.js - Released 2017/01/31 00:00:00 UTC
+// MainViewController.js - Released 2017/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.20
+// This file is part of MureDenoise Script Version 1.21
 //
 // Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -148,14 +148,6 @@ function MainController(model, isViewTarget) {
       else if (
          model.flatfieldView != null &&
          model.flatfieldView.isView &&
-         !(model.detectorOffset == 0)
-      ) {
-         message = "<b>Error</b>: Detector offset must be 0 when a flatfield " +
-            "is selected.";
-      }
-      else if (
-         model.flatfieldView != null &&
-         model.flatfieldView.isView &&
          !(model.flatfieldSizeMinimum <= Math.min(
             model.flatfieldView.image.width, model.flatfieldView.image.height
          ))
@@ -251,10 +243,6 @@ function MainController(model, isViewTarget) {
          model.denoiseVarianceScaleFormat,
          model.denoiseVarianceScale
       );
-      model.useGradientNoiseThresholds =
-         model.useGradientNoiseThresholdsDefault;
-      this.view.useGradientNoiseThresholdsCheckBox.checked =
-         model.useGradientNoiseThresholds;
       model.denoiseCycleSpinCount = model.denoiseCycleSpinCountDefault;
       this.view.denoiseCycleSpinCountEdit.text = format(
          model.denoiseCycleSpinCountFormat,
@@ -281,7 +269,6 @@ function MainController(model, isViewTarget) {
 
       this.view.denoiseVarianceScaleEdit.enabled = false;
       this.view.loadVarianceScaleButton.enabled = false;
-      this.view.useGradientNoiseThresholdsCheckBox.enabled = false;
       this.view.denoiseCycleSpinCountEdit.enabled = false;
       this.view.generateMethodNoiseImageCheckBox.enabled = false;
 
@@ -307,7 +294,6 @@ function MainController(model, isViewTarget) {
 
       this.view.denoiseVarianceScaleEdit.enabled = true;
       this.view.loadVarianceScaleButton.enabled = true;
-      this.view.useGradientNoiseThresholdsCheckBox.enabled = true;
       this.view.denoiseCycleSpinCountEdit.enabled = true;
       this.view.generateMethodNoiseImageCheckBox.enabled = true;
 
@@ -327,7 +313,6 @@ function MainController(model, isViewTarget) {
             model.flatfieldView == null ||
             !model.flatfieldView.isView || (
                model.flatfieldView.image.numberOfChannels == 1 &&
-               model.detectorOffset == 0 &&
                model.flatfieldSizeMinimum <= Math.min(
                   model.flatfieldView.image.width,
                   model.flatfieldView.image.height
@@ -395,7 +380,6 @@ function MainController(model, isViewTarget) {
          model.detectorOffsetDefault
       );
       this.enableControls();
-      this.checkFlatfieldView();
    };
 
    this.denoiseVarianceScaleOnTextUpdated = function(text) {
@@ -728,11 +712,6 @@ function MainController(model, isViewTarget) {
       this.loadVarianceScaleProcessLogFile();
    };
 
-   this.useGradientNoiseThresholdsOnCheck = function(checked) {
-      model.useGradientNoiseThresholds = checked;
-      this.enableControls();
-   };
-
    this.denoiseCycleSpinCountOnTextUpdated = function(text) {
       model.denoiseCycleSpinCount = model.defaultNumeric(
          parseInt(text),
@@ -795,10 +774,6 @@ function MainController(model, isViewTarget) {
       console.writeln(format(
          "Denoise variance scale: " + model.denoiseVarianceScaleFormat,
          model.denoiseVarianceScale
-      ));
-      console.writeln(format(
-         "Use gradient/noise thresholds: " +
-         (model.useGradientNoiseThresholds ? "true" : "false")
       ));
       console.writeln(format(
          "Denoise cycle-spin count: " + model.denoiseCycleSpinCountFormat,
@@ -1100,7 +1075,7 @@ function MainView(model, controller) {
             "denoising. The image must be a single frame image or an " +
             "average combination of similarly exposed and registered " +
             "frames. The size of the image must be at least 256 pixels " +
-            "in width and height. Pedestal must be zero.</p>" +
+            "in width and height.</p>" +
 
             "<p>For linear multichannel images from monocolor detectors, " +
             "run the monochannel denoiser on each channel separately. The " +
@@ -1315,8 +1290,9 @@ function MainView(model, controller) {
             "<p>The offset of the detector in " + model.detectorOffsetUnits +
             ".</p>" +
 
-            "<p>Offset must be set to 0 for bias or dark-subtracted " +
-            "images.</p>" +
+            "<p>Offset must be set to 0 for a bias or dark-subtracted image, " +
+            "unless the image has a non-zero pedestal, in which case offset " +
+            "must be set equal to the pedestal.</p>" +
 
             "<p>If detector offset is unknown, the " +
             "<i>DarkBiasNoiseEstimator</i> script can provide an estimate.</p>"
@@ -1413,35 +1389,6 @@ function MainView(model, controller) {
                controller.loadVarianceScale();
             }
          );
-      }
-
-      {
-         this.useGradientNoiseThresholdsPane =
-            this.addPane(this.denoiseGroupBox);
-
-         this.useGradientNoiseThresholdsPane.addUnscaledSpacing(
-            this.labelWidth
-         );
-
-         this.useGradientNoiseThresholdsPane.addSpacing(
-            this.useGradientNoiseThresholdsPane.spacing
-         );
-
-         this.useGradientNoiseThresholdsCheckBox = this.addCheckBox(
-            this.useGradientNoiseThresholdsPane,
-            "Use gradient/noise thresholds",
-            "<p>Increase the adaptivity of the denoising process by " +
-            "incorporating interscale gradient to local noise ratio " +
-            "relationships into the thresholding functions. Increasing the " +
-            "adaptivity of the denoising process improves output quality, " +
-            "but also increases processing time by about 40\%.</p>",
-            model.useGradientNoiseThresholds,
-            function(checked) {
-               controller.useGradientNoiseThresholdsOnCheck(checked);
-            }
-         );
-
-         this.useGradientNoiseThresholdsPane.addStretch();
       }
 
       {
@@ -1648,4 +1595,4 @@ function MainView(model, controller) {
 MainView.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF MainViewController.js - Released 2017/01/31 00:00:00 UTC
+// EOF MainViewController.js - Released 2017/02/16 00:00:00 UTC

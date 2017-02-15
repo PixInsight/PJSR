@@ -3,6 +3,17 @@ MureDenoise Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2017.02.16 - Version 1.21
+
+- Removed use gradient/noise thresholds option.
+
+- Fixed non-zero detector offset bug.
+
+- Improved cycle-spin sampling uniformity.
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
 2017.01.31 - Version 1.20
 
 - Enabling the use gradient/noise thresholds parameter increases the adaptivity
