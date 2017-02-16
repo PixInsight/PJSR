@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2017/01/31 00:00:00 UTC
+// MainModel.js - Released 2017/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.20
+// This file is part of MureDenoise Script Version 1.21
 //
 // Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -204,11 +204,6 @@ function MainModel() {
    this.denoiseVarianceScaleUnits = "";
    this.denoiseVarianceScale = this.denoiseVarianceScaleDefault;
 
-   // Use gradient/noise thresholds option.
-   this.useGradientNoiseThresholdsDefault = false;
-   this.useGradientNoiseThresholds =
-      this.useGradientNoiseThresholdsDefault;
-
    // Denoise cycle-spin count.
    this.denoiseCycleSpinCountMinimum = 1;
    this.denoiseCycleSpinCountMaximum = 32;
@@ -296,10 +291,6 @@ function MainModel() {
          this.denoiseVarianceScaleMaximum,
          this.denoiseVarianceScaleDefault
       );
-      this.useGradientNoiseThresholds = this.defaultBoolean(
-         Settings.read("useGradientNoiseThresholds", DataType_Boolean),
-         this.useGradientNoiseThresholdsDefault
-      );
       this.denoiseCycleSpinCount = this.defaultNumeric(
          Settings.read("denoiseCycleSpinCount", DataType_Int32),
          this.denoiseCycleSpinCountMinimum,
@@ -355,11 +346,6 @@ function MainModel() {
          "denoiseVarianceScale",
          DataType_Real64,
          this.denoiseVarianceScale
-      );
-      Settings.write(
-         "useGradientNoiseThresholds",
-         DataType_Boolean,
-         this.useGradientNoiseThresholds
       );
       Settings.write(
          "denoiseCycleSpinCount",
@@ -432,12 +418,6 @@ function MainModel() {
             this.denoiseVarianceScaleDefault
          );
       }
-      if (Parameters.has("useGradientNoiseThresholds")) {
-         this.useGradientNoiseThresholds = this.defaultBoolean(
-            Parameters.getBoolean("useGradientNoiseThresholds"),
-            this.useGradientNoiseThresholdsDefault
-         );
-      }
       if (Parameters.has("denoiseCycleSpinCount")) {
          this.denoiseCycleSpinCount = this.defaultNumeric(
             Parameters.getInteger("denoiseCycleSpinCount"),
@@ -477,9 +457,6 @@ function MainModel() {
       Parameters.set("detectorOffset", this.detectorOffset);
 
       Parameters.set("denoiseVarianceScale", this.denoiseVarianceScale);
-      Parameters.set(
-         "useGradientNoiseThresholds", this.useGradientNoiseThresholds
-      );
       Parameters.set("denoiseCycleSpinCount", this.denoiseCycleSpinCount);
       Parameters.set(
          "generateMethodNoiseImage", this.generateMethodNoiseImage
@@ -494,4 +471,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2017/01/31 00:00:00 UTC
+// EOF MainModel.js - Released 2017/02/16 00:00:00 UTC
