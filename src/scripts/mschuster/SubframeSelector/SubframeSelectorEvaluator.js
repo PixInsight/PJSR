@@ -204,7 +204,7 @@ function findMedianDispersionDescription(descriptions) {
 }
 
 function selectorExpressionEvaluator(
-   expression, description, descriptions, subframeScale, cameraGain, cameraResolution
+   expression, description, descriptions, subframeScale, cameraGain, cameraResolution, statistics
 ) {
    this.expression = expression;
    this.description = description;
@@ -380,6 +380,12 @@ function selectorExpressionEvaluator(
       else if (property == "FWHM") {
          return this.subframeScale * this.description.FWHM;
       }
+      else if (property == "FWHMMaximum") {
+         return this.subframeScale * statistics.FWHMMaximum;
+      }
+      else if (property == "FWHMMinimum") {
+         return this.subframeScale * statistics.FWHMMinimum;
+      }
       else if (property == "FWHMSigma") {
          value = this.subframeScale * this.description.FWHM;
          medianDispersion = this.scaleMedianDispersion(
@@ -400,6 +406,12 @@ function selectorExpressionEvaluator(
       else if (property == "Eccentricity") {
          return this.description.eccentricity;
       }
+      else if (property == "EccentricityMaximum") {
+         return statistics.eccentricityMaximum;
+      }
+      else if (property == "EccentricityMinimum") {
+         return statistics.eccentricityMinimum;
+      }
       else if (property == "EccentricitySigma") {
          value = this.description.eccentricity;
          medianDispersion = this.medianDispersionDescription.eccentricity;
@@ -415,6 +427,12 @@ function selectorExpressionEvaluator(
       }
       else if (property == "SNRWeight") {
          return this.description.SNRWeight;
+      }
+      else if (property == "SNRWeightMaximum") {
+         return statistics.SNRWeightMaximum;
+      }
+      else if (property == "SNRWeightMinimum") {
+         return statistics.SNRWeightMinimum;
       }
       else if (property == "SNRWeightSigma") {
          value = this.description.SNRWeight;
@@ -753,7 +771,7 @@ function selectorExpressionEvaluator(
 }
 
 function weightingExpressionEvaluator(
-   expression, description, descriptions, subframeScale, cameraGain, cameraResolution
+   expression, description, descriptions, subframeScale, cameraGain, cameraResolution, statistics
 ) {
    this.expression = expression;
    this.description = description;
@@ -920,6 +938,12 @@ function weightingExpressionEvaluator(
       else if (property == "FWHM") {
          return this.subframeScale * this.description.FWHM;
       }
+      else if (property == "FWHMMaximum") {
+         return this.subframeScale * statistics.FWHMMaximum;
+      }
+      else if (property == "FWHMMinimum") {
+         return this.subframeScale * statistics.FWHMMinimum;
+      }
       else if (property == "FWHMSigma") {
          value = this.subframeScale * this.description.FWHM;
          medianDispersion = this.scaleMedianDispersion(
@@ -940,6 +964,12 @@ function weightingExpressionEvaluator(
       else if (property == "Eccentricity") {
          return this.description.eccentricity;
       }
+      else if (property == "EccentricityMaximum") {
+         return statistics.eccentricityMaximum;
+      }
+      else if (property == "EccentricityMinimum") {
+         return statistics.eccentricityMinimum;
+      }
       else if (property == "EccentricitySigma") {
          value = this.description.eccentricity;
          medianDispersion = this.medianDispersionDescription.eccentricity;
@@ -955,6 +985,12 @@ function weightingExpressionEvaluator(
       }
       else if (property == "SNRWeight") {
          return this.description.SNRWeight;
+      }
+      else if (property == "SNRWeightMaximum") {
+         return statistics.SNRWeightMaximum;
+      }
+      else if (property == "SNRWeightMinimum") {
+         return statistics.SNRWeightMinimum;
       }
       else if (property == "SNRWeightSigma") {
          value = this.description.SNRWeight;
@@ -1139,7 +1175,8 @@ function selectorExpressionIsValid(expression) {
       [nullEvaluationDescription],
       parameters.actualSubframeScale(),
       parameters.actualCameraGain(),
-      parameters.cameraResolutionValues[parameters.cameraResolution]
+      parameters.cameraResolutionValues[parameters.cameraResolution],
+      nullEvaluationDescriptionStatistics
    );
    selectorEvaluator.evaluate();
    return selectorEvaluator.error == null;
@@ -1152,7 +1189,8 @@ function weightingExpressionIsValid(expression) {
       [nullEvaluationDescription],
       parameters.actualSubframeScale(),
       parameters.actualCameraGain(),
-      parameters.cameraResolutionValues[parameters.cameraResolution]
+      parameters.cameraResolutionValues[parameters.cameraResolution],
+      nullEvaluationDescriptionStatistics
    );
    weightEvaluator.evaluate();
    return weightEvaluator.error == null;

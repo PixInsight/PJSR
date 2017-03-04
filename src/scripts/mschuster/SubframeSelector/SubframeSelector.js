@@ -711,6 +711,7 @@ function tabulationEvaluate(dialog) {
    parameters.evaluationsDescriptions = evaluationsDescriptions;
 
    var evaluationsDescriptions = [];
+   var descriptionStatistics = generateEvaluationDescriptionStatistics(parameters.evaluationsDescriptions);
    for (var i = 0; i != parameters.evaluationsDescriptions.length; ++i) {
       var description = parameters.evaluationsDescriptions[i];
 
@@ -720,7 +721,8 @@ function tabulationEvaluate(dialog) {
          parameters.evaluationsDescriptions,
          parameters.actualSubframeScale(),
          parameters.actualCameraGain(),
-         parameters.cameraResolutionValues[parameters.cameraResolution]
+         parameters.cameraResolutionValues[parameters.cameraResolution],
+         descriptionStatistics
       );
       var weight = weightEvaluator.evaluate();
       if (weight != null) {
@@ -732,6 +734,7 @@ function tabulationEvaluate(dialog) {
    parameters.evaluationsDescriptions = evaluationsDescriptions;
 
    var evaluationsDescriptions = [];
+   var descriptionStatistics = generateEvaluationDescriptionStatistics(parameters.evaluationsDescriptions);
    for (var i = 0; i != parameters.evaluationsDescriptions.length; ++i) {
       var description = parameters.evaluationsDescriptions[i];
 
@@ -741,7 +744,8 @@ function tabulationEvaluate(dialog) {
          parameters.evaluationsDescriptions,
          parameters.actualSubframeScale(),
          parameters.actualCameraGain(),
-         parameters.cameraResolutionValues[parameters.cameraResolution]
+         parameters.cameraResolutionValues[parameters.cameraResolution],
+         descriptionStatistics
       );
       var checked = selectorEvaluator.evaluate();
       if (checked != null && !description.locked) {

@@ -86,8 +86,9 @@ function editSelectorExpressionDialogPrototype() {
 "<i>weighting</i> | true | false | [ ! ] (<i>approval</i>) ]<br>" +
 "<i>weighting</i> = <i>term</i> [ [ + | - | * | / | ^ ] <i>term</i> ]...<br>" +
 "<i>term</i> = [ - ] [ <i>number</i> | <i>property</i> | (<i>weighting</i>) ]<br>" +
-"<i>property</i> = [ Index | Weight | WeightSigma | FWHM | FWHMSigma | Eccentricity | " +
-"EccentricitySigma | SNRWeight | SNRWeightSigma | Median | MedianSigma | " +
+"<i>property</i> = [ Index | Weight | WeightSigma | FWHM | FWHMSigma | FWHMMaximum | FWHMMinimum | " +
+"Eccentricity | EccentricitySigma | EccentricityMaximum | EccentricityMinimum | " +
+"SNRWeight | SNRWeightSigma | SNRWeightMaximum | SNRWeightMinimum | Median | MedianSigma | " +
 "MeanDeviation | MeanDeviationSigma | Noise | NoiseSigma | StarSupport | " +
 "StarSupportSigma | StarResidual | StarResidualSigma | NoiseSupport | " +
 "NoiseSupportSigma | FWHMMeanDev | FWHMMeanDevSigma | EccentricityMeanDev | " +
@@ -108,7 +109,8 @@ function editSelectorExpressionDialogPrototype() {
                [nullEvaluationDescription],
                parameters.actualSubframeScale(),
                parameters.actualCameraGain(),
-               parameters.cameraResolutionValues[parameters.cameraResolution]
+               parameters.cameraResolutionValues[parameters.cameraResolution],
+               nullEvaluationDescriptionStatistics
             );
             selectorEvaluator.evaluate();
             if (selectorEvaluator.error != null) {
@@ -212,8 +214,9 @@ function editWeightingExpressionDialogPrototype() {
 "properties. A blank expression will assign a zero weight to all subframes.</p>" +
 "<i>weighting</i> = [ <i>term</i> [ [ + | - | * | / | ^ ] <i>term</i> ]... ]<br>" +
 "<i>term</i> = [ - ] [ <i>number</i> | <i>property</i> | (<i>weighting</i>) ]<br>" +
-"<i>property</i> = [ Index | FWHM | FWHMSigma | Eccentricity | EccentricitySigma | " +
-"SNRWeight | SNRWeightSigma | Median | MedianSigma | MeanDeviation | " +
+"<i>property</i> = [ Index | FWHM | FWHMSigma | FWHMMaximum | FWHMMinimum | " +
+"Eccentricity | EccentricitySigma | EccentricityMaximum | EccentricityMinimum | " +
+"SNRWeight | SNRWeightSigma | SNRWeightMaximum | SNRWeightMinimum | Median | MedianSigma | MeanDeviation | " +
 "MeanDeviationSigma | Noise | NoiseSigma | StarSupport | StarSupportSigma | " +
 "StarResidual | StarResidualSigma | NoiseSupport | NoiseSupportSigma | FWHMMeanDev | " +
 "FWHMMeanDevSigma | EccentricityMeanDev | EccentricityMeanDevSigma | " +
@@ -234,7 +237,8 @@ function editWeightingExpressionDialogPrototype() {
                [nullEvaluationDescription],
                parameters.actualSubframeScale(),
                parameters.actualCameraGain(),
-               parameters.cameraResolutionValues[parameters.cameraResolution]
+               parameters.cameraResolutionValues[parameters.cameraResolution],
+               nullEvaluationDescriptionStatistics
             );
             weightEvaluator.evaluate();
             if (weightEvaluator.error != null) {

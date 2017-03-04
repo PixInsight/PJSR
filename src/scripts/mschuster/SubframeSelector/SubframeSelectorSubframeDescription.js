@@ -352,6 +352,30 @@ var evaluationDescriptionCompare = [
    ]
 ];
 
+function evaluationDescriptionStatistics() {
+   this.FWHMMinimum = Number.MAX_VALUE;
+   this.FWHMMaximum = Number.MIN_VALUE;
+   this.eccentricityMinimum = Number.MAX_VALUE;
+   this.eccentricityMaximum = Number.MIN_VALUE;
+   this.SNRWeightMinimum = Number.MAX_VALUE;
+   this.SNRWeightMaximum = Number.MIN_VALUE;
+}
+
+function generateEvaluationDescriptionStatistics(evaluationDescriptions) {
+   var statistics = new evaluationDescriptionStatistics();
+   evaluationDescriptions.forEach(function(description) {
+      if (description.FWHM < statistics.FWHMMinimum) statistics.FWHMMinimum = description.FWHM;
+      if (description.FWHM > statistics.FWHMMaximum) statistics.FWHMMaximum = description.FWHM;
+      if (description.eccentricity < statistics.eccentricityMinimum) statistics.eccentricityMinimum = description.eccentricity;
+      if (description.eccentricity > statistics.eccentricityMaximum) statistics.eccentricityMaximum = description.eccentricity;
+      if (description.SNRWeight < statistics.SNRWeightMinimum) statistics.SNRWeightMinimum = description.SNRWeight;
+      if (description.SNRWeight > statistics.SNRWeightMaximum) statistics.SNRWeightMaximum = description.SNRWeight;
+   });
+   return statistics;
+}
+
+var nullEvaluationDescriptionStatistics = new evaluationDescriptionStatistics();
+
 function SNRWeightFunction(meanDeviation, noise, cameraGain, cameraResolution) {
    return noise != 0 ? Math.pow(meanDeviation, 2.0) / Math.pow(noise, 2.0) : 0;
 }
