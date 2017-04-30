@@ -3,7 +3,7 @@
 
    Annotation of astronomical images.
 
-   Copyright (C) 2012-2016, Andres del Pozo
+   Copyright (C) 2012-2017, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 
 /*
    Changelog:
+
+   1.9.2:* Added Gaia DR1 catalog
 
    1.9.1:* Added test for too big images (>0.5GigaPixels)
 
@@ -169,7 +171,7 @@
 
 #feature-info  A script for annotating astronomical images.<br/>\
                <br/>\
-               Copyright &copy; 2012-2016 Andr&eacute;s del Pozo
+               Copyright &copy; 2012-2017 Andr&eacute;s del Pozo
 
 #include <pjsr/DataType.jsh>
 #include <pjsr/FontFamily.jsh>
@@ -186,7 +188,7 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.9.1"
+#define VERSION "1.9.2"
 #define TITLE "Annotate Image"
 #define SETTINGS_MODULE "ANNOT"
 
@@ -1738,7 +1740,7 @@ function AnnotateDialog(engine)
          "The script requires the image to have coordinates stored in FITS header keywords following the WCS convention.<br/>" +
          "The Image Plate Solver script can be used to generate these coordinates and keywords.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2012-2016 Andr&eacute;s del Pozo</p>";
+         "Copyright &copy; 2012-2017 Andr&eacute;s del Pozo</p>";
 
    // Layers
    this.layer_TreeBox = new TreeBox(this);

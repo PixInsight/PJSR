@@ -92,7 +92,7 @@ function Catalog( name )
 
    this.GetDefaultLabels = function()
    {
-      return [null, null, null, null, "Name", null, null, null];
+      return [null, null, null, null, this.fields[0], null, null, null];
    };
 }
 
@@ -2085,6 +2085,80 @@ function GCVSCatalog()
 
 GCVSCatalog.prototype=new VizierCatalog;
 __catalogRegister__.Register( new GCVSCatalog );
+
+
+// ******************************************************************
+// GaiaDR1_Catalog
+// ******************************************************************
+function GaiaDR1_Catalog()
+{
+   this.name = "Gaia DR1";
+   this.description = "Gaia Data Release 1 (Gaia collaboration 2016, 1,142,679,769 sources)";
+
+   this.__base__ = VizierCatalog;
+   this.__base__(this.name);
+
+   this.catalogMagnitude = 20.7;
+   this.magMin = NULLMAG;
+   this.magMax = 21;
+   this.fields = [ "SourceID", "Coordinates", "<Gmag>" ];
+
+   this.properties.push(["magMin", DataType_Double]);
+   this.properties.push(["magMax", DataType_Double]);
+   this.properties.push(["magnitudeFilter", DataType_UCString ]);
+
+   this.filters = [ "<Gmag>"];
+   this.magnitudeFilter = "<Gmag>";
+
+   this.GetConstructor = function ()
+   {
+      return "new GaiaDR1_Catalog()";
+   }
+
+   this.UrlBuilder = function (center, fov, mirrorServer)
+   {
+      var url = mirrorServer + "viz-bin/asu-tsv?-source=I/337/gaia&-c=" +
+         format("%f %f", center.x, center.y) +
+         "&-c.r=" + format("%f", fov) +
+         "&-c.u=deg&-out.form=|" +
+         "&-out.add=_RAJ,_DEJ&-out=pmRA&-out=pmDE&-out=Source&-out=<Gmag>" +
+         this.CreateMagFilter(this.magnitudeFilter, this.magMin, this.magMax);
+      return url;
+   }
+
+   this.ParseRecord = function (tokens, epoch)
+   {
+      if (tokens.length >= 6 && parseFloat(tokens[0]) > 0)
+      {
+         var x = parseFloat(tokens[0]);
+         var y = parseFloat(tokens[1]);
+         if (!(x >= 0 && x <= 360 && y >= -90 && y <= 90))
+            return null;
+
+         if (epoch != null && tokens[2].trim().length > 0 && tokens[3].trim().length > 0)
+         {
+            var pmX = parseFloat(tokens[2]);
+            var pmY = parseFloat(tokens[3]);
+            var dx = pmX * (epoch - 2000) / 3600000/* * Math.cos( y*Math.PI/180 )*/;
+            var dy = pmY * (epoch - 2000) / 3600000;
+            x += dx;
+            y += dy;
+         }
+         var name = tokens[4].trim();
+         var record = new CatalogRecord(new Point(x, y), 0, name, parseFloat(tokens[5]));
+         record["SourceID"] = name;
+         record["<Gmag>"] = tokens[5].trim();
+         if (record[this.magnitudeFilter])
+            record.magnitude = parseFloat(record[this.magnitudeFilter]);
+         return record;
+      }
+      else
+         return null;
+   }
+}
+
+GaiaDR1_Catalog.prototype=new VizierCatalog;
+__catalogRegister__.Register( new GaiaDR1_Catalog );
 
 // ******************************************************************
 // CustomCatalog: Uses a file to store the info

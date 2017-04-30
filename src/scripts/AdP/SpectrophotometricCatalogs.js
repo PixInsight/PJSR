@@ -40,7 +40,7 @@ function III_126_Catalog()
 
    this.catalogMagnitude = 7;
 
-   this.fields = [ "Name", "Vmag1", "Vmag2", "Vmag3", "SpType1", "SpType2", "SpType3" ];
+   this.fields = [ "Name", "Coordinates", "Vmag1", "Vmag2", "Vmag3", "SpType1", "SpType2", "SpType3" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);
@@ -128,7 +128,7 @@ function II_183A_Catalog()
 
    this.catalogMagnitude = 16;
 
-   this.fields = [ "Name", "Vmag", "B-V", "U-B", "V-R", "R-I", "V-I" ];
+   this.fields = [ "Name", "Coordinates", "Vmag", "B-V", "U-B", "V-R", "R-I", "V-I" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);
@@ -194,7 +194,7 @@ function III_201_Catalog()
 
    this.catalogMagnitude = 7;
 
-   this.fields = [ "Name", "Vmag", "B-V", "SpType", "HD" ];
+   this.fields = [ "Name", "Coordinates", "Vmag", "B-V", "SpType", "HD" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);
@@ -258,7 +258,7 @@ function III_202_Catalog()
 
    this.catalogMagnitude = 10;
 
-   this.fields = [ "Name", "Vmag", "Sp", "HR" ];
+   this.fields = [ "Name", "Coordinates", "Vmag", "Sp", "HR" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);
@@ -321,7 +321,7 @@ function JA_AS_92_1_Catalog()
 
    this.catalogMagnitude = 7;
 
-   this.fields = [ "Name", "Vmag", "Bmag", "SpType" ];
+   this.fields = [ "Name", "Coordinates", "Vmag", "Bmag", "SpType" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);

@@ -3,7 +3,7 @@
 
    Plate solving of astronomical images.
 
-   Copyright (C) 2012-2016, Andres del Pozo
+   Copyright (C) 2012-2017, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 
 /*
    Changelog:
+
+   4.2.2: * Added Gaia DR1 catalog
 
    4.2.1: * When solving a list of files the seed parameters for each image are now set with the following priority:
             (1) The previous astrometric solution (if it exists)
@@ -166,7 +168,7 @@
 
 #feature-info  A script for plate-solving astronomical images.<br/>\
                <br/>\
-               Copyright &copy; 2012-2016 Andr&eacute;s del Pozo
+               Copyright &copy; 2012-2017 Andr&eacute;s del Pozo
 
 #include <pjsr/DataType.jsh>
 #include <pjsr/Sizer.jsh>
@@ -183,7 +185,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.2.1"
+#define SOLVERVERSION "4.2.2"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -302,7 +304,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.helpLabel.useRichText = true;
    this.helpLabel.text =
       "<p><b>Image Plate Solver v" + SOLVERVERSION + "</b> &mdash; A script for plate-solving astronomical images.<br/>" +
-      "Copyright &copy; 2012-2016 Andr&eacute;s del Pozo</p>";
+      "Copyright &copy; 2012-2017 Andr&eacute;s del Pozo</p>";
 
    if(showTargetImage)
    {
@@ -1488,31 +1490,15 @@ function ImageSolver()
       if(!res)
          throw "The image could not be aligned with the reference star field";
 
-      var aligndata = align.outputData[0].slice( 11, 17 );
-      aligndata[6] = 0;
-      aligndata[7] = 0;
-      aligndata[8] = 1;
-
-      // TEMPORAL: StarAlignment uses a different convention for the origin
-      // of the coordinates of the stars.
-      // BugReport: http://pixinsight.com/forum/index.php?topic=4371.0
-      aligndata[2] += 0.5;
-      aligndata[5] += 0.5;
-      // ***
-
-      var oldMatrix = new Matrix( aligndata, 3, 3 );
-
       var numPairs = align.outputData[0][2];
       var pairs = {
-         oldMatrix: oldMatrix,
-         pS: [],
-         pI: []
+         pS: new Array(numPairs),
+         pI: new Array(numPairs)
       };
-      for(var i=0; i<numPairs; i++){
-         pairs.pS.push(new Point(align.outputData[0][29][i],
-            align.outputData[0][30][i]));
-         pairs.pI.push(new Point(align.outputData[0][31][i],
-            align.outputData[0][32][i]));
+      for (var i = 0; i < numPairs; i++)
+      {
+         pairs.pS[i] = new Point(align.outputData[0][29][i] + 0.5, align.outputData[0][30][i] + 0.5);
+         pairs.pI[i] = new Point(align.outputData[0][31][i] + 0.5, align.outputData[0][32][i] + 0.5);
       }
       return pairs;
    };
