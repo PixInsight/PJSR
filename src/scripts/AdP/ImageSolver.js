@@ -250,7 +250,7 @@ function SolverConfiguration(module)
 
    this.useActive = true;
    this.files = [];
-   this.availableCatalogs = [new UCAC3Catalog(),new PPMXLCatalog(),new TychoCatalog(),new HR_Catalog()];
+   this.availableCatalogs = [new UCAC3Catalog(),new PPMXLCatalog(),new TychoCatalog(),new HR_Catalog(),new Gaia_Catalog()];
    this.catalogMode = 1;
    this.vizierServer = "http://vizier.u-strasbg.fr/";
    this.magnitude = 12;

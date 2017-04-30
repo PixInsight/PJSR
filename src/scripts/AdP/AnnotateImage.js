@@ -30,7 +30,7 @@
 /*
    Changelog:
 
-   1.9.2:* Added Gaia DR1 catalog
+   1.9.2:* Added Gaia DR1 and APASS DR9 catalogs
 
    1.9.1:* Added test for too big images (>0.5GigaPixels)
 
