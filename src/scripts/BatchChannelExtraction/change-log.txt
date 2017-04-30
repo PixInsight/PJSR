@@ -1,0 +1,55 @@
+===============================================================================
+Batch Channel Extraction Script Changelog
+===============================================================================
+
+-------------------------------------------------------------------------------
+2017/01/26 - v1.2.2
+
+Maintenance modifications by PTeam staff:
+
+- Script renamed to BatchChannelExtraction (previously BatchChannelExtractor)
+  for coherence with core distribution guidelines.
+
+-------------------------------------------------------------------------------
+2017/01/19 - v1.2.1
+
+Minor changes by Michael Covington:
+
+- Uses .trim() to fix bug preventing output formats other than XISF.
+
+- Shows console during and after run, so user can see messages.
+
+- Slightly more compact layout to fit on 1024x768 laptop screen
+
+-------------------------------------------------------------------------------
+2015/12/03 - v1.02
+
+Maintenance modifications by PTeam staff:
+
+- Modified to use scaled icon resources in PixInsight 1.8.4 and later.
+
+- The default file suffix is now .xisf.
+
+- Changed default channel suffixes to _R, _G, _B, for coherence with standard
+  platform guidelines
+
+-------------------------------------------------------------------------------
+2010/10/21 - v1.01
+
+- Added functions to select individual channels for extraction.
+
+- Added option for clearing console.
+
+- Added default prefix/postfix buttons.
+
+- Added tooltips.
+
+-------------------------------------------------------------------------------
+2010/08/31 - v1.0
+
+- Script complete.
+
+-------------------------------------------------------------------------------
+2010/08/31 - v0.5
+
+- Begin coding main dialog GUI.

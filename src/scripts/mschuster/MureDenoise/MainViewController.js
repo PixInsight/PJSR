@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainViewController.js - Released 2016/02/24 00:00:00 UTC
+// MainViewController.js - Released 2017/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.15
+// This file is part of MureDenoise Script Version 1.21
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -47,31 +47,52 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // ****************************************************************************
 
-function MainController(model) {
+function MainController(model, isViewTarget) {
    this.view = null;
+
+   this.isViewTarget = isViewTarget;
 
    this.setView = function(view) {
       this.view = view;
    };
 
    this.setImageView = function(view) {
-      if (view.isView) {
+      if (view != null && view.isView) {
          model.imageView = view;
          this.view.imageViewList.currentView = model.imageView;
-         this.enableControls();
-         this.checkImageView();
+         if (!this.checkImageView(!isViewTarget) && !isViewTarget) {
+            model.imageView = null;
+            this.view.imageViewList.currentView = this.view.imageViewListNull;
+         }
       }
+      else {
+         model.imageView = null;
+         this.view.imageViewList.currentView = this.view.imageViewListNull;
+      }
+
+      if (
+         model.flatfieldView != null &&
+         model.flatfieldView.isView &&
+         !this.checkFlatfieldView(!isViewTarget) &&
+         !isViewTarget
+      ) {
+         model.flatfieldView = null;
+         this.view.flatfieldViewList.currentView =
+            this.view.flatfieldViewListNull;
+      }
+
+      this.enableControls();
    };
 
-   this.checkImageView = function() {
+   this.checkImageView = function(silent = false) {
       var message = null;
       if (
          model.imageView != null &&
          model.imageView.isView &&
          !(model.imageView.image.numberOfChannels == 1)
       ) {
-         message = "<p><b>Warning</b>: A monochannel image must be " +
-            "selected for denoising.</p>";
+         message = "<b>Error</b>: A monochannel image must be " +
+            "selected for denoising.";
       }
       else if (
          model.imageView != null &&
@@ -80,10 +101,10 @@ function MainController(model) {
             model.imageView.image.width, model.imageView.image.height
          ))
       ) {
-         message = "<p><b>Warning</b>: The size of the selected image must " +
+         message = "<b>Error</b>: The size of the selected image must " +
             "be at least " +
             format("%d ", model.imageSizeMinimum) +
-            "pixels in width and height.</p>";
+            "pixels in width and height.";
       }
       else if (
          model.imageView != null &&
@@ -95,25 +116,34 @@ function MainController(model) {
             model.imageView.image.height == model.flatfieldView.image.height
          )
       ) {
-         message = "<p><b>Warning</b>: The sizes of the image selected for " +
+         message = "<b>Error</b>: The sizes of the image selected for " +
             "denoising and the flatfield must be equal.";
       }
-      if (message != null) {
-         (new MessageBox(
-            message, TITLE, StdIcon_Warning, StdButton_Ok
-         )).execute();
+      if (message != null && !silent) {
+         if (isViewTarget) {
+            console.criticalln();
+            console.criticalln(message);
+            console.flush();
+         }
+         else {
+            (new MessageBox(
+               "<p>" + message + "</p>", TITLE, StdIcon_Error, StdButton_Ok
+            )).execute();
+         }
       }
+
+      return message == null;
    };
 
-   this.checkFlatfieldView = function() {
+   this.checkFlatfieldView = function(silent = false) {
       var message = null;
       if (
          model.flatfieldView != null &&
          model.flatfieldView.isView &&
          !(model.flatfieldView.image.numberOfChannels == 1)
       ) {
-         message = "<p><b>Warning</b>: A monochannel image must be " +
-            "selected for a flatfield.</p>";
+         message = "<b>Error</b>: A monochannel image must be " +
+            "selected for a flatfield.";
       }
       else if (
          model.flatfieldView != null &&
@@ -122,10 +152,10 @@ function MainController(model) {
             model.flatfieldView.image.width, model.flatfieldView.image.height
          ))
       ) {
-         message = "<p><b>Warning</b>: The size of the flatfield image must " +
+         message = "<b>Error</b>: The size of the flatfield image must " +
             "be at least " +
             format("%d ", model.flatfieldSizeMinimum) +
-            "pixels in width and height.</p>";
+            "pixels in width and height.";
       }
       else if (
          model.imageView != null &&
@@ -137,19 +167,43 @@ function MainController(model) {
             model.imageView.image.height == model.flatfieldView.image.height
          )
       ) {
-         message = "<p><b>Warning</b>: The sizes of the image selected for " +
+         message = "<b>Error</b>: The sizes of the image selected for " +
             "denoising and the flatfield must be equal.";
       }
-      if (message != null) {
-         (new MessageBox(
-            message, TITLE, StdIcon_Warning, StdButton_Ok
-         )).execute();
+      if (message != null && !silent) {
+         if (isViewTarget) {
+            console.criticalln();
+            console.criticalln(message);
+            console.flush();
+         }
+         else {
+            (new MessageBox(
+               "<p>" + message + "</p>", TITLE, StdIcon_Error, StdButton_Ok
+            )).execute();
+         }
       }
+
+      return message == null;
    };
 
    this.execute = function() {
       this.enableControls();
-      this.view.execute();
+      if (isViewTarget) {
+         if (this.view.denoiseButton.enabled) {
+            this.denoise();
+         }
+         else {
+            console.criticalln();
+            console.criticalln(format(
+               "<b>Error</b>: Cannot denoise: view: " + model.imageViewFormat,
+               model.imageView.fullId
+            ));
+            console.flush();
+         }
+      }
+      else {
+         this.view.execute();
+      }
    };
 
    this.reset = function() {
@@ -338,7 +392,170 @@ function MainController(model) {
       this.enableControls();
    };
 
-   this.loadVarianceScale = function() {
+   this.loadVarianceScaleImageMetadata = function() {
+      if (model.imageView == null || !model.imageView.isView) {
+         return false;
+      }
+
+      var imageCombinationCount = 0;
+      var keywords = model.imageView.window.keywords;
+      for (var i = 0; i != keywords.length; ++i) {
+         if (keywords[i].name != "HISTORY") {
+            continue;
+         }
+         var found = keywords[i].comment.match(
+            /ImageIntegration\.numberOfImages: (\d+)/
+         );
+         if (found != null && found.length == 2) {
+            imageCombinationCount = parseInt(found[1]);
+         }
+      }
+      if (imageCombinationCount < model.imageCombinationCountMinimum) {
+         return false;
+      }
+      if (imageCombinationCount > model.imageCombinationCountMaximum) {
+         return false;
+      }
+
+      var pixelCombination = null;
+      var outputNormalization = null;
+      var weightMode = null;
+      var weights = new Vector(0, imageCombinationCount);
+      var scales = new Vector(0, imageCombinationCount);
+      for (var i = 0; i != keywords.length; ++i) {
+         if (keywords[i].name != "HISTORY") {
+            continue;
+         }
+         var found = keywords[i].comment.match(
+            /ImageIntegration\.pixelCombination: *([a-z]+)/
+         );
+         if (found != null && found.length == 2) {
+            pixelCombination = found[1];
+         }
+         var found = keywords[i].comment.match(
+            /ImageIntegration\.outputNormalization: *([a-z]+(?: [a-z+]+)*)/
+         );
+         if (found != null && found.length == 2) {
+            outputNormalization = found[1];
+         }
+         var found = keywords[i].comment.match(
+            /ImageIntegration\.weightMode: *([a-z']+(?: [a-z]+)*)/
+         );
+         if (found != null && found.length == 2) {
+            weightMode = found[1];
+         }
+         var found = keywords[i].comment.match(
+            /ImageIntegration\.imageWeights_(\d+): *([\-+]?\d\.\d+e[\-+]\d+)/
+         );
+         if (found != null && found.length == 3) {
+            var index = parseInt(found[1]);
+            var weight = parseFloat(found[2]);
+            if (0 <= index && index < imageCombinationCount && 0 < weight) {
+               weights.at(index, weight);
+            }
+         }
+         var found = keywords[i].comment.match(
+            /ImageIntegration\.scaleFactors_(\d+): *([\-+]?\d\.\d+e[\-+]\d+)/
+         );
+         if (found != null && found.length == 3) {
+            var index = parseInt(found[1]);
+            var scale = parseFloat(found[2]);
+            if (0 <= index && index < imageCombinationCount && 0 < scale) {
+               scales.at(index, scale);
+            }
+         }
+      }
+      if (pixelCombination == null) {
+         return false;
+      }
+      if (outputNormalization == null) {
+         return false;
+      }
+      if (pixelCombination != "average") {
+         weightMode = "don't care";
+      }
+      if (weightMode == null) {
+         return false;
+      }
+
+      if (pixelCombination != "average") {
+         for (var i = 0; i != imageCombinationCount; ++i) {
+            weights.at(i, 1);
+         }
+      }
+      if (outputNormalization == "none" || outputNormalization == "additive") {
+         for (var i = 0; i != imageCombinationCount; ++i) {
+            scales.at(i, 1);
+         }
+      }
+      if (weightMode == "don't care") {
+         for (var i = 0; i != imageCombinationCount; ++i) {
+            weights.at(i, 1);
+         }
+      }
+
+      for (var i = 0; i != imageCombinationCount; ++i) {
+         if (weights.at(i) == 0 || scales.at(i) == 0) {
+            return false;
+         }
+      }
+
+      var denoiseVarianceScale = 0;
+      for (var i = 0; i != imageCombinationCount; ++i) {
+         var factor = weights.at(i) * scales.at(i);
+         denoiseVarianceScale += factor * factor;
+      }
+      var sumWeights = 0;
+      for (var i = 0; i != imageCombinationCount; ++i) {
+         sumWeights += weights.at(i);
+      }
+      denoiseVarianceScale *= imageCombinationCount / (sumWeights * sumWeights);
+
+      model.denoiseVarianceScale = model.defaultNumeric(
+         denoiseVarianceScale,
+         model.denoiseVarianceScaleMinimum,
+         model.denoiseVarianceScaleMaximum,
+         model.denoiseVarianceScaleDefault
+      );
+      this.view.denoiseVarianceScaleEdit.text = format(
+         model.denoiseVarianceScaleFormat,
+         model.denoiseVarianceScale
+      );
+
+      model.imageCombinationCount = model.defaultNumeric(
+         imageCombinationCount,
+         model.imageCombinationCountMinimum,
+         model.imageCombinationCountMaximum,
+         model.imageCombinationCountDefault
+      );
+      this.view.imageCombinationCountEdit.text = format(
+         model.imageCombinationCountFormat,
+         model.imageCombinationCount
+      );
+
+      this.enableControls();
+
+      (new MessageBox(
+         "<p>Variance scale of " +
+         format(
+            model.denoiseVarianceScaleFormat,
+            model.denoiseVarianceScale
+         ) +
+         " for a combination of " +
+         format(
+            model.imageCombinationCountFormat,
+            model.imageCombinationCount
+         ) +
+         " images loaded from image metadata.</p>",
+         TITLE,
+         StdIcon_Information,
+         StdButton_Ok
+      )).execute();
+
+      return true;
+   };
+
+   this.loadVarianceScaleProcessLogFile = function() {
       var openFileDialog = new OpenFileDialog;
       openFileDialog.multipleSelections = false;
       openFileDialog.caption = "Select ImageIntegration process log file";
@@ -346,138 +563,153 @@ function MainController(model) {
          ["Plain text files", ".txt"]
       ];
 
-      if (openFileDialog.execute() && openFileDialog.fileNames.length == 1) {
-         try {
-            var lines = File.readLines(openFileDialog.fileNames[0]);
+      if (!openFileDialog.execute() || openFileDialog.fileNames.length != 1) {
+         return;
+      }
 
-            var scaleFactors = [];
-            var zeroOffsets = [];
-            var weights = [];
-            var outputNormalization = null;
-            var weightingMode = null;
-            for (var i = 0; i != lines.length; ++i) {
-               var line = lines[i];
+      try {
+         var lines = File.readLines(openFileDialog.fileNames[0]);
 
-               var prefix = /^Scale factors *: */;
-               if (line.search(prefix) >= 0) {
-                  scaleFactors.push(parseFloat(line.replace(prefix, "")));
-               }
+         var scaleFactors = [];
+         var zeroOffsets = [];
+         var weights = [];
+         var outputNormalization = null;
+         var weightingMode = null;
+         for (var i = 0; i != lines.length; ++i) {
+            var line = lines[i];
 
-               var prefix = /^Zero offset *: */;
-               if (line.search(prefix) >= 0) {
-                  zeroOffsets.push(parseFloat(line.replace(prefix, "")));
-               }
-
-               var prefix = /^Weight *: */;
-               if (line.search(prefix) >= 0) {
-                  weights.push(parseFloat(line.replace(prefix, "")));
-               }
-
-               var prefix = /^Output normalization \.* /;
-               if (line.search(prefix) >= 0) {
-                  outputNormalization = line.replace(prefix, "").trim();
-               }
-
-               var prefix = /^Weighting mode \.* /;
-               if (line.search(prefix) >= 0) {
-                  weightingMode = line.replace(prefix, "").trim();
-               }
+            var prefix = /^Scale factors *: */;
+            if (line.search(prefix) >= 0) {
+               scaleFactors.push(parseFloat(line.replace(prefix, "")));
             }
 
-            var imageCombinationCount = scaleFactors.length;
-            if (
-               imageCombinationCount != zeroOffsets.length ||
-               imageCombinationCount != weights.length ||
-               imageCombinationCount == 0
-            ) {
-               throw new Error(
-                  "Can't load variance scale, the log file appears incomplete."
-               );
+            var prefix = /^Zero offset *: */;
+            if (line.search(prefix) >= 0) {
+               zeroOffsets.push(parseFloat(line.replace(prefix, "")));
             }
 
-            if (
-               outputNormalization != null &&
-               outputNormalization != "additive + scaling"
-            ) {
-               for (var i = 0; i != imageCombinationCount; ++i) {
-                  scaleFactors[i] = 1;
-                  zeroOffsets[i] = 1;
-               }
-            }
-            if (
-               weightingMode != null &&
-               weightingMode != "noise evaluation"
-            ) {
-               for (var i = 0; i != imageCombinationCount; ++i) {
-                  weights[i] = 1;
-               }
+            var prefix = /^Weight *: */;
+            if (line.search(prefix) >= 0) {
+               weights.push(parseFloat(line.replace(prefix, "")));
             }
 
-            var denoiseVarianceScale = 0;
-            var denoiseOffsetCounterpoise = 0;
-            var sumWeights = 0
-            for (var i = 0; i != imageCombinationCount; ++i) {
-               sumWeights += weights[i];
+            var prefix = /^Output normalization \.* /;
+            if (line.search(prefix) >= 0) {
+               outputNormalization = line.replace(prefix, "").trim();
             }
-            for (var i = 0; i != imageCombinationCount; ++i) {
-               var weight =  weights[i] * scaleFactors[i] / sumWeights;
-               denoiseVarianceScale += weight * weight;
-               denoiseOffsetCounterpoise += weight * zeroOffsets[i];
-            }
-            denoiseVarianceScale *= imageCombinationCount;
-            denoiseOffsetCounterpoise *= 65535;
 
-            model.denoiseVarianceScale = model.defaultNumeric(
-               denoiseVarianceScale,
-               model.denoiseVarianceScaleMinimum,
-               model.denoiseVarianceScaleMaximum,
-               model.denoiseVarianceScaleDefault
+            var prefix = /^Weighting mode \.* /;
+            if (line.search(prefix) >= 0) {
+               weightingMode = line.replace(prefix, "").trim();
+            }
+         }
+
+         var imageCombinationCount = scaleFactors.length;
+         if (
+            imageCombinationCount != zeroOffsets.length ||
+            imageCombinationCount != weights.length ||
+            imageCombinationCount == 0
+         ) {
+            throw new Error(
+               "Can't load variance scale, the process log file appears " +
+               "incomplete."
             );
-            this.view.denoiseVarianceScaleEdit.text = format(
+         }
+
+         if (
+            outputNormalization != null &&
+            outputNormalization != "additive + scaling"
+         ) {
+            for (var i = 0; i != imageCombinationCount; ++i) {
+               scaleFactors[i] = 1;
+               zeroOffsets[i] = 1;
+            }
+         }
+         if (
+            weightingMode != null &&
+            weightingMode != "noise evaluation" &&
+            weightingMode.search("custom keyword") < 0
+         ) {
+            for (var i = 0; i != imageCombinationCount; ++i) {
+               weights[i] = 1;
+            }
+         }
+
+         var denoiseVarianceScale = 0;
+         var denoiseOffsetCounterpoise = 0;
+         for (var i = 0; i != imageCombinationCount; ++i) {
+            var weight =  weights[i] * scaleFactors[i];
+            denoiseVarianceScale += weight * weight;
+            denoiseOffsetCounterpoise += weight * zeroOffsets[i];
+         }
+         var sumWeights = 0
+         for (var i = 0; i != imageCombinationCount; ++i) {
+            sumWeights += weights[i];
+         }
+         denoiseVarianceScale *=
+            imageCombinationCount / (sumWeights * sumWeights);
+         denoiseOffsetCounterpoise *= 65535;
+
+         model.denoiseVarianceScale = model.defaultNumeric(
+            denoiseVarianceScale,
+            model.denoiseVarianceScaleMinimum,
+            model.denoiseVarianceScaleMaximum,
+            model.denoiseVarianceScaleDefault
+         );
+         this.view.denoiseVarianceScaleEdit.text = format(
+            model.denoiseVarianceScaleFormat,
+            model.denoiseVarianceScale
+         );
+
+         model.imageCombinationCount = model.defaultNumeric(
+            imageCombinationCount,
+            model.imageCombinationCountMinimum,
+            model.imageCombinationCountMaximum,
+            model.imageCombinationCountDefault
+         );
+         this.view.imageCombinationCountEdit.text = format(
+            model.imageCombinationCountFormat,
+            model.imageCombinationCount
+         );
+
+         this.enableControls();
+
+         (new MessageBox(
+            "<p>Variance scale of " +
+            format(
                model.denoiseVarianceScaleFormat,
                model.denoiseVarianceScale
-            );
-
-            model.imageCombinationCount = model.defaultNumeric(
-               imageCombinationCount,
-               model.imageCombinationCountMinimum,
-               model.imageCombinationCountMaximum,
-               model.imageCombinationCountDefault
-            );
-            this.view.imageCombinationCountEdit.text = format(
+            ) +
+            " for a combination of " +
+            format(
                model.imageCombinationCountFormat,
                model.imageCombinationCount
-            );
-
-            (new MessageBox(
-               "<p>Variance scale of " +
-               format(
-                  model.denoiseVarianceScaleFormat,
-                  model.denoiseVarianceScale
-               ) +
-               " for a combination of " +
-               format(
-                  model.imageCombinationCountFormat,
-                  model.imageCombinationCount
-               ) +
-               " images loaded.<p>",
-               TITLE,
-               StdIcon_Information,
-               StdButton_Ok
-            )).execute();
-         }
-         catch (exception) {
-            console.criticalln(exception.message);
-            (new MessageBox(
-               "<p><b>Error</b>: " + exception.message + "</p>" +
-               "<p>Load variance scale aborted.</p>",
-               TITLE,
-               StdIcon_Error,
-               StdButton_Ok
-            )).execute();
-         }
+            ) +
+            " images loaded from process log file.</p>",
+            TITLE,
+            StdIcon_Information,
+            StdButton_Ok
+         )).execute();
       }
-      this.enableControls();
+      catch (exception) {
+         console.criticalln();
+         console.criticalln("<b>Error</b>: " + exception.message);
+         console.flush();
+         (new MessageBox(
+            "<p><b>Error</b>: " + exception.message + "</p>" +
+            "<p>Load variance scale aborted.</p>",
+            TITLE,
+            StdIcon_Error,
+            StdButton_Ok
+         )).execute();
+      }
+   };
+
+   this.loadVarianceScale = function() {
+      if (this.loadVarianceScaleImageMetadata()) {
+         return;
+      }
+      this.loadVarianceScaleProcessLogFile();
    };
 
    this.denoiseCycleSpinCountOnTextUpdated = function(text) {
@@ -561,7 +793,7 @@ function MainController(model) {
       console.show();
       if (false) {
          console.writeln();
-         console.writeln("FrameMatrix count: ", globalFrameMatrixCount);
+         console.warningln("FrameMatrix count: ", globalFrameMatrixCount);
       }
       console.flush();
 
@@ -582,21 +814,29 @@ function MainController(model) {
          console.flush();
       }
       catch (exception) {
-         console.criticalln(exception.message);
-         if (!(new RegExp("^abort")).test(exception.message)) {
-            (new MessageBox(
-               "<p><b>Error</b>: " + exception.message + "</p>" +
-               "<p>Estimation aborted.</p>",
-               TITLE,
-               StdIcon_Error,
-               StdButton_Ok
-            )).execute();
+         console.criticalln();
+         console.criticalln(
+            !(new RegExp("^abort")).test(exception.message) ?
+            "<b>Error</b>: " + exception.message :
+            exception.message
+         );
+         console.flush();
+         if (!isViewTarget) {
+            if (!(new RegExp("^abort")).test(exception.message)) {
+               (new MessageBox(
+                  "<p><b>Error</b>: " + exception.message + "</p>" +
+                  "<p>Denoise aborted.</p>",
+                  TITLE,
+                  StdIcon_Error,
+                  StdButton_Ok
+               )).execute();
+            }
          }
       }
 
       if (false) {
          console.writeln();
-         console.writeln("FrameMatrix count: ", globalFrameMatrixCount);
+         console.warningln("FrameMatrix count: ", globalFrameMatrixCount);
       }
       console.flush();
       console.hide();
@@ -629,7 +869,11 @@ function MainView(model, controller) {
    this.__base__ = Dialog;
    this.__base__();
 
-   Console.abortEnabled = false;
+   this.consoleAbortEnabled = function() {
+      return controller.isViewTarget;
+   };
+
+   Console.abortEnabled = this.consoleAbortEnabled();
    this.abortEnabled = false;
    this.abortRequested = false;
 
@@ -653,7 +897,9 @@ function MainView(model, controller) {
 
    this.throwAbort = function() {
       processEvents();
-      if (this.abortEnabled && this.abortRequested) {
+      if (
+         this.abortEnabled && (this.abortRequested || Console.abortRequested)
+      ) {
          throw new Error("abort");
       }
    };
@@ -685,11 +931,14 @@ function MainView(model, controller) {
       return buttonPane;
    };
 
-   this.addViewList = function(pane, onViewSelected) {
+   this.addViewList = function(pane, view, onViewSelected) {
       var viewList = new ViewList(this);
       pane.add(viewList);
 
       viewList.getAll();
+      if (view != null && view.isView) {
+         viewList.currentView = view;
+      }
       viewList.onViewSelected = onViewSelected;
 
       return viewList;
@@ -812,6 +1061,7 @@ function MainView(model, controller) {
 
          this.imageViewList = this.addViewList(
             this.imageViewPane,
+            null,
             function(view) {
                controller.imageViewOnViewSelected(view);
             }
@@ -916,24 +1166,31 @@ function MainView(model, controller) {
 
          this.flatfieldViewList = this.addViewList(
             this.flatfieldViewPane,
+            model.flatfieldView,
             function(view) {
                controller.flatfieldViewOnViewSelected(view);
             }
          );
-         this.flatfieldViewListNull = this.flatfieldViewList.currentView;
+         this.flatfieldViewListNull = View.viewById("");
 
          this.flatfieldViewHelpButton = this.addToolButton(
             this.flatfieldViewPane,
             ":/icons/comment.png",
-            "<p>To enable large spatial scale flatfield compensation, the " +
-            "view of the monochannel image used for flatfield calibration. " +
-            "The flatfield must be bias or dark-subtracted. " +
-            "To disable flatfield compensation, do not select a view.</p>" +
+            "<p>To enable large scale flatfield compensation, the view of " +
+            "the monochannel image used for flatfield calibration. The " +
+            "flatfield must be bias or dark-subtracted. Pedestal must be " +
+            "zero. To disable flatfield compensation, do not select a " +
+            "view.</p>" +
 
             "<p>Flatfield compensation is useful for telescopes with more " +
             "than ~10% optical vignetting. For telescopes with less " +
             "vignetting, flatfield compensation results in negligible " +
-            "denoising quality improvement.</p>",
+            "output quality improvement.</p>" +
+
+            "<p>The standard deviation of the smoothed flatfield is written " +
+            "to the process console as the Flatfield scale value. The value " +
+            "is normalized as a percentage of the mean of the smoothed " +
+            "flatfield.</p>",
             function() {}
          );
       }
@@ -1033,8 +1290,9 @@ function MainView(model, controller) {
             "<p>The offset of the detector in " + model.detectorOffsetUnits +
             ".</p>" +
 
-            "<p>Offset must be set to 0 for bias or dark-subtracted " +
-            "images.</p>" +
+            "<p>Offset must be set to 0 for a bias or dark-subtracted image, " +
+            "unless the image has a non-zero pedestal, in which case offset " +
+            "must be set equal to the pedestal.</p>" +
 
             "<p>If detector offset is unknown, the " +
             "<i>DarkBiasNoiseEstimator</i> script can provide an estimate.</p>"
@@ -1088,7 +1346,8 @@ function MainView(model, controller) {
 
             "<p>To account for the effects of average combination image " +
             "normalization and weighting, variance scale may be loaded from " +
-            "<i>ImageIntegration</i> process log information.</p>"
+            "<i>ImageIntegration</i> generated image metadata or a process " +
+            "log file.</p>"
          );
 
          this.denoiseVarianceScaleEdit = this.addEdit(
@@ -1120,10 +1379,11 @@ function MainView(model, controller) {
             this.denoiseVarianceScalePane,
             "Load variance scale...",
             "<p>Loads the variance scale and combination count from " +
-            "information in an <i>ImageIntegration</i> process log file.</p>" +
+            "<i>ImageIntegration</i> generated image metadata or a process " +
+            "log file.</p>" +
 
-            "<p>The log file is a manually created .txt file containing a " +
-            "copy of the Process Console log generated by the " +
+            "<p>A process log file is a manually created .txt file " +
+            "containing a copy of the Process Console log generated by the " +
             "<i>ImageIntegration</i> process.</p>",
             function() {
                controller.loadVarianceScale();
@@ -1138,7 +1398,7 @@ function MainView(model, controller) {
             this.denoiseCycleSpinCountPane,
             "Cycle-spin count:",
             "<p>Cycle-spin count provides an adjustable trade-off between " +
-            "denoising quality and processing time. Increasing the number " +
+            "output quality and processing time. Increasing the number " +
             "of cycle-spins improves denoising quality, but also " +
             "increases (nearly linearly) processing time.</p>" +
 
@@ -1189,9 +1449,15 @@ function MainView(model, controller) {
             "denoising method, defined as the difference between the noisy " +
             "input and the denoised output. Method noise should track " +
             "hypothesis noise statistics, and is strongly signal dependent " +
-            "due to the presence of Poisson noise. Method noise departs " +
-            "from hypothesis noise statistics in areas where image gradient " +
-            "magnitude exceeds the noise level significantly.</p>",
+            "due to the presence of Poisson noise.</p>" +
+
+            "<p>The standard deviation of the method noise image is written " +
+            "to the process console as the <i>Method noise</i> value in DN " +
+            "units. The process log will also contain an estimate of the " +
+            "relative contributions of Poisson noise variance and Gaussian " +
+            "noise variance in the 10th percentile exposure. If the Gaussian " +
+            "noise variance contribution is less than 10\%, the image can be " +
+            "considered \"sky background noise limited\".</p>",
             model.generateMethodNoiseImage,
             function(checked) {
                controller.generateMethodNoiseImageOnCheck(checked);
@@ -1252,8 +1518,8 @@ function MainView(model, controller) {
          "calibration and optional average combination steps and prior to " +
          "other linear or nonlinear processing steps.</p>" +
 
-         "<p>The script applies an interscale wavelet mixed noise unbiased " +
-         "eisk estimator (MURE) to find a denoised output image that " +
+         "<p>The script applies a Haar-wavelet mixed noise unbiased " +
+         "risk estimator (MURE) to find a denoised output image that " +
          "minimizes an estimate of the oracle mean-squared error (MSE), or  " +
          "\"risk\", between the denoised output image and the unknown " +
          "noise-free image.</p>" +
@@ -1277,9 +1543,9 @@ function MainView(model, controller) {
          "have the same pixel resolution, and be registered by projective " +
          "transformation with no distortion correction.</p>" +
 
-         "<p>Copyright &copy; 2012-2016 Mike Schuster. All Rights " +
+         "<p>Copyright &copy; 2012-2017 Mike Schuster. All Rights " +
          "Reserved.<br>" +
-         "Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights " +
+         "Copyright &copy; 2003-2017 Pleiades Astrophoto S.L. All Rights " +
          "Reserved.</p>"
       );
       this.versionLabel.setVariableWidth();
@@ -1321,7 +1587,7 @@ function MainView(model, controller) {
    this.windowTitle = TITLE;
 
    this.adjustToContents();
-   this.setMinWidth(this.width + this.logicalPixelsToPhysical(40));
+   this.setMinWidth(this.width + this.logicalPixelsToPhysical(0));
    this.setFixedHeight(this.height + this.logicalPixelsToPhysical(20));
 
    this.disableAbort();
@@ -1329,4 +1595,4 @@ function MainView(model, controller) {
 MainView.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF MainViewController.js - Released 2016/02/24 00:00:00 UTC
+// EOF MainViewController.js - Released 2017/02/16 00:00:00 UTC

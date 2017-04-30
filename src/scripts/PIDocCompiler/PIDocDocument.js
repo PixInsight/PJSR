@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// PIDocDocument.js - Released 2015/07/22 16:40:31 UTC
+// PIDocDocument.js - Released 2017/01/23 20:54:58 UTC
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.6.1
+// This file is part of PixInsight Documentation Compiler Script version 1.6.2
 //
-// Copyright (c) 2010-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2010-2017 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -49,7 +49,7 @@
 /*
  * PixInsight Documentation Compiler
  *
- * Copyright (C) 2010-2015 Pleiades Astrophoto. All Rights Reserved.
+ * Copyright (C) 2010-2017 Pleiades Astrophoto. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Document object.
@@ -75,7 +75,7 @@
 /*
  * A generic document section.
  */
-function Section( parent, title, sectionId )
+function Section( parent, title, sectionId, noIndex )
 {
    this.__base__ = Object;
    this.__base__();
@@ -83,6 +83,7 @@ function Section( parent, title, sectionId )
    this.parent = parent;
    this.title = title.replace( /a\>\s+/g, "a>" ); // remove white spaces after label tags
    this.text = '';
+   this.noIndex = (noIndex == undefined) ? false : noIndex;
 
    if ( this.parent )
       this.id = this.parent.id + "_:_";
@@ -117,15 +118,19 @@ function Section( parent, title, sectionId )
       let xhtml = '';
       if ( this.parent )
       {
-         xhtml += "<div class=\"pidoc_subsection\" id=\"" + document.internalLabel( this.id ) + "\">\n";
-         if ( this.parent.parent )
-            xhtml += "   <h5 class=\"pidoc_subsectionTitle\">" + this.title + "</h5>\n";
-         else
-            xhtml += "   <h4 class=\"pidoc_subsectionTitle\">" + this.title + "</h4>\n";
+         xhtml += "<div class=\"pidoc_subsection\"";
+         if ( !this.noIndex )
+            xhtml += " id=\"" + document.internalLabel( this.id ) + "\"";
+         xhtml += ">\n";
+         if ( !this.title.isEmpty() )
+            if ( this.parent.parent )
+               xhtml += "   <h5 class=\"pidoc_subsectionTitle\">" + this.title + "</h5>\n";
+            else
+               xhtml += "   <h4 class=\"pidoc_subsectionTitle\">" + this.title + "</h4>\n";
       }
       else
       {
-         xhtml += Section.startXhtml( this.title, this.id );
+         xhtml += Section.startXhtml( this.title, this.noIndex ? '' : this.id );
       }
 
       xhtml += this.text;
@@ -152,8 +157,10 @@ Section.startXhtml = function( title, id, toggle )
 {
    if ( toggle == undefined )
       toggle = true;
-   return "<div class=\"pidoc_section\" id=\"" + document.internalLabel( id ) + "\">\n"
-        + "   <h3 class=\"pidoc_sectionTitle\">" + title + "</h3>\n"
+   let s = "<div class=\"pidoc_section\" id=\"" + document.internalLabel( id ) + "\">\n";
+   if ( !title.isEmpty() )
+      s += "   <h3 class=\"pidoc_sectionTitle\">" + title + "</h3>\n";
+   return s
         + (toggle ? ("   " + Section.toggleSectionXhtml( id )) : "")
         + "   <div id=\"" + id + "\">\n";
 };
@@ -871,14 +878,14 @@ function PIDocDocument()
       this.currentSection = this.currentSection.parent;
    };
 
-   this.beginSubsection = function( title, tokens, index )
+   this.beginSubsection = function( title, tokens, index, noIndex )
    {
       if ( !this.currentSection )
          throw new ParseError( "No top-level document section is being defined.", tokens, index );
       if ( this.currentSection.hasSubsection( title ) )
          throw new ParseError( "Redefinition of the '" + title + "' subsection.", tokens, index );
 
-      this.currentSection = new Section( this.currentSection, title );
+      this.currentSection = new Section( this.currentSection, title, '', noIndex );
    };
 
    this.endSubsection = function( text, tokens, index )
@@ -2081,6 +2088,9 @@ function PIDocDocument()
 
       function sectionTOC( section, sn )
       {
+         if ( section.noIndex )
+            return '';
+
          if ( sn == undefined )
             sn = (++sectionNumber).toString();
 
@@ -2784,4 +2794,4 @@ PIDocDocument.prototype = new Object;
 var document = new PIDocDocument;
 
 // ----------------------------------------------------------------------------
-// EOF PIDocDocument.js - Released 2015/07/22 16:40:31 UTC
+// EOF PIDocDocument.js - Released 2017/01/23 20:54:58 UTC

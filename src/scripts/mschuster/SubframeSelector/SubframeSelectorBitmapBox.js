@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// SubframeSelectorBitmapBox.js - Released 2016/05/12 00:00:00 UTC
+// SubframeSelectorBitmapBox.js - Released 2016/12/28 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of SubframeSelector Script version 1.10
+// This file is part of SubframeSelector Script version 1.11
 //
 // Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -150,4 +150,4 @@ function BitmapBox(parent) {
 BitmapBox.prototype = new ScrollBox;
 
 // ****************************************************************************
-// EOF SubframeSelectorBitmapBox.js - Released 2016/05/12 00:00:00 UTC
+// EOF SubframeSelectorBitmapBox.js - Released 2016/12/28 00:00:00 UTC

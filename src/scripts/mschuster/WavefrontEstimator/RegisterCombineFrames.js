@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// RegisterCombineFrames.js - Released 2015/11/23 00:00:00 UTC
+// RegisterCombineFrames.js - Released 2016/12/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.18
+// This file is part of WavefrontEstimator Script Version 1.19
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -79,6 +79,9 @@ function RegisterCombineFrames(model, view, controller) {
          var image = imageWindows[0].mainView.image;
          var keywords = imageWindows[0].keywords;
          var pedestal = 0;
+         if (!image.isGrayscale || image.isComplex) {
+            throw new Error(model.frameIsNotMonochrome);
+         }
          for (var i = 0; i != keywords.length; ++i) {
             var keyword = keywords[i];
             if (keyword.name == "PEDESTAL") {
@@ -1109,4 +1112,4 @@ function RegisterCombineFrames(model, view, controller) {
 }
 
 // ****************************************************************************
-// EOF RegisterCombineFrames.js - Released 2015/11/23 00:00:00 UTC
+// EOF RegisterCombineFrames.js - Released 2016/12/30 00:00:00 UTC

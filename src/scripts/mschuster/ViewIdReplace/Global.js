@@ -1,12 +1,13 @@
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ----------------------------------------------------------------------------
-// pidoc.js - Released 2017/01/23 20:54:58 UTC
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+// Global.js - Released 2017/01/15 00:00:00 UTC
+// ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.6.2
+// This file is part of ViewIdReplace Script Version 1.4
 //
-// Copyright (c) 2010-2017 Pleiades Astrophoto S.L.
+// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,44 +45,48 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 
-/*
- * PixInsight Documentation Compiler
- *
- * Copyright (C) 2010-2017 Pleiades Astrophoto. All Rights Reserved.
- * Written by Juan Conejero (PTeam)
- *
- * Executable file.
- */
+// Throws an error if assertion does not hold.
+function assert(assertion, message) {
+   if (!assertion) {
+      throw new Error("Assertion failed: " + message);
+   }
+}
 
-#feature-id    Development > Documentation Compiler
+// Filters a view id to match ^[_a-zA-Z][_a-zA-Z0-9]*$ by replacing invalid
+// characters by "_".
+function filterViewId(viewId) {
+   return viewId.trim() == "" ?
+      "_" :
+      viewId.trim().replace(/[^_a-zA-Z0-9]/g, '_').replace(/^[^_a-zA-Z]/, '_');
+}
 
-#feature-info  PixInsight Documentation Compiler. This script parses a PIDoc source file and generates an \
-   HTML5/XHTML document integrated with a target PixInsight reference documentation system.<br/>\
-   <br/>\
-   PIDoc is a powerful markup language to generate PixInsight documentation easily and efficiently. \
-   By writing their documentation in the PIDoc language, developers on the PixInsight platform can concentrate \
-   exclusively on documentation contents, without having to think on the appearance of their documents. The \
-   documentation compiler automatically generates correctly structured and organized documents that integrate \
-   seamlessly with the PixInsight reference documentation system.<br/>\
-   <br/>\
-   Written by Juan Conejero (PTeam)<br/>\
-   Copyright &copy; 2010-2017 Pleiades Astrophoto, S.L.
+// Dynamic methods for core Control object.
+if (!Control.prototype.logicalPixelsToPhysical) {
+   Control.prototype.logicalPixelsToPhysical = function(s) {
+      return Math.round(s);
+   };
+}
 
-#feature-icon  pidoc.xpm
+if (!Control.prototype.setScaledFixedSize) {
+   Control.prototype.setScaledFixedSize = function(w, h) {
+      this.setFixedSize(w, h);
+   };
+}
 
-#include "PIDocGlobal.js"
-#include "PIDocData.js"
-#include "PIDocSystem.js"
-#include "PIDocDocument.js"
-#include "PIDocSyntaxHighlighters.js"
-#include "PIDocCommands.js"
-#include "PIDocCompiler.js"
-#include "PIDocGUI.js"
-#include "PIDocMain.js"
+if (!Control.prototype.scaledResource) {
+   Control.prototype.scaledResource = function(r) {
+      return r;
+   };
+}
 
-main();
+// Dynamic methods for core Sizer object.
+if (!Sizer.prototype.addUnscaledSpacing) {
+   Sizer.prototype.addUnscaledSpacing = function(s) {
+      this.addSpacing(s);
+   };
+}
 
-// ----------------------------------------------------------------------------
-// EOF pidoc.js - Released 2017/01/23 20:54:58 UTC
+// ****************************************************************************
+// EOF Global.js - Released 2017/01/15 00:00:00 UTC

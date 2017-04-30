@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// WavefrontEstimator.js - Released 2015/11/23 00:00:00 UTC
+// WavefrontEstimator.js - Released 2016/12/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.18
+// This file is part of WavefrontEstimator Script Version 1.19
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -48,11 +48,11 @@
 // ****************************************************************************
 
 #define TITLE "WavefrontEstimator"
-#define VERSION "1.18"
+#define VERSION "1.19"
 
 #feature-id Instrumentation > WavefrontEstimator
 
-#feature-info <b>WavefrontEstimator Version 1.18</b><br/>\
+#feature-info <b>WavefrontEstimator Version 1.19</b><br/>\
    <br/>\
    Script for testing the on-axis optical quality of telescopes.<br/>\
    <br/>\
@@ -148,4 +148,4 @@ main();
 gc();
 
 // ****************************************************************************
-// EOF WavefrontEstimator.js - Released 2015/11/23 00:00:00 UTC
+// EOF WavefrontEstimator.js - Released 2016/12/30 00:00:00 UTC

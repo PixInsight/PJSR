@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// Global.js - Released 2017/02/16 00:00:00 UTC
+// MainModel.js - Released 2017/01/15 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.21
+// This file is part of ViewIdReplace Script Version 1.4
 //
 // Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -47,56 +47,70 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // ****************************************************************************
 
-// Throws an error if assertion does not hold.
-function assert(assertion, message) {
-   if (!assertion) {
-      throw new Error("Assertion failed: " + message);
-   }
-}
+function MainModel() {
+   // Pattern, can be a string or a regular expression as a string.
+   this.patternDefault = "";
+   this.pattern = this.patternDefault;
 
-// Filters a view id to match ^[_a-zA-Z][_a-zA-Z0-9]*$ by replacing invalid
-// characters by "_".
-function filterViewId(viewId) {
-   return viewId.trim() == "" ?
-      "_" :
-      viewId.trim().replace(/[^_a-zA-Z0-9]/g, '_').replace(/^[^_a-zA-Z]/, '_');
-}
+   // Replacement, a string.
+   this.replacementDefault = "";
+   this.replacement = this.replacementDefault;
 
-// Gives a unique view id with base id by appending a suffix.
-function uniqueViewId(baseId) {
-   var viewId = baseId.replace("->", "_");
-   for (var i = 1; !View.viewById(viewId).isNull; ++i) {
-      viewId = baseId.replace("->", "_") + format("_%d", i);
+   // Gives string if well defined, otherwise a default.
+   this.defaultString = function(str, def) {
+      return str != null ? str : def;
    }
 
-   return viewId;
-}
-
-// Dynamic methods for core Control object.
-if (!Control.prototype.logicalPixelsToPhysical) {
-   Control.prototype.logicalPixelsToPhysical = function(s) {
-      return Math.round(s);
+   // Loads core settings.
+   this.loadSettings = function() {
+      this.pattern = this.defaultString(
+         Settings.read("pattern", DataType_String8), this.patternDefault
+      );
+      this.replacement = this.defaultString(
+         Settings.read("replacement", DataType_String8), this.replacementDefault
+      );
    };
-}
 
-if (!Control.prototype.setScaledFixedSize) {
-   Control.prototype.setScaledFixedSize = function(w, h) {
-      this.setFixedSize(w, h);
+   // Stores core settings.
+   this.storeSettings = function() {
+      Settings.write("pattern", DataType_String8, this.pattern);
+      Settings.write("replacement", DataType_String8, this.replacement);
    };
-}
 
-if (!Control.prototype.scaledResource) {
-   Control.prototype.scaledResource = function(r) {
-      return r;
+   // Loads instance parameters.
+   this.loadParameters = function() {
+      if (Parameters.has("pattern")) {
+         this.pattern = this.defaultString(
+            Parameters.getString("pattern"), this.patternDefault
+         );
+      }
+      if (Parameters.has("replacement")) {
+         this.replacement = this.defaultString(
+            Parameters.getString("replacement"), this.replacementDefault
+         );
+      }
    };
-}
 
-// Dynamic methods for core Sizer object.
-if (!Sizer.prototype.addUnscaledSpacing) {
-   Sizer.prototype.addUnscaledSpacing = function(s) {
-      this.addSpacing(s);
+   // Stores instance parameters.
+   this.storeParameters = function() {
+      Parameters.clear();
+
+      Parameters.set("version", VERSION);
+
+      if (coreVersionBuild < 1205) {
+         Parameters.set("pattern", this.pattern.replace(/\$/g, "\\$"));
+         Parameters.set("replacement", this.replacement.replace(/\$/g, "\\$"));
+      }
+      else {
+         Parameters.set("pattern", this.pattern);
+         Parameters.set("replacement", this.replacement);
+      }
+   };
+
+   // Clears the model.
+   this.clear = function() {
    };
 }
 
 // ****************************************************************************
-// EOF Global.js - Released 2017/02/16 00:00:00 UTC
+// EOF MainModel.js - Released 2017/01/15 00:00:00 UTC

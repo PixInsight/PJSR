@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// NR3SVD.js - Released 2016/02/24 00:00:00 UTC
+// NR3SVD.js - Released 2017/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.15
+// This file is part of MureDenoise Script Version 1.21
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -444,10 +444,10 @@ function NR3SVD(a) {
    reorder();
    check();
 
-   var tsh = 0.5 * Math.sqrt(m + n + 1) * Math.abs(w.at(0)) * eps;
+   var tsh = 0.5 * (m + n + 1) * Math.abs(w.at(0)) * eps;
 
    return [u, w, v, tsh];
 };
 
 // ****************************************************************************
-// EOF NR3SVD.js - Released 2016/02/24 00:00:00 UTC
+// EOF NR3SVD.js - Released 2017/02/16 00:00:00 UTC

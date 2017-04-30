@@ -1,12 +1,13 @@
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ----------------------------------------------------------------------------
-// pidoc.js - Released 2017/01/23 20:54:58 UTC
-// ----------------------------------------------------------------------------
+// ****************************************************************************
+// ViewIdReplace.js - Released 2017/01/15 00:00:00 UTC
+// ****************************************************************************
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.6.2
+// This file is part of ViewIdReplace Script Version 1.4
 //
-// Copyright (c) 2010-2017 Pleiades Astrophoto S.L.
+// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -44,44 +45,51 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ----------------------------------------------------------------------------
+// ****************************************************************************
 
-/*
- * PixInsight Documentation Compiler
- *
- * Copyright (C) 2010-2017 Pleiades Astrophoto. All Rights Reserved.
- * Written by Juan Conejero (PTeam)
- *
- * Executable file.
- */
+#define TITLE "ViewIdReplace"
+#define VERSION "1.4"
 
-#feature-id    Development > Documentation Compiler
+#feature-id Utilities > ViewIdReplace
 
-#feature-info  PixInsight Documentation Compiler. This script parses a PIDoc source file and generates an \
-   HTML5/XHTML document integrated with a target PixInsight reference documentation system.<br/>\
+#feature-info <b>ViewIdReplace Version 1.4</b><br/>\
    <br/>\
-   PIDoc is a powerful markup language to generate PixInsight documentation easily and efficiently. \
-   By writing their documentation in the PIDoc language, developers on the PixInsight platform can concentrate \
-   exclusively on documentation contents, without having to think on the appearance of their documents. The \
-   documentation compiler automatically generates correctly structured and organized documents that integrate \
-   seamlessly with the PixInsight reference documentation system.<br/>\
+   Script that renames a view with some or all matches of a pattern replaced \
+   by a replacement.<br/>\
    <br/>\
-   Written by Juan Conejero (PTeam)<br/>\
-   Copyright &copy; 2010-2017 Pleiades Astrophoto, S.L.
+   Copyright &copy; 2012-2017 Mike Schuster. All Rights Reserved.<br/>\
+   Copyright &copy; 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 
-#feature-icon  pidoc.xpm
+#include <pjsr/DataType.jsh>
+#include <pjsr/Sizer.jsh>
+#include <pjsr/StdButton.jsh>
+#include <pjsr/StdIcon.jsh>
+#include <pjsr/TextAlign.jsh>
 
-#include "PIDocGlobal.js"
-#include "PIDocData.js"
-#include "PIDocSystem.js"
-#include "PIDocDocument.js"
-#include "PIDocSyntaxHighlighters.js"
-#include "PIDocCommands.js"
-#include "PIDocCompiler.js"
-#include "PIDocGUI.js"
-#include "PIDocMain.js"
+#include "MainModel.js"
+#include "MainViewController.js"
+
+function main() {
+   console.hide();
+
+   var model = new MainModel();
+   model.loadSettings();
+   model.loadParameters();
+
+   var controller = new MainController(model);
+
+   var view = new MainView(model, controller);
+   controller.setView(view);
+
+   controller.execute();
+
+   model.storeSettings();
+   model.clear();
+}
 
 main();
 
-// ----------------------------------------------------------------------------
-// EOF pidoc.js - Released 2017/01/23 20:54:58 UTC
+gc();
+
+// ****************************************************************************
+// EOF ViewIdReplace.js - Released 2017/01/15 00:00:00 UTC
