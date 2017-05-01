@@ -30,6 +30,9 @@
 /*
  Changelog:
 
+ 1.3:   * Changes by Colin McGill: new PSF_FLUX table and write
+          all the available magnitudes and the airmass in all the tables.
+
  1.2.3: * Option for choosing in the solver between using the image metadata
           or the configuration of the solver dialog.
 
@@ -66,7 +69,7 @@
 <br/>\
 Copyright &copy;2013-2016 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.2.3"
+#define VERSION "1.3"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -1613,7 +1616,7 @@ function OutputTab(parent, engine)
    //
    this.fileTable_Check = new CheckBox(this);
    this.fileTable_Check.text = "Generate a table for each image with its information";
-   this.fileTable_Check.toolTip = "This tables contains all the information available for the image, including catalog data and photometry calculations";
+   this.fileTable_Check.toolTip = "<p>This tables contains all the information available for the image, including catalog data and photometry calculations.</p>";
    this.fileTable_Check.checked = engine.generateFileTable;
    this.fileTable_Check.onCheck = function (checked)
    {
@@ -1623,7 +1626,7 @@ function OutputTab(parent, engine)
    //
    this.fluxTable_Check = new CheckBox(this);
    this.fluxTable_Check.text = "Generate flux tables";
-   this.fluxTable_Check.toolTip = "The flux tables contains a summary of the measured fluxes of all the stars and images. The table will be generated in the output directory.";
+   this.fluxTable_Check.toolTip = "<p>The flux tables contains a summary of the measured fluxes of all the stars and images.</p><p>The table will be generated in the output directory.</p>";
    this.fluxTable_Check.checked = engine.generateFluxTable;
    this.fluxTable_Check.onCheck = function (checked)
    {
@@ -1631,9 +1634,19 @@ function OutputTab(parent, engine)
    };
 
    //
+   this.psfFluxTable_Check = new CheckBox(this);
+   this.psfFluxTable_Check.text = "Generate PSF flux table";
+   this.psfFluxTable_Check.toolTip = "<p>The flux tables contains a summary of the fluxes of all the stars and images calculated from the PSF fitting for the star.</p><p>The table will be generated in the output directory.</p>";
+   this.psfFluxTable_Check.checked = engine.generatePSFFluxTable;
+   this.psfFluxTable_Check.onCheck = function (checked)
+   {
+      engine.generatePSFFluxTable = checked;
+   };
+
+   //
    this.backgTable_Check = new CheckBox(this);
    this.backgTable_Check.text = "Generate background table";
-   this.backgTable_Check.toolTip = "The background table contains a summary of the measured backgrounds of all the stars and images. The table will be generated in the output directory.";
+   this.backgTable_Check.toolTip = "<p>The background table contains a summary of the measured backgrounds of all the stars and images.</p><p>The table will be generated in the output directory.</p>";
    this.backgTable_Check.checked = engine.generateBackgTable;
    this.backgTable_Check.onCheck = function (checked)
    {
@@ -1643,7 +1656,7 @@ function OutputTab(parent, engine)
    //
    this.snrTable_Check = new CheckBox(this);
    this.snrTable_Check.text = "Generate SNR table";
-   this.snrTable_Check.toolTip = "The SNR table contains a summary of the measured SNR (Signal to Noise Ratio) of all the stars and images. The table will be generated in the output directory.";
+   this.snrTable_Check.toolTip = "<p>The SNR table contains a summary of the measured SNR (Signal to Noise Ratio) of all the stars and images.</p><p>The table will be generated in the output directory.</p>";
    this.snrTable_Check.checked = engine.generateSNRTable;
    this.snrTable_Check.onCheck = function (checked)
    {
@@ -1653,7 +1666,7 @@ function OutputTab(parent, engine)
    //
    this.flagTable_Check = new CheckBox(this);
    this.flagTable_Check.text = "Generate flags table";
-   this.flagTable_Check.toolTip = "The flags table contains a summary of the flags of all the stars and images. The table will be generated in the output directory.";
+   this.flagTable_Check.toolTip = "<p>The flags table contains a summary of the flags of all the stars and images.</p><p>The table will be generated in the output directory.</p>";
    this.flagTable_Check.checked = engine.generateFlagTable;
    this.flagTable_Check.onCheck = function (checked)
    {
@@ -1663,7 +1676,7 @@ function OutputTab(parent, engine)
    //
    this.errorLog_Check = new CheckBox(this);
    this.errorLog_Check.text = "Generate error file";
-   this.errorLog_Check.toolTip = "The error file contains all the errors that occurred in the process. It is only written if there is at least one error.";
+   this.errorLog_Check.toolTip = "<p>The error file contains all the errors that occurred in the process. It is only written if there is at least one error.<p>";
    this.errorLog_Check.checked = engine.generateErrorLog;
    this.errorLog_Check.onCheck = function (checked)
    {
@@ -1679,6 +1692,7 @@ function OutputTab(parent, engine)
    this.tables_Group.sizer.add(this.outPrefix_Sizer);
    this.tables_Group.sizer.add(this.fileTable_Check);
    this.tables_Group.sizer.add(this.fluxTable_Check);
+   this.tables_Group.sizer.add(this.psfFluxTable_Check);
    this.tables_Group.sizer.add(this.backgTable_Check);
    this.tables_Group.sizer.add(this.snrTable_Check);
    this.tables_Group.sizer.add(this.flagTable_Check);
@@ -1949,6 +1963,7 @@ function PhotometryEngine(w)
          ["outputPrefix", DataType_UCString],
          ["generateFileTable", DataType_Boolean],
          ["generateFluxTable", DataType_Boolean],
+         ["generatePSFFluxTable", DataType_Boolean],
          ["generateBackgTable", DataType_Boolean],
          ["generateSNRTable", DataType_Boolean],
          ["generateFlagTable", DataType_Boolean],
@@ -2004,6 +2019,7 @@ function PhotometryEngine(w)
    this.starsReference = null;
    this.generateFileTable = true;
    this.generateFluxTable = true;
+   this.generatePSFFluxTable = true;
    this.generateBackgTable = false;
    this.generateSNRTable = false;
    this.generateFlagTable = false;
@@ -2845,6 +2861,24 @@ function PhotometryEngine(w)
       }
    }
 
+   this.GetWindowAirMass = function (window)
+   {
+       var keywords = window.keywords;
+       for (var i = 0; i < keywords.length; i++)
+       {
+           var key = keywords[i];
+           if (key && key.name == "AIRMASS")
+           {
+               var value = key.value;
+               // Remove the enclosing '' if necessary
+               if (value[0] == "'" && value[value.length - 1] == "'")
+                   value = value.substr(1, value.length - 2);
+               return value.trim();
+           }
+       }
+       return "UNK";
+   }
+
    this.WriteResult = function (window, metadataWCS, catalogStars, imageStars)
    {
       var filePath = window.filePath;
@@ -2889,7 +2923,10 @@ function PhotometryEngine(w)
          else
             backgroundStr = "Background photometric window\n";
 
-         file.outText(format("%04d;%04d\n", boundsStr.length + apertureStr.length + backgroundStr.length + lineLength, lineLength));
+         var airmasStr = format("Airmass;%s\n", this.GetWindowAirMass(window));
+
+         file.outText(format("%04d;%04d\n", boundsStr.length + apertureStr.length + backgroundStr.length +airmasStr.length + lineLength, lineLength));
+
 
          var columns = "DATE_OBS     ;NAME                     ;";
          columns += format("%-" + filterColWidth + "ls", "FILTER");
@@ -2910,6 +2947,7 @@ function PhotometryEngine(w)
          file.outText(boundsStr);
          file.outText(apertureStr);
          file.outText(backgroundStr);
+         file.outText(airmasStr);
          file.outText(columns);
          //console.writeln(lineLength, " ", columns.length);
       }
@@ -2992,6 +3030,7 @@ function PhotometryEngine(w)
       imageData.dateObs = window.metadataWCS.epoch;
       imageData.stars = imageStars;
       imageData.filter = this.GetWindowFilter(window);
+      imageData.airmass = this.GetWindowAirMass(window);
 
       return imageData;
    };
@@ -3030,19 +3069,24 @@ function PhotometryEngine(w)
          // Create file
          var file = new File;
          file.createForWriting(path);
+         var headerprefix = ";;;";    
+
+          // Calculate prefix - depends on number of filters
+         for (var f = 0; f < this.catalog.filters.length; f++)
+         {
+             headerprefix += ";";
+         }
+         if (snrField)
+            headerprefix += ";";
 
          // Write image ID row
-         if (snrField)
-            file.outText(";");
-         file.outText(";;;;ImageId");
+         file.outText(headerprefix+"ImageId");
          for (var i = 0; i < this.imagesData.length; i++)
             file.outText(";" + this.imagesData[i].id);
          file.outText("\n");
 
          // Write image DATE_OBS row
-         if (snrField)
-            file.outText(";");
-         file.outText(";;;;DATE_OBS");
+         file.outText(headerprefix+"DATE_OBS");
          for (var i = 0; i < this.imagesData.length; i++)
             if (this.imagesData[i].dateObs == null)
                file.outText(";");
@@ -3051,18 +3095,28 @@ function PhotometryEngine(w)
          file.outText("\n");
 
          // Write image FILTER row
-         if (snrField)
-            file.outText(";");
-         file.outText(";;;;FILTER");
+         file.outText(headerprefix+"FILTER");
          for (var i = 0; i < this.imagesData.length; i++)
             file.outText(format(";%ls", this.imagesData[i].filter));
          file.outText("\n");
 
+          // Write image AIRMASS row
+         file.outText(headerprefix+"AIRMASS");
+         for (var i = 0; i < this.imagesData.length; i++)
+             file.outText(format(";%ls", this.imagesData[i].airmass));
+         file.outText("\n");
+
          // Write stars header
+         file.outText("StarId;RA;Dec;Flags");
+         for (var f = 0; f < this.catalog.filters.length; f++)
+         {
+             var filter = this.catalog.filters[f];
+             file.outText(";Catalog_" + filter);
+         }
+
          if (snrField)
-            file.outText("StarId;RA;Dec;Flags;Catalog_" + this.catalogFilter + ";MinSNR");
-         else
-            file.outText("StarId;RA;Dec;Flags;Catalog_" + this.catalogFilter);
+             file.outText(";MinSNR");
+
          for (var i = 0; i < this.imagesData.length; i++)
             file.outText(format(";%ls_%d", fieldName, i + 1));
          file.outText("\n");
@@ -3096,9 +3150,17 @@ function PhotometryEngine(w)
                   }
                   else
                      flags |= STARFLAG_LOWSNR;
-               file.outText(format("%d;", flags));
-               if (this.catalogStars[s][this.catalogFilter] != null)
-                  file.outText(format("%f", this.catalogStars[s][this.catalogFilter]));
+               file.outText(format("%d", flags));
+               for (f = 0; f < this.catalog.filters.length; f++)
+               {
+                   var filter = this.catalog.filters[f];
+                   if (this.catalogStars[s][filter]) {
+                       file.outText(format(";%f", this.catalogStars[s][filter]));
+                   } else {
+                       file.outText(";");
+                   }
+               }
+
                if (snrField)
                {
                   file.outText(";");
@@ -3451,6 +3513,18 @@ function PhotometryEngine(w)
       {
          this.RemoveEmptyStars();
 
+         if (this.generatePSFFluxTable)
+            this.WriteTable(
+               function (star)
+               {
+                  return star.psf.A * star.psf.sigmaX * star.psf.sigmaY;
+               },
+               "PSF_Flux",
+               function (star)
+               {
+                  return star.SNR[0];
+               }
+            );
          if (this.generateFluxTable)
             for (var f = 0; f < this.apertureSteps; f++)
                this.WriteTable(
