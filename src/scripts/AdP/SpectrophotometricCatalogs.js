@@ -128,13 +128,13 @@ function II_183A_Catalog()
 
    this.catalogMagnitude = 16;
 
-   this.fields = [ "Name", "Coordinates", "Vmag", "B-V", "U-B", "V-R", "R-I", "V-I" ];
+   this.fields = [ "Name", "Coordinates", "Vmag", "B-V", "U-B", "V-R", "R-I", "V-I", "B", "U", "R", "I" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);
    this.properties.push(["magnitudeFilter", DataType_UCString ]);
 
-   this.filters = [ "Vmag" ];
+   this.filters = [ "Vmag", "B", "U", "R", "I" ];
    this.magnitudeFilter = "Vmag";
 
    this.GetConstructor = function ()
@@ -170,6 +170,11 @@ function II_183A_Catalog()
          record["V-R"] = tokens[6].trim();
          record["R-I"] = tokens[7].trim();
          record["V-I"] = tokens[8].trim();
+         // B, U, R and I magnitudes implemetation by Colin McGill
+         record["B"] = record["B-V"] * 1.0 + record["Vmag"] * 1.0;
+         record["U"] = record["U-B"] * 1.0 + record["B"] * 1.0;
+         record["R"] = - record["V-R"] * 1.0 + record["Vmag"] * 1.0;
+         record["I"] = - record["V-I"] * 1.0 + record["Vmag"] * 1.0;
          record.magnitude = parseFloat(record[this.magnitudeFilter]);
          return record;
       }
