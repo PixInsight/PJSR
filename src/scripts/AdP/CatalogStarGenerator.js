@@ -3,7 +3,7 @@
 
  Script for generating a simulation of an star field using Internet catalogs.
 
- Copyright (C) 2013-2015, Andres del Pozo
+ Copyright (C) 2013-2017, Andres del Pozo
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 
 /*
  Changelog:
+
+ 2.1.2:* Added Gaia DR1 catalog
 
  2.1.1: * Increased the maximum size of the output image
 
@@ -74,7 +76,7 @@
 
 #feature-info  Script for generating a simulation of an star field using Internet catalogs.<br/>\
 <br/>\
-Copyright &copy;2013-15 Andr&eacute;s del Pozo
+Copyright &copy;2013-17 Andr&eacute;s del Pozo
 
 #include <pjsr/Sizer.jsh>
 #include <pjsr/FrameStyle.jsh>
@@ -86,7 +88,7 @@ Copyright &copy;2013-15 Andr&eacute;s del Pozo
 #include <pjsr/TextAlign.jsh>
 #include <pjsr/NumericControl.jsh>
 
-#define CSG_VERSION "2.1.1"
+#define CSG_VERSION "2.1.2"
 #define CSG_TITLE "Catalog Star Generator"
 #define CSG_SETTINGS_MODULE "CSGEN"
 
@@ -121,7 +123,7 @@ function CatStarGeneratorDialog(engine)
       "<p><b>Catalog Star Generator v" + CSG_VERSION +
          "</b> &mdash; A script for generating a simulation of an star field using Internet catalogs.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2013-15 Andr&eacute;s del Pozo</p>";
+         "Copyright &copy; 2013-17 Andr&eacute;s del Pozo</p>";
 
    // GEOMETRY
    this.sourceGeom_Frame = new Frame(this);

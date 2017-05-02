@@ -92,7 +92,7 @@ function Catalog( name )
 
    this.GetDefaultLabels = function()
    {
-      return [null, null, null, null, "Name", null, null, null];
+      return [null, null, null, null, this.fields[0], null, null, null];
    };
 }
 
@@ -617,6 +617,40 @@ function VizierCatalog(name)
          return [];
    };
 
+   // Removes objects that are in the same position with the given tolerance
+   this.RemoveDuplicates = function (objects, tolerance)
+   {
+      objects.sort(function (a, b)
+      {
+         return a.posRD.y < b.posRD.y ? -1 : (a.posRD.y > b.posRD.y ? 1 : 0);
+      });
+
+      var duplicated = 0;
+      for (var i = 0; i < objects.length; i++)
+      {
+         var a = objects[i];
+         var posRD = a.posRD;
+         var cosy = DMath.cos(posRD.y);
+         for (var j = i + 1; j < objects.length;)
+         {
+            var b = objects[j];
+            var dy = Math.abs(b.posRD.y - posRD.y);
+            if (dy > tolerance)
+               break;
+            var dx = Math.abs(b.posRD.x - posRD.x) * cosy;
+            if (dx < tolerance)
+            {
+               if (a.magnitude > b.magnitude)
+                  objects[i] = b;
+               objects.splice(j, 1);
+               duplicated++;
+            }
+            else
+               j++;
+         }
+      }
+      console.writeln(format("Removed %d duplicated objects", duplicated));
+   };
 }
 
 
@@ -2085,6 +2119,162 @@ function GCVSCatalog()
 
 GCVSCatalog.prototype=new VizierCatalog;
 __catalogRegister__.Register( new GCVSCatalog );
+
+
+// ******************************************************************
+// Gaia_Catalog
+// ******************************************************************
+function Gaia_Catalog()
+{
+   this.name = "Gaia";
+   this.description = "Gaia Data Release 1 (Gaia collaboration 2016, 1,142,679,769 sources)";
+
+   this.__base__ = VizierCatalog;
+   this.__base__(this.name);
+
+   this.catalogMagnitude = 20.7;
+   this.magMin = NULLMAG;
+   this.magMax = 21;
+   this.fields = [ "SourceID", "Coordinates", "<Gmag>" ];
+
+   this.properties.push(["magMin", DataType_Double]);
+   this.properties.push(["magMax", DataType_Double]);
+   this.properties.push(["magnitudeFilter", DataType_UCString ]);
+
+   this.filters = [ "<Gmag>"];
+   this.magnitudeFilter = "<Gmag>";
+
+   this.GetConstructor = function ()
+   {
+      return "new Gaia_Catalog()";
+   }
+
+   this.UrlBuilder = function (center, fov, mirrorServer)
+   {
+      var url = mirrorServer + "viz-bin/asu-tsv?-source=I/337/gaia&-c=" +
+         format("%f %f", center.x, center.y) +
+         "&-c.r=" + format("%f", fov) +
+         "&-c.u=deg&-out.form=|" +
+         "&-out.add=_RAJ,_DEJ&-out=pmRA&-out=pmDE&-out=Source&-out=<Gmag>" +
+         this.CreateMagFilter(this.magnitudeFilter, this.magMin, this.magMax);
+      return url;
+   }
+
+   this.ParseRecord = function (tokens, epoch)
+   {
+      if (tokens.length >= 6 && parseFloat(tokens[0]) > 0)
+      {
+         var x = parseFloat(tokens[0]);
+         var y = parseFloat(tokens[1]);
+         if (!(x >= 0 && x <= 360 && y >= -90 && y <= 90))
+            return null;
+
+         if (epoch != null && tokens[2].trim().length > 0 && tokens[3].trim().length > 0)
+         {
+            var pmX = parseFloat(tokens[2]);
+            var pmY = parseFloat(tokens[3]);
+            var dx = pmX * (epoch - 2000) / 3600000/* * Math.cos( y*Math.PI/180 )*/;
+            var dy = pmY * (epoch - 2000) / 3600000;
+            x += dx;
+            y += dy;
+         }
+         var name = tokens[4].trim();
+         var record = new CatalogRecord(new Point(x, y), 0, name, parseFloat(tokens[5]));
+         record["SourceID"] = name;
+         record["<Gmag>"] = tokens[5].trim();
+         if (record[this.magnitudeFilter])
+            record.magnitude = parseFloat(record[this.magnitudeFilter]);
+         return record;
+      }
+      else
+         return null;
+   }
+}
+
+Gaia_Catalog.prototype=new VizierCatalog;
+__catalogRegister__.Register( new Gaia_Catalog );
+
+// ******************************************************************
+// APASS_Catalog
+// ******************************************************************
+function APASS_Catalog()
+{
+   this.name = "APASS";
+   this.description = "AAVSO Photometric All Sky Survey DR9 (Henden+, 2016, 62 million stars)";
+
+   this.__base__ = VizierCatalog;
+   this.__base__(this.name);
+
+   this.catalogMagnitude = 17;
+   this.magMin = 10;
+   this.magMax = 17;
+   this.fields = [ "Coordinates", "Vmag", "Bmag", "g'mag","r'mag", "i'mag", "B-V" ];
+
+   this.properties.push(["magMin", DataType_Double]);
+   this.properties.push(["magMax", DataType_Double]);
+   this.properties.push(["magnitudeFilter", DataType_UCString ]);
+
+   this.filters = [ "Vmag", "Bmag", "g'mag","r'mag", "i'mag"];
+   this.magnitudeFilter = "Vmag";
+
+   this.GetConstructor = function ()
+   {
+      return "new APASS_Catalog()";
+   };
+
+   this.UrlBuilder = function (center, fov, mirrorServer)
+   {
+      var url = mirrorServer + "viz-bin/asu-tsv?-source=II/336/apass9&-c=" +
+         format("%f %f", center.x, center.y) +
+         "&-c.r=" + format("%f", fov) +
+         "&-c.u=deg&-out.form=|" +
+         "&-out.add=_RAJ,_DEJ&-out=B-V&-out=Vmag&-out=Bmag&-out=g'mag&-out=r'mag&-out=i'mag" +
+         this.CreateMagFilter(this.magnitudeFilter, this.magMin, this.magMax);
+      return url;
+   };
+
+   this.ParseRecord = function (tokens, epoch)
+   {
+      if (tokens.length >= 2 && parseFloat(tokens[0]) > 0)
+      {
+         var x = parseFloat( tokens[0] );
+         var y = parseFloat( tokens[1] );
+         if( !(x>=0 && x<=360 && y>=-90 && y<=90) )
+            return null;
+
+         var name = tokens[0]+"_"+tokens[1];
+         var record = new CatalogRecord(new Point(x, y), 0, name, 0);
+         if(tokens.length>2)
+            record["B-V"] = tokens[2].trim();
+         if(tokens.length>3)
+            record["Vmag"] = tokens[3].trim();
+         if(tokens.length>4)
+            record["Bmag"] = tokens[4].trim();
+         if(tokens.length>5)
+            record["g'mag"] = tokens[5].trim();
+         if(tokens.length>6)
+            record["r'mag"] = tokens[6].trim();
+         if(tokens.length>7)
+            record["i'mag"] = tokens[7].trim();
+         if (record[this.magnitudeFilter])
+            record.magnitude = parseFloat(record[this.magnitudeFilter]);
+         return record;
+      }
+      else
+         return null;
+   };
+
+   this.PostProcessObjects = function (objects)
+   {
+      // The workflow of APASS DR9 can generate duplicated stars
+      // Since the resolution of the cameras is 2.5"/px the tolerance
+      // will be 2.5"/px
+      this.RemoveDuplicates(objects, 3/3600);
+   }
+}
+
+APASS_Catalog.prototype=new VizierCatalog;
+__catalogRegister__.Register( new APASS_Catalog );
 
 // ******************************************************************
 // CustomCatalog: Uses a file to store the info
