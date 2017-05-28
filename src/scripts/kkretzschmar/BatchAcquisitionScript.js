@@ -6,7 +6,7 @@
 //
 //
 // Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
-// Written by Juan Conejero (PTeam)
+// Written by Klaus Kretzschmar (PTeam)
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -48,8 +48,13 @@
 
 /*
  * TODO
- *  - add coordinate search dialog to target list
- *  - add synch action
+ * - Add horizontal grid
+ * - Fix worklist bugs
+ * - Improve sync (delay after execute on before goto)
+ * - Store config parameters
+ * Mount:
+ * - Add polynomial parameters
+ * - geographic latitude parameter
  */
 
 
@@ -99,10 +104,13 @@ function BatchFrameAcquisitionEngine()
    // mount parameters
    this.doMove                   = false;
    this.automaticMove            = false;
+   this.automaticSync            = false;
+   this.park                     = false;
    this.center                   = false;
    this.align                    = false;
    this.computeApparentPos       = false;
    this.alignModelFile           = "";
+   this.syncDataFile             = "";
 
    // camera parameters
    this.binningX             = { idx:0, text:"1" };
@@ -189,6 +197,7 @@ function BatchFrameAcquisitionEngine()
       console.writeln("Compute apparent pos:      " + (this.computeApparentPos ? "true" : "false"));
       console.writeln("Alignment corr:            " + (this.align ? "true" : "false"));
       console.writeln("Alignment file:            " + this.alignModelFile);
+      console.writeln("Sync data file:            " + this.syncDataFile);
       console.writeln("------------------------------------------------");
       console.noteln("Camera parameters:");
       console.writeln("Binning X:                 " + this.binningX.text);
@@ -302,6 +311,7 @@ function BatchFrameAcquisitionEngine()
       mountController.computeApparentPosition   = this.computeApparentPos;
       mountController.enableAlignmentCorrection = this.align;
       mountController.alignmentModelFile        = this.alignModelFile;
+      mountController.syncDataFile              = this.syncDataFile;
       if (this.alignModelFile!=""){
          mountController.alignmentConfig = 127;
       }
@@ -334,18 +344,18 @@ function BatchFrameAcquisitionEngine()
          mountController.targetDec = this.worklist[i].dec;
          console.writeln(format("Moving to target %s", this.worklist[i].targetName));
 
-
          var isDifferentTarget = previousTarget!=this.worklist[i].targetName;
-         if (isDifferentTarget && this.doMove  && !this.automaticMove && !(new MessageBox( "Goto next object ?", "Message", StdIcon_Question, StdButton_Yes, StdButton_No).execute()) ) {
-            break;
-         }
+
+         if (isDifferentTarget && this.doMove  && !this.automaticMove && !this.automaticSync && !(new MessageBox( "Goto next object ?", "Message", StdIcon_Question, StdButton_Yes, StdButton_No).execute()) ) {
+             break;
+          }
 
          if (isDifferentTarget && this.doMove && !mountController.executeGlobal()){
             node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
             break;
          }
 
-
+         msleep(10000);
          // start frame acquisition
          cameraController.objectName          = this.worklist[i].targetName;
          cameraController.binningX            = this.worklist[i].binningX;
@@ -370,7 +380,7 @@ function BatchFrameAcquisitionEngine()
          if (isDifferentTarget && this.center){
             cameraController.saveClientImages = false;
             cameraController.openClientImages = true;
-            cameraController.uploadMode.idx   = 0;
+            cameraController.uploadMode       = 0;
             cameraController.exposureTime     = this.worklist[i].expTime * this.centerImageExpTimeFraction;
             cameraController.exposureCount    = 1;
 
@@ -385,7 +395,7 @@ function BatchFrameAcquisitionEngine()
                //window.close();
                break;
             }
-
+               msleep(5000);
             cameraController.saveClientImages = this.saveClientImages;
             cameraController.openClientImages = this.openClientImages;
             cameraController.uploadMode       = this.uploadMode.idx;
@@ -394,16 +404,31 @@ function BatchFrameAcquisitionEngine()
             cameraController.binningX         = this.worklist[i].binningX;
             cameraController.binningY         = this.worklist[i].binningY;
 
-            //window.close();
+            window.forceClose();
+
+            if (isDifferentTarget && this.doMove  && !this.automaticMove && !this.automaticSync && !(new MessageBox( "Continue ?", "Message", StdIcon_Question, StdButton_Yes, StdButton_No).execute()) ) {
+               break;
          }
-         if (!cameraController.executeGlobal()){
+
+         }
+         if (!this.automaticSync && !cameraController.executeGlobal()){
             node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
             break;
          }
-
+         if (this.automaticSync) {
+        	   // sync mount
+        	   mountController.Command                   = 11; // Sync
+        	   mountController.executeGlobal();
+        	   mountController.Command                   = 10; // Goto
+         }
          node.setIcon(5,":/bullets/bullet-ball-glass-green.png");
          previousTarget = this.worklist[i].targetName;
          previousFilterID = this.worklist[i].filterID;
+      }
+      // park telescope
+      if (this.park) {
+         mountController.Command                   = 1; // Park
+         mountController.executeGlobal();
       }
    }
 }
@@ -436,14 +461,24 @@ function MountParametersDialog(dialog)
    this.gotoMode_ComboBox.addItem("None");
    this.gotoMode_ComboBox.addItem("Interactive");
    this.gotoMode_ComboBox.addItem("Automatic");
+   this.gotoMode_ComboBox.addItem("Automatic sync");
    this.gotoMode_ComboBox.toolTip = this.gotoMode_Label.toolTip ;
    this.gotoMode_ComboBox.onItemSelected = function ( index ) {
       this.dialog.enableGotoServices(index != "0");
       engine.doMove = (index != "0");
       engine.automaticMove = (index == "2");
+      engine.automaticSync = (index == "3");
    }
 
 
+   this.park_Label = new Label(this);
+   this.park_Label.text = "Park telescope:";
+   this.park_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.park_Label.minWidth = labelWidth1;
+   this.park_Label.toolTip = "<p>Park the telescope after all targets have been finished.</p>";
+
+   this.park_Checkbox = new CheckBox(this);
+   this.park_Checkbox.toolTip = this.park_Label.toolTip;
 
    this.centering_Label = new Label(this);
    this.centering_Label.text = "Center object:";
@@ -509,11 +544,38 @@ function MountParametersDialog(dialog)
       }
    }
 
+   this.syncData_Edit = new Edit(this);
+   this.syncData_Edit.text = "<select a sync data file>";
+   this.syncData_Edit.toolTip = "<p>Specify file that lists the data points of synchronized star positions.</p>"
+
+   this.syncData_ToolButton = new ToolButton(this);
+   this.syncData_ToolButton.icon = ":/icons/select-file.png";
+   this.syncData_ToolButton.setScaledFixedSize(22, 22);
+   this.syncData_ToolButton.toolTip = "<p>Select the sync data file:</p>";
+   this.syncData_ToolButton.onClick = function ()
+   {
+      var ofd = new OpenFileDialog;
+      ofd.multipleSelections = false;
+      ofd.caption = "Select Sync Data File";
+      ofd.filters = [["SyncData","*.csv"]];
+
+      if ( ofd.execute() )
+      {
+         dialog.mountDialog.syncData_Edit.text = ofd.fileNames[0];
+      }
+   }
+
    this.gotoMode_Sizer = new HorizontalSizer;
    this.gotoMode_Sizer.margin = 6;
    this.gotoMode_Sizer.spacing = 4;
    this.gotoMode_Sizer.add( this.gotoMode_Label );
    this.gotoMode_Sizer.add( this.gotoMode_ComboBox );
+
+   this.park_Sizer = new HorizontalSizer;
+   this.park_Sizer.margin = 6;
+   this.park_Sizer.spacing = 4;
+   this.park_Sizer.add( this.park_Label );
+   this.park_Sizer.add( this.park_Checkbox );
 
    this.centering_Sizer = new HorizontalSizer;
    this.centering_Sizer.margin = 6;
@@ -540,6 +602,12 @@ function MountParametersDialog(dialog)
    this.alignmentModel_Sizer.add( this.alignmentFile_ToolButton );
    //this.alignmentModel_Sizer.addStretch();
 
+   this.syncData_Sizer = new HorizontalSizer;
+   this.syncData_Sizer.margin = 6;
+   this.syncData_Sizer.spacing = 4;
+   this.syncData_Sizer.add( this.syncData_Edit );
+   this.syncData_Sizer.add( this.syncData_ToolButton );
+
 
    this.mountParameters_GroupBox = new GroupBox(this);
    this.mountParameters_GroupBox.title = "Mount Device Parameters";
@@ -547,11 +615,13 @@ function MountParametersDialog(dialog)
    this.mountParameters_GroupBox.sizer.margin = 6;
    this.mountParameters_GroupBox.sizer.spacing = 4;
    this.mountParameters_GroupBox.sizer.add( this.gotoMode_Sizer);
+   this.mountParameters_GroupBox.sizer.add( this.park_Sizer);
    this.mountParameters_GroupBox.sizer.add( this.centering_Sizer);
    this.mountParameters_GroupBox.sizer.add( this.centering_exposureTimeEdit);
    this.mountParameters_GroupBox.sizer.add( this.apparentPosCorrection_Sizer );
    this.mountParameters_GroupBox.sizer.add( this.alignmentCorrection_Sizer );
    this.mountParameters_GroupBox.sizer.add( this.alignmentModel_Sizer );
+   this.mountParameters_GroupBox.sizer.add( this.syncData_Sizer );
 
    this.ok_Button = new PushButton( this );
    this.ok_Button.text = "OK";
@@ -597,6 +667,7 @@ function MountParametersDialog(dialog)
       this.computeApparentPos_Label.enabled     = enable;
       this.computeApparentPos_Checkbox.enabled  = enable;
       this.alignmentModel_Edit.enabled          = enable;
+      this.syncData_Edit.enabled                = enable;
    }
    this.enableGotoServices(false);
 }
@@ -1130,7 +1201,7 @@ function CameraParametersDialog(dialog)
 CameraParametersDialog.prototype = new Dialog;
 
 /*
- * Mount parameters dialog
+ * Filter name  dialog
  */
 
 function FilerNameDialog(dialog)
@@ -1472,6 +1543,210 @@ function UpdateWorklistDialog(dialog, selectedIdx)
 UpdateWorklistDialog.prototype = new Dialog;
 
 /*
+ * Dialog to define a grid of equidistant coordinate points
+ * covering the sky.
+ *
+ * Can be used to automatically move to these gridpoints
+ * e.g getting sync data for telesope pointing models.
+ */
+
+function CoordGridDefinitionDialog(dialog)
+{
+   this.__base__ = Dialog;
+   this.__base__();
+
+   let labelWidth = this.font.width( "Maximum azimuth angle" + 'T' );
+
+   /*this.gridType_Label = new Label( this );
+   this.gridType_Label.text = "Coordinate grid type";
+   this.gridType_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.gridType_Label.minWidth = labelWidth;
+   this.gridType_Label.toolTip = "<p><b>Equatorial grid:</b> Grid of coordinates given in righascension and declination.</p>" +
+                                 "<p><b>Horizontal grid:</b> Grid of coordinates given in azimuth and height.</p>";
+
+   this.gridType_ComboBox = new ComboBox(this);
+   this.gridType_ComboBox.addItem("Equatorial grid");
+   this.gridType_ComboBox.addItem("Horizontal grid");
+   this.gridType_ComboBox.currentItem = 0;
+   this.gridType_ComboBox.toolTip = "<p><b>Equatorial grid:</b> Grid of coordinates given in righascension and declination.</p>" +
+   		                            "<p><b>Horizontal grid:</b> Grid of coordinates given in azimuth and height.</p>";
+
+   this.gridType_ComboBox.onItemSelected = function ( index ) {
+	   this.dialog.enableGridServices(index == 0);
+   }
+
+   this.gridType_Sizer = new HorizontalSizer;
+   this.gridType_Sizer.spacing = 4;
+   this.gridType_Sizer.add( this.gridType_Label );
+   this.gridType_Sizer.add( this.gridType_ComboBox );
+   this.gridType_Sizer.addStretch();
+
+   this.grid_maxAzimuthEdit = new NumericEdit( this );
+   this.grid_maxAzimuthEdit.label.text = "Max azimuth angle:";
+   this.grid_maxAzimuthEdit.label.minWidth = labelWidth;
+   this.grid_maxAzimuthEdit.setRange( 0, 180 );
+   this.grid_maxAzimuthEdit.setPrecision( 2 );
+   this.grid_maxAzimuthEdit.setValue( 0 );
+   this.grid_maxAzimuthEdit.toolTip = "<p>Maximum azimuth angle of coordinate grid</p>";
+   this.grid_maxAzimuthEdit.enabled = false;
+   this.grid_maxAzimuthEdit.sizer.addStretch();
+
+   this.grid_minAzimuthEdit = new NumericEdit( this );
+   this.grid_minAzimuthEdit.label.text = "Min azimuth angle:";
+   this.grid_minAzimuthEdit.label.minWidth = labelWidth;
+   this.grid_minAzimuthEdit.setRange( -180, 0 );
+   this.grid_minAzimuthEdit.setPrecision( 2 );
+   this.grid_minAzimuthEdit.setValue( 0 );
+   this.grid_minAzimuthEdit.toolTip = "<p>Minimum azimuth angle of coordinate grid</p>";
+   this.grid_minAzimuthEdit.enabled = false;
+   this.grid_minAzimuthEdit.sizer.addStretch();
+
+   this.grid_maxHeightEdit = new NumericEdit( this );
+   this.grid_maxHeightEdit.label.text = "Max height angle:";
+   this.grid_maxHeightEdit.label.minWidth = labelWidth;
+   this.grid_maxHeightEdit.setRange( 0, 180 );
+   this.grid_maxHeightEdit.setPrecision( 2 );
+   this.grid_maxHeightEdit.setValue( 0 );
+   this.grid_maxHeightEdit.toolTip = "<p>Maximum height angle of coordinate grid</p>";
+   this.grid_maxHeightEdit.enabled= false;
+   this.grid_maxHeightEdit.sizer.addStretch();
+
+   this.grid_minHeightEdit = new NumericEdit( this );
+   this.grid_minHeightEdit.label.text = "Min height angle:";
+   this.grid_minHeightEdit.label.minWidth = labelWidth;
+   this.grid_minHeightEdit.setRange( -180, 0 );
+   this.grid_minHeightEdit.setPrecision( 2 );
+   this.grid_minHeightEdit.setValue( 0 );
+   this.grid_minHeightEdit.toolTip = "<p>Minimum height angle of coordinate grid</p>";
+   this.grid_minHeightEdit.enabled= false;
+   this.grid_minHeightEdit.sizer.addStretch();
+*/
+   this.grid_maxRAEdit = new NumericEdit( this );
+   this.grid_maxRAEdit.label.text = "Max rightascension:";
+   this.grid_maxRAEdit.label.minWidth = labelWidth;
+   this.grid_maxRAEdit.setRange( 0, 23.99 );
+   this.grid_maxRAEdit.setPrecision( 2 );
+   this.grid_maxRAEdit.setValue( 0 );
+   this.grid_maxRAEdit.toolTip = "<p>Maximum rightascension of coordinate grid</p>";
+   this.grid_maxRAEdit.enabled= false;
+   this.grid_maxRAEdit.sizer.addStretch();
+
+   this.grid_minRAEdit = new NumericEdit( this );
+   this.grid_minRAEdit.label.text = "Min rightascension:";
+   this.grid_minRAEdit.label.minWidth = labelWidth;
+   this.grid_minRAEdit.setRange( 0, 23.99 );
+   this.grid_minRAEdit.setPrecision( 2 );
+   this.grid_minRAEdit.setValue( 0 );
+   this.grid_minRAEdit.toolTip = "<p>Minimum rightascension of coordinate grid</p>";
+   this.grid_minRAEdit.enabled= false;
+   this.grid_minRAEdit.sizer.addStretch();
+
+   this.grid_maxDECEdit = new NumericEdit( this );
+   this.grid_maxDECEdit.label.text = "Max declination angle:";
+   this.grid_maxDECEdit.label.minWidth = labelWidth;
+   this.grid_maxDECEdit.setRange( -90, 90 );
+   this.grid_maxDECEdit.setPrecision( 2 );
+   this.grid_maxDECEdit.setValue( 0 );
+   this.grid_maxDECEdit.toolTip = "<p>Maximum declination angle of coordinate grid</p>";
+   this.grid_maxDECEdit.enabled= false;
+   this.grid_maxDECEdit.sizer.addStretch();
+
+   this.grid_minDECEdit = new NumericEdit( this );
+   this.grid_minDECEdit.label.text = "Min declination angle:";
+   this.grid_minDECEdit.label.minWidth = labelWidth;
+   this.grid_minDECEdit.setRange( -90, 90 );
+   this.grid_minDECEdit.setPrecision( 2 );
+   this.grid_minDECEdit.setValue( 0 );
+   this.grid_minDECEdit.toolTip = "<p>Minimum declination angle of coordinate grid</p>";
+   this.grid_minDECEdit.enabled= false;
+   this.grid_minDECEdit.sizer.addStretch();
+
+   this.grid_RAStepEdit = new NumericEdit( this );
+   this.grid_RAStepEdit.label.text = "RA step size:";
+   this.grid_RAStepEdit.label.minWidth = labelWidth;
+   this.grid_RAStepEdit.setRange( 0, 12 );
+   this.grid_RAStepEdit.setPrecision( 2 );
+   this.grid_RAStepEdit.setValue( 0 );
+   this.grid_RAStepEdit.toolTip = "<p>Grid step size in rightascension</p>";
+   this.grid_RAStepEdit.enabled= false;
+   this.grid_RAStepEdit.sizer.addStretch();
+
+   this.grid_DECStepEdit = new NumericEdit( this );
+   this.grid_DECStepEdit.label.text = "DEC step size:";
+   this.grid_DECStepEdit.label.minWidth = labelWidth;
+   this.grid_DECStepEdit.setRange( 0, 12 );
+   this.grid_DECStepEdit.setPrecision( 2 );
+   this.grid_DECStepEdit.setValue( 0 );
+   this.grid_DECStepEdit.toolTip = "<p>Grid step size in declination</p>";
+   this.grid_DECStepEdit.enabled= false;
+   this.grid_DECStepEdit.sizer.addStretch();
+
+   this.ok_Button = new PushButton( this );
+   this.ok_Button.text = "OK";
+   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
+   this.ok_Button.onClick = function()
+   {
+      this.dialog.ok();
+   };
+
+   this.cancel_Button = new PushButton( this );
+   this.cancel_Button.text = "Cancel";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
+   this.cancel_Button.onClick = function()
+   {
+      this.dialog.cancel();
+   };
+
+   this.buttons_Sizer = new HorizontalSizer;
+   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.addStretch();
+   this.buttons_Sizer.add( this.ok_Button );
+   this.buttons_Sizer.add( this.cancel_Button );
+
+   this.sizer = new VerticalSizer;
+   this.sizer.margin = 8;
+   this.sizer.spacing = 8;
+//   this.sizer.add( this.gridType_Sizer );
+   this.sizer.add( this.grid_maxRAEdit );
+   this.sizer.add( this.grid_minRAEdit );
+   this.sizer.add( this.grid_maxDECEdit );
+   this.sizer.add( this.grid_minDECEdit );
+   this.sizer.add( this.grid_RAStepEdit );
+   this.sizer.add( this.grid_DECStepEdit );
+ /*  this.sizer.add( this.grid_maxAzimuthEdit );
+   this.sizer.add( this.grid_minAzimuthEdit );
+   this.sizer.add( this.grid_maxHeightEdit );
+   this.sizer.add( this.grid_minHeightEdit );*/
+   this.sizer.add( this.buttons_Sizer);
+
+   this.windowTitle = "Coordinate grid definition";
+   this.userResizable = true;
+   this.adjustToContents();
+
+
+   this.enableGridServices = function(enable) {
+	this.grid_maxRAEdit.enabled   = enable;
+	this.grid_minRAEdit.enabled   = enable;
+	this.grid_maxDECEdit.enabled  = enable;
+	this.grid_minDECEdit.enabled  = enable;
+	this.grid_RAStepEdit.enabled  = enable;
+	this.grid_DECStepEdit.enabled = enable;
+
+/*	this.grid_maxAzimuthEdit.enabled= !enable;
+	this.grid_minAzimuthEdit.enabled= !enable;
+	this.grid_maxHeightEdit.enabled = !enable;
+	this.grid_minHeightEdit.enabled = !enable;*/
+   }
+
+   let enableEquatorialCoordGrid = true; //this.gridType_ComboBox.currentItem == 0;
+
+   this.enableGridServices(enableEquatorialCoordGrid);
+
+}
+
+CoordGridDefinitionDialog.prototype = new Dialog;
+
+/*
  * Batch Frame Acquisition dialog
  */
 function BatchFrameAcquisitionDialog()
@@ -1484,6 +1759,7 @@ function BatchFrameAcquisitionDialog()
 
    this.cameraDialog = new CameraParametersDialog(this);
    this.filterDialog = new FilterWheelParametersDialog(this);
+   this.coordGridDialog = new CoordGridDefinitionDialog(this);
    this.updateDialog = {};
    this.filter = [];
    //
@@ -1623,6 +1899,7 @@ function BatchFrameAcquisitionDialog()
          engine.center             = this.dialog.mountDialog.centering_Checkbox.checked;
          engine.align              = this.dialog.mountDialog.alignmentCorrection_Checkbox.checked;
          engine.alignModelFile     = this.dialog.mountDialog.alignmentModel_Edit.text;
+         engine.syncDataFile       = this.dialog.mountDialog.syncData_Edit.text;
          engine.computeApparentPos = this.dialog.mountDialog.computeApparentPos_Checkbox.checked;
       }
    }
@@ -1780,9 +2057,52 @@ function BatchFrameAcquisitionDialog()
       }
    }
 
+   this.gridTargetCoord_Button = new ToolButton( this );
+   this.gridTargetCoord_Button.icon = this.scaledResource( ":/icons/border.png" );
+   this.gridTargetCoord_Button.toolTip = "<p>Create grid of coordinates.</p>";
+   this.gridTargetCoord_Button.onClick = function()
+   {
+
+	   if (this.dialog.coordGridDialog.execute()){
+
+	   var  ra_lower    = this.dialog.coordGridDialog.grid_minRAEdit.value;
+	   var  ra_upper    = this.dialog.coordGridDialog.grid_maxRAEdit.value;
+	   var  dec_lower   = this.dialog.coordGridDialog.grid_minDECEdit.value;
+	   var  dec_upper   = this.dialog.coordGridDialog.grid_maxDECEdit.value;
+	   var  ra_step_deg = this.dialog.coordGridDialog.grid_RAStepEdit.value;
+	   var  ra_step  = Math.round(ra_step_deg / 15 * 1000000000000) / 1000000000000;
+
+	   var  dec_step_deg = this.dialog.coordGridDialog.grid_DECStepEdit.value;;
+
+	   var num_of_ra_steps  = (ra_upper - ra_lower) /  ra_step;
+	   var num_of_dec_steps = (dec_upper - dec_lower) /  dec_step_deg;
+
+	   var count=0;
+	   for (var ra=ra_lower ; ra<=ra_upper ; ra+=ra_step ){
+		   for (var dec=dec_lower ; dec<=dec_upper ; dec+=dec_step_deg ) {
+			   var nodeText = "grid_point_" + count;
+			   var node = new TreeBoxNode( this.dialog.mountParam_TreeBox );
+			   node.setText(0,nodeText);
+			   node.setText(1,sexadecimalStringFromDouble(ra));
+			   node.setText(2,sexadecimalStringFromDouble(dec));
+			   node.setText(3,"0");
+
+			   var targetItem = {"name": "", "ra" : 0.0, "dec": 0.0};
+			   targetItem.name = nodeText;
+			   targetItem.ra   = ra;
+			   targetItem.dec  = dec;
+			   engine.targets[count] = targetItem;
+			   count++;
+		   }
+	   }
+   }
+
+   };
+
+   //
    this.loadTargetCoord_Button = new ToolButton( this );
    this.loadTargetCoord_Button.icon = this.scaledResource( ":/icons/add.png" );
-   this.loadTargetCoord_Button.toolTip = "<p>Add target coordinates from csv file.</p>";
+   this.loadTargetCoord_Button.toolTip = "<p>Add target coordinates from csv file	.</p>";
    this.loadTargetCoord_Button.onClick = function()
    {
       var ofd = new OpenFileDialog;
@@ -1821,8 +2141,7 @@ function BatchFrameAcquisitionDialog()
          }
          this.dialog.mountParam_TreeBox.canUpdate = true;
       }
-   };
-
+   }
    //
 
    this.moveUpTargetCoord_Button = new ToolButton( this );
@@ -1869,10 +2188,12 @@ function BatchFrameAcquisitionDialog()
       if (this.dialog.mountParam_TreeBox.selectedNodes.length == 0)
       {
          this.dialog.mountParam_TreeBox.clear();
+         engine.targets = [];
       } else {
          var selectedNode = this.dialog.mountParam_TreeBox.selectedNodes[0];
          var idx = this.dialog.mountParam_TreeBox.childIndex(selectedNode);
          this.dialog.mountParam_TreeBox.remove(idx);
+         engine.targets.splice(idx,1);
       }
       this.dialog.updateTargets(this.dialog.mountParam_TreeBox);
    }
@@ -1885,6 +2206,7 @@ function BatchFrameAcquisitionDialog()
    this.mountParam_ButtonSizer.spacing = 4;
    this.mountParam_ButtonSizer.add(this.findTargetCoord_Button);
    this.mountParam_ButtonSizer.add(this.loadTargetCoord_Button);
+   this.mountParam_ButtonSizer.add(this.gridTargetCoord_Button);
    this.mountParam_ButtonSizer.add(this.moveUpTargetCoord_Button);
    this.mountParam_ButtonSizer.add(this.moveDownTargetCoord_Button);
    this.mountParam_ButtonSizer.add(this.clearTargetCoord_Button);
@@ -1926,6 +2248,8 @@ function BatchFrameAcquisitionDialog()
    this.createWorklist_Button.toolTip = "<p>Create worklist</p>";
    this.createWorklist_Button.onClick = function()
    {
+      engine.worklist.splice(0,engine.worklist.length);
+      this.dialog.worklist_TreeBox.clear();
       engine.print();
       var worklist = engine.createWorklist();
       for (var i = 0; i < worklist.length; ++i){
@@ -1972,10 +2296,12 @@ function BatchFrameAcquisitionDialog()
       if (this.dialog.worklist_TreeBox.selectedNodes.length == 0)
       {
          this.dialog.worklist_TreeBox.clear();
+         engine.worklist.splice(0,engine.worklist.length);
       } else {
          var selectedNode = this.dialog.worklist_TreeBox.selectedNodes[0];
          var idx = this.dialog.worklist_TreeBox.childIndex(selectedNode);
          this.dialog.worklist_TreeBox.remove(idx);
+         engine.worklist.splice(idx,1);
       }
    };
 
@@ -2039,37 +2365,13 @@ BatchFrameAcquisitionDialog.prototype = new Dialog;
  */
 function main()
 {
-   //console.hide();
-   // Show our dialog box, quit if cancelled.
+   // Show dialog box, quit if cancelled.
    console.abortEnabled = true;
    var dialog = new BatchFrameAcquisitionDialog();
    for ( ;; )
    {
       if ( dialog.execute() )
       {
-/*         if ( engine.inputFiles.length == 0 )
-         {
-            (new MessageBox( "No input files have been specified!", TITLE, StdIcon_Error, StdButton_Ok )).execute();
-            continue;
-         }
-
-#ifneq WARN_ON_NO_OUTPUT_DIRECTORY 0
-         if ( engine.outputDirectory.length == 0 )
-            if ( (new MessageBox( "<p>No output directory has been specified.</p>" +
-                                  "<p>Each converted image will be written to the directory of " +
-                                  "its corresponding input file.<br>" +
-                                  "<b>Are you sure?</b></p>",
-                                  TITLE, StdIcon_Warning, StdButton_Yes, StdButton_No )).execute() != StdButton_Yes )
-               continue;
-#endif
-         // Perform batch file format conversion and quit.
-         console.show();
-         console.abortEnabled = true;
-         engine.convertFiles();
-
-         if ( (new MessageBox( "Do you want to perform another format conversion?",
-                               TITLE, StdIcon_Question, StdButton_Yes, StdButton_No )).execute() == StdButton_Yes )
-            continue;*/
       }
 
       break;
