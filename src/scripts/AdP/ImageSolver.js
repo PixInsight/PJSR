@@ -30,6 +30,12 @@
 /*
    Changelog:
 
+   4.2.4: * Bugfix: The HR catalog was named "Bright Stars " (with a trailing
+            space), which was causing identification problems for PCL hybrid
+            modules. See the HR_Catalog() constructor in
+            AstronomicalCatalogs.jsh. See also a modification to
+            CatalogRegister.FindByName().
+
    4.2.3: * Added generation of global control variables for invocation from
             PCL-based modules.
           * Improved some text messages and labels.
@@ -189,7 +195,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.2.3"
+#define SOLVERVERSION "4.2.4"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -1433,6 +1439,9 @@ function ImageSolver()
    {
       this.solverCfg.LoadSettings();
       this.solverCfg.LoadParameters();
+
+      // ### N.B.: Be compatible with versions < 4.2.4
+      this.solverCfg.catalog = this.solverCfg.catalog.trim();
 
       if (prioritizeSettings)
       {

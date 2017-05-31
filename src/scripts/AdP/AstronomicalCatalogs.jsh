@@ -40,6 +40,7 @@ function CatalogRegister()
 
    this.FindByName = function ( catalogName )
    {
+      catalogName = catalogName.trim();
       for( var i=0; i<this.catalogs.length; i++)
          if( this.catalogs[i].name == catalogName )
             return this.catalogs[i];
@@ -675,7 +676,7 @@ VizierCatalog.mirrors = [
 // ******************************************************************
 function HR_Catalog()
 {
-   this.name="Bright Stars ";
+   this.name="Bright Stars";
    this.description = "Bright Star Catalog, 5th ed. (Hoffleit+, 9110 stars)";
 
    this.__base__ = VizierCatalog;

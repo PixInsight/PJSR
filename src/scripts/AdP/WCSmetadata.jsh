@@ -703,7 +703,7 @@ function ImageMetadata(module)
       var projOrgRD = new Point(this.projection.ra0*180/Math.PI, this.projection.dec0*180/Math.PI);
       console.writeln( format(    "Projection origin.. [%.6f %.6f]px -> [RA:%ls Dec:%ls]",
          projOrgPx.x,projOrgPx.y,
-         DMSangle.FromAngle(projOrgRD.x*24/360).ToString(),DMSangle.FromAngle(projOrgRD.y).ToString()) );
+         DMSangle.FromAngle(projOrgRD.x*24/360).ToString(true),DMSangle.FromAngle(projOrgRD.y).ToString()) );
       if(this.ref_I_G.polDegree && this.ref_I_G.polDegree>1)
          console.writeln(  format("Polynomial degree.. %d", this.ref_I_G.polDegree) );
       if (this.controlPoints && (this.ref_I_G instanceof ReferSpline))
