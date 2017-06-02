@@ -30,6 +30,9 @@
 /*
  Changelog:
 
+ 1.4:   * Added selection of the units of the aperture: pixels or arcseconds
+        * Added support and warning for apertures less that 2 pixels
+
  1.3.1: * Added generation of global control variables for invocation from
           PCL-based modules.
         * Require core version 1.8.4
@@ -75,7 +78,7 @@
 <br/>\
 Copyright &copy;2013-2017 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.3.1"
+#define VERSION "1.4"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -894,9 +897,9 @@ function FluxTab(parent, engine)
          return false;
       }
 
-      if (engine.minimumAperture < 2)
+      if (engine.minimumAperture <= 0)
       {
-         new MessageBox("The minimum aperture cannot be less than two pixels.", TITLE, StdIcon_Error, StdButton_Ok).execute();
+         new MessageBox("The aperture must be greater than 0.", TITLE, StdIcon_Error, StdButton_Ok).execute();
          return false;
       }
 
@@ -1066,15 +1069,25 @@ function FluxTab(parent, engine)
       engine.minimumAperture = parseFloat(value);
    };
 
-   this.minimumApertureUnits_Label = new Label(this);
-   this.minimumApertureUnits_Label.text = "pixels";
-   this.minimumApertureUnits_Label.textAlignment = TextAlign_Left | TextAlign_VertCenter;
+   //this.minimumApertureUnits_Label = new Label(this);
+   //this.minimumApertureUnits_Label.text = "pixels";
+   //this.minimumApertureUnits_Label.textAlignment = TextAlign_Left | TextAlign_VertCenter;
+   this.minimumApertureUnits_Combo = new ComboBox(this);
+   this.minimumApertureUnits_Combo.editEnabled = false;
+   this.minimumApertureUnits_Combo.addItem("pixels");
+   this.minimumApertureUnits_Combo.addItem("arcseconds");
+   this.minimumApertureUnits_Combo.currentItem = (engine.apertureUnit!=null && engine.apertureUnit != 0) ? 1 : 0;
+   this.minimumApertureUnits_Combo.onItemSelected = function ()
+   {
+      engine.apertureUnit = this.currentItem;
+      this.dialog.SetApertureUnit();
+   };
 
    this.minimumAperture_Sizer = new HorizontalSizer;
    this.minimumAperture_Sizer.spacing = 6;
    this.minimumAperture_Sizer.add(this.minimumAperture_Label);
    this.minimumAperture_Sizer.add(this.minimumAperture_Edit);
-   this.minimumAperture_Sizer.add(this.minimumApertureUnits_Label);
+   this.minimumAperture_Sizer.add(this.minimumApertureUnits_Combo);
    this.minimumAperture_Sizer.addStretch();
 
    //
@@ -1737,6 +1750,13 @@ function PhotometryDialog(engine)
    this.editWidth = this.font.width("MMMMMMMMMMM");
    this.editWidth2 = this.font.width("M2.5M");
 
+   this.SetApertureUnit = function()
+   {
+      var label = (engine.apertureUnit!=null && engine.apertureUnit != 0) ? "arcseconds" : "pixels";
+      this.flux_Tab.apertureStepSizeUnits_Label.text = label;
+      this.background_Tab.bkgRingUnits_Label.text = label;
+   };
+
    this.helpLabel = new Label(this);
    this.helpLabel.frameStyle = FrameStyle_Box;
    this.helpLabel.minWidth = 45 * this.font.width('M');
@@ -1847,6 +1867,7 @@ function PhotometryDialog(engine)
 
    this.sizer.addSpacing(8);
    this.sizer.add(this.buttons_Sizer);
+   this.SetApertureUnit();
 
    this.windowTitle = TITLE;
    this.adjustToContents();
@@ -1951,6 +1972,7 @@ function PhotometryEngine(w)
          ["minimumAperture", DataType_Double],
          ["apertureSteps", DataType_UInt32],
          ["apertureStepSize", DataType_Double],
+         ["apertureUnit", DataType_UInt32],
          ["bkgWindowMode", DataType_UInt32],
          ["bkgModel", DataType_UInt32],
          ["backgroundSigmaLow", DataType_Double],
@@ -2004,6 +2026,7 @@ function PhotometryEngine(w)
    this.apertureShape = 0;
    this.apertureSteps = 1;
    this.apertureStepSize = 1;
+   this.apertureUnit = 0; // 0-Pixels, 1-ArcSeconds
    this.backgroundSigmaLow = 5;
    this.backgroundSigmaHigh = 2.5;
    this.bkgFlatten = false;
@@ -2081,6 +2104,7 @@ function PhotometryEngine(w)
 
    this.LoadStars = function (imgMetadata)
    {
+      this.catalog.magMin = 0;
       this.catalog.magMax = this.maxMagnitude;
       this.catalog.queryMargin = 1.5; // It loads all the stars in an area 50% bigger than the first image
       this.catalog.Load(imgMetadata, this.vizierServer);
@@ -2497,8 +2521,8 @@ function PhotometryEngine(w)
       var backgroundPen = new Pen(0xff0000A0, 1);
 
       //console.writeln("Rendering");
-      var radius = this.minimumAperture / 2 + 0.5;
-      var radius2 = (this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1)) / 2 + 0.5;
+      var radius = this.minimumAperture * this.apertureUnitFactor / 2 + 0.5;
+      var radius2 = (this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1)) * this.apertureUnitFactor / 2 + 0.5;
       for (var s = 0; s < imageStars.length; s++)
       {
          if (imageStars[s] == null)
@@ -2634,7 +2658,7 @@ function PhotometryEngine(w)
 
    this.ValidateStars = function (imageStars)
    {
-      var maxAperture = this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1);
+      var maxAperture = (this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1)) * this.apertureUnitFactor;
       for (var i = 0; i < imageStars.length - 1; i++)
       {
          var star1 = imageStars[i];
@@ -2744,7 +2768,17 @@ function PhotometryEngine(w)
             bkgWindow.close();
       }
 
-      console.write("Calculating Photometry: ");
+      console.writeln("Aperture Photometry:");
+      if (this.apertureSteps > 1)
+      {
+         console.writeln(format("  Minimum aperture: %f px", this.minimumAperture * this.apertureUnitFactor));
+         console.writeln(format("  Maximum aperture: %f px", (this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1)) * this.apertureUnitFactor));
+      }
+      else
+         console.writeln(format("  Aperture: %f px", this.minimumAperture * this.apertureUnitFactor));
+      console.writeln(format("  Image resolution: %f sec/px", window.metadataWCS.resolution * 3600));
+      if (this.minimumAperture * this.apertureUnitFactor < 2)
+         console.warningln("The aperture is less than 2 pixels. The precision of the photometry is going to be low.");
       processEvents();
 
       var lastProcess = (new Date).getTime();
@@ -2779,7 +2813,7 @@ function PhotometryEngine(w)
          star.SNR = new Array(this.apertureSteps);
          for (var a = 0; a < this.apertureSteps; a++)
          {
-            var aperture = this.minimumAperture + this.apertureStepSize * a;
+            var aperture = (this.minimumAperture + this.apertureStepSize * a) * this.apertureUnitFactor;
             var backNoise2;
             var intersection;
 
@@ -2933,7 +2967,7 @@ function PhotometryEngine(w)
       {
          var area = this.FindBounds(catalogStars, imageStars);
          var boundsStr = format("Bounds;%f;%f;%f;%f\n", area.x0, area.y0, area.x1, area.y1);
-         var apertureStr = format("Aperture;%g;%d;%g\n", this.minimumAperture, this.apertureSteps, this.apertureStepSize);
+         var apertureStr = format("Aperture;%g;%d;%g\n", this.minimumAperture * this.apertureUnitFactor, this.apertureSteps, this.apertureStepSize * this.apertureUnitFactor);
          var backgroundStr;
          if (this.bkgWindowMode == BKGWINDOW_RING)
             backgroundStr = format("Background ring window;%d;%d\n", this.bkgAperture1, this.bkgAperture2);
@@ -2956,9 +2990,9 @@ function PhotometryEngine(w)
          columns += "BKGROUND;BGSTDDEV;BGRJCT;";
          columns += "PSF_A    ;PSF_SIGMAX;PSF_SIGMAY;PSF_THETA;PSF_MAD     ;"
          for (var a = 0; a < this.apertureSteps; a++)
-            columns += format("%-9ls", "FLUX" + format("%g", this.minimumAperture + this.apertureStepSize * a)) + separator;
+            columns += format("%-9ls", "FLUX" + format("%g", (this.minimumAperture + this.apertureStepSize * a)* this.apertureUnitFactor)) + separator;
          for (var a = 0; a < this.apertureSteps; a++)
-            columns += format("%-8ls", "SNR" + format("%g", this.minimumAperture + this.apertureStepSize * a)) + separator;
+            columns += format("%-8ls", "SNR" + format("%g", (this.minimumAperture + this.apertureStepSize * a)* this.apertureUnitFactor)) + separator;
          columns += "FLAG\n";
 
          file.outText(boundsStr);
@@ -3308,6 +3342,12 @@ function PhotometryEngine(w)
    this.ProcessWindow = function (window)
    {
       this.LoadMetadata(window);
+
+      // Calculates the conversion between aperture units and pixels
+      if (this.apertureUnit != null && this.apertureUnit != 0)
+         this.apertureUnitFactor = 1 / (window.metadataWCS.resolution * 3600);
+      else
+         this.apertureUnitFactor = 1;
 
       // Get reference image
       var referenceWindow = null;
