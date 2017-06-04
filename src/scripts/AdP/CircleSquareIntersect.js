@@ -3,7 +3,7 @@
 
  This file is part of the Photometry script
 
- Copyright (C) 2013, Andres del Pozo
+ Copyright (C) 2013-2017, Andres del Pozo
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -69,38 +69,60 @@ function CircleSquareIntersection(center, radius)
 
    this.ProcessCase0 = function ()
    {
-      // Test intersection
-      if(this.sqOrg.y<=0 && this.sqOrg.y+this.sqSize>=0)
+      // Check if the center of the circle is inside the square
+      if (this.sqOrg.x <= 0 && this.sqOrg.x + this.sqSize >= 0 && this.sqOrg.y <= 0 && this.sqOrg.y + this.sqSize >= 0)
       {
+         var area = Math.PI * this.radius2;
          // To the right
-         if(this.sqOrg.x<radius && this.sqOrg.x+this.sqSize>radius)
-         {
-            //console.writeln("A",radius-this.sqOrg.x);
-            return this.SegmentAreaBy_h(radius-this.sqOrg.x);
-         }
+         if (this.sqOrg.x > -radius)
+            area -= this.SegmentAreaBy_h(this.sqOrg.x + radius);
 
-         // To the left
-         if(this.sqOrg.x<-radius && this.sqOrg.x+this.sqSize>-radius)
-         {
-            //console.writeln("B",this.sqOrg.x+this.sqSize+radius);
-            return this.SegmentAreaBy_h(this.sqOrg.x+this.sqSize+radius);
-         }
+         if (this.sqOrg.x + this.sqSize < radius)
+            area -= this.SegmentAreaBy_h(radius - this.sqOrg.x - this.sqSize);
+
+         if (this.sqOrg.y > -radius)
+            area -= this.SegmentAreaBy_h(this.sqOrg.y + radius);
+
+         if (this.sqOrg.y + this.sqSize < radius)
+            area -= this.SegmentAreaBy_h(radius - this.sqOrg.y - this.sqSize);
+
+         return area;
       }
-
-      if(this.sqOrg.x<=0 && this.sqOrg.x+this.sqSize>=0)
+      else
       {
-         // To the botton
-         if(this.sqOrg.y<radius && this.sqOrg.y+this.sqSize>radius)
+         // Test intersection
+         if (this.sqOrg.y <= 0 && this.sqOrg.y + this.sqSize >= 0)
          {
-            //console.writeln("C",radius-this.sqOrg.y);
-            return this.SegmentAreaBy_h(radius-this.sqOrg.y);
+            // To the right
+            if (this.sqOrg.x < radius && this.sqOrg.x + this.sqSize > radius)
+            {
+               //console.writeln("A",radius-this.sqOrg.x);
+               return this.SegmentAreaBy_h(radius - this.sqOrg.x);
+            }
+
+            // To the left
+            if (this.sqOrg.x < -radius && this.sqOrg.x + this.sqSize > -radius)
+            {
+               //console.writeln("B",this.sqOrg.x+this.sqSize+radius);
+               return this.SegmentAreaBy_h(this.sqOrg.x + this.sqSize + radius);
+            }
          }
 
-         // To the top
-         if(this.sqOrg.y<-radius && this.sqOrg.y+this.sqSize>-radius)
+         if (this.sqOrg.x <= 0 && this.sqOrg.x + this.sqSize >= 0)
          {
-            //console.writeln("D",this.sqOrg.y+this.sqSize-radius);
-            return this.SegmentAreaBy_h(this.sqOrg.y+this.sqSize+radius);
+            // To the botton
+            if (this.sqOrg.y < radius && this.sqOrg.y + this.sqSize > radius)
+            {
+               //console.writeln("C",radius-this.sqOrg.y);
+               return this.SegmentAreaBy_h(radius - this.sqOrg.y);
+            }
+
+            // To the top
+            if (this.sqOrg.y < -radius && this.sqOrg.y + this.sqSize > -radius)
+            {
+               //console.writeln("D",this.sqOrg.y+this.sqSize-radius);
+               return this.SegmentAreaBy_h(this.sqOrg.y + this.sqSize + radius);
+            }
          }
       }
       return 0;
@@ -239,7 +261,7 @@ function CircleSquareIntersection(center, radius)
       var p3inside = this.CheckPointInCircle(new Point(this.sqOrg.x + this.sqSize, this.sqOrg.y + this.sqSize));
       var p4inside = this.CheckPointInCircle(new Point(this.sqOrg.x, this.sqOrg.y + this.sqSize));
       var numInside = p1inside + p2inside + p3inside + p4inside;
-      //console.writeln("Num corner inside: ", numInside);
+//      console.writeln("Num corner inside: ", numInside);
       var area=0;
       switch(numInside)
       {
@@ -295,43 +317,45 @@ function SquareSquareIntersection(center, size)
 
 function TestCircle()
 {
-   var engine=new CircleSquareIntersection();
+   var engine=null;
 
    // Case 0 - Out
    console.writeln("Case 0 - Out");
-   engine.SetCircle(new Point(0,0), 5);
-   engine.SetSquare(new Point(6,0), 2);
-   console.writeln("Area=",engine.Calculate());
+   engine=new CircleSquareIntersection(new Point(0,0), 5);
+   console.writeln("Area=",engine.Calculate(new Point(6,0), 2));
 
    // Case 0 - Intersect
    console.writeln("Case 0 - Intersect");
-   engine.SetCircle(new Point(0,0), 5);
-   engine.SetSquare(new Point(4.99,-1), 2);
-   console.writeln("Area=",engine.Calculate());
+   engine=new CircleSquareIntersection(new Point(0,0), 5);
+   console.writeln("Area=",engine.Calculate(new Point(4.99,-1), 2));
 
    // Case 1
    console.writeln("Case 1");
-   engine.SetCircle(new Point(0,0), 5);
-   engine.SetSquare(new Point(4,2), 2);
-   console.writeln("Area=",engine.Calculate());
+   engine=new CircleSquareIntersection(new Point(0,0), 5);
+   console.writeln("Area=",engine.Calculate(new Point(4,2), 2));
 
    // Case 2
    console.writeln("Case 2");
-   engine.SetCircle(new Point(0,0), 5);
-   engine.SetSquare(new Point(3,1), 2);
-   console.writeln("Area=",engine.Calculate());
+   engine=new CircleSquareIntersection(new Point(0,0), 5);
+   console.writeln("Area=",engine.Calculate(new Point(3,1), 2));
 
    // Case 3
    console.writeln("Case 3");
-   engine.SetCircle(new Point(0,0), 5);
-   engine.SetSquare(new Point(2,2), 2);
-   console.writeln("Area=",engine.Calculate());
+   engine=new CircleSquareIntersection(new Point(0,0), 5);
+   console.writeln("Area=",engine.Calculate(new Point(2,2), 2));
 
    // Case 4
    console.writeln("Case 4");
-   engine.SetCircle(new Point(0,0), 5);
-   engine.SetSquare(new Point(1,1), 2);
-   console.writeln("Area=",engine.Calculate());
+   engine=new CircleSquareIntersection(new Point(0,0), 5);
+   console.writeln("Area=",engine.Calculate(new Point(1,1), 2));
+
+   console.writeln("Case 5");
+   engine=new CircleSquareIntersection(new Point(0,0), 0.5);
+   console.writeln("Area=",engine.Calculate(new Point(-0.5, -0.5), 1));
+
+   console.writeln("Case 6");
+   engine=new CircleSquareIntersection(new Point(0,0), 1);
+   console.writeln("Area=",engine.Calculate(new Point(0, -0.5), 1));
 
    // Coverage
    console.writeln("Coverage");
@@ -339,15 +363,14 @@ function TestCircle()
    var cell=1;
    var totalArea=0;
    var center=new Point (3179.403267,3568.977920);
-   engine.SetCircle(center, rad);
-engine.SetSquare(new Point(3179,3566), 1);
-console.writeln(engine.Calculate());
+   engine = new CircleSquareIntersection(center, rad);
+//engine.SetSquare(new Point(3179,3566), 1);
+//console.writeln(engine.Calculate());
    for(var y=Math.floor(center.y-rad); y<center.y+rad; y+=cell)
    {
       for(var x=Math.floor(center.x-rad); x<center.x+rad; x+=cell)
       {
-         engine.SetSquare(new Point(x,y), cell);
-         var area=engine.Calculate();
+         var area=engine.Calculate(new Point(x,y), cell);
          totalArea+=area;
          console.writeln(format("[%f,%f]=%f ",x,y,area));
       }

@@ -3,7 +3,7 @@
 
    This file is part of ImageSolver and AnnotateImage scripts
 
-   Copyright (C) 2012-2014, Andres del Pozo
+   Copyright (C) 2012-2017, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -1672,15 +1672,12 @@ BVCatalog.prototype = new VizierCatalog;
 __catalogRegister__.Register( new BVCatalog );
 
 // ******************************************************************
-// SDSSCatalog
+// SDSSBase: Base class of SDSS catalog versions
 // ******************************************************************
-function SDSSCatalog()
+function SDSSBase(catalogName)
 {
-   this.name="SDSS";
-   this.description = "SDSS R8 catalog (469,053,874 objects)";
-
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__( catalogName );
 
    this.catalogMagnitude = 25;
 
@@ -1695,11 +1692,6 @@ function SDSSCatalog()
    this.magnitudeFilter = "rmag";
    this.classFilter = 0;
    this.maxFov = 45;
-
-   this.GetConstructor = function()
-   {
-      return "new SDSSCatalog()";
-   }
 
    this._base_GetEditControls = this.GetEditControls;
    this.GetEditControls = function (parent)
@@ -1740,12 +1732,12 @@ function SDSSCatalog()
 
    this.UrlBuilder = function(center, fov, mirrorServer)
    {
-      var url=mirrorServer+"viz-bin/asu-tsv?-source=II/306/sdss8&mode==1&-c=" +
+      var url=mirrorServer+"viz-bin/asu-tsv?-source="+this.vizierSource+"&mode==1&-c=" +
          format("%f %f",center.x, center.y) +
          "&-c.r=" + format("%f",fov) +
          "&-c.u=deg&-out.form=|"+
          format("&-out.max=%d", this.maxRecords)+
-         "&-out=SDSS8&-out=RAJ2000&-out=DEJ2000&-out=pmRA&-out=pmDE&-out=cl&-out=zsp" +
+         "&-out="+this.idField+"&-out=RAJ2000&-out=DEJ2000&-out=pmRA&-out=pmDE&-out=cl&-out=zsp" +
          "&-out=umag&-out=gmag&-out=rmag&-out=imag&-out=zmag" +
          this.CreateMagFilter( this.magnitudeFilter, this.magMin, this.magMax ) ;
       if( this.classFilter==1 )
@@ -1784,7 +1776,7 @@ function SDSSCatalog()
             x += dx;
             y += dy;
          }
-         var record = new CatalogRecord( new Point( x, y ), 0, "SDSS8"+tokens[0].trim(), 0 );
+         var record = new CatalogRecord( new Point( x, y ), 0, "SDSS"+tokens[0].trim(), 0 );
          record.Redshift = tokens[6].trim();
          record.Class = tokens[5].trim();
          record.umag = tokens[7].trim();
@@ -1799,8 +1791,56 @@ function SDSSCatalog()
    }
 }
 
-SDSSCatalog.prototype=new VizierCatalog;
+SDSSBase.prototype=new VizierCatalog;
+
+
+// ******************************************************************
+// SDSSCatalog: Latest version of SDSS
+// ******************************************************************
+function SDSSCatalog()
+{
+   this.name="SDSS";
+   this.description = "SDSS R9 catalog (469,053,874 objects)";
+
+   this.__base__ = SDSSBase;
+   this.__base__( this.name );
+
+   this.vizierSource = "V/139"
+   this.idField = "SDSS9";
+
+   this.GetConstructor = function()
+   {
+      return "new SDSSCatalog()";
+   }
+}
+
+SDSSCatalog.prototype=new SDSSBase;
+
 __catalogRegister__.Register( new SDSSCatalog );
+
+// ******************************************************************
+// SDSS7Catalog: Release 7 of SDSS
+// ******************************************************************
+function SDSS7Catalog()
+{
+   this.name="SDSS7";
+   this.description = "SDSS R7 catalog (357,175,411 objects)";
+
+   this.__base__ = SDSSBase;
+   this.__base__( this.name );
+
+   this.vizierSource = "II/294"
+   this.idField = "SDSS";
+
+   this.GetConstructor = function()
+   {
+      return "new SDSS7Catalog()";
+   }
+}
+
+SDSS7Catalog.prototype=new SDSSBase;
+
+__catalogRegister__.Register( new SDSS7Catalog );
 
 // ******************************************************************
 // GSCCatalog
