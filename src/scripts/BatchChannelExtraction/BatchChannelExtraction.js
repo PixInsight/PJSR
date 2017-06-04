@@ -41,7 +41,7 @@
 #include <pjsr/StdCursor.jsh>
 #include <pjsr/UndoFlag.jsh>
 
-#define VERSION "1.2.2"
+#define VERSION "1.2.3"
 #define TITLE   "Batch Channel Extraction"
 
 #define DEFAULT_EXTENSION     ".xisf"
@@ -106,6 +106,22 @@ var btnIcon = new Array(
 ":/bullets/bullet-yellow.png",            //13
 ":/auto-hide/close.png",                  //14
 ":/");
+
+// Add FITS information if not exists, otherwise update information.
+function updateKeyword( keywords, name, value, comment )
+{
+    for ( var i=0; i<keywords.length; i++ )
+    {
+	if ( keywords[i].name == name )
+	{
+	    keywords[i].value = value;
+	    if ( comment != null )
+		keywords[i].comment = comment;
+	    return;
+	}
+    }
+    keywords.push( new FITSKeyword( name, value, (comment == null) ? "" : comment ) );
+}
 
 //label object constructor
 function labelBox(parent, elText, tAlign, elWidth)
@@ -463,6 +479,20 @@ function ChannelExtractionEngine()
             name = File.extractName(data.inputFiles[i]);
             bluPath = dir + prefix + name + postfix + ext;
          }
+
+	 var keywords = new Array;
+	 if (typeof srcWin[0].keywords != "undefined")
+	 {
+	     keywords = srcWin[0].keywords;
+	 }
+	 updateKeyword(keywords, "FILTER", "R", "BatchChannelExtraction red channel");
+	 redWin.keywords = keywords.slice();
+
+	 updateKeyword(keywords, "FILTER", "G", "BatchChannelExtraction green channel");
+	 grnWin.keywords = keywords.slice();
+
+	 updateKeyword(keywords, "FILTER", "B", "BatchChannelExtraction blue channel");
+	 bluWin.keywords = keywords;
 
          //save the separated channel image files
          if(data.extractRed)
