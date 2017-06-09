@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGCCMakefiles.js - Released 2015/11/26 08:53:10 UTC
+// MakGenGCCMakefiles.js - Released 2017-04-14T16:45:58Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.104
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Generation of makefiles for GCC and Clang compilers.
@@ -92,9 +92,9 @@ function GnuCxxAll( F, P )
 
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# PixInsight Makefile Generator Script v" + VERSION );
-   f.outTextLn( "# Copyright (C) 2009-2015 Pleiades Astrophoto" );
+   f.outTextLn( "# Copyright (C) 2009-2017 Pleiades Astrophoto" );
    f.outTextLn( "######################################################################" );
-   f.outTextLn( "# Automatically generated on " + (new Date( Date.now() )).toUTCString() );
+   f.outTextLn( "# Generated on .... " + (new Date( Date.now() )).toISOString() );
    f.outTextLn( "# Project id ...... " + P.id );
    f.outTextLn( "# Project type .... " + P.type );
    f.outTextLn( "# Platform ........ " + P.platform + "/g++" );
@@ -182,9 +182,9 @@ function GnuCxx( F, P )
 
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# PixInsight Makefile Generator Script v" + VERSION );
-   f.outTextLn( "# Copyright (C) 2009-2015 Pleiades Astrophoto" );
+   f.outTextLn( "# Copyright (C) 2009-2017 Pleiades Astrophoto" );
    f.outTextLn( "######################################################################" );
-   f.outTextLn( "# Automatically generated on " + (new Date( Date.now() )).toUTCString() );
+   f.outTextLn( "# Generated on .... " + (new Date( Date.now() )).toISOString() );
    f.outTextLn( "# Project id ...... " + P.id );
    f.outTextLn( "# Project type .... " + P.type );
    f.outTextLn( "# Platform ........ " + P.platform + "/g++" );
@@ -449,4 +449,4 @@ function GnuCxx( F, P )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGCCMakefiles.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenGCCMakefiles.js - Released 2017-04-14T16:45:58Z

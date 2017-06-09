@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenFileLists.js - Released 2015/11/26 08:53:10 UTC
+// MakGenFileLists.js - Released 2017-04-14T16:45:58Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.104
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Directory search routines.
@@ -285,4 +285,4 @@ if ( !noImages )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenFileLists.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenFileLists.js - Released 2017-04-14T16:45:58Z
