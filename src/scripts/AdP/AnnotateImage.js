@@ -30,6 +30,8 @@
 /*
    Changelog:
 
+   1.9.3:* Changed the ambiguous term "Epoch" by "Obs date"
+
    1.9.2:* Added Gaia DR1 and APASS DR9 catalogs
 
    1.9.1:* Added test for too big images (>0.5GigaPixels)
@@ -188,7 +190,7 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.9.2"
+#define VERSION "1.9.3"
 #define TITLE "Annotate Image"
 #define SETTINGS_MODULE "ANNOT"
 

@@ -30,7 +30,9 @@
 /*
  Changelog:
 
- 2.1.2:* Added Gaia DR1 catalog
+ 2.1.3: * Changed the ambiguous term "Epoch" by "Obs date"
+
+ 2.1.2: * Added Gaia DR1 catalog
 
  2.1.1: * Increased the maximum size of the output image
 
@@ -88,7 +90,7 @@ Copyright &copy;2013-17 Andr&eacute;s del Pozo
 #include <pjsr/TextAlign.jsh>
 #include <pjsr/NumericControl.jsh>
 
-#define CSG_VERSION "2.1.2"
+#define CSG_VERSION "2.1.3"
 #define CSG_TITLE "Catalog Star Generator"
 #define CSG_SETTINGS_MODULE "CSGEN"
 

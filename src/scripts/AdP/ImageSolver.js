@@ -30,6 +30,8 @@
 /*
    Changelog:
 
+   4.2.6: * Changed the ambiguous term "Epoch" by "Obs date"
+
    4.2.5: * Added resetSettings and resetSettingsAndExit script parameters for
             reinitialization from PCL hybrid modules.
 
@@ -198,7 +200,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.2.5"
+#define SOLVERVERSION "4.2.6"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
