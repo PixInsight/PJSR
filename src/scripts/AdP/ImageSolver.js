@@ -30,6 +30,9 @@
 /*
    Changelog:
 
+   4.2.5: * Added resetSettings and resetSettingsAndExit script parameters for
+            reinitialization from PCL hybrid modules.
+
    4.2.4: * Bugfix: The HR catalog was named "Bright Stars " (with a trailing
             space), which was causing identification problems for PCL hybrid
             modules. See the HR_Catalog() constructor in
@@ -195,7 +198,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.2.4"
+#define SOLVERVERSION "4.2.5"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -2771,6 +2774,16 @@ function main()
    {
       new MessageBox("This script requires at least the version 1.8.4 of PixInsight", TITLE, StdIcon_Error, StdButton_Ok).execute();
       return;
+   }
+
+   if ( Parameters.getBoolean( "resetSettingsAndExit" ) )
+   {
+      Settings.remove( SETTINGS_MODULE );
+      return;
+   }
+   else if ( Parameters.getBoolean( "resetSettings" ) )
+   {
+      Settings.remove( SETTINGS_MODULE );
    }
 
    var solver = new ImageSolver();

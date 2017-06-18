@@ -30,6 +30,9 @@
 /*
  Changelog:
 
+ 1.4.1: * Added resetSettings and resetSettingsAndExit script parameters for
+          reinitialization from PCL hybrid modules.
+
  1.4:   * Added selection of the units of the aperture: pixels or arcseconds
         * Added support and warning for apertures less that 2 pixels
 
@@ -78,7 +81,7 @@
 <br/>\
 Copyright &copy;2013-2017 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.4"
+#define VERSION "1.4.1"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -3647,6 +3650,16 @@ function main()
    {
       new MessageBox("This script requires at least version 1.8.4 of PixInsight", TITLE, StdIcon_Error, StdButton_Ok).execute();
       return;
+   }
+
+   if ( Parameters.getBoolean( "resetSettingsAndExit" ) )
+   {
+      Settings.remove( SETTINGS_MODULE );
+      return;
+   }
+   else if ( Parameters.getBoolean( "resetSettings" ) )
+   {
+      Settings.remove( SETTINGS_MODULE );
    }
 
    var engine = new PhotometryEngine;

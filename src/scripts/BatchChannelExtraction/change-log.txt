@@ -3,6 +3,17 @@ Batch Channel Extraction Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2017/05/29 - v1.2.3
+
+Minor changes by Thomas Stibor:
+
+- Copy FITS information from input image and restore the FITS information
+  along with new added or overwritten FILTER keyword in extracted R,G,B images.
+
+- If no FITS information exists in input image, then add new FILTER keyword
+  in extracted R,G,B images.
+
+-------------------------------------------------------------------------------
 2017/01/26 - v1.2.2
 
 Maintenance modifications by PTeam staff:

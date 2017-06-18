@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGUI.js - Released 2015/11/26 08:53:10 UTC
+// MakGenGUI.js - Released 2017-04-14T16:45:58Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.104
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Graphical user interface.
@@ -339,6 +339,33 @@ function MakefileGeneratorDialog()
    this.osxArchOptions_Sizer.addUnscaledSpacing( labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
    this.osxArchOptions_Sizer.add( this.osxArchOptions_CheckBox );
    this.osxArchOptions_Sizer.addStretch();
+
+   //
+
+#define TOOLTIP_OSX_SDK_VERSION \
+"<p>This is the version xx.yy of the MacOSXxx.yy.sdk directory specified with the -isysroot argument " + \
+"for compilation on macOS. The SDK directory provides a complete set of compilers, headers, libraries, " + \
+"frameworks, etc, necessary to build PCL-based modules on macOS. The default SDK version is 10.12.</p>"
+
+   this.osxSDKVersion_Label = new Label( this );
+   this.osxSDKVersion_Label.text = "OS X SDK version:";
+   this.osxSDKVersion_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.osxSDKVersion_Label.minWidth = labelWidth1;
+   this.osxSDKVersion_Label.toolTip = TOOLTIP_OSX_SDK_VERSION;
+
+   this.osxSDKVersion_ComboBox = new ComboBox( this );
+   this.osxSDKVersion_ComboBox.addItem( "10.10" );
+   this.osxSDKVersion_ComboBox.addItem( "10.11" );
+   this.osxSDKVersion_ComboBox.addItem( "10.12" );
+   this.osxSDKVersion_ComboBox.toolTip = TOOLTIP_OSX_SDK_VERSION;
+   this.osxSDKVersion_ComboBox.setMinWidth( 16*emWidth );
+   this.osxSDKVersion_ComboBox.currentItem = this.osxSDKVersion_ComboBox.findItem( DEFAULT_OSX_SDK_VERSION );
+
+   this.osxSDKVersion_Sizer = new HorizontalSizer;
+   this.osxSDKVersion_Sizer.spacing = 4;
+   this.osxSDKVersion_Sizer.add( this.osxSDKVersion_Label );
+   this.osxSDKVersion_Sizer.add( this.osxSDKVersion_ComboBox, 100 );
+   this.osxSDKVersion_Sizer.addStretch();
 
    //
 
@@ -718,6 +745,7 @@ function MakefileGeneratorDialog()
    this.sizer.add( this.architecture_Sizer );
    this.sizer.add( this.hostMakefiles_Sizer );
    this.sizer.add( this.osxArchOptions_Sizer );
+   this.sizer.add( this.osxSDKVersion_Sizer );
    this.sizer.add( this.gccDebug_Sizer );
    this.sizer.add( this.gccUnstripped_Sizer );
    this.sizer.add( this.gccSuffix_Sizer );
@@ -754,6 +782,8 @@ function MakefileGeneratorDialog()
          this.allArchitectures_CheckBox.checked    = Parameters.getBoolean( "allArchitectures" );
       if ( Parameters.has( "osxArchOptions" ) )
          this.osxArchOptions_CheckBox.checked      = Parameters.getBoolean( "osxArchOptions" );
+      if ( Parameters.has( "osxSDKVersion" ) )
+         this.osxSDKVersion_ComboBox.currentItem   = Parameters.getInteger( "osxSDKVersion" );
       if ( Parameters.has( "gccDebug" ) )
          this.gccDebug_CheckBox.checked            = Parameters.getBoolean( "gccDebug" );
       if ( Parameters.has( "gccUnstripped" ) )
@@ -786,6 +816,7 @@ function MakefileGeneratorDialog()
       Parameters.set( "architecture",     this.architecture_ComboBox.currentItem );
       Parameters.set( "allArchitectures", this.allArchitectures_CheckBox.checked );
       Parameters.set( "osxArchOptions",   this.osxArchOptions_CheckBox.checked );
+      Parameters.set( "osxSDKVersion",    this.osxSDKVersion_ComboBox.currentItem );
       Parameters.set( "gccDebug",         this.gccDebug_CheckBox.checked );
       Parameters.set( "gccUnstripped",    this.gccUnstripped_CheckBox.checked );
       Parameters.set( "gccSuffixLinux",   this.gccSuffixLinux_Edit.text );
@@ -858,6 +889,7 @@ function MakefileGeneratorDialog()
          this.allArchitectures_CheckBox.enabled = true;
 
          this.osxArchOptions_CheckBox.enabled =
+         this.osxSDKVersion_ComboBox.enabled =
          this.gccDebug_CheckBox.enabled =
          this.gccUnstripped_CheckBox.enabled =
          this.gccSuffixLinux_Label.enabled =
@@ -888,4 +920,4 @@ function MakefileGeneratorDialog()
 MakefileGeneratorDialog.prototype = new Dialog;
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGUI.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenGUI.js - Released 2017-04-14T16:45:58Z
