@@ -145,16 +145,26 @@ function CircleSquareIntersection(center, radius)
 
       var angle1=Math.asin(org.y/radius);
       var angle2=Math.acos(org.x/radius);
-//console.writeln("a1,a2:",angle1*180/Math.PI," ",angle2*180/Math.PI);
       var angle=Math.abs(angle2-angle1);
       var area0=this.SegmentAreaBy_angle(angle);
 
       var x1=radius*Math.cos(angle1);
       var y2=radius*Math.sin(angle2);
-//console.writeln("org:",org.x," ",org.y);
-//console.writeln("x1,y2:",x1," ",y2);
       var area1=(x1-org.x)*(y2-org.y)/2;
-      return area0+area1;
+
+      var area2 = 0;
+      if(org.y<0 && org.x+this.sqSize<radius)
+      {
+         area2 = this.SegmentAreaBy_h(radius-(org.x+this.sqSize));
+      }
+
+      var area3 = 0;
+      if(org.x<0 && org.y+this.sqSize<radius)
+      {
+         area3 = this.SegmentAreaBy_h(radius-(org.y+this.sqSize));
+      }
+
+      return area0+area1-area2-area3;
    };
 
    this.ProcessCase2 = function (p1inside, p2inside, p3inside, p4inside)
@@ -319,7 +329,7 @@ function TestCircle()
 {
    var engine=null;
 
-   // Case 0 - Out
+  /* // Case 0 - Out
    console.writeln("Case 0 - Out");
    engine=new CircleSquareIntersection(new Point(0,0), 5);
    console.writeln("Area=",engine.Calculate(new Point(6,0), 2));
@@ -359,10 +369,10 @@ function TestCircle()
 
    // Coverage
    console.writeln("Coverage");
-   var rad=2;
+   var rad=0.678728;
    var cell=1;
    var totalArea=0;
-   var center=new Point (3179.403267,3568.977920);
+   var center=new Point (3637.634330,1597.413993);
    engine = new CircleSquareIntersection(center, rad);
 //engine.SetSquare(new Point(3179,3566), 1);
 //console.writeln(engine.Calculate());
@@ -377,5 +387,36 @@ function TestCircle()
       console.writeln();
    }
    var realArea=rad*rad*Math.PI;
-   console.writeln("Total Area: ",totalArea," (Real: ",realArea,") Error:",totalArea-realArea);
+   console.writeln("Total Area: ",totalArea," (Real: ",realArea,") Error:",totalArea-realArea);*/
+
+   //
+   for (var i = 0; i < 100000; i++)
+   {
+      var rad = Math.random() * 5;
+      var cell = 1;
+      var totalArea = 0;
+      var center = new Point(1000 + Math.random(), 1000 + Math.random());
+      try
+      {
+         engine = new CircleSquareIntersection(center, rad);
+         for (var y = Math.floor(center.y - rad); y < center.y + rad; y += cell)
+         {
+            for (var x = Math.floor(center.x - rad); x < center.x + rad; x += cell)
+            {
+               var area = engine.Calculate(new Point(x, y), cell);
+               totalArea += area;
+            }
+         }
+         var realArea = rad * rad * Math.PI;
+         if (Math.abs(totalArea - realArea) > 1e-10)
+         {
+            console.writeln(format("ox:%f oy:%f r:%f", center.x, center.y, rad));
+            console.writeln("Total Area: ", totalArea, " (Real: ", realArea, ") Error:", totalArea - realArea);
+         }
+      } catch (err)
+      {
+         console.writeln(format("ox:%f oy:%f r:%f", center.x, center.y, rad));
+         console.writeln(err);
+      }
+   }
 }

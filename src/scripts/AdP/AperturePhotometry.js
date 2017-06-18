@@ -30,6 +30,8 @@
 /*
  Changelog:
 
+ 1.4.2: * Fixed the photometry with small apertures.
+
  1.4.1: * Added resetSettings and resetSettingsAndExit script parameters for
           reinitialization from PCL hybrid modules.
 
@@ -81,7 +83,7 @@
 <br/>\
 Copyright &copy;2013-2017 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.4.1"
+#define VERSION "1.4.2"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
