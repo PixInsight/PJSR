@@ -30,6 +30,8 @@
 /*
  Changelog:
 
+ 1.4.3: * Better error management in the online catalogs
+
  1.4.2: * Fixed the photometry with small apertures.
 
  1.4.1: * Added resetSettings and resetSettingsAndExit script parameters for
@@ -83,7 +85,7 @@
 <br/>\
 Copyright &copy;2013-2017 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.4.2"
+#define VERSION "1.4.3"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -2113,6 +2115,8 @@ function PhotometryEngine(w)
       this.catalog.magMax = this.maxMagnitude;
       this.catalog.queryMargin = 1.5; // It loads all the stars in an area 50% bigger than the first image
       this.catalog.Load(imgMetadata, this.vizierServer);
+      if (this.catalog.objects == null)
+         throw "Catalog error";
       var stars = new Array();
       var margin = Math.max(0, this.margin - 5);
       for (var i = 0; i < this.catalog.objects.length; i++)

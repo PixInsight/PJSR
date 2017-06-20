@@ -30,6 +30,8 @@
 /*
  Changelog:
 
+ 2.1.4: * Better error management in the online catalogs
+
  2.1.3: * Changed the ambiguous term "Epoch" by "Obs date"
 
  2.1.2: * Added Gaia DR1 catalog
@@ -90,7 +92,7 @@ Copyright &copy;2013-17 Andr&eacute;s del Pozo
 #include <pjsr/TextAlign.jsh>
 #include <pjsr/NumericControl.jsh>
 
-#define CSG_VERSION "2.1.3"
+#define CSG_VERSION "2.1.4"
 #define CSG_TITLE "Catalog Star Generator"
 #define CSG_SETTINGS_MODULE "CSGEN"
 
@@ -1166,6 +1168,8 @@ function CatalogStarGenerator()
    {
       catalog.magMax = this.maxMagnitude;
       catalog.Load(this.metadata, this.vizierServer);
+      if(catalog.objects == null)
+         throw "Catalog error";
       var stars = new Array();
       for (var i = 0; i < catalog.objects.length; i++)
       {

@@ -30,6 +30,8 @@
 /*
    Changelog:
 
+   4.2.7: * Better error management in the online catalogs
+
    4.2.6: * Changed the ambiguous term "Epoch" by "Obs date"
 
    4.2.5: * Added resetSettings and resetSettingsAndExit script parameters for
@@ -200,7 +202,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.2.6"
+#define SOLVERVERSION "4.2.7"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -1607,6 +1609,8 @@ function ImageSolver()
             }
          }
          this.catalog.Load(metadata, this.solverCfg.vizierServer);
+         if(this.catalog.objects == null)
+            throw "Catalog error";
 
          var ref_G_S = metadata.ref_S_G.inverse();
 
@@ -2169,7 +2173,9 @@ function ImageSolver()
          this.catalog.Load(metadata, this.solverCfg.vizierServer);
          catalogObjects = this.catalog.objects;
       }
-      if(catalogObjects==null || catalogObjects.length<10)
+      if(catalogObjects==null)
+         throw "Catalog error";
+      if(catalogObjects.length<10)
          throw "The solver has found too few stars in the catalog";
       catalogObjects.sort(function(a,b) {
          if(a.magnitude && b.magnitude)

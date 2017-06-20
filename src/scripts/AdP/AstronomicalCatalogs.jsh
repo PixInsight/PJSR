@@ -371,8 +371,11 @@ function VizierCatalog(name)
          // Increase the size of the query by a small factor in order to be able to use it in similar images
          fov = Math.min(180, fov * this.queryMargin);
 
-         this.DoLoad(center, metadata.epoch, fov, mirrorServer);
-
+         if (!this.DoLoad(center, metadata.epoch, fov, mirrorServer))
+         {
+            this.objects = null;
+            return;
+         }
          var actual_fov = 0;
          for (var i = 0; i < this.objects.length; i++)
          {
@@ -440,22 +443,29 @@ function VizierCatalog(name)
       //console.hide();
 
       if (!download.ok)
-         return;
+         return false;
 
       var file = new File();
       file.openForReading(outputFileName);
       if (!file.isOpen)
-         return;
+         return false;
       var s = file.read(DataType_ByteArray, file.size);
       file.close();
-      this.catalogLines = s.toString().split("\n");
+      var catalogLines = s.toString().split("\n");
+
+      if (catalogLines.length < 20)
+      {  // Vizier always returns at least 20 comment lines
+         console.criticalln("There has been an unknown error in the catalog server: Too short response");
+         return false;
+      }
+
 
       var querySize = 0;
       try
       {
-         for (var i = 0; i < this.catalogLines.length; i++)
+         for (var i = 0; i < catalogLines.length; i++)
          {
-            var line = this.catalogLines[i];
+            var line = catalogLines[i];
             if (line.length == 0 || line.charAt(0) == "#") //comment
                continue;
             var tokens = line.split("|");
@@ -476,7 +486,7 @@ function VizierCatalog(name)
       } catch (e)
       {
          new MessageBox(e.toString(), TITLE, StdIcon_Error, StdButton_Ok).execute();
-         return;
+         return false;
       }
       //if(this.bounds)
       //   console.writeln(format("Bounds: %f;%f;%f;%f / %f;%f;%f;%f", this.bounds.x0, this.bounds.x1, this.bounds.y0, this.bounds.y1,
@@ -486,6 +496,7 @@ function VizierCatalog(name)
 
       if (querySize > this.maxRecords - 100)
          console.writeln("<b>WARNING</b>: The server has returned an incomplete query. Please reduce the value of the magnitude filter");
+      return true;
    };
 
    this.GetCacheDescriptor = function()
