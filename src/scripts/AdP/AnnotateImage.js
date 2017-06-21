@@ -30,6 +30,10 @@
 /*
    Changelog:
 
+   1.9.4:* Better error management in the online catalogs
+
+   1.9.3:* Changed the ambiguous term "Epoch" by "Obs date"
+
    1.9.2:* Added Gaia DR1 and APASS DR9 catalogs
 
    1.9.1:* Added test for too big images (>0.5GigaPixels)
@@ -188,7 +192,7 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.9.2"
+#define VERSION "1.9.4"
 #define TITLE "Annotate Image"
 #define SETTINGS_MODULE "ANNOT"
 
@@ -1012,7 +1016,10 @@ function CatalogLayer(catalog)
       this.catalog.Load(metadata, mirrorServer);
       // "objects" stores a shallow duplicate of the array of objects of the
       // catalog. RemoveDuplicates removes stars from this array.
-      this.objects = this.catalog.objects.slice();
+      if(this.catalog.objects)
+         this.objects = this.catalog.objects.slice();
+      else
+         this.objects = null;
    }
 
    this.Validate = function ()
@@ -1049,6 +1056,8 @@ function CatalogLayer(catalog)
    this.Draw = function (g, metadata, bounds, imageWnd, graphicsScale)
    {
       var objects = this.GetObjects();
+      if(objects==null)
+         return;
       var penMarker = new Pen(this.gprops.lineColor, this.gprops.lineWidth * graphicsScale);
       var penLabel = new Pen(this.gprops.labelColor, 0);
       var font = new Font(this.gprops.labelFace, this.gprops.labelSize * graphicsScale);

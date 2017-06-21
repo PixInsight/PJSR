@@ -30,6 +30,8 @@
 /*
  Changelog:
 
+ 1.2.2:* Better error management in the online catalogs
+
  1.2.1:* Added test for too big images (>0.5GigaPixels)
 
  1.2:  * Use downloaded catalogs
@@ -64,7 +66,7 @@
 #endif
 
 
-#define VERSION "1.2.1"
+#define VERSION "1.2.2"
 #define TITLE "Mosaic Planner"
 #define SETTINGS_MODULE "MosaicPlan"
 #define STAR_CSV_FILE   File.systemTempDirectory + "/stars.csv"
@@ -1956,21 +1958,24 @@ function MosaicPlannerEngine()
          this.catalog.magMax = this.maxMagnitude;
          this.catalog.Load(this.metadata, this.vizierServer);
 
-         for (var i = 0; i < this.catalog.objects.length; i++)
+         if (this.catalog.objects)
          {
-            if (this.catalog.objects[i] == null)
-               continue;
-            var posPx = this.metadata.Convert_RD_I(this.catalog.objects[i].posRD);
-            if (posPx && posPx.x >= 0 && posPx.x <= this.metadata.width && posPx.y >= 0 && posPx.y <= this.metadata.height)
+            for (var i = 0; i < this.catalog.objects.length; i++)
             {
-               var star = {};
-               //               star.name = catalog.objects[i].name;
-               //               star.catPosEq = catalog.objects[i].posRD;
-               star.catPosPx = posPx;
-               star.magnitude = this.catalog.objects[i].magnitude;
-               this.catalogStars.stars.push(star);
+               if (this.catalog.objects[i] == null)
+                  continue;
+               var posPx = this.metadata.Convert_RD_I(this.catalog.objects[i].posRD);
+               if (posPx && posPx.x >= 0 && posPx.x <= this.metadata.width && posPx.y >= 0 && posPx.y <= this.metadata.height)
+               {
+                  var star = {};
+                  //               star.name = catalog.objects[i].name;
+                  //               star.catPosEq = catalog.objects[i].posRD;
+                  star.catPosPx = posPx;
+                  star.magnitude = this.catalog.objects[i].magnitude;
+                  this.catalogStars.stars.push(star);
+               }
+               // if(stars.length>200) break;
             }
-            // if(stars.length>200) break;
          }
       }
       else

@@ -381,7 +381,7 @@ function EpochEditor(parent, epochJD, // Julian date of the epoch
    var epochTooltip =
       "<p>Date of the star field. This value is used for computing the proper motion of the stars.</p>";
 
-   this.epoch_Label = new fieldLabel(this, "Epoch (ymd):", labelWidth);
+   this.epoch_Label = new fieldLabel(this, "Obs. date (ymd):", labelWidth);
 
    this.epoch_year_SpinBox = new SpinBox(this);
    this.epoch_year_SpinBox.minValue = 0;
