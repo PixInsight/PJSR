@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenParameters.js - Released 2015/11/26 08:53:10 UTC
+// MakGenParameters.js - Released 2017-04-14T16:45:58Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.104
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Project generation parameters.
@@ -135,6 +135,11 @@ function GeneratorParameters()
     * makefiles.
     */
    this.osxArchOptions = true;
+
+   /*
+    * OS X sysroot SDK version.
+    */
+   this.osxSDKVersion = DEFAULT_OSX_SDK_VERSION;
 
    /*
     * PCL diagnostics level
@@ -415,11 +420,11 @@ function GeneratorParameters()
 
    this.gccQtMkspecsDirectory = function()
    {
+      if ( this.isFreeBSDPlatform() )
+         return "/usr/local/lib/qt5/mkspecs/freebsd-clang";
       let s = this.qtDirectory() + "/qtbase/mkspecs/";
       if ( this.isMacOSXPlatform() )
          s += "macx-g++";
-      else if ( this.isFreeBSDPlatform() )
-         s += "freebsd-g++";
       else // Linux
          s += this.is64BitProject() ? "linux-g++-64" : "linux-g++-32";
       return s;
@@ -485,8 +490,8 @@ function GeneratorParameters()
 
       if ( this.isMacOSXPlatform() )
       {
-         s += " -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk";
-         s += " -mmacosx-version-min=10.7";
+         s += " -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + this.osxSDKVersion + ".sdk";
+         s += " -mmacosx-version-min=10.9";
       }
 
       s += " -D_REENTRANT -D" + this.platformMacroId();
@@ -496,12 +501,10 @@ function GeneratorParameters()
               " -DXP_UNIX" + // SpiderMonkey
               " -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" +
               " -DQT_EDITION=QT_EDITION_OPENSOURCE" + // Qt/LGPL
-              " -DQT_NO_MTDEV -DQT_NO_LIBUDEV ";
+              " -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_SHARED" +
+              " -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_MTDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT";
          if ( this.isMacOSXPlatform() )
             s += " -DQT_NO_EVDEV";
-         s += " -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_SHARED" +
-              " -DQT_UITOOLS_LIB -DQT_WEBKITWIDGETS_LIB -DQT_WEBKIT_LIB -DQT_PRINTSUPPORT_LIB" +
-              " -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_XML_LIB -DQT_SVG_LIB";
       }
       else
       {
@@ -510,11 +513,10 @@ function GeneratorParameters()
             s += " -D__PCL_QT_INTERFACE" + // PCL
                  " -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" +
                  " -DQT_EDITION=QT_EDITION_OPENSOURCE" + // Qt/LGPL
-                 " -DQT_NO_MTDEV -DQT_NO_LIBUDEV ";
+                 " -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_SHARED" +
+                 " -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_MTDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT";
             if ( this.isMacOSXPlatform() )
                s += " -DQT_NO_EVDEV";
-            s += " -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_SHARED" +
-                 " -DQT_UITOOLS_LIB -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB";
          }
 
          for ( var i = 0; i < this.extraDefinitions.length; ++i )
@@ -524,17 +526,30 @@ function GeneratorParameters()
       if ( this.diagnostics != 0 )
          s += " -D__PCL_DIAGNOSTICS_LEVEL=" + this.diagnostics.toString();
 
-      s += " -I\"$(PCLINCDIR)\"";
+      s += " -I\"$(PCLINCDIR)\" -I\"$(PCLSRCDIR)/3rdparty\"";
+
       if ( this.isCore() || this.isCoreAux() )
       {
-         s += " -I\"" + this.qtDirectory() + "/qtbase/include\"";
-         s += " -I\"" + this.qtDirectory() + "/qtsvg/include\"";
-         if ( this.isCore() )
-            s += " -I\"" + this.qtDirectory() + "/qtwebkit/include\"";
-         if ( this.isLinuxPlatform() || this.isFreeBSDPlatform() )
-            s += " -I\"" + this.qtDirectory() + "/qtx11extras/include\"";
-         if ( this.isMacOSXPlatform() )
-            s += " -I\"" + this.qtDirectory() + "/qtmacextras/include\"";
+         if ( this.isFreeBSDPlatform() )
+            s += " -I/usr/local/include/qt5";
+         else
+         {
+            s += " -I\"" + this.qtDirectory() + "/qtbase/include\"";
+            s += " -I\"" + this.qtDirectory() + "/qtbase/include/QtCore\"";
+            s += " -I\"" + this.qtDirectory() + "/qtsvg/include\"";
+            if ( this.isCore() )
+            {
+               s += " -I\"" + this.qtDirectory() + "/qtwebchannel/include\"";
+               s += " -I\"" + this.qtDirectory() + "/qtwebengine/include\"";
+               s += " -I\"" + this.qtDirectory() + "/qtwebengine/include/QtWebEngineWidgets\"";
+               s += " -I\"" + this.qtDirectory() + "/qtdeclarative/include\"";
+               s += " -I\"" + this.qtDirectory() + "/qtlocation/include\"";
+            }
+            if ( this.isLinuxPlatform() || this.isFreeBSDPlatform() )
+               s += " -I\"" + this.qtDirectory() + "/qtx11extras/include\"";
+            if ( this.isMacOSXPlatform() )
+               s += " -I\"" + this.qtDirectory() + "/qtmacextras/include\"";
+         }
          s += " -I\"" + this.gccQtMkspecsDirectory() + "\"";
 
          if ( this.isCore() )
@@ -561,7 +576,10 @@ function GeneratorParameters()
       if ( this.isModule() || this.isDynamicLibrary() || this.isExecutable() )
          if ( this.dependsOnQt() )
          {
-            s += " -I\"" + this.qtDirectory() + "/qtbase/include\"";
+            if ( this.isFreeBSDPlatform() )
+               s += " -I/usr/local/include -I/usr/local/include/qt5";
+            else
+               s += " -I\"" + this.qtDirectory() + "/qtbase/include\"";
             s += " -I\"" + this.gccQtMkspecsDirectory() + "\"";
          }
 
@@ -697,8 +715,8 @@ function GeneratorParameters()
          // See: http://stackoverflow.com/questions/2092378/
          //             macosx-how-to-collect-dependencies-into-a-local-bundle
          s += " -headerpad_max_install_names";
-         s += " -Wl,-syslibroot,/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk";
-         s += " -mmacosx-version-min=10.7";
+         s += " -Wl,-syslibroot,/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + this.osxSDKVersion + ".sdk";
+         s += " -mmacosx-version-min=10.9";
          s += " -stdlib=libc++";
       }
       else
@@ -742,12 +760,18 @@ function GeneratorParameters()
       {
          if ( this.isLinuxPlatform() || this.isFreeBSDPlatform() )
             s += " -L\"" + this.binDirectory() + "/lib\"";
-         s += " -L\"" + this.qtDirectory() + "/qtbase/lib\"";
-         if ( this.isMacOSXPlatform() )
-            s += " -F\"" + this.qtDirectory() + "/qtbase/lib\"";
          if ( this.isFreeBSDPlatform() )
+         {
+            s += " -L/usr/local/lib -L/usr/local/lib/qt5";
             if ( this.isCore() || this.isCoreAux() )
-               s += " -L/usr/local/lib -L/usr/X11R6/lib";
+               s += " -L/usr/X11R6/lib";
+         }
+         else
+         {
+            s += " -L\"" + this.qtDirectory() + "/qtbase/lib\"";
+            if ( this.isMacOSXPlatform() )
+               s += " -F\"" + this.qtDirectory() + "/qtbase/lib\"";
+         }
       }
 
       if ( this.isModule() || this.isDynamicLibrary() || this.isExecutable() || this.isCoreAux() )
@@ -757,31 +781,33 @@ function GeneratorParameters()
       s += " -o $(OBJ_DIR)/" + this.mainTarget() + " $(OBJ_FILES)";
 
       if ( this.isModule() || this.isDynamicLibrary() )
-      {
-         if ( this.isMacOSXPlatform() )
-            s += " -framework CoreFoundation"; // required since PI 1.8.0
          if ( this.isMacOSXPlatform() )
          {
+            s += " -framework CoreFoundation"; // required since PI 1.8.0
             for ( let i = 0; i < this.extraLibraries.length; ++i )
                if ( this.extraLibraries[i].startsWith( "Qt" ) )
                   s += " -framework " + this.extraLibraries[i].replace( "Qt5", "Qt" );
-               else
+            if ( this.isModule() )
+               s += " -lpthread -lPCL-pxi -llz4-pxi -lzlib-pxi -lRFC6234-pxi -llcms-pxi -lcminpack-pxi";
+            for ( let i = 0; i < this.extraLibraries.length; ++i )
+               if ( !this.extraLibraries[i].startsWith( "Qt" ) )
                   s += " -l" + this.extraLibraries[i];
          }
          else
          {
+            if ( this.isModule() )
+               s += " -lpthread -lPCL-pxi -llz4-pxi -lzlib-pxi -lRFC6234-pxi -llcms-pxi -lcminpack-pxi";
             for ( let i = 0; i < this.extraLibraries.length; ++i )
                s += " -l" + this.extraLibraries[i];
          }
-         if ( this.isModule() )
-            s += " -lpthread -lPCL-pxi";
-      }
 
       if ( this.isExecutable() || this.isX11Installer() )
       {
          if ( this.isMacOSXPlatform() )
             s += " -framework AppKit -framework ApplicationServices";
-         s += " -lpthread -lPCL-pxi";
+         s += " -lpthread -lPCL-pxi -llz4-pxi -lzlib-pxi -lRFC6234-pxi -llcms-pxi -lcminpack-pxi";
+         for ( let i = 0; i < this.extraLibraries.length; ++i )
+            s += " -l" + this.extraLibraries[i];
       }
 
       if ( this.isCore() )
@@ -793,9 +819,9 @@ function GeneratorParameters()
             s += " -lz -framework Carbon -framework AppKit -framework ApplicationServices -framework Security" +
                  " -framework DiskArbitration -framework IOKit -framework OpenGL -framework AGL" +
                  " -lQt5UiTools -framework QtSensors -framework QtPositioning -framework QtMultimediaWidgets" +
-                 " -framework QtMultimedia -framework QtOpenGL -framework QtSql -framework QtWebChannel" +
-                 " -framework QtQml -framework QtQuick -framework QtWebKitWidgets -framework QtWebKit" +
-                 " -framework QtPrintSupport -framework QtWidgets -framework QtGui -framework QtSvg" +
+                 " -framework QtMultimedia -framework QtOpenGL -framework QtSql -framework QtQml -framework QtQuick" +
+                 " -framework QtWebChannel -framework QtWebEngine -framework QtWebEngineCore -framework QtWebEngineWidgets" +
+                 " -framework QtPrintSupport -framework QtMacExtras -framework QtWidgets -framework QtGui -framework QtSvg" +
                  " -framework QtXml -framework QtNetwork -framework QtCore";
          }
          else
@@ -803,7 +829,9 @@ function GeneratorParameters()
             // X11-Linux/FreeBSD core application, Qt/X11 >= 5.4
             s += " -lSM -lICE -lXi -lXrender -lXrandr -lfreetype -lfontconfig -lXext -lX11" +
                  " -lm -lgthread-2.0 -lgobject-2.0 -lrt -lglib-2.0 -lpthread";
-            if ( !this.isFreeBSDPlatform() )
+            if ( this.isFreeBSDPlatform() )
+               s += " -lexecinfo";
+            else
                s += " -ldl -lresolv";
             s += " -lcom_err -lidn -lz";
             if ( !this.isMacOSXPlatform() )
@@ -811,16 +839,19 @@ function GeneratorParameters()
             if ( !this.isFreeBSDPlatform() )
                s += " -lssh2";
             s += " -lQt5UiTools -lQt5Sensors -lQt5Positioning -lQt5MultimediaWidgets -lQt5Multimedia" +
-                 " -lQt5OpenGL -lQt5Sql -lQt5WebChannel -lQt5Qml -lQt5Quick -lQt5WebKitWidgets -lQt5WebKit" +
-                 " -lQt5PrintSupport -lQt5X11Extras -lQt5Widgets -lQt5Gui -lQt5Svg -lQt5Xml -lQt5Network -lQt5Core";
+                 " -lQt5OpenGL -lQt5Sql -lQt5Qml -lQt5Quick -lQt5WebChannel -lQt5WebEngine -lQt5WebEngineCore" +
+                 " -lQt5WebEngineWidgets -lQt5PrintSupport -lQt5X11Extras -lQt5Widgets -lQt5Gui -lQt5Svg" +
+                 " -lQt5Xml -lQt5Network -lQt5Core";
          }
 
          // SpiderMonkey >= 1.8.7 since PI version 1.8.0.853
+         // PixInsight Class Library (PCL)
+         // LZ4
          // Zlib
+         // RFC6234
          // cURL
          // Little CMS
-         // PixInsight Class Library (PCL)
-         s += " -lmozjs" + CORE_JS_ENGINE_VERSION + " -lzlib-pxi -lcurl-pxi -llcms-pxi -lPCL-pxi";
+         s += " -lmozjs" + CORE_JS_ENGINE_VERSION + " -lPCL-pxi -llz4-pxi -lzlib-pxi -lRFC6234-pxi -lcurl-pxi -llcms-pxi";
       }
 
       if ( this.isCoreAux() )
@@ -883,4 +914,4 @@ function GeneratorParameters()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenParameters.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenParameters.js - Released 2017-04-14T16:45:58Z

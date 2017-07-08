@@ -3,7 +3,7 @@
 
    Plate solving of astronomical images.
 
-   Copyright (C) 2012-2016, Andres del Pozo
+   Copyright (C) 2012-2017, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,25 @@
 
 /*
    Changelog:
+
+   4.2.7: * Better error management in the online catalogs
+
+   4.2.6: * Changed the ambiguous term "Epoch" by "Obs date"
+
+   4.2.5: * Added resetSettings and resetSettingsAndExit script parameters for
+            reinitialization from PCL hybrid modules.
+
+   4.2.4: * Bugfix: The HR catalog was named "Bright Stars " (with a trailing
+            space), which was causing identification problems for PCL hybrid
+            modules. See the HR_Catalog() constructor in
+            AstronomicalCatalogs.jsh. See also a modification to
+            CatalogRegister.FindByName().
+
+   4.2.3: * Added generation of global control variables for invocation from
+            PCL-based modules.
+          * Improved some text messages and labels.
+
+   4.2.2: * Added Gaia DR1 catalog
 
    4.2.1: * When solving a list of files the seed parameters for each image are now set with the following priority:
             (1) The previous astrometric solution (if it exists)
@@ -166,7 +185,7 @@
 
 #feature-info  A script for plate-solving astronomical images.<br/>\
                <br/>\
-               Copyright &copy; 2012-2016 Andr&eacute;s del Pozo
+               Copyright &copy; 2012-2017 Andr&eacute;s del Pozo
 
 #include <pjsr/DataType.jsh>
 #include <pjsr/Sizer.jsh>
@@ -183,7 +202,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.2.1"
+#define SOLVERVERSION "4.2.7"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -248,7 +267,7 @@ function SolverConfiguration(module)
 
    this.useActive = true;
    this.files = [];
-   this.availableCatalogs = [new UCAC3Catalog(),new PPMXLCatalog(),new TychoCatalog(),new HR_Catalog()];
+   this.availableCatalogs = [new UCAC3Catalog(),new PPMXLCatalog(),new TychoCatalog(),new HR_Catalog(),new Gaia_Catalog()];
    this.catalogMode = 1;
    this.vizierServer = "http://vizier.u-strasbg.fr/";
    this.magnitude = 12;
@@ -302,7 +321,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.helpLabel.useRichText = true;
    this.helpLabel.text =
       "<p><b>Image Plate Solver v" + SOLVERVERSION + "</b> &mdash; A script for plate-solving astronomical images.<br/>" +
-      "Copyright &copy; 2012-2016 Andr&eacute;s del Pozo</p>";
+      "Copyright &copy; 2012-2017 Andr&eacute;s del Pozo</p>";
 
    if(showTargetImage)
    {
@@ -314,7 +333,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
       this.selected_Radio.text = "Active window";
       this.selected_Radio.checked = solverCfg.useActive == true;
       this.selected_Radio.minWidth = labelWidth1;
-      this.selected_Radio.toolTip = "<p>The script solves the geometry of the image of the active window.</p>";
+      this.selected_Radio.toolTip = "<p>The script solves the image of the active window.</p>";
       this.selected_Radio.enabled = hasActiveWindow;
       this.selected_Radio.onCheck = function (value)
       {
@@ -326,7 +345,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
       this.files_Radio.text = "List of files";
       this.files_Radio.checked = !solverCfg.useActive;
       this.files_Radio.minWidth = labelWidth1;
-      this.files_Radio.toolTip = "<p>The solves the geometry of the images of a list of files.</p>";
+      this.files_Radio.toolTip = "<p>The script solves the images in a list of files.</p>";
       this.files_Radio.onCheck = function (value)
       {
          solverCfg.useActive = false;
@@ -386,7 +405,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
       // Remove file button
       this.remove_Button = new PushButton(this);
       this.remove_Button.text = "Remove files";
-      this.remove_Button.toolTip = "Removes the selected files from the list";
+      this.remove_Button.toolTip = "<p>Removes the selected files from the list.</p>";
       this.remove_Button.onMousePress = function ()
       {
          for (var i = this.dialog.files_List.numberOfChildren - 1; i >= 0; i--)
@@ -402,7 +421,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
       // Clear files button
       this.clear_Button = new PushButton(this);
       this.clear_Button.text = "Clear files";
-      this.clear_Button.toolTip = "Clears the list of files";
+      this.clear_Button.toolTip = "<p>Clears the list of files.</p>";
       this.clear_Button.onMousePress = function ()
       {
          this.dialog.files_List.clear();
@@ -495,8 +514,8 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.optimize_CheckBox = new CheckBox( this );
    this.optimize_CheckBox.text = "Only apply optimization";
    this.optimize_CheckBox.checked = this.solverCfg.onlyOptimize != null && this.solverCfg.onlyOptimize;
-   this.optimize_CheckBox.toolTip = "<p>The solver assumes that the image is already solved and " +
-      "it only optimizes the result using the current parameters.</p>";
+   this.optimize_CheckBox.toolTip = "<p>The solver assumes that the image is already solved, and " +
+      "only optimizes the result using the current parameters.</p>";
    this.optimize_CheckBox.onCheck = function( checked )
    {
       solverCfg.onlyOptimize = checked;
@@ -571,7 +590,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.focal_Edit = new Edit( this );
    this.focal_Edit.text = format( "%g", metadata.focal );
    this.focal_Edit.toolTip = "<p>Effective focal length of the optical system in millimeters.<br />" +
-      "It doesn't need to be the exact value, but it should not be more than 50% off (the closer the better).</p>";
+      "It doesn't need to be the exact value, but it should not be more than a 50% off (the closer the better).</p>";
    this.focal_Edit.setFixedWidth( spinBoxWidth );
    this.focal_Edit.enabled = metadata.useFocal;
    this.focal_Edit.onTextUpdated = function( value )
@@ -607,7 +626,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    if ( metadata.resolution != null )
       this.resolution_Edit.text = format( "%g", metadata.resolution*3600 );
    this.resolution_Edit.toolTip = "<p>Resolution of the image in arcseconds per pixel.<br />"+
-      "It doesn't need to be the exact value, but it should not be more than 50% off (the closer the better).</p>";
+      "It doesn't need to be the exact value, but it should not be more than a 50% off (the closer the better).</p>";
    this.resolution_Edit.setFixedWidth( spinBoxWidth );
    this.resolution_Edit.enabled = !metadata.useFocal;
    this.resolution_Edit.onTextUpdated = function( value )
@@ -715,7 +734,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dmParGroupBox.sizer.add( this.optimize_Sizer );
    this.dmParGroupBox.sizer.add( this.dmParPanel );
 
-   this.dmPar_Section = new SectionBar(this, "Image parameters");
+   this.dmPar_Section = new SectionBar(this, "Image Parameters");
    this.dmPar_Section.onToggleSection = function (section, toggleBegin)
    {
       if (!toggleBegin)
@@ -737,9 +756,8 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dbPath_RadioButton.setMinWidth( labelWidth1 );
    this.dbPath_RadioButton.checked = this.solverCfg.catalogMode==0;
    this.dbPath_RadioButton.toolTip = "<p>Use a locally stored star catalog.</p>"+
-      "It admits the database files for StarGenerator that can be downloaded from http://pixinsight.com/download/</p>"+
-   "<p>It also admits custom text files that can be created with a spreadsheet or that can be downloaded " +
-      "from an online catalog server.</p>";
+      "The script supports database files for the StarGenerator process, which can be downloaded from http://pixinsight.com/download/</p>"+
+   "<p>It also supports custom text files that can be created with a spreadsheet, or be downloaded from an online catalog server.</p>";
    this.dbPath_RadioButton.onCheck = function( value )
    {
       this.dialog.dbPath_Edit.enabled = value;
@@ -892,8 +910,8 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.magnitude_SpinBox.minValue = 0;
    this.magnitude_SpinBox.maxValue = 30;
    this.magnitude_SpinBox.value = this.solverCfg.magnitude;
-   this.magnitude_SpinBox.toolTip = "<p>Maximum star magnitude to use in the algorithm.<br/>" +
-      "For wider fields, use lower values.</p>";
+   this.magnitude_SpinBox.toolTip = "<p>Maximum star magnitude to use for the image registration and plate-solving algorithms.<br/>" +
+                           "For wider fields, use lower values.</p>";
    this.magnitude_SpinBox.setFixedWidth( spinBoxWidth );
    this.magnitude_SpinBox.onValueUpdated = function( value )
    {
@@ -907,7 +925,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.magnitude_Sizer.addStretch();
 
    // Advanced controls
-   this.advanced_Section = new SectionBar(this, "Advanced parameters");
+   this.advanced_Section = new SectionBar(this, "Advanced Parameters");
    this.advanced_Control = new Control(this);
    this.advanced_Control.sizer = new VerticalSizer;
    this.advanced_Control.sizer.margin = 6;
@@ -929,7 +947,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
 
    this.projection_Combo = new ComboBox(this);
    this.projection_Combo.editEnabled = false;
-   this.projection_Combo.toolTip = "<p>Projection used in the image.</p>";
+   this.projection_Combo.toolTip = "<p>Projection system used in the image.</p>";
    //this.projection_Combo.minWidth = catalogComboWidth;
    this.projection_Combo.addItem("Gnomonic");
    this.projection_Combo.addItem("Stereographic");
@@ -962,16 +980,16 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.projection_Sizer.addStretch();
 
    // Align Algorithm
-   this.alignAlgorithm_Label = new fieldLabel(this, "Align algorithm:", labelWidth1);
+   this.alignAlgorithm_Label = new fieldLabel(this, "Alignment algorithm:", labelWidth1);
 
    this.alignAlgorithm_Combo = new ComboBox(this);
    this.alignAlgorithm_Combo.editEnabled = false;
    this.alignAlgorithm_Combo.addItem("Triangles");
    this.alignAlgorithm_Combo.addItem("Polygons");
    this.alignAlgorithm_Combo.currentItem = solverCfg.alignAlgorithm == AlignAlgorithm.prototype.Polygons ? 1 : 0;
-   this.alignAlgorithm_Combo.toolTip = "<p>This parameter sets the algorithm used by the alignment step. There are two options:</p>" +
-      "<ul><li><b>Triangles</b>: Uses a triangle similarity algorithm which is fast, works in most images but have problems in images with strong distortions.</li>" +
-      "<li><b>Polygons</b>: Uses an algorithm based on the comparison of polygons which is more tolerant to distortions and scale differences, but <i><u>it doesn't work with mirrored images</u></i>.</li></ul>";
+   this.alignAlgorithm_Combo.toolTip = "<p>This parameter sets the algorithm used by the image registration step. There are two options:</p>" +
+      "<ul><li><b>Triangles</b>: Uses a triangle similarity algorithm which is fast and works in most images, but may have problems for images with strong distortions.</li>" +
+      "<li><b>Polygons</b>: Uses an algorithm based on the comparison of polygons, which is more tolerant to distortions and scale differences, but <i><u>it does not work with mirrored images</u></i>.</li></ul>";
    this.alignAlgorithm_Combo.onItemSelected = function ()
    {
       this.dialog.solverCfg.alignAlgorithm = this.dialog.alignAlgorithm_Combo.currentItem;
@@ -1046,8 +1064,8 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.showDistortion_Check.text = "Show distortion map";
    this.showDistortion_Check.checked = this.solverCfg.showDistortion!=null && this.solverCfg.showDistortion;
    this.showDistortion_Check.enabled = this.solverCfg.distortionCorrection == true;
-   this.showDistortion_Check.toolTip = "<p>This option generates a image that shows the distortion map of the image. "+
-      "It shows the difference between the final solution and a lineal solution.</p>";
+   this.showDistortion_Check.toolTip = "<p>This option generates an image that shows the distortion map of the image. "+
+                           "It plots the difference between the final solution and a linear solution.</p>";
    this.showDistortion_Check.onCheck = function( checked )
    {
       solverCfg.showDistortion = checked;
@@ -1063,7 +1081,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.genDistortModel_Check.text = "Generate distortion model";
    this.genDistortModel_Check.checked = this.solverCfg.generateDistortModel != null && this.solverCfg.generateDistortModel;
    this.genDistortModel_Check.enabled = this.solverCfg.distortionCorrection == true;
-   this.genDistortModel_Check.toolTip = "<p>Generates a distortion model in CSV format compatible with StarAlignment.</p>";
+   this.genDistortModel_Check.toolTip = "<p>Generates a distortion model in CSV format, compatible with the StarAlignment process.</p>";
    this.genDistortModel_Check.onCheck = function (checked)
    {
       solverCfg.generateDistortModel = checked;
@@ -1078,9 +1096,9 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
 
    //this.distortion_Label = new fieldLabel(this, "Distortion model:", labelWidth1);
    var distortionToolTip = "<p>When a distortion model is selected, the solver uses it " +
-      "for modeling the distortion of the image. This model uses the same format as StarAlignment and " +
-      "can be generated using ManualImageSolver or ImageSolver. The model should be generated using an image taken " +
-      "with the same camera and lenses at the same focal and aperture.</p>";
+      "for modeling the distortions of the image. This model uses the same format as StarAlignment and " +
+      "can be generated using the ManualImageSolver or ImageSolver scripts. The model should be generated using an image taken " +
+      "with the same camera and lenses, at the same focal and aperture.</p>";
    this.useDistortModel_Check = new CheckBox(this);
    this.useDistortModel_Check.text = "Use distortion model:";
    this.useDistortModel_Check.checked = this.solverCfg.useDistortionModel;
@@ -1153,13 +1171,15 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.sensitivity_Control.setPrecision(2);
    this.sensitivity_Control.edit.minWidth = spinBoxWidth;
    this.sensitivity_Control.setValue( this.solverCfg.sensitivity );
-   this.sensitivity_Control.toolTip = "<p>Star detection sensitivity. Increase the value to detect less stars.</p>";
+   this.sensitivity_Control.toolTip = "<p>Star detection sensitivity. Increase this value to detect less stars.</p>";
    this.sensitivity_Control.onValueUpdated = function (value) { solverCfg.sensitivity = value; };
 
    this.showStars_Check = new CheckBox( this );
    this.showStars_Check.text = "Show stars";
    this.showStars_Check.checked = this.solverCfg.showStars;
-   this.showStars_Check.toolTip = "<p>When marked generates a new image with marks on the position of the detected stars in the original image.<br />It is useful for evaluating the value of the sensitivity</p>";
+   this.showStars_Check.toolTip = "<p>When checked, generates a new image with marks on the positions of the detected stars " +
+                           "in the original image.<br />" +
+                           "It is useful to compare the results of different values of the detection sensitivity parameter.</p>";
    this.showStars_Check.onCheck = function( checked )
    {
       solverCfg.showStars = checked;
@@ -1177,9 +1197,9 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.residualsImg_CheckBox = new CheckBox( this );
    this.residualsImg_CheckBox .text = "Generate residuals image";
    this.residualsImg_CheckBox.checked = this.solverCfg.generateErrorImg != null && this.solverCfg.generateErrorImg;
-   this.residualsImg_CheckBox.toolTip = "<p>Generates an image with the predicted position of the stars (green)" +
-      "and arrows (red) pointing the actual position.<br/>" +
-      "This image can be used to analyze the errors of the solution.</p>";
+   this.residualsImg_CheckBox.toolTip = "<p>Generates an image with the predicted positions of the stars (green) " +
+      "and arrows (red) pointing to the actual measured positions.<br/>" +
+      "This image can be used to analyze the errors of the computed solution.</p>";
    this.residualsImg_CheckBox.onCheck = function( checked )
    {
       solverCfg.generateErrorImg = checked;
@@ -1199,10 +1219,10 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.advanced_Control.sizer.add(this.residualsImg_Sizer);
 
    // DISTORTION SECTION
-   this.distortion_Section = new SectionBar(this, "Distortion correction");
+   this.distortion_Section = new SectionBar(this, "Distortion Correction");
    this.distortion_Section.enableCheckBox(true);
    this.distortion_Section.checkBox.checked = this.solverCfg.distortionCorrection == true;
-   this.distortion_Section.checkBox.toolTip = "<p>This option tries to model the distortion of the image using surface splines.</p>";
+   this.distortion_Section.checkBox.toolTip = "<p>This option builds a model of the distortions of the image using 2-D surface splines.</p>";
    this.distortion_Section.onCheckSection = function(sectionbar)
    {
       solverCfg.distortionCorrection = sectionbar.checkBox.checked;
@@ -1322,11 +1342,11 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    //this.reset_Button.text = "Reset";
    this.reset_Button.icon = this.scaledResource( ":/icons/reload.png" );
    this.reset_Button.setScaledFixedSize( 20, 20 );
-   this.reset_Button.toolTip = "<p>Resets the settings to the default values.<br />"+
-      "It closes the dialog and the script must be executed again.</p>";
+   this.reset_Button.toolTip = "<p>Resets script settings to default values.<br />"+
+      "It closes the dialog window, so the script must be executed again.</p>";
    this.reset_Button.onClick = function()
    {
-      var msg = new MessageBox( "Do you really want to reset the settings to their default value?",
+      var msg = new MessageBox( "Do you really want to reset all settings to their default values?",
          TITLE, StdIcon_Warning, StdButton_Yes, StdButton_No );
       var res = msg.execute();
       if( res == StdButton_Yes )
@@ -1427,6 +1447,9 @@ function ImageSolver()
       this.solverCfg.LoadSettings();
       this.solverCfg.LoadParameters();
 
+      // ### N.B.: Be compatible with versions < 4.2.4
+      this.solverCfg.catalog = this.solverCfg.catalog.trim();
+
       if (prioritizeSettings)
       {
          if (w && w.isWindow)
@@ -1480,39 +1503,23 @@ function ImageSolver()
       align.mode = StarAlignment.prototype.OutputMatrix;
 
       if(align.useTriangles)
-         console.writeln("Using Triangle similarity algorithm");
+         console.writeln("Using the triangle similarity algorithm");
       else
-         console.writeln("Using Polygon algorithm with ", align.polygonSides, " sides");
+         console.writeln("Using the polygon matching algorithm with ", align.polygonSides, " sides");
 
       var res=align.executeOn( view, false );
       if(!res)
          throw "The image could not be aligned with the reference star field";
 
-      var aligndata = align.outputData[0].slice( 11, 17 );
-      aligndata[6] = 0;
-      aligndata[7] = 0;
-      aligndata[8] = 1;
-
-      // TEMPORAL: StarAlignment uses a different convention for the origin
-      // of the coordinates of the stars.
-      // BugReport: http://pixinsight.com/forum/index.php?topic=4371.0
-      aligndata[2] += 0.5;
-      aligndata[5] += 0.5;
-      // ***
-
-      var oldMatrix = new Matrix( aligndata, 3, 3 );
-
       var numPairs = align.outputData[0][2];
       var pairs = {
-         oldMatrix: oldMatrix,
-         pS: [],
-         pI: []
+         pS: new Array(numPairs),
+         pI: new Array(numPairs)
       };
-      for(var i=0; i<numPairs; i++){
-         pairs.pS.push(new Point(align.outputData[0][29][i],
-            align.outputData[0][30][i]));
-         pairs.pI.push(new Point(align.outputData[0][31][i],
-            align.outputData[0][32][i]));
+      for (var i = 0; i < numPairs; i++)
+      {
+         pairs.pS[i] = new Point(align.outputData[0][29][i] + 0.5, align.outputData[0][30][i] + 0.5);
+         pairs.pI[i] = new Point(align.outputData[0][31][i] + 0.5, align.outputData[0][32][i] + 0.5);
       }
       return pairs;
    };
@@ -1557,7 +1564,7 @@ function ImageSolver()
          else
             generator.epoch = metadata.epoch;
          if(this.solverCfg.projection!=0)
-            throw "The local catalog only supports the Gnomonic projection. Please select an only catalog.";
+            throw "The local catalog only supports the Gnomonic projection. Please select an online catalog.";
          generator.projectionSystem = StarGenerator.prototype.Gnomonic;
 
          if ( metadata.useFocal )
@@ -1602,6 +1609,8 @@ function ImageSolver()
             }
          }
          this.catalog.Load(metadata, this.solverCfg.vizierServer);
+         if(this.catalog.objects == null)
+            throw "Catalog error";
 
          var ref_G_S = metadata.ref_S_G.inverse();
 
@@ -1692,10 +1701,11 @@ function ImageSolver()
          console.criticalln("*** Error: ", ex);
          console.writeln("<html>Please check the following items:<ul>" +
             "<li>The initial coordinates should be inside the image.</li>" +
-            "<li>The initial resolution should be in a factor of 2 of the correct value.</li>" +
-            "<li>Adjust the sensitivity so the script detects most of the stars in the image without mistaking noise for stars.</li>" +
-            "<li>The catalog should be matched to the image. Choose the catalog and magnitude filter so the number of" +
-            "stars extracted from the catalog is similar to the number of stars detected in the image.</li>" +
+            "<li>The initial resolution should be within a factor of 2 from the correct value.</li>" +
+            "<li>Adjust the star detection sensitivity parameter, so that the script can detect most of the stars in " +
+               "the image without mistaking noise for stars.</li>" +
+            "<li>The catalog should be matched to the image. Choose the appropriate catalog and magnitude filter, so " +
+               "that the number of stars extracted from the catalog can be similar to the number of stars detected in the image.</li>" +
             "</ul></html>")
          return null;
       }
@@ -1737,7 +1747,7 @@ function ImageSolver()
    {
       var lines = File.readLines(path);
       if (lines == null || lines.length < 1)
-         throw "Couldn't read the distortion model";
+         throw "Could not read the distortion model";
 
       var pD = [];
       var pU = [];
@@ -1821,13 +1831,13 @@ function ImageSolver()
          }
          //else console.writeln("0 0");
       }
-      console.writeln("Valid fittings:", valid);
+      console.writeln("Valid fittings: ", valid);
 
       if(!this.solverCfg.distortionCorrection)
          return actualCoords;
 
       // ------------
-      console.writeln(format("Search stars in a radius of %.0f pixels", tolerance));
+      console.writeln(format("Search stars within a radius of %.0f pixels", tolerance));
       searchRadius = tolerance;
       stars = [];
       psf = [];
@@ -1887,7 +1897,7 @@ function ImageSolver()
             }
          }
       }
-      console.writeln("Valid fittings:", valid);
+      console.writeln("Valid fittings: ", valid);
 
       return actualCoords;
    }
@@ -1896,10 +1906,10 @@ function ImageSolver()
    {
       if(!stars)
          return;
-      console.writeln("Creating error map");
+      console.writeln("Generating error map");
       if (metadata.width * metadata.height * 4 >= 2 * 1024 * 1024 * 1024)
       {
-         console.warningln("Cannot draw the image: The size is too big");
+         console.warningln("** Warning: Cannot draw the image: The size is too big!");
          return;
       }
 
@@ -1973,10 +1983,10 @@ function ImageSolver()
 
    this.DrawDistortions = function(targetWindow, metadata)
    {
-      console.writeln("Creating distortion map");
+      console.writeln("Generating distortion map");
       if (metadata.width * metadata.height * 4 >= 2 * 1024 * 1024 * 1024)
       {
-         console.warningln("Cannot draw the image: The size is too big");
+         console.warningln("** Warning: Cannot draw the image: The size is too big!");
          return;
       }
 
@@ -2163,7 +2173,9 @@ function ImageSolver()
          this.catalog.Load(metadata, this.solverCfg.vizierServer);
          catalogObjects = this.catalog.objects;
       }
-      if(catalogObjects==null || catalogObjects.length<10)
+      if(catalogObjects==null)
+         throw "Catalog error";
+      if(catalogObjects.length<10)
          throw "The solver has found too few stars in the catalog";
       catalogObjects.sort(function(a,b) {
          if(a.magnitude && b.magnitude)
@@ -2304,7 +2316,7 @@ function ImageSolver()
 
    this.DoIterationLineal = function (metadata, stars)
    {
-      console.writeln("Starting Lineal iteration.");
+      console.writeln("Starting Linear iteration.");
       console.flush();
       processEvents();
 
@@ -2347,10 +2359,10 @@ function ImageSolver()
       var newMetadata = metadata.Clone();
       newMetadata.projection = stars.projection;
       if(useDistortionModel){
-         console.writeln("Starting Spline iteration with distortion model.");
+         console.writeln("Starting spline iteration with distortion model.");
          this.MetadataFromDistortionModel(newMetadata, stars.actualCoords, stars.coordsG, stars.weights);
       } else /*if(this.solverCfg.distortionCorrection)*/{
-         console.writeln("Starting Spline iteration.");
+         console.writeln("Starting spline iteration.");
          newMetadata.ref_I_G = new ReferSpline(stars.actualCoords, stars.coordsG, stars.weights, 2, smoothing, 2000);
          newMetadata.ref_I_G_lineal = MultipleLinearRegression(1,stars.actualCoords, stars.coordsG).ToLinealMatrix();
          processEvents();
@@ -2455,7 +2467,7 @@ function ImageSolver()
          if (this.solverCfg.noiseLayers > 0)
             auxWindow = denoisedWindow = this.GenerateDenoisedImage(targetWindow);
 
-         console.writeln("Seed parameters for the plate solving:");
+         console.writeln("Seed parameters for plate solving:");
          console.writeln("   Image coordinates: RA=",
             DMSangle.FromAngle(this.metadata.ra * 24 / 360).ToString(true), ", Dec=",
             DMSangle.FromAngle(this.metadata.dec).ToString());
@@ -2509,8 +2521,8 @@ function ImageSolver()
                console.writeln("Original coordinates:");
                console.writeln("Image center ...... RA: ", DMSangle.FromAngle(this.metadata.ra * 24 / 360).ToString(true),
                   "  Dec: ", DMSangle.FromAngle(this.metadata.dec).ToString());
-               console.writeln(format("Resolution ........ %.2f arcsec/pix", this.metadata.resolution * 3600));
-               console.writeln(format("RMS ............... %.4f pix (%d stars)", stars.rms, stars.numValid));
+               console.writeln(format("Resolution ........ %.2f arcsec/px", this.metadata.resolution * 3600));
+               console.writeln(format("RMS ............... %.4f px (%d stars)", stars.rms, stars.numValid));
                console.writeln(format("Score ............. %.4f", stars.score));
                console.writeln("*****");
                bestMetadata = this.metadata;
@@ -2519,7 +2531,7 @@ function ImageSolver()
                iterationHistory.push({score: stars.score, numValid: stars.numValid});
             } catch (ex)
             {
-               console.writeln("Error solving the image: " + ex);
+               console.criticalln("*** Error: Unable to solve the image: " + ex);
                return false;
             }
          }
@@ -2533,14 +2545,14 @@ function ImageSolver()
                   stars = this.DetectStars(denoisedWindow, result, clipRect, tolerance);
             } catch (ex)
             {
-               console.writeln("Error solving the image: " + ex);
+               console.criticalln("*** Error: Unable to solve the image: " + ex);
                this.error = "Error solving the image: " + ex.toString();
                return false;
             }
             if (result == null)
             {
-               console.writeln("*** The image could not be solved.");
-               console.writeln("This is usually because the initial parameters are too far from the real metadata of the image");
+               console.criticalln("*** The image could not be solved.");
+               console.writeln("This is usually because the initial parameters are too far from the real metadata of the image.");
                this.error = "The image could not be solved";
                return false;
             }
@@ -2554,8 +2566,8 @@ function ImageSolver()
             console.writeln(format("Iteration 1, delta = %.3f arcsec (%.2f pixels)", delta, delta / (result.resolution * 3600)));
             console.writeln("Image center ...... RA: ", DMSangle.FromAngle(result.ra * 24 / 360).ToString(true),
                "  Dec: ", DMSangle.FromAngle(result.dec).ToString());
-            console.writeln(format("Resolution ........ %.2f arcsec/pix", result.resolution * 3600));
-            console.writeln(format("RMS ............... %.4f pix (%d stars)", stars.rms, stars.numValid));
+            console.writeln(format("Resolution ........ %.2f arcsec/px", result.resolution * 3600));
+            console.writeln(format("RMS ............... %.4f px (%d stars)", stars.rms, stars.numValid));
             console.writeln(format("Score ............. %.4f", stars.score));
             console.writeln("*****");
             this.metadata = result;
@@ -2582,13 +2594,13 @@ function ImageSolver()
                   result = this.DoIterationLineal(this.metadata, stars);
                if (result == null)
                {
-                  console.writeln(" *** The image could not be fully solved. The image has been tagged using the last good solution");
+                  console.warningln("** Warning: The image could not be fully solved. The image has been tagged using the last good solution.");
                   break;
                }
             } catch(ex){
                console.abortEnabled = false;
-               console.writeln(" *** The image could not be fully solved: " + ex +
-                  "\nThe image has been tagged using the last good solution");
+               console.warningln("** Warning: The image could not be fully solved: " + ex +
+                                 "\nThe image has been tagged using the last good solution.");
                break;
             }
 
@@ -2612,8 +2624,8 @@ function ImageSolver()
             console.writeln(format("Iteration %d, delta = %.3f arcsec (%.2f pixels)", iteration, delta, delta / (result.resolution * 3600)));
             console.writeln("Image center ...... RA: ", DMSangle.FromAngle(result.ra * 24 / 360).ToString(true),
                "  Dec: ", DMSangle.FromAngle(result.dec).ToString());
-            console.writeln(format("Resolution ........ %.2f arcsec/pix", result.resolution * 3600));
-            console.writeln(format("RMS ............... %.4f pix (%d stars)", stars.rms, stars.numValid));
+            console.writeln(format("Resolution ........ %.2f arcsec/px", result.resolution * 3600));
+            console.writeln(format("RMS ............... %.4f px (%d stars)", stars.rms, stars.numValid));
             if (stars.score > bestScore)
                console.writeln(format("Score ............. \x1b[38;2;128;255;128m%.4f\x1b[0m", stars.score));
             else
@@ -2641,15 +2653,15 @@ function ImageSolver()
             {
                lastImprovement = 0;
                this.distortModel = null;
-               console.noteln("The solution with distortion model has converged. Trying to optimize it without the model.");
+               console.noteln("* The solution with distortion model has converged. Trying to optimize it without the model.");
             }
 
             // Finish condition
             finish = true;
             if (iteration > this.solverCfg.maxIterations)
-               console.warningln("Maximum number of iterations reached");
+               console.warningln("** Warning: Reached maximum number of iterations.");
             else if (lastImprovement > maxItersNoImprovement)
-               console.writeln("Maximum number of iterations without improvement reached");
+               console.noteln("* Reached maximum number of iterations without improvement.");
             else
                finish = false;
 
@@ -2661,12 +2673,12 @@ function ImageSolver()
             if (console.abortRequested)
             {
                finish = true;
-               console.writeln("**** User requested abort ****");
+               console.criticalln("*** User requested abort ***");
             }
             gc(true);
          }
 
-         console.writeln(format("Image solved with an score of %.2f", bestScore));
+         console.noteln(format("* Image solved with a score of %.2f", bestScore));
          console.writeln();
          this.metadata = bestMetadata;
 
@@ -2702,7 +2714,7 @@ function ImageSolver()
             else
             {
                var ofd = new SaveFileDialog;
-               ofd.caption = "Select distortion model path";
+               ofd.caption = "Save Distortion Model File";
                ofd.filters = [
                   ["Distortion models", "*.csv"]
                ];
@@ -2772,6 +2784,16 @@ function main()
       return;
    }
 
+   if ( Parameters.getBoolean( "resetSettingsAndExit" ) )
+   {
+      Settings.remove( SETTINGS_MODULE );
+      return;
+   }
+   else if ( Parameters.getBoolean( "resetSettings" ) )
+   {
+      Settings.remove( SETTINGS_MODULE );
+   }
+
    var solver = new ImageSolver();
 
    if (Parameters.isViewTarget)
@@ -2831,10 +2853,11 @@ function main()
             console.writeln("===============================================================================");
             solver.metadata.Print();
             console.writeln("===============================================================================");
+            ++__PJSR_AdpImageSolver_SuccessCount;
          }
       } else {
          if (solver.solverCfg.files.length == 0)
-            throw "There is not any image selected";
+            throw "No image file has been selected";
          var errorList = [];
          for (var i = 0; i < solver.solverCfg.files.length; i++)
          {
@@ -2864,6 +2887,7 @@ function main()
                   console.writeln("===============================================================================");
                   solver.metadata.Print();
                   console.writeln("===============================================================================");
+                  ++__PJSR_AdpImageSolver_SuccessCount;
                } else
                   errorList.push({
                      id:File.extractNameAndExtension(filePath),
@@ -2872,7 +2896,7 @@ function main()
             } catch (ex)
             {
                console.writeln("*******************************")
-               console.writeln("Error in image " + filePath + ": " + ex);
+               console.writeln("Error in image <raw>" + filePath + "</raw>: " + ex);
                errorList.push({
                   id:File.extractNameAndExtension(filePath),
                   message:ex
@@ -2885,14 +2909,17 @@ function main()
 
          console.writeln("");
          if(errorList.length > 0){
-            console.warningln("Process finished with errors:");
+            console.warningln("** Warning: Process finished with errors:");
             for (var i = 0; i < errorList.length; i++)
                console.criticalln("  "+ errorList[i].id + ": " + errorList[i].message);
          } else
-            console.writeln("Process finished without errors");
+            console.noteln("* Process finished without errors.");
       }
    }
 }
+
+// Global control variable for PCL invocation.
+var __PJSR_AdpImageSolver_SuccessCount = 0;
 
 main();
 #endif

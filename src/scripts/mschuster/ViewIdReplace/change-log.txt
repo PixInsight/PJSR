@@ -1,0 +1,33 @@
+===============================================================================
+ViewIdReplace Script Changelog
+===============================================================================
+
+-------------------------------------------------------------------------------
+2017.01.15 - Version 1.4
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
+2017.01.15 - Version 1.3
+
+- Added diagnostics button to check the pattern for syntax errors.
+
+- Trimmed leading and trailing spaces from the replacement, if any.
+
+- Added \ metacharacter escape workaround for $ metacharacters.
+
+- Improved error handling and messaging.
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
+2017.01.09 - Version 1.2
+
+- Bug fixes.
+
+-------------------------------------------------------------------------------
+2017.01.08 - Version 1.1
+
+- Initial release.
+
+-------------------------------------------------------------------------------

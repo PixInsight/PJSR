@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MureEstimator.js - Released 2016/02/24 00:00:00 UTC
+// MureEstimator.js - Released 2017/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.15
+// This file is part of MureDenoise Script Version 1.21
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -48,9 +48,6 @@
 // ****************************************************************************
 
 function MureEstimator(model, view) {
-   // Random seed for cycle spin location generation.
-   this.cycleSpinRandomSeed = [967133899, 2024758679];
-
    // Locations to log.
    this.logLocations = [
       // new Point(x, y), ...
@@ -76,100 +73,106 @@ function MureEstimator(model, view) {
       return 5;
    };
 
-   // Gives randomized cycle spin locations as a function of levels of
-   // refinement and cycle spin count.
-   this.generateCycleSpinLocations = function(
-      levelsOfRefinement, cycleSpinCount, cycleSpinRandomSeed
-   ) {
-      // Gives a random integer in the range [0, size].
-      function randomInteger(size) {
-         return Math.min(size, Math.floor((size + 1) * Math.random()));
+   // Gives randomized cycle spin locations as a function of cycle spin count.
+   this.generateCycleSpinLocations = function(cycleSpinCount) {
+      var coordinates = [
+         [23, 20],
+         [20, 1, 5, 17],
+         [6, 20, 29, 6, 13, 3],
+         [5, 18, 22, 28, 8, 1, 21, 13],
+         [0, 0, 25, 13, 10, 8, 16, 25, 4, 20],
+         [6, 23, 19, 6, 31, 5, 21, 26, 27, 16, 9, 11],
+         [7, 25, 5, 9, 26, 1, 20, 12, 15, 2, 17, 22, 30, 17],
+         [9, 25, 25, 22, 5, 4, 18, 7, 30, 11, 8, 15, 28, 0, 18, 29],
+         [29, 29, 22, 22, 28, 14, 12, 20, 15, 8, 8, 31, 19, 0, 5, 11,
+         3, 20],
+         [26, 15, 14, 8, 28, 29, 29, 6, 18, 0, 6, 1, 5, 10, 11, 21,
+         20, 23, 2, 22],
+         [27, 26, 11, 28, 30, 2, 12, 16, 9, 5, 19, 31, 19, 8, 28, 16,
+         4, 12, 19, 21, 4, 23],
+         [26, 8, 5, 19, 28, 17, 21, 22, 18, 11, 6, 7, 13, 26, 1, 0,
+         23, 31, 13, 2, 13, 18, 29, 25],
+         [11, 19, 21, 8, 2, 12, 7, 6, 17, 0, 29, 20, 8, 30, 28, 28,
+         22, 16, 20, 24, 29, 5, 14, 12, 4, 23],
+         [15, 19, 7, 16, 2, 22, 30, 6, 7, 7, 8, 26, 15, 10, 0, 29,
+         13, 1, 25, 15, 17, 27, 22, 5, 24, 25, 0, 13],
+         [2, 0, 12, 27, 23, 28, 29, 13, 20, 19, 30, 26, 15, 9, 13, 2,
+         21, 3, 12, 20, 5, 20, 29, 5, 9, 13, 3, 9, 22, 11],
+         [22, 11, 15, 15, 12, 23, 10, 9, 3, 14, 23, 21, 18, 3, 5, 21,
+         18, 26, 27, 2, 2, 6, 30, 20, 29, 11, 8, 2, 30, 28, 5, 28],
+         [3, 19, 8, 25, 26, 14, 2, 2, 28, 28, 11, 11, 10, 2, 21, 25,
+         24, 7, 17, 31, 14, 20, 29, 21, 1, 12, 15, 6, 6, 7, 19, 11,
+         20, 18],
+         [13, 17, 6, 25, 16, 23, 10, 2, 20, 30, 31, 31, 22, 8, 26, 23,
+         20, 17, 27, 13, 3, 17, 8, 13, 15, 11, 31, 7, 6, 7, 12, 28,
+         16, 4, 25, 2],
+         [3, 15, 1, 21, 3, 28, 23, 21, 17, 23, 28, 26, 30, 1, 22, 14,
+         12, 18, 14, 7, 9, 30, 6, 5, 7, 23, 26, 9, 22, 2, 28, 17,
+         1, 9, 9, 12, 15, 0],
+         [5, 10, 29, 9, 4, 21, 23, 7, 12, 6, 14, 31, 19, 13, 24, 27,
+         24, 17, 31, 3, 21, 1, 8, 30, 31, 16, 30, 29, 30, 22, 6, 4,
+         15, 18, 12, 24, 20, 22, 11, 12],
+         [9, 26, 1, 24, 30, 15, 26, 10, 3, 3, 20, 5, 4, 11, 20, 19,
+         8, 18, 16, 27, 24, 25, 27, 20, 27, 30, 12, 10, 14, 18, 9, 2,
+         19, 11, 29, 4, 15, 2, 21, 30, 4, 29],
+         [17, 17, 24, 19, 12, 22, 17, 7, 8, 28, 23, 11, 29, 11, 17, 30,
+         21, 24, 31, 20, 24, 30, 0, 26, 10, 12, 22, 4, 7, 17, 7, 6,
+         3, 31, 28, 3, 1, 7, 13, 2, 2, 14, 5, 23],
+         [26, 1, 23, 7, 24, 16, 1, 4, 2, 28, 8, 3, 16, 7, 24, 27,
+         29, 8, 18, 28, 30, 22, 20, 2, 8, 19, 5, 14, 12, 29, 13, 22,
+         31, 16, 21, 21, 7, 25, 17, 17, 12, 12, 5, 8, 20, 12],
+         [7, 20, 17, 20, 8, 13, 3, 28, 23, 24, 6, 5, 13, 16, 12, 22,
+         11, 30, 17, 27, 12, 4, 21, 31, 27, 0, 20, 7, 1, 2, 29, 6,
+         25, 19, 20, 13, 28, 26, 13, 10, 3, 10, 2, 18, 29, 15, 25, 10],
+         [28, 17, 4, 20, 11, 16, 25, 23, 22, 14, 19, 22, 29, 8, 0, 13,
+         31, 28, 22, 30, 9, 27, 17, 27, 27, 1, 11, 1, 6, 11, 31, 22,
+         23, 8, 16, 5, 13, 23, 4, 30, 11, 7, 17, 11, 1, 3, 6, 5,
+         17, 17],
+         [24, 4, 24, 29, 30, 0, 16, 31, 16, 24, 14, 5, 29, 25, 3, 24,
+         9, 3, 27, 10, 11, 19, 13, 12, 0, 8, 31, 18, 21, 16, 6, 11,
+         11, 29, 23, 24, 26, 19, 1, 13, 9, 24, 20, 8, 16, 17, 6, 18,
+         5, 30, 4, 4],
+         [26, 16, 18, 14, 15, 21, 3, 16, 24, 7, 29, 2, 23, 30, 10, 19,
+         1, 25, 19, 2, 17, 26, 25, 21, 28, 26, 7, 26, 14, 6, 9, 13,
+         31, 20, 31, 12, 13, 0, 5, 2, 5, 21, 20, 20, 8, 7, 4, 11,
+         12, 27, 1, 6, 19, 9],
+         [8, 3, 13, 11, 10, 30, 3, 4, 17, 4, 6, 12, 3, 16, 2, 9,
+         19, 27, 29, 5, 12, 19, 29, 14, 30, 0, 21, 21, 22, 3, 2, 21,
+         20, 9, 28, 23, 19, 15, 3, 29, 9, 8, 25, 29, 7, 20, 9, 25,
+         26, 18, 26, 10, 16, 23, 15, 31],
+         [28, 7, 21, 7, 31, 12, 4, 2, 9, 31, 17, 1, 20, 29, 1, 29,
+         26, 29, 4, 24, 15, 11, 19, 23, 19, 18, 22, 2, 10, 26, 12, 7,
+         31, 22, 7, 6, 24, 22, 8, 11, 30, 2, 23, 14, 8, 21, 11, 17,
+         2, 8, 2, 16, 15, 26, 27, 17, 14, 21],
+         [12, 5, 5, 0, 15, 28, 8, 9, 20, 5, 28, 2, 14, 10, 18, 0,
+         22, 15, 10, 31, 23, 1, 19, 19, 13, 22, 2, 10, 19, 25, 7, 23,
+         9, 14, 2, 4, 0, 28, 2, 23, 28, 8, 19, 10, 1, 16, 29, 13,
+         15, 16, 24, 28, 23, 22, 27, 19, 6, 18, 28, 25],
+         [17, 16, 23, 8, 22, 3, 19, 11, 14, 6, 28, 6, 15, 1, 25, 30,
+         9, 3, 31, 30, 29, 25, 10, 29, 9, 8, 24, 24, 10, 13, 23, 19,
+         4, 9, 5, 22, 2, 4, 16, 28, 26, 12, 18, 21, 2, 26, 5, 31,
+         12, 18, 30, 15, 10, 24, 28, 20, 4, 15, 31, 10, 1, 19],
+         [1, 27, 30, 21, 28, 31, 27, 16, 4, 0, 8, 26, 30, 5, 29, 10,
+         11, 2, 19, 5, 21, 18, 25, 4, 21, 0, 21, 23, 5, 18, 20, 13,
+         26, 24, 18, 28, 7, 8, 15, 8, 12, 29, 11, 12, 14, 20, 23, 9,
+         4, 23, 9, 21, 16, 1, 1, 15, 15, 15, 3, 5, 2, 10, 6, 13]
+      ];
+
+      var locations = new Array(cycleSpinCount);
+      for (var i = 0; i != cycleSpinCount; ++i) {
+         locations[i] = new Point(
+            coordinates[cycleSpinCount - 1][2 * i],
+            coordinates[cycleSpinCount - 1][2 * i + 1]
+         );
       }
 
-      // Gives the minimum distance between point and locations.
-      function poissonDiskDistance(point, locations) {
-         var distance = Infinity;
-         for (var i = 0; i != locations.length; ++i) {
-            var dx = point.x - locations[i].x;
-            var dy = point.y - locations[i].y;
-
-            distance = Math.min(distance, Math.sqrt(dx * dx + dy * dy));
-         }
-
-         return distance;
-      }
-
-      // Gives Poisson disk locations given domain size, desired count, and
-      // radius.
-      function poissonDiskLocations(size, count, radius) {
-         var active = new Array();
-         var locations = new Array();
-
-         locations.push(new Point(
-            randomInteger(size - 1), randomInteger(size - 1)
-         ));
-         active.push(locations.length - 1);
-
-         for (; active.length != 0 && locations.length < count;) {
-            var index = randomInteger(active.length - 1);
-            var value = active[active.length - 1];
-            active[active.length - 1] = active[index];
-            active[index] = value;
-
-            var center = locations[active[active.length - 1]];
-
-            var samples = 64;
-            for (var sample = 0; sample != samples; ++sample) {
-               var theta = 2 * Math.PI * Math.random();
-               var delta = radius * (Math.random() + 1);
-               var point = new Point(
-                  center.x + Math.round(delta * Math.cos(theta)),
-                  center.y + Math.round(delta * Math.sin(theta))
-               );
-               if (point.x < 0 || size <= point.x) {
-                  continue;
-               }
-               if (point.y < 0 || size <= point.y) {
-                  continue;
-               }
-               if (poissonDiskDistance(point, locations) < radius) {
-                  continue;
-               }
-               break;
-            }
-
-            if (sample == samples) {
-               active = active.slice(0, active.length - 1);
-            }
-            else {
-               locations.push(point);
-               active.push(locations.length - 1);
-            }
-         }
-
-         return locations;
-      }
-
-      Math.initRandomGenerator(cycleSpinRandomSeed);
-
-      var size = Math.round(Math.pow2(levelsOfRefinement));
-      var radius = 0.9 * (size - 1) / Math.sqrt(cycleSpinCount);
-      var locations = poissonDiskLocations(size, cycleSpinCount, radius);
-
-      for (var i = 0; i != 4 && locations.length < cycleSpinCount; ++i) {
-         if ((i % 2) == 1) {
-            radius *= 0.95;
-         }
-         locations = poissonDiskLocations(size, cycleSpinCount, radius);
-      }
-
-      return locations.slice(0, Math.min(locations.length, cycleSpinCount));
+      return locations;
    };
 
    // Gives alpha threshold coefficients as a function of detail coefficients
    // d, coarse coefficients c, gradient coefficients p, and standard
    // deviation of Gaussian noise s.
-   this.alphaThresholds = function(d, c, p, s) {
+   this.alphaThresholdsBasic = function(d, c, p, s) {
       var dm = d.matrix();
       var cm = c.matrix();
       var pm = p.matrix();
@@ -187,7 +190,7 @@ function MureEstimator(model, view) {
             var tcs2 = Math.tanh(100 * cv) * cv + s2;
 
             var t1 = dv;
-            var t2 = (1 - Math.exp(-dv * dv / (12 * tcs2))) * dv;
+            var t2 = Math.exp(-dv * dv / (12 * tcs2)) * dv;
             var t3 = pv;
 
             var elm = row * cols + col;
@@ -203,7 +206,7 @@ function MureEstimator(model, view) {
    // Gives beta threshold coefficients as a function of detail coefficients
    // d, coarse coefficients c, gradient coefficients p, and standard
    // deviation of Gaussian noise s.
-   this.betaThresholds = function(d, c, p, s) {
+   this.betaThresholdsBasic = function(d, c, p, s) {
       var dm = d.matrix();
       var cm = c.matrix();
       var pm = p.matrix();
@@ -222,35 +225,41 @@ function MureEstimator(model, view) {
             var pv = pm.at(row, col);
 
             var dvm1 = dv - 1;
+            var dvm1u2 = dvm1 * dvm1;
             var dvp1 = dv + 1;
+            var dvp1u2 = dvp1 * dvp1;
             var cvm1 = cv - 1;
+            var cvm1x100 = 100 * cvm1;
             var cvp1 = cv + 1;
-            var tcm1 = Math.tanh(100 * cvm1);
-            var tcp1 = Math.tanh(100 * cvp1);
-            var scm1 = 1 / Math.cosh(100 * cvm1);
-            var scp1 = 1 / Math.cosh(100 * cvp1);
+            var cvp1x100 = 100 * cvp1;
+            var tcm1 = Math.tanh(cvm1x100);
+            var tcp1 = Math.tanh(cvp1x100);
+            var scm1 = 1 / Math.cosh(cvm1x100);
+            var scp1 = 1 / Math.cosh(cvp1x100);
             var tcm1s2 = cvm1 * tcm1 + s2;
+            var tcm1s2x12 = 12 * tcm1s2;
             var tcp1s2 = cvp1 * tcp1 + s2;
-            var etcm1s2 = Math.exp(-dvm1 * dvm1 / (12 * tcm1s2));
-            var etcp1s2 = Math.exp(-dvp1 * dvp1 / (12 * tcp1s2));
-            var stcm1 = 100 * cvm1 * scm1 * scm1 + tcm1;
-            var stcp1 = 100 * cvp1 * scp1 * scp1 + tcp1;
+            var tcp1s2x12 = 12 * tcp1s2;
+            var dvm1u2xtcm1s2x12 = dvm1u2 / tcm1s2x12;
+            var dvp1u2xtcp1s2x12 = dvp1u2 / tcp1s2x12;
+            var etcm1s2 = Math.exp(-dvm1u2xtcm1s2x12);
+            var etcp1s2 = Math.exp(-dvp1u2xtcp1s2x12);
+            var stcm1 = cvm1x100 * scm1 * scm1 + tcm1;
+            var stcp1 = cvp1x100 * scp1 * scp1 + tcp1;
 
             t1 += dv * dv - cv - s2;
-            t2 +=
-               0.5 * (
-                  (dv + cv) * dvm1 * (1 - etcm1s2) +
-                  (dv - cv) * dvp1 * (1 - etcp1s2)
+            t2 += 0.5 * (
+               (
+                  (dv + cv) * dvm1 * etcm1s2 +
+                  (dv - cv) * dvp1 * etcp1s2
                ) -
-               0.5 * (
-                  2 - etcm1s2 - etcp1s2 +
-                  (2 * dvm1 * dvm1 * etcm1s2) / (12 * tcm1s2) +
-                  (2 * dvp1 * dvp1 * etcp1s2) / (12 * tcp1s2) -
-                  (dvm1 * dvm1 * dvm1 * etcm1s2 * stcm1) /
-                     (12 * tcm1s2 * tcm1s2) +
-                  (dvp1 * dvp1 * dvp1 * etcp1s2 * stcp1) /
-                     (12 * tcp1s2 * tcp1s2)
-               ) * s2;
+               s2 * (
+                  etcm1s2 +
+                  etcp1s2 +
+                  dvm1u2xtcm1s2x12 * etcm1s2 * (dvm1 * stcm1 / tcm1s2 - 2) -
+                  dvp1u2xtcp1s2x12 * etcp1s2 * (dvp1 * stcp1 / tcp1s2 + 2)
+               )
+            );
             t3 += dv * pv;
          }
       }
@@ -262,27 +271,17 @@ function MureEstimator(model, view) {
    };
 
    // Logs denoise image information.
-   this.logDenoiseImage = function(
+   this.logDenoiseImageBasic = function(
       levelsOfRefinement,
       level,
       locations,
-      vw,
-      hw,
-      dw,
-      c1,
-      v1,
-      h1,
-      d1,
-      c2,
-      v2,
-      h2,
-      d2,
-      vp,
-      hp,
-      dp,
+      vw, hw, dw,
+      c1, v1, h1, d1,
+      c2, v2, h2, d2,
+      vp, hp, dp,
       gaussianNoise
    ) {
-      console.writeln(format("logDenoiseImage%d = {", level));
+      console.writeln(format("logDenoiseImageBasic%d = {", level));
       console.writeln(format("{\"image\", \"%s\"},", model.imageView.fullId));
       console.writeln(format("{\"level\", %d},", level));
 
@@ -326,7 +325,7 @@ function MureEstimator(model, view) {
          var h1p = h1.matrix().at(row, col);
          var d1p = d1.matrix().at(row, col);
          console.writeln(format(
-            "{\"c1v1h1d1\", %.3f, %.3f, %.3f, %.3f},", c1p, v1p, h1p, d1p
+            "{\"c1_v1_h1_d1\", %.3f, %.3f, %.3f, %.3f},", c1p, v1p, h1p, d1p
          ).replace(/e/g, "*^"));
 
          var c2p = c2.matrix().at(row, col);
@@ -334,14 +333,14 @@ function MureEstimator(model, view) {
          var h2p = h2.matrix().at(row, col);
          var d2p = d2.matrix().at(row, col);
          console.writeln(format(
-            "{\"c2v2h2p2\", %.3f, %.3f, %.3f, %.3f},", c2p, v2p, h2p, d2p
+            "{\"c2_v2_h2_d2\", %.3f, %.3f, %.3f, %.3f},", c2p, v2p, h2p, d2p
          ).replace(/e/g, "*^"));
 
          var vpp = vp.matrix().at(row, col);
          var hpp = hp.matrix().at(row, col);
          var dpp = dp.matrix().at(row, col);
          console.writeln(format(
-            "{\"vphpdp\", %.3f, %.3f, %.3f},", vpp, hpp, dpp
+            "{\"vp_hp_dp\", %.3f, %.3f, %.3f},", vpp, hpp, dpp
          ).replace(/e/g, "*^"));
 
          console.writeln(format(
@@ -349,17 +348,17 @@ function MureEstimator(model, view) {
          ).replace(/e/g, "*^"));
 
          console.writeln(format(
-            "{\"v1c1vpfnoisE\", %.3f, %.3f, %.3f, %.3f},",
+            "{\"v1_c1_vp_noisE\", %.3f, %.3f, %.3f, %.3f},",
             v1p, c1p, vpp, gaussianNoise
          ).replace(/e/g, "*^"));
 
          console.writeln(format(
-            "{\"h1c1hpfnoisE\", %.3f, %.3f, %.3f, %.3f},",
+            "{\"h1_c1_hp_noisE\", %.3f, %.3f, %.3f, %.3f},",
             h1p, c1p, hpp, gaussianNoise
          ).replace(/e/g, "*^"));
 
          console.writeln(format(
-            "{\"d1c1dpfnoisE\", %.3f, %.3f, %.3f, %.3f}",
+            "{\"d1_c1_dp_noisE\", %.3f, %.3f, %.3f, %.3f}",
             d1p, c1p, dpp, gaussianNoise
          ).replace(/e/g, "*^"));
 
@@ -373,7 +372,11 @@ function MureEstimator(model, view) {
 
    // Denoises the image.
    this.denoiseImage = function(
-      image, gaussianNoise, levelsOfRefinement, level, locations
+      image,
+      gaussianNoise,
+      levelsOfRefinement,
+      level,
+      locations
    ) {
       var imageDecompose = image.unnormalizedHaarDecompose();
       view.throwAbort();
@@ -386,19 +389,21 @@ function MureEstimator(model, view) {
       view.throwAbort();
 
       {
-         var vp = c1.filterColumns([-1, 0, 1]);
-         var hp = c1.filterRows([-1, 0, 1]);
-         var dp = hp.filterColumns([-1, 0, 1]);
+         var vp = c1.centeredGradientColumns();
+         var hp = c1.centeredGradientRows();
+         var dp = hp.centeredGradientColumns();
+         view.throwAbort();
+      }
+
+      {
+         var vat = this.alphaThresholdsBasic(v1, c1, vp, 2 * gaussianNoise);
+         var hat = this.alphaThresholdsBasic(h1, c1, hp, 2 * gaussianNoise);
+         var dat = this.alphaThresholdsBasic(d1, c1, dp, 2 * gaussianNoise);
          view.throwAbort();
 
-         var vat = this.alphaThresholds(v1, c1, vp, 2 * gaussianNoise);
-         var hat = this.alphaThresholds(h1, c1, hp, 2 * gaussianNoise);
-         var dat = this.alphaThresholds(d1, c1, dp, 2 * gaussianNoise);
-         view.throwAbort();
-
-         var vbt = this.betaThresholds(v1, c1, vp, 2 * gaussianNoise);
-         var hbt = this.betaThresholds(h1, c1, hp, 2 * gaussianNoise);
-         var dbt = this.betaThresholds(d1, c1, dp, 2 * gaussianNoise);
+         var vbt = this.betaThresholdsBasic(v1, c1, vp, 2 * gaussianNoise);
+         var hbt = this.betaThresholdsBasic(h1, c1, hp, 2 * gaussianNoise);
+         var dbt = this.betaThresholdsBasic(d1, c1, dp, 2 * gaussianNoise);
          view.throwAbort();
       }
 
@@ -419,9 +424,22 @@ function MureEstimator(model, view) {
       }
 
       {
-         var vtmi = vtm.pseudoInverse(1);
-         var htmi = htm.pseudoInverse(1);
-         var dtmi = dtm.pseudoInverse(1);
+         var vtmid = vtm.pseudoInverse(1);
+         var htmid = htm.pseudoInverse(1);
+         var dtmid = dtm.pseudoInverse(1);
+         var vtmi = vtmid.pseudoInverse;
+         var htmi = htmid.pseudoInverse;
+         var dtmi = dtmid.pseudoInverse;
+         var illConditioned =
+            vtmid.illConditioned ||
+            htmid.illConditioned ||
+            dtmid.illConditioned;
+         if (false && illConditioned) {
+            console.writeln(format(
+               "Ill-conditioned linear system (wavelet scale %d)", level
+            ));
+            console.flush();
+         }
          view.throwAbort();
 
          vtm.clear();
@@ -463,43 +481,41 @@ function MureEstimator(model, view) {
       }
 
       {
-         if (level == levelsOfRefinement) {
+         if (illConditioned || level == levelsOfRefinement) {
             var c2 = c1.clone();
          }
          else {
-            var c2 = this.denoiseImage(
-               c1,
-               2 * gaussianNoise,
+            var ratio = 1 / model.subbandVarianceScalingRatio(level);
+            var c1r = c1.multiplyScalar(ratio);
+
+            var c2r = this.denoiseImage(
+               c1r,
+               2 * Math.sqrt(ratio) * gaussianNoise,
                levelsOfRefinement,
                level + 1,
                locations
             );
+            c1r.clear();
+
+            var c2 = c2r.multiplyScalar(1 / ratio);
+            c2r.clear();
          }
          view.throwAbort();
 
-         var reconstruct =
+         var reconstruct = illConditioned ?
+            s.unnormalizedHaarReconstruct([s, c1, v1, h1, d1]) :
             s.unnormalizedHaarReconstruct([s, c2, v2, h2, d2]);
          view.throwAbort();
 
          if (locations.length != 0) {
-            this.logDenoiseImage(
+            this.logDenoiseImageBasic(
                levelsOfRefinement,
                level,
                locations,
-               vw,
-               hw,
-               dw,
-               c1,
-               v1,
-               h1,
-               d1,
-               c2,
-               v2,
-               h2,
-               d2,
-               vp,
-               hp,
-               dp,
+               vw, hw, dw,
+               c1, v1, h1, d1,
+               c2, v2, h2, d2,
+               vp, hp, dp,
                2 * gaussianNoise
             );
          }
@@ -541,15 +557,15 @@ function MureEstimator(model, view) {
       var image = (
          new FrameMatrix(model.imageView.image.toMatrix())
       ).pipeline([
+         function(frame) {
+            return frame.fusedMultiplyAddScalar(
+               65535 * baseGain, -baseOffset
+            );
+         },
          flatfield == null ? null :
             function(frame) {
                return frame.multiplyFrame(flatfield);
             },
-         function(frame) {
-            return frame.fusedMultiplyAddScalar(
-               65535 * baseGain, -baseGain * baseOffset
-            );
-         },
          function(frame) {
             return frame.fusedPadShift(
                pad, cycleSpinLocation.x, cycleSpinLocation.y
@@ -560,7 +576,7 @@ function MureEstimator(model, view) {
             view.throwAbort();
             return self.denoiseImage(
                frame,
-               baseGain * baseGaussianNoise,
+               baseGaussianNoise,
                levelsOfRefinement,
                1,
                self.padShiftLogLocations(
@@ -577,24 +593,98 @@ function MureEstimator(model, view) {
                -cycleSpinLocation.x, -cycleSpinLocation.y, -pad
             );
          },
-         function(frame) {
-            return frame.fusedAddMultiplyScalar(
-               baseGain * baseOffset, 1 / (65535 * baseGain)
-            );
-         },
          flatfield == null ? null :
             function(frame) {
                return frame.divideFrame(flatfield);
-            }
+            },
+         function(frame) {
+            return frame.fusedAddMultiplyScalar(
+               baseOffset, 1 / (65535 * baseGain)
+            );
+         }
       ]);
 
       if (!image.isFinite()) {
          throw new Error(
-            "The denoise process did not find a representable result"
+            "The denoise process did not find a representable result."
          );
       }
 
       return image;
+   };
+
+   // Generates the smooth flatfield.
+   this.generateSmoothFlatfield = function() {
+      var flatfield = null;
+      if (model.flatfieldView != null && model.flatfieldView.isView) {
+         var image = new Image(model.flatfieldView.image);
+
+         var layers = [];
+         for (
+            var layer = 0;
+            layer != model.smoothFlatfieldLayerCount + 1;
+            ++layer
+         ) {
+            layers.push([
+               layer == model.smoothFlatfieldLayerCount,
+               true, 0.000, false, 3.000, 1.00, 1
+            ]);
+         }
+
+         var MLT = new MultiscaleLinearTransform;
+         MLT.layers = layers;
+         MLT.transform =
+            MultiscaleLinearTransform.prototype.MultiscaleLinearTransform;
+         MLT.executeOn(image);
+         Console.abortEnabled = view.consoleAbortEnabled();
+
+         var flatfield = (new FrameMatrix(image.toMatrix())).pipeline([
+            function(frame) {
+               return frame.multiplyScalar(1 / frame.matrix().mean());
+            }
+         ]);
+
+         image.free();
+      }
+
+      return flatfield;
+   };
+
+   // Logs the smooth flatfield scale.
+   this.logSmoothFlatfieldScale = function(flatfield) {
+      var flatfieldStdDev = flatfield.matrix().stdDev();
+      console.writeln(format(
+         "Flatfield scale: " + model.flatfieldScaleFormat +
+         " " + model.flatfieldScaleUnits,
+         model.flatfieldScaleNormalization * flatfieldStdDev
+      ));
+      console.flush();
+   };
+
+   // Logs the base parameters.
+   this.logBaseParameters = function() {
+      var baseGain = model.baseGain();
+      console.writeln(format(
+         "Base gain: " + model.detectorGainFormat +
+         " " + model.detectorGainUnits,
+         baseGain
+      ));
+
+      var baseGaussianNoise = model.baseGaussianNoise();
+      console.writeln(format(
+         "Base Gaussian noise: " + model.detectorGaussianNoiseFormat +
+         " " + "e-",
+         baseGaussianNoise
+      ));
+
+      var baseOffset = model.baseOffset();
+      console.writeln(format(
+         "Base offset: " + model.detectorOffsetFormat +
+         " " + "e-",
+         baseOffset
+      ));
+
+      console.flush();
    };
 
    // Generates the method noise image.
@@ -643,32 +733,6 @@ function MureEstimator(model, view) {
       return imageWindow;
    };
 
-   // Logs the base parameters.
-   this.logBaseParameters = function() {
-      var baseGain = model.baseGain();
-      console.writeln(format(
-         "Base gain: " + model.detectorGainFormat +
-         " " + model.detectorGainUnits,
-         baseGain
-      ));
-
-      var baseGaussianNoise = model.baseGaussianNoise();
-      console.writeln(format(
-         "Base Gaussian noise: " + model.detectorGaussianNoiseFormat +
-         " " + model.detectorGaussianNoiseUnits,
-         baseGaussianNoise
-      ));
-
-      var baseOffset = model.baseOffset();
-      console.writeln(format(
-         "Base offset: " + model.detectorOffsetFormat +
-         " " + model.detectorOffsetUnits,
-         baseOffset
-      ));
-
-      console.flush();
-   };
-
    // Logs the method noise.
    this.logMethodNoise = function(methodNoise) {
       var methodNoiseStdDev = methodNoise.matrix().stdDev();
@@ -680,6 +744,101 @@ function MureEstimator(model, view) {
       console.flush();
    };
 
+   // Generates the exposure estimate.
+   this.generateExposureEstimate = function(flatfield, quantile) {
+      var image = (
+         new FrameMatrix(model.imageView.image.toMatrix())
+      ).pipeline([
+         flatfield == null ? null :
+            function(frame) {
+               return frame.multiplyFrame(flatfield);
+            }
+      ]);
+
+      var matrix = image.matrix();
+      var size = model.varianceEstimateBlockSize;
+      var rows = Math.floor(matrix.rows / size);
+      var rowOffset = Math.floor(0.5 * (matrix.rows - size * rows));
+      var cols = Math.floor(matrix.cols / size);
+      var colOffset = Math.floor(0.5 * (matrix.cols - size * cols));
+      var blocks = new Vector(0, rows * cols);
+      var block = new Vector(0, size * size);
+      for (var row = 0; row != rows; ++row) {
+         for (var col = 0; col != cols; ++col) {
+            for (var brow = 0; brow != size; ++brow) {
+               for (var bcol = 0; bcol != size; ++bcol) {
+                  block.at(
+                     size * brow + bcol,
+                     matrix.at(
+                        size * row + rowOffset + brow,
+                        size * col + colOffset + bcol
+                     )
+                  );
+               }
+            }
+            blocks.at(cols * row + col, block.median());
+         }
+      }
+      blocks.sort();
+
+      var exposure = 65535 * blocks.at(
+         Math.round(quantile * (blocks.length - 1))
+      );
+
+      block.assign(0, 0);
+      blocks.assign(0, 0);
+      image.clear();
+
+      return exposure;
+   };
+
+   // Generates the variance estimate.
+   this.generateVarianceEstimate = function(flatfield, quantile) {
+      var poissonNoise =
+         Math.max(0, (
+            this.generateExposureEstimate(flatfield, quantile) -
+            model.detectorOffset
+         )) /
+         (model.imageCombinationCount * model.detectorGain);
+      var gaussianNoise =
+         model.detectorGaussianNoise * model.detectorGaussianNoise /
+         model.imageCombinationCount;
+      var totalNoise = poissonNoise + gaussianNoise;
+
+      return {
+         quantile: quantile,
+         poissonNoise: poissonNoise / totalNoise,
+         gaussianNoise: gaussianNoise / totalNoise
+      };
+   };
+
+   // Logs the variance estimate.
+   this.logVarianceEstimate = function(varianceEstimate) {
+      console.writeln(format(
+         model.varianceEstimateQuantileFormat +
+            " percentile exposure Poisson noise variance: " +
+            model.varianceEstimateFormat + " " + model.varianceEstimateUnits,
+         Math.round(
+            model.varianceEstimateNormalization *
+            varianceEstimate.quantile
+         ),
+         model.varianceEstimateNormalization *
+            varianceEstimate.poissonNoise
+      ));
+      console.writeln(format(
+         model.varianceEstimateQuantileFormat +
+            " percentile exposure Gaussian noise variance: " +
+            model.varianceEstimateFormat + " " + model.varianceEstimateUnits,
+         Math.round(
+            model.varianceEstimateNormalization *
+            varianceEstimate.quantile
+         ),
+         model.varianceEstimateNormalization *
+            varianceEstimate.gaussianNoise
+      ));
+      console.flush();
+   };
+
    // Assigns the estimate.
    this.assignEstimate = function(estimate) {
       var estimateImage = estimate.matrix().toImage();
@@ -687,53 +846,6 @@ function MureEstimator(model, view) {
       model.imageView.image.assign(estimateImage);
       model.imageView.endProcess();
       estimateImage.free();
-   };
-
-   // Generates the smooth flatfield.
-   this.generateSmoothFlatfield = function() {
-      var flatfield = null;
-      if (model.flatfieldView != null && model.flatfieldView.isView) {
-         var image = new Image(model.flatfieldView.image);
-
-         var layers = [];
-         for (
-            var layer = 0;
-            layer != model.smoothFlatfieldLayerCount + 1;
-            ++layer
-         ) {
-            layers.push([
-               layer == model.smoothFlatfieldLayerCount,
-               true, 0.000, false, 3.000, 1.00, 1
-            ]);
-         }
-
-         var MLT = new MultiscaleLinearTransform;
-         MLT.layers = layers;
-         MLT.transform =
-            MultiscaleLinearTransform.prototype.MultiscaleLinearTransform;
-         MLT.executeOn(image);
-
-         var flatfield = (new FrameMatrix(image.toMatrix())).pipeline([
-            function(frame) {
-               return frame.multiplyScalar(1 / frame.matrix().mean());
-            }
-         ]);
-
-         image.free();
-      }
-
-      return flatfield;
-   };
-
-   // Logs the smooth flatfield scale.
-   this.logSmoothFlatfieldScale = function(flatfield) {
-      var flatfieldStdDev = flatfield.matrix().stdDev();
-      console.writeln(format(
-         "Flatfield scale: " + model.flatfieldScaleFormat +
-         " " + model.flatfieldScaleUnits,
-         model.flatfieldScaleNormalization * flatfieldStdDev
-      ));
-      console.flush();
    };
 
    // Denoises the image.
@@ -764,9 +876,10 @@ function MureEstimator(model, view) {
 
       var levelsOfRefinement = this.generateLevelsOfRefinement();
       var cycleSpinCount = model.denoiseCycleSpinCount;
-      var cycleSpinLocations = this.generateCycleSpinLocations(
-         levelsOfRefinement, cycleSpinCount, this.cycleSpinRandomSeed
-      );
+      var cycleSpinLocations = this.generateCycleSpinLocations(cycleSpinCount);
+      if (this.logLocations.length != 0) {
+         cycleSpinLocations = [new Point(0, 0)];
+      }
 
       var estimate = new FrameMatrix(new Matrix(
          0, model.imageView.image.height, model.imageView.image.width
@@ -802,7 +915,7 @@ function MureEstimator(model, view) {
 
       if (!estimate.isFinite()) {
          throw new Error(
-            "The denoise process did not find a representable result"
+            "The denoise process did not find a representable result."
          );
       }
 
@@ -811,6 +924,12 @@ function MureEstimator(model, view) {
          (this.generateMethodNoiseImage(estimate)).pipeline([
             function(frame) {
                self.logMethodNoise(frame);
+
+               var varianceEstimate = self.generateVarianceEstimate(
+                  flatfield, model.varianceEstimateQuantile
+               );
+
+               self.logVarianceEstimate(varianceEstimate);
 
                return self.generateMethodNoiseImageWindow(frame);
             }
@@ -827,4 +946,4 @@ function MureEstimator(model, view) {
 };
 
 // ****************************************************************************
-// EOF MureEstimator.js - Released 2016/02/24 00:00:00 UTC
+// EOF MureEstimator.js - Released 2017/02/16 00:00:00 UTC

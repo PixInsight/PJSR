@@ -1,0 +1,2 @@
+Copyright (C) 2010-2017 S J Brown
+Contributions: Copyright (C) 2017 Michael Covington

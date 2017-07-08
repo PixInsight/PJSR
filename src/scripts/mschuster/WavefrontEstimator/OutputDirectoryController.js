@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// OutputDirectoryController.js - Released 2015/11/23 00:00:00 UTC
+// OutputDirectoryController.js - Released 2016/12/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.18
+// This file is part of WavefrontEstimator Script Version 1.19
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -78,8 +78,8 @@ function OutputDirectoryController(model) {
          "Detector type: ",
          model.detectorType == model.monochromeDetectorType ?
             "Monochrome" :
-         model.detectorType == model.bayerRGBDetectorType ?
-            "Bayer RGB" : "None"
+         model.detectorType == model.colorFilterArrayDetectorType ?
+            "Color filter array" : "None"
       );
       console.writeln(format(
          "Gain: " +
@@ -405,8 +405,8 @@ function OutputDirectoryController(model) {
             if (model.generateViews) {
                imageWindow.forceClose();
                var imageWindows = ImageWindow.open(
-                  intraFocalRejectionMapPath.path,
-                  intraFocalRejectionMapPath.id
+                  intraFocalRejectionMapPath.path //,
+                  //intraFocalRejectionMapPath.id
                );
                console.abortEnabled = false; // workaround for 1123 bug.
                if (imageWindows.length != 1) {
@@ -454,8 +454,8 @@ function OutputDirectoryController(model) {
             if (model.generateViews) {
                imageWindow.forceClose();
                var imageWindows = ImageWindow.open(
-                  extraFocalRejectionMapPath.path,
-                  extraFocalRejectionMapPath.id
+                  extraFocalRejectionMapPath.path //,
+                  //extraFocalRejectionMapPath.id
                );
                console.abortEnabled = false; // workaround for 1123 bug.
                if (imageWindows.length != 1) {
@@ -554,7 +554,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               intraFocalIdPath.path, intraFocalIdPath.id
+               intraFocalIdPath.path //, intraFocalIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -612,7 +612,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               extraFocalIdPath.path, extraFocalIdPath.id
+               extraFocalIdPath.path //, extraFocalIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -710,7 +710,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               intraFocalIdPath.path, intraFocalIdPath.id
+               intraFocalIdPath.path //, intraFocalIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -768,7 +768,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               extraFocalIdPath.path, extraFocalIdPath.id
+               extraFocalIdPath.path //, extraFocalIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -874,7 +874,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               wavefrontIdPath.path, wavefrontIdPath.id
+               wavefrontIdPath.path //, wavefrontIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -933,7 +933,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               wavefrontDomainIdPath.path, wavefrontDomainIdPath.id
+               wavefrontDomainIdPath.path //, wavefrontDomainIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -1026,7 +1026,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               pointSpreadFunctionIdPath.path, pointSpreadFunctionIdPath.id
+               pointSpreadFunctionIdPath.path //, pointSpreadFunctionIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -1126,8 +1126,8 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               modulationTransferFunctionIdPath.path,
-               modulationTransferFunctionIdPath.id
+               modulationTransferFunctionIdPath.path //,
+               //modulationTransferFunctionIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -1178,7 +1178,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               wavefrontContourPlotIdPath.path, wavefrontContourPlotIdPath.id
+               wavefrontContourPlotIdPath.path //, wavefrontContourPlotIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -1227,7 +1227,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               interferogramPlotIdPath.path, interferogramPlotIdPath.id
+               interferogramPlotIdPath.path //, interferogramPlotIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -1272,7 +1272,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               interferogramPlotIdPath.path, interferogramPlotIdPath.id
+               interferogramPlotIdPath.path //, interferogramPlotIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -1334,7 +1334,7 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               encircledEnergyPlotIdPath.path, encircledEnergyPlotIdPath.id
+               encircledEnergyPlotIdPath.path //, encircledEnergyPlotIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -1428,8 +1428,8 @@ function OutputDirectoryController(model) {
          if (model.generateViews) {
             imageWindow.forceClose();
             var imageWindows = ImageWindow.open(
-               modulationTransferFunctionPlotIdPath.path,
-               modulationTransferFunctionPlotIdPath.id
+               modulationTransferFunctionPlotIdPath.path //,
+               //modulationTransferFunctionPlotIdPath.id
             );
             console.abortEnabled = false; // workaround for 1123 bug.
             if (imageWindows.length != 1) {
@@ -1659,4 +1659,4 @@ function OutputDirectoryController(model) {
 }
 
 // ****************************************************************************
-// EOF OutputDirectoryController.js - Released 2015/11/23 00:00:00 UTC
+// EOF OutputDirectoryController.js - Released 2016/12/30 00:00:00 UTC

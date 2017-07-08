@@ -1,10 +1,10 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// ExposureTabViewController.js - Released 2015/11/23 00:00:00 UTC
+// ExposureTabViewController.js - Released 2016/12/30 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of WavefrontEstimator Script Version 1.18
+// This file is part of WavefrontEstimator Script Version 1.19
 //
 // Copyright (C) 2012-2015 Mike Schuster. All Rights Reserved.
 // Copyright (C) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
@@ -202,11 +202,14 @@ function ExposureTabController(model, controller) {
       );
 
       var starMagnitudeEstimate = 2.5 * Math.log10(
-         (model.detectorType == model.monochromeDetectorType ? 1 : 0.25) *
          (10000 / model.defocusExposure) *
          (model.exposureTime * square(model.apertureDiameter)) /
          (
-            this.exposureCalibration[model.observationBandwidth] *
+            this.exposureCalibration[
+               model.detectorType == model.monochromeDetectorType ?
+                  model.observationBandwidth :
+                  1
+            ] *
             square(defocusDiameterEstimate)
          )
       );
@@ -838,7 +841,8 @@ function ExposureTabView(parent, model, controller) {
          "<p>The intra-focal or extra-focal frame view to measure.</p>" +
 
          "<p>The frame must be bias-subtracted and not otherwise " +
-         "processed.</p>",
+         "processed. Frames from color filter array detectors must not be " +
+         "demosaiced.</p>",
          function(view) {controller.measurementViewListOnViewSelected(view);}
       );
       this.measurementViewListNullView = this.measurementViewList.currentView;
@@ -848,14 +852,16 @@ function ExposureTabView(parent, model, controller) {
          ":/icons/comment.png",
          "<p>The exposure measurement tool measures the exposure parameters " +
          "of the selected frame view. The frame must be bias-subtracted and " +
-         "not otherwise processed.</p>" +
+         "not otherwise processed. Frames from color filter array detectors " +
+         "must not be demosaiced.</p>" +
 
          "<p><b>1.</b> Set the telescope, detector, and filter parameters " +
          "in the Parameters tab.</p>" +
 
          "<p><b>2.</b> Select an intra-focal or extra-focal frame view and " +
          "click the Measure button. The frame must be bias-subtracted and " +
-         "not otherwise processed.</p>" +
+         "not otherwise processed. Frames from color filter array detectors " +
+         "must not be demosaiced.</p>" +
 
          "<p><b>3.</b> The measured defocus distance, defocused image " +
          "diameter, and median defocused image exposure are displayed.</p>",
@@ -960,4 +966,4 @@ function ExposureTabView(parent, model, controller) {
 ExposureTabView.prototype = new Frame;
 
 // ****************************************************************************
-// EOF ExposureTabViewController.js - Released 2015/11/23 00:00:00 UTC
+// EOF ExposureTabViewController.js - Released 2016/12/30 00:00:00 UTC

@@ -3,6 +3,71 @@ MureDenoise Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2017.02.16 - Version 1.21
+
+- Removed use gradient/noise thresholds option.
+
+- Fixed non-zero detector offset bug.
+
+- Improved cycle-spin sampling uniformity.
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
+2017.01.31 - Version 1.20
+
+- Enabling the use gradient/noise thresholds parameter increases the adaptivity
+of the denoising process by incorporating interscale gradient to local noise
+ratio relationships into the thresholding functions. Increasing the adaptivity
+of the denoising process improves output quality, but also increases processing
+time by about 40%.
+
+- Optimized the filtering, thresholding, and wavelet transform implementations
+for a 10% performance gain.
+
+- Account for detector offset in the 10th percentile exposure component noise
+variance estimates.
+
+- Use DataType_Real64 for floating point settings.
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
+2016.12.31 - Version 1.19
+
+- "Load variance scale..." loads variance scale directly from the image selected
+for denoising using metadata produced by the recent ImageIntegration update. No
+need now for a process log .txt file, except for a legacy integration that lacks
+the metadata.
+
+- The script now works with image containers. Create a script instance on the
+workspace and drag it to an image container instance or vice versa. You may also
+drag the script instance on the workspace to a view. Be sure to check the
+process log for errors, as no GUI error messages will appear. Abort processing
+by clicking "Pause/Abort" in the console.
+
+- If "Generate method noise image" is enabled, the log will contain an estimate
+of component Poisson and Gaussian noise variance in the sky background, defined
+by the 10th percentile exposure. If the Gaussian noise variance contribution is
+less than 10%, the image can be considered "sky background noise limited".
+
+- Improved messaging, documentation, and tooltips.
+
+-------------------------------------------------------------------------------
+2016.12.19 - Version 1.18
+
+- Added a Haar-wavelet correlation structure exploit that provides a small
+denoising quality improvement by partially addressing the correlation introduced
+by frame registration.
+
+- Added support for ImageIntegration Weights option custom FITS keyword in the
+load variance scale import.
+
+- Added Flatfield parameter view name save and restore.
+
+- Improved documentation and tooltips.
+
+-------------------------------------------------------------------------------
 2016.02.24 - Version 1.15
 
 - Modified Load variance scale button to load Combination count in addition to

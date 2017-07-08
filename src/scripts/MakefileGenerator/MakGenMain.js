@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenMain.js - Released 2015/11/26 08:53:10 UTC
+// MakGenMain.js - Released 2017-04-14T16:45:58Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.104
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Script entry point.
@@ -114,7 +114,7 @@ function main()
          console.writeln( "<end><cbr>" );
          writeSeparator();
          console.writeln( "PixInsight Makefile Generator Script v" + VERSION );
-         console.writeln( "Copyright (C) 2009-2015 Pleiades Astrophoto" );
+         console.writeln( "Copyright (C) 2009-2017 Pleiades Astrophoto" );
          writeSeparator();
          console.flush();
 
@@ -173,7 +173,7 @@ function main()
             P.id = File.extractName( projectDirectory ).trim();
             if ( P.id.length == 0 )
             {
-               (new MessageBox( "<p>You haven't specified a project identifier. That's nice, but " +
+               (new MessageBox( "<p>You haven't specified a project identifier. That's fine, but " +
                                 "for some reason, I cannot extract a valid identifier from your " +
                                 "project directory !?</p>",
                                 TITLE, StdIcon_Error, StdButton_Ok )).execute();
@@ -211,6 +211,7 @@ function main()
          }
 
          P.osxArchOptions = dialog.osxArchOptions_CheckBox.checked;
+         P.osxSDKVersion = dialog.osxSDKVersion_ComboBox.itemText( dialog.osxSDKVersion_ComboBox.currentItem  ).trim();
 
          P.gccSuffixLinux = dialog.gccSuffixLinux_Edit.text.trim();
 
@@ -379,4 +380,4 @@ function main()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenMain.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenMain.js - Released 2017-04-14T16:45:58Z
