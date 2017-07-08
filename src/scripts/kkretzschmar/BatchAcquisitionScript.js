@@ -106,11 +106,11 @@ function BatchFrameAcquisitionEngine()
    this.automaticMove            = false;
    this.automaticSync            = false;
    this.park                     = false;
+
    this.center                   = false;
    this.align                    = false;
    this.computeApparentPos       = false;
    this.alignModelFile           = "";
-   this.syncDataFile             = "";
 
    // camera parameters
    this.binningX             = { idx:0, text:"1" };
@@ -131,16 +131,24 @@ function BatchFrameAcquisitionEngine()
    this.serverFileTemplate   = "";
    this.uploadMode           = { idx:0, text:"Client only" };
 
+   // on error modes
+   this.onError = 0;
+
    // processing parameters
    // fraction of exposure time spent for the image used to center the object
    this.centerImageExpTimeFraction = 10;
 
    // target list
    this.targets = [];
+   this.targetInHourAngle = false;
 
    // worklist
    this.worklist = [];
 
+   // cloud upload parameters
+   this.cloudURL = "";
+   this.auth_token = 0;
+   this.wait=false;
 
 
    this.executeController = function()
@@ -197,7 +205,6 @@ function BatchFrameAcquisitionEngine()
       console.writeln("Compute apparent pos:      " + (this.computeApparentPos ? "true" : "false"));
       console.writeln("Alignment corr:            " + (this.align ? "true" : "false"));
       console.writeln("Alignment file:            " + this.alignModelFile);
-      console.writeln("Sync data file:            " + this.syncDataFile);
       console.writeln("------------------------------------------------");
       console.noteln("Camera parameters:");
       console.writeln("Binning X:                 " + this.binningX.text);
@@ -223,7 +230,7 @@ function BatchFrameAcquisitionEngine()
       console.writeln(" ");
       console.writeln("------------------------------------------------");
       console.noteln("Targets:");
-      console.writeln(format("%-15s|%-15s|%-15s|","Name","Rightascension","Declination"));
+      console.writeln(format("%-15s|%-15s|%-15s|","Name", this.targetInHourAngle ? "Hour Angle": "Rightascension","Declination"));
       console.writeln("------------------------------------------------")
       for (var i = 0; i < this.targets.length; ++i){
          console.writeln(format("%-15s|% 2.12f|% 3.11f|",this.targets[i].name,this.targets[i].ra,this.targets[i].dec));
@@ -253,7 +260,7 @@ function BatchFrameAcquisitionEngine()
       var count = 0;
       for (var t = 0; t < this.targets.length; ++t){
          for (var f = 0; f < this.filterKeys.length; ++f){
-            var item = {"targetName":"", "ra":0, "dec":0, "filterName":"", "filterID":-1, "binningX":0, "binningY":0, "expTime":0, "numOfFrames":0};
+            var item = {"targetName":"", "ra":0, "dec":0, "filterName":"", "filterID":-1, "binningX":0, "binningY":0, "expTime":0, "numOfFrames":0, "download_dir": "", "fileName": ""};
             item.targetName  = this.targets[t].name;
             item.ra          = this.targets[t].ra;
             item.dec         = this.targets[t].dec;
@@ -263,6 +270,8 @@ function BatchFrameAcquisitionEngine()
             item.binningY    = this.binningY.idx + 1;
             item.expTime     = this.exposureTime;
             item.numOfFrames = this.numOfFrames;
+            item.download_dir = this.uploadMode.idx == 2 ? this.serverDownloadDir : this.clientDownloadDir;
+            item.fileName     =  this.uploadMode.idx == 2 ? this.serverFileTemplate : this.clientFileTemplate;
             this.worklist[count]  = item;
             count = count + 1;
          }
@@ -303,6 +312,28 @@ function BatchFrameAcquisitionEngine()
       }
    }
 
+   this.uploadWorkListItem = function (wItem)
+   {
+	   var T = new NetworkTransfer;
+      if (engine.cloudURL.indexOf("https") != -1) {
+         T.setSSL();
+      }
+	   T.setURL(this.cloudURL + "api/v1.0/add_frame");
+	   let authTokenHeaderPart = "Authentication-Token: " + this.auth_token;
+	   T.setCustomHTTPHeaders(["Content-Type: application/json", authTokenHeaderPart]);
+
+	   T.onDownloadDataAvailable = function (data)
+	   {
+		   engine.wait=false;
+ 	   }
+	   let jsonData =   JSON.stringify(wItem);
+
+	   engine.wait = true;
+	   let rc =T.post(jsonData);
+
+   }
+
+
    this.startProcessing = function (treeBox)
    {
       // configure mount controller
@@ -311,7 +342,6 @@ function BatchFrameAcquisitionEngine()
       mountController.computeApparentPosition   = this.computeApparentPos;
       mountController.enableAlignmentCorrection = this.align;
       mountController.alignmentModelFile        = this.alignModelFile;
-      mountController.syncDataFile              = this.syncDataFile;
       if (this.alignModelFile!=""){
          mountController.alignmentConfig = 127;
       }
@@ -340,7 +370,11 @@ function BatchFrameAcquisitionEngine()
          var node = treeBox.child(i);
          node.setIcon(5,":/bullets/bullet-ball-glass-yellow.png");
          // move to target
-         mountController.targetRA  = this.worklist[i].ra;
+         if (this.targetInHourAngle){
+        	 mountController.targetRA  = mountController.currentLST - this.worklist[i].ra;
+         } else {
+        	 mountController.targetRA  = this.worklist[i].ra;
+         }
          mountController.targetDec = this.worklist[i].dec;
          console.writeln(format("Moving to target %s", this.worklist[i].targetName));
 
@@ -393,9 +427,11 @@ function BatchFrameAcquisitionEngine()
             if (!this.centerImage(window,mountController,this.worklist[i].binningX)){
                node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
                //window.close();
-               break;
+               if (this.onError == 0) {
+            	   break;
+               }
             }
-               msleep(5000);
+            msleep(5000);
             cameraController.saveClientImages = this.saveClientImages;
             cameraController.openClientImages = this.openClientImages;
             cameraController.uploadMode       = this.uploadMode.idx;
@@ -413,7 +449,9 @@ function BatchFrameAcquisitionEngine()
          }
          if (!this.automaticSync && !cameraController.executeGlobal()){
             node.setIcon(5,":/bullets/bullet-ball-glass-red.png");
+
             break;
+
          }
          if (this.automaticSync) {
         	   // sync mount
@@ -422,6 +460,9 @@ function BatchFrameAcquisitionEngine()
         	   mountController.Command                   = 10; // Goto
          }
          node.setIcon(5,":/bullets/bullet-ball-glass-green.png");
+         if (this.auth_token != 0) {
+        	 this.uploadWorkListItem(this.worklist[i]);
+         }
          previousTarget = this.worklist[i].targetName;
          previousFilterID = this.worklist[i].filterID;
       }
@@ -468,6 +509,24 @@ function MountParametersDialog(dialog)
       engine.doMove = (index != "0");
       engine.automaticMove = (index == "2");
       engine.automaticSync = (index == "3");
+   }
+
+   this.onError_Label = new Label(this);
+   this.onError_Label.text = "On Error mode:";
+   this.onError_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.onError_Label.minWidth = labelWidth1;
+   this.onError_Label.toolTip = "<p>There are three On Error modes:</p> \
+                                   <p><i>Stop:</i> Processing stops, if an error occured, e.g. centering of object failed.</p> \
+                                   <p><i>Continue:</i> Processing continues, even if an error occured.</p>\
+                                   <p><i>Retry:</i> Retry actioin, if an error occured</p>";
+
+   this.onError_ComboBox = new ComboBox(this);
+   this.onError_ComboBox.addItem("Stop");
+   this.onError_ComboBox.addItem("Continue");
+   this.onError_ComboBox.addItem("Retry");
+   this.onError_ComboBox.toolTip = this.onError_Label.toolTip ;
+   this.onError_ComboBox.onItemSelected = function ( index ) {
+      engine.onError = index;
    }
 
 
@@ -533,35 +592,14 @@ function MountParametersDialog(dialog)
    this.alignmentFile_ToolButton.toolTip = "<p>Select the alignment file:</p>";
    this.alignmentFile_ToolButton.onClick = function ()
    {
-      var ofd = new OpenFileDialog;
+      var ofd = new SaveFileDialog;
       ofd.multipleSelections = false;
       ofd.caption = "Select Alignment Model";
-      ofd.filters = [["Alignment Model","*.csv"]];
+      ofd.filters = [["Alignment Model","*.xtpm"]];
 
       if ( ofd.execute() )
       {
-         dialog.mountDialog.alignmentModel_Edit.text = ofd.fileNames[0];
-      }
-   }
-
-   this.syncData_Edit = new Edit(this);
-   this.syncData_Edit.text = "<select a sync data file>";
-   this.syncData_Edit.toolTip = "<p>Specify file that lists the data points of synchronized star positions.</p>"
-
-   this.syncData_ToolButton = new ToolButton(this);
-   this.syncData_ToolButton.icon = ":/icons/select-file.png";
-   this.syncData_ToolButton.setScaledFixedSize(22, 22);
-   this.syncData_ToolButton.toolTip = "<p>Select the sync data file:</p>";
-   this.syncData_ToolButton.onClick = function ()
-   {
-      var ofd = new OpenFileDialog;
-      ofd.multipleSelections = false;
-      ofd.caption = "Select Sync Data File";
-      ofd.filters = [["SyncData","*.csv"]];
-
-      if ( ofd.execute() )
-      {
-         dialog.mountDialog.syncData_Edit.text = ofd.fileNames[0];
+         dialog.mountDialog.alignmentModel_Edit.text = ofd.fileName;
       }
    }
 
@@ -570,6 +608,12 @@ function MountParametersDialog(dialog)
    this.gotoMode_Sizer.spacing = 4;
    this.gotoMode_Sizer.add( this.gotoMode_Label );
    this.gotoMode_Sizer.add( this.gotoMode_ComboBox );
+
+   this.onError_Sizer = new HorizontalSizer;
+   this.onError_Sizer.margin = 6;
+   this.onError_Sizer.spacing = 4;
+   this.onError_Sizer.add( this.onError_Label );
+   this.onError_Sizer.add( this.onError_ComboBox );
 
    this.park_Sizer = new HorizontalSizer;
    this.park_Sizer.margin = 6;
@@ -602,12 +646,6 @@ function MountParametersDialog(dialog)
    this.alignmentModel_Sizer.add( this.alignmentFile_ToolButton );
    //this.alignmentModel_Sizer.addStretch();
 
-   this.syncData_Sizer = new HorizontalSizer;
-   this.syncData_Sizer.margin = 6;
-   this.syncData_Sizer.spacing = 4;
-   this.syncData_Sizer.add( this.syncData_Edit );
-   this.syncData_Sizer.add( this.syncData_ToolButton );
-
 
    this.mountParameters_GroupBox = new GroupBox(this);
    this.mountParameters_GroupBox.title = "Mount Device Parameters";
@@ -615,13 +653,13 @@ function MountParametersDialog(dialog)
    this.mountParameters_GroupBox.sizer.margin = 6;
    this.mountParameters_GroupBox.sizer.spacing = 4;
    this.mountParameters_GroupBox.sizer.add( this.gotoMode_Sizer);
+   this.mountParameters_GroupBox.sizer.add( this.onError_Sizer );
    this.mountParameters_GroupBox.sizer.add( this.park_Sizer);
    this.mountParameters_GroupBox.sizer.add( this.centering_Sizer);
    this.mountParameters_GroupBox.sizer.add( this.centering_exposureTimeEdit);
    this.mountParameters_GroupBox.sizer.add( this.apparentPosCorrection_Sizer );
    this.mountParameters_GroupBox.sizer.add( this.alignmentCorrection_Sizer );
    this.mountParameters_GroupBox.sizer.add( this.alignmentModel_Sizer );
-   this.mountParameters_GroupBox.sizer.add( this.syncData_Sizer );
 
    this.ok_Button = new PushButton( this );
    this.ok_Button.text = "OK";
@@ -667,7 +705,6 @@ function MountParametersDialog(dialog)
       this.computeApparentPos_Label.enabled     = enable;
       this.computeApparentPos_Checkbox.enabled  = enable;
       this.alignmentModel_Edit.enabled          = enable;
-      this.syncData_Edit.enabled                = enable;
    }
    this.enableGotoServices(false);
 }
@@ -1555,7 +1592,7 @@ function CoordGridDefinitionDialog(dialog)
    this.__base__ = Dialog;
    this.__base__();
 
-   let labelWidth = this.font.width( "Maximum azimuth angle" + 'T' );
+   var labelWidth = this.font.width( "Maximum azimuth angle" + 'T' );
 
    /*this.gridType_Label = new Label( this );
    this.gridType_Label.text = "Coordinate grid type";
@@ -1622,27 +1659,27 @@ function CoordGridDefinitionDialog(dialog)
    this.grid_minHeightEdit.sizer.addStretch();
 */
    this.grid_maxRAEdit = new NumericEdit( this );
-   this.grid_maxRAEdit.label.text = "Max rightascension:";
+   this.grid_maxRAEdit.label.text = "Max hour angle [h]:";
    this.grid_maxRAEdit.label.minWidth = labelWidth;
-   this.grid_maxRAEdit.setRange( 0, 23.99 );
+   this.grid_maxRAEdit.setRange( -12, 12 );
    this.grid_maxRAEdit.setPrecision( 2 );
    this.grid_maxRAEdit.setValue( 0 );
-   this.grid_maxRAEdit.toolTip = "<p>Maximum rightascension of coordinate grid</p>";
+   this.grid_maxRAEdit.toolTip = "<p>Maximum hour angle of coordinate grid</p>";
    this.grid_maxRAEdit.enabled= false;
    this.grid_maxRAEdit.sizer.addStretch();
 
    this.grid_minRAEdit = new NumericEdit( this );
-   this.grid_minRAEdit.label.text = "Min rightascension:";
+   this.grid_minRAEdit.label.text = "Min hour angle [h]:";
    this.grid_minRAEdit.label.minWidth = labelWidth;
-   this.grid_minRAEdit.setRange( 0, 23.99 );
+   this.grid_minRAEdit.setRange( -12, 12 );
    this.grid_minRAEdit.setPrecision( 2 );
    this.grid_minRAEdit.setValue( 0 );
-   this.grid_minRAEdit.toolTip = "<p>Minimum rightascension of coordinate grid</p>";
+   this.grid_minRAEdit.toolTip = "<p>Minimum hour angle of coordinate grid</p>";
    this.grid_minRAEdit.enabled= false;
    this.grid_minRAEdit.sizer.addStretch();
 
    this.grid_maxDECEdit = new NumericEdit( this );
-   this.grid_maxDECEdit.label.text = "Max declination angle:";
+   this.grid_maxDECEdit.label.text = "Max declination angle [deg]:";
    this.grid_maxDECEdit.label.minWidth = labelWidth;
    this.grid_maxDECEdit.setRange( -90, 90 );
    this.grid_maxDECEdit.setPrecision( 2 );
@@ -1652,7 +1689,7 @@ function CoordGridDefinitionDialog(dialog)
    this.grid_maxDECEdit.sizer.addStretch();
 
    this.grid_minDECEdit = new NumericEdit( this );
-   this.grid_minDECEdit.label.text = "Min declination angle:";
+   this.grid_minDECEdit.label.text = "Min declination angle [deg]:";
    this.grid_minDECEdit.label.minWidth = labelWidth;
    this.grid_minDECEdit.setRange( -90, 90 );
    this.grid_minDECEdit.setPrecision( 2 );
@@ -1747,6 +1784,112 @@ function CoordGridDefinitionDialog(dialog)
 CoordGridDefinitionDialog.prototype = new Dialog;
 
 /*
+ * Dialog to configure a connection for an upload of metadata to the cloud
+ *
+ * - url for connection
+ * - user credentionals
+ *
+ * Use this dialog to get a connection token from the cloud application
+ */
+
+function CloudConnectionDialog(dialog)
+{
+   this.__base__ = Dialog;
+   this.__base__();
+
+   var labelWidth = this.font.width( "Cloud Connection URL:" + "T" );
+
+   this.cloudConnectionURL_Label = new Label(this);
+   this.cloudConnectionURL_Label.text = "URL:";
+   this.cloudConnectionURL_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.cloudConnectionURL_Label.minWidth = labelWidth;
+   this.cloudConnectionURL_Label.toolTip = "<p>Set the url for the cloud application. </p>";
+
+   this.cloudConnectionURL_Edit = new Edit(this);
+   this.cloudConnectionURL_Edit.text = "klaus-Inspiron-1720:5000/";
+   this.cloudConnectionURL_Edit.setFixedWidth(185);
+   this.cloudConnectionURL_Edit.toolTip = "<p>Enter the url for the cloud application.</p>";
+
+   this.cloudConnectionURL_Sizer = new HorizontalSizer;
+   this.cloudConnectionURL_Sizer.margin = 6;
+   this.cloudConnectionURL_Sizer.spacing = 4;
+   this.cloudConnectionURL_Sizer.add(this.cloudConnectionURL_Label);
+   this.cloudConnectionURL_Sizer.add(this.cloudConnectionURL_Edit);
+
+   this.User_Label = new Label(this);
+   this.User_Label.text = "User:";
+   this.User_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.User_Label.minWidth = labelWidth;
+   this.User_Label.toolTip = "<p>Set the user credentials for the cloud connection. </p>";
+
+   this.User_Edit = new Edit(this);
+   this.User_Edit.setFixedWidth(185);
+   this.User_Edit.toolTip = "<p>Specify login user.</p>";
+
+   this.User_Sizer = new HorizontalSizer;
+   this.User_Sizer.margin = 6;
+   this.User_Sizer.spacing = 4;
+   this.User_Sizer.add(this.User_Label);
+   this.User_Sizer.add(this.User_Edit);
+
+   this.Password_Label = new Label(this);
+   this.Password_Label.text = "Password:";
+   this.Password_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.Password_Label.minWidth = labelWidth;
+   this.Password_Label.toolTip = "<p>Set the user credentials for the cloud connection. </p>";
+
+   this.Password_Edit = new Edit(this);
+   this.Password_Edit.setFixedWidth(185);
+   this.Password_Edit.passwordMode = true;
+   this.Password_Edit.toolTip = "<p>Specify login password.</p>";
+
+   console.writeln(JSON.stringify(this.Password_Edit));
+
+   this.Password_Sizer = new HorizontalSizer;
+   this.Password_Sizer.margin = 6;
+   this.Password_Sizer.spacing = 4;
+   this.Password_Sizer.add(this.Password_Label);
+   this.Password_Sizer.add(this.Password_Edit);
+
+   this.ok_Button = new PushButton( this );
+   this.ok_Button.text = "OK";
+   this.ok_Button.icon = this.scaledResource( ":/icons/ok.png" );
+   this.ok_Button.onClick = function()
+   {
+      this.dialog.ok();
+   };
+
+   this.cancel_Button = new PushButton( this );
+   this.cancel_Button.text = "Cancel";
+   this.cancel_Button.icon = this.scaledResource( ":/icons/cancel.png" );
+   this.cancel_Button.onClick = function()
+   {
+      this.dialog.cancel();
+   };
+
+   this.buttons_Sizer = new HorizontalSizer;
+   this.buttons_Sizer.spacing = 6;
+   this.buttons_Sizer.addStretch();
+   this.buttons_Sizer.add( this.ok_Button );
+   this.buttons_Sizer.add( this.cancel_Button );
+
+   this.sizer = new VerticalSizer;
+   this.sizer.margin = 8;
+   this.sizer.spacing = 8;
+   this.sizer.add( this.cloudConnectionURL_Sizer );
+   this.sizer.add( this.User_Sizer );
+   this.sizer.add( this.Password_Sizer );
+   this.sizer.add( this.buttons_Sizer );
+
+   this.windowTitle = "Cloud Connection";
+   this.userResizable = true;
+   this.adjustToContents();
+
+}
+
+CloudConnectionDialog.prototype = new Dialog;
+
+/*
  * Batch Frame Acquisition dialog
  */
 function BatchFrameAcquisitionDialog()
@@ -1760,6 +1903,7 @@ function BatchFrameAcquisitionDialog()
    this.cameraDialog = new CameraParametersDialog(this);
    this.filterDialog = new FilterWheelParametersDialog(this);
    this.coordGridDialog = new CoordGridDefinitionDialog(this);
+   this.cloudConnectionDialog = new CloudConnectionDialog(this);
    this.updateDialog = {};
    this.filter = [];
    //
@@ -1899,7 +2043,6 @@ function BatchFrameAcquisitionDialog()
          engine.center             = this.dialog.mountDialog.centering_Checkbox.checked;
          engine.align              = this.dialog.mountDialog.alignmentCorrection_Checkbox.checked;
          engine.alignModelFile     = this.dialog.mountDialog.alignmentModel_Edit.text;
-         engine.syncDataFile       = this.dialog.mountDialog.syncData_Edit.text;
          engine.computeApparentPos = this.dialog.mountDialog.computeApparentPos_Checkbox.checked;
       }
    }
@@ -2020,7 +2163,7 @@ function BatchFrameAcquisitionDialog()
          var targetItem = {"name": "", "ra" : 0.0, "dec": 0.0};
          targetItem.name = childNode.text(0);
          targetItem.ra   = sexadecimalStringToDouble(childNode.text(1),":");
-         targetItem.dec  = sexadecimalStringToDouble(childNode.text(2),":");
+         targetItem.dec  = sexadecimalStringToDouble(childNode.text(2),":");      
          engine.targets[i] = targetItem;
       }
    }
@@ -2095,6 +2238,7 @@ function BatchFrameAcquisitionDialog()
 			   count++;
 		   }
 	   }
+	   engine.targetInHourAngle = true;
    }
 
    };
@@ -2242,8 +2386,8 @@ function BatchFrameAcquisitionDialog()
 
    //
 
-   this.createWorklist_Button = new PushButton( this );
-   this.createWorklist_Button.text = "Worklist";
+   this.createWorklist_Button = new ToolButton( this );
+   //this.createWorklist_Button.text = "Worklist";
    this.createWorklist_Button.icon = this.scaledResource( ":/icons/add.png" );
    this.createWorklist_Button.toolTip = "<p>Create worklist</p>";
    this.createWorklist_Button.onClick = function()
@@ -2264,8 +2408,8 @@ function BatchFrameAcquisitionDialog()
    };
 
 
-   this.updateWorklist_Button = new PushButton( this );
-   this.updateWorklist_Button.text = "Update";
+   this.updateWorklist_Button = new ToolButton( this );
+   //this.updateWorklist_Button.text = "Update";
    this.updateWorklist_Button.icon = this.scaledResource( ":/icons/write.png" );
    this.updateWorklist_Button.toolTip = "<p>Update worklist</p>";
    this.updateWorklist_Button.onClick = function()
@@ -2287,8 +2431,8 @@ function BatchFrameAcquisitionDialog()
       }
    };
 
-   this.clearWorklist_Button = new PushButton( this );
-   this.clearWorklist_Button.text = "Clear";
+   this.clearWorklist_Button = new ToolButton( this );
+   //this.clearWorklist_Button.text = "Clear";
    this.clearWorklist_Button.icon = this.scaledResource( ":/icons/clear.png" );
    this.clearWorklist_Button.toolTip = "<p>Clear worklist</p>";
    this.clearWorklist_Button.onClick = function()
@@ -2303,6 +2447,56 @@ function BatchFrameAcquisitionDialog()
          this.dialog.worklist_TreeBox.remove(idx);
          engine.worklist.splice(idx,1);
       }
+   };
+
+
+   this.cloudUpload_Button = new ToolButton( this );
+   //this.cloudUpload_Button.text = "Clear";
+   this.cloudUpload_Button.icon = this.scaledResource( ":/icons/cloud.png" );
+   this.cloudUpload_Button.toolTip = "<p>Cloud upload configuration</p>";
+   this.cloudUpload_Button.onClick = function()
+   {
+	   if (this.dialog.cloudConnectionDialog.execute()) {
+
+         engine.cloudURL = this.dialog.cloudConnectionDialog.cloudConnectionURL_Edit.text;
+
+         var T = new NetworkTransfer;
+         if (engine.cloudURL.indexOf("https") != -1) {
+            T.setSSL();
+         }
+         T.setURL(this.dialog.cloudConnectionDialog.cloudConnectionURL_Edit.text + "login");
+         T.onDownloadDataAvailable = function (data)
+         {
+        	 try {
+        		 var token = JSON.parse(data);
+        		 if (token.meta.code == 200) { // ok
+        			 engine.auth_token = token.response.user.authentication_token;
+        		 } else  if (token.meta.code == 400) { // wrong credentials
+        			 if (token.response.errors.email != null) {
+        				 (new MessageBox(token.response.errors.email[0], "Error",  StdIcon_Error)).execute();
+        			 } else if (token.response.errors.password != null) {
+        				 (new MessageBox(token.response.errors.password[0], "Error",  StdIcon_Error)).execute();
+        			 } else {
+        				 (new MessageBox("Code: " + token.meta.code , "Error",  StdIcon_Error)).execute();
+        			 }
+        		 } else {
+        			 (new MessageBox("HTTP error code: " + token.meta.code , "Error",  StdIcon_Error)).execute();
+        		 }
+             } catch (e) {
+            	 (new MessageBox("Login service not available.", "Error",  StdIcon_Error)).execute();
+             }
+
+	     }
+
+         let data =  "{\"email\":\"" + this.dialog.cloudConnectionDialog.User_Edit.text +"\", " +
+                      "\"password\":\""+ this.dialog.cloudConnectionDialog.Password_Edit.text +"\"}";
+
+         let lenghtStr = "Content-Length: " + data.length;
+         T.setCustomHTTPHeaders(["Content-Type: application/json", lenghtStr]);
+
+		    var rc = T.post(data);
+
+	   }
    };
 
    this.startProcessing_Button = new PushButton( this );
@@ -2323,22 +2517,34 @@ function BatchFrameAcquisitionDialog()
       this.dialog.cancel();
    };
 
+   this.worklist_ToolButtonSizer = new VerticalSizer;
+   this.worklist_ToolButtonSizer.margin = 6;
+   this.worklist_ToolButtonSizer.spacing = 4;
+   this.worklist_ToolButtonSizer.add(this.createWorklist_Button);
+   this.worklist_ToolButtonSizer.add(this.updateWorklist_Button);
+   this.worklist_ToolButtonSizer.add(this.clearWorklist_Button);
+   this.worklist_ToolButtonSizer.add(this.cloudUpload_Button);
+   this.worklist_ToolButtonSizer.addStretch();
+
+   this.worklist_TreeBoxButtonSizer = new HorizontalSizer;
+   this.worklist_TreeBoxButtonSizer.margin = 6;
+   this.worklist_TreeBoxButtonSizer.spacing = 4;
+   this.worklist_TreeBoxButtonSizer.add(this.worklist_TreeBox, 100);
+   this.worklist_TreeBoxButtonSizer.add(this.worklist_ToolButtonSizer);
+
    this.worklist_ButtonSizer = new HorizontalSizer;
    this.worklist_ButtonSizer.margin = 6;
    this.worklist_ButtonSizer.spacing = 4;
-   this.worklist_ButtonSizer.add(this.createWorklist_Button);
-   this.worklist_ButtonSizer.add(this.updateWorklist_Button);
-   this.worklist_ButtonSizer.add(this.clearWorklist_Button);
-   this.worklist_ButtonSizer.addStretch();
    this.worklist_ButtonSizer.add(this.startProcessing_Button);
    this.worklist_ButtonSizer.add(this.cancelProcessing_Button);
+   this.worklist_ButtonSizer.addStretch();
 
    this.worklist_GroupBox = new GroupBox( this );
    this.worklist_GroupBox.title = "Acquisition queue";
    this.worklist_GroupBox.sizer = new VerticalSizer;
    this.worklist_GroupBox.sizer.margin = 6;
    this.worklist_GroupBox.sizer.spacing = 4;
-   this.worklist_GroupBox.sizer.add( this.worklist_TreeBox, 100 );
+   this.worklist_GroupBox.sizer.add( this.worklist_TreeBoxButtonSizer );
    this.worklist_GroupBox.sizer.add( this.worklist_ButtonSizer );
 
    //
