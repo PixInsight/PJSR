@@ -5,7 +5,7 @@
 // ----------------------------------------------------------------------------
 //
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
 // Written by Klaus Kretzschmar (PTeam)
 //
 // Redistribution and use in both source and binary forms, with or without
@@ -46,16 +46,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // ----------------------------------------------------------------------------
 
-/*
- * TODO
- * - Add horizontal grid
- * - Fix worklist bugs
- * - Improve sync (delay after execute on before goto)
- * - Store config parameters
- * Mount:
- * - Add polynomial parameters
- * - geographic latitude parameter
- */
 
 
 #feature-id    Batch Processing > Batch Frame Acquisition
@@ -84,6 +74,8 @@
 #include "INDI-helper.jsh"
 
 #define VERSION "0.1.0"
+
+#undef UPLOAD_DATA_FEATURE
 
 
 /*
@@ -312,6 +304,7 @@ function BatchFrameAcquisitionEngine()
       }
    }
 
+#ifdef   UPLOAD_DATA_FEATURE
    this.uploadWorkListItem = function (wItem)
    {
 	   var T = new NetworkTransfer;
@@ -332,7 +325,7 @@ function BatchFrameAcquisitionEngine()
 	   let rc =T.post(jsonData);
 
    }
-
+#endif
 
    this.startProcessing = function (treeBox)
    {
@@ -460,9 +453,11 @@ function BatchFrameAcquisitionEngine()
         	   mountController.Command                   = 10; // Goto
          }
          node.setIcon(5,":/bullets/bullet-ball-glass-green.png");
+#ifdef   UPLOAD_DATA_FEATURE
          if (this.auth_token != 0) {
         	 this.uploadWorkListItem(this.worklist[i]);
          }
+#endif
          previousTarget = this.worklist[i].targetName;
          previousFilterID = this.worklist[i].filterID;
       }
@@ -1792,6 +1787,7 @@ CoordGridDefinitionDialog.prototype = new Dialog;
  * Use this dialog to get a connection token from the cloud application
  */
 
+#ifdef   UPLOAD_DATA_FEATURE
 function CloudConnectionDialog(dialog)
 {
    this.__base__ = Dialog;
@@ -1888,6 +1884,7 @@ function CloudConnectionDialog(dialog)
 }
 
 CloudConnectionDialog.prototype = new Dialog;
+#endif
 
 /*
  * Batch Frame Acquisition dialog
@@ -1903,7 +1900,9 @@ function BatchFrameAcquisitionDialog()
    this.cameraDialog = new CameraParametersDialog(this);
    this.filterDialog = new FilterWheelParametersDialog(this);
    this.coordGridDialog = new CoordGridDefinitionDialog(this);
+#ifdef   UPLOAD_DATA_FEATURE
    this.cloudConnectionDialog = new CloudConnectionDialog(this);
+#endif
    this.updateDialog = {};
    this.filter = [];
    //
@@ -2140,7 +2139,7 @@ function BatchFrameAcquisitionDialog()
    this.helpLabel.useRichText = true;
    this.helpLabel.text = "<p><b>" + TITLE + " v" + VERSION + "</b> &mdash; " +
                          "An acquisition batch processing utility.</p>" +
-                         "<p>Copyright &copy; 2009-2015 Klaus Kretzschmar</p>";
+                         "<p>Copyright &copy; 2009-2017 Klaus Kretzschmar</p>";
    //
 
    this.mountParam_TreeBox = new TreeBox( this );
@@ -2163,7 +2162,7 @@ function BatchFrameAcquisitionDialog()
          var targetItem = {"name": "", "ra" : 0.0, "dec": 0.0};
          targetItem.name = childNode.text(0);
          targetItem.ra   = sexadecimalStringToDouble(childNode.text(1),":");
-         targetItem.dec  = sexadecimalStringToDouble(childNode.text(2),":");      
+         targetItem.dec  = sexadecimalStringToDouble(childNode.text(2),":");
          engine.targets[i] = targetItem;
       }
    }
@@ -2449,7 +2448,7 @@ function BatchFrameAcquisitionDialog()
       }
    };
 
-
+#ifdef   UPLOAD_DATA_FEATURE
    this.cloudUpload_Button = new ToolButton( this );
    //this.cloudUpload_Button.text = "Clear";
    this.cloudUpload_Button.icon = this.scaledResource( ":/icons/cloud.png" );
@@ -2498,7 +2497,7 @@ function BatchFrameAcquisitionDialog()
 
 	   }
    };
-
+#endif
    this.startProcessing_Button = new PushButton( this );
    this.startProcessing_Button.text = "Start";
    this.startProcessing_Button.icon = this.scaledResource( ":/icons/power.png" );
@@ -2523,7 +2522,9 @@ function BatchFrameAcquisitionDialog()
    this.worklist_ToolButtonSizer.add(this.createWorklist_Button);
    this.worklist_ToolButtonSizer.add(this.updateWorklist_Button);
    this.worklist_ToolButtonSizer.add(this.clearWorklist_Button);
+#ifdef   UPLOAD_DATA_FEATURE
    this.worklist_ToolButtonSizer.add(this.cloudUpload_Button);
+#endif
    this.worklist_ToolButtonSizer.addStretch();
 
    this.worklist_TreeBoxButtonSizer = new HorizontalSizer;
