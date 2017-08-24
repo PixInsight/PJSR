@@ -6,6 +6,7 @@ Makefile Generator Script Changelog
 
    - Core builds adapted to Qt 5.9.0.
    - Default SDK version 10.12 on all macOS builds.
+   - Adapted to new distribution model on macOS.
    - Visual C++ 2015 (vc14) required for all Windows builds.
 
 -------------------------------------------------------------------------------

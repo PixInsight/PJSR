@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenFileLists.js - Released 2017-04-14T16:45:58Z
+// MakGenFileLists.js - Released 2017-08-01T15:54:50Z
 // ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Makefile Generator Script version 1.104
@@ -285,4 +285,4 @@ if ( !noImages )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenFileLists.js - Released 2017-04-14T16:45:58Z
+// EOF MakGenFileLists.js - Released 2017-08-01T15:54:50Z

@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/NumericControl.jsh - Released 2015/11/09 15:21:11 UTC
+// pjsr/NumericControl.jsh - Released 2017-08-01T14:29:08Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -173,12 +173,12 @@ function NumericEdit( parent )
          if ( this.scientific )
             if ( this.sciTriggerExp < 0 || v != 0 && (Math.abs( v ) > Math.pow10( +this.sciTriggerExp ) ||
                                                       Math.abs( v ) < Math.pow10( -this.sciTriggerExp )) )
-               return format( "%.*le", this.precision, v );
+               return format( "%.*e", this.precision, v );
 
-         return format( "%.*lf", this.precisionForValue( this.precision, v ), v );
+         return format( "%.*f", this.precisionForValue( this.precision, v ), v );
       }
 
-      return format( "%.0lf", v );
+      return format( "%.0f", v );
    };
 
    this.minEditWidth = function()
@@ -261,7 +261,7 @@ function NumericEdit( parent )
 
          if ( this.lowerBound < this.upperBound )
             if ( newValue < this.lowerBound || newValue > this.upperBound )
-               throw new Error( format( "Numeric value out of range: %.16lg - valid range is [%.16lg,%.16lg]",
+               throw new Error( format( "Numeric value out of range: %.16g - valid range is [%.16g,%.16g]",
                                         newValue, this.lowerBound, this.upperBound ) );
          let changed = newValue != this.value;
          if ( changed )
@@ -348,4 +348,4 @@ NumericControl.prototype = new NumericEdit;
 #endif   // __PJSR_NumericControl_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/NumericControl.jsh - Released 2015/11/09 15:21:11 UTC
+// EOF pjsr/NumericControl.jsh - Released 2017-08-01T14:29:08Z

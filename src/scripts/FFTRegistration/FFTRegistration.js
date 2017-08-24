@@ -701,7 +701,7 @@ function FFTRegistrationEngine()
       // Open the reference image as a copy (disable Save As)
       var w = ImageWindow.open( this.referenceImage,
             this.integrate ? format( "Integration_of_%d", this.targetImages.length + 1 ) :
-                             "RegistrationReference", true );
+                             "RegistrationReference", ""/*formatHints*/, true/*asCopy*/ );
 
       if ( w.length == 0 )
          throw Error( TITLE + ": Unable to load the reference image: " + this.referenceImage );

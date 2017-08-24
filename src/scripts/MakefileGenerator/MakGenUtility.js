@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenUtility.js - Released 2017-04-14T16:45:58Z
+// MakGenUtility.js - Released 2017-08-01T15:54:50Z
 // ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Makefile Generator Script version 1.104
@@ -153,10 +153,10 @@ function UUID()
    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace( /[xy]/g,
       function( c )
       {
-         let r = Math.random()*16|0, v = c == ('x' ? r : (r&0x3|0x8));
-         return v.toString(16);
+         let r = Math.random()*16|0, v = (c == 'x') ? r : (r&0x3|0x8);
+         return v.toString( 16 );
       } );
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenUtility.js - Released 2017-04-14T16:45:58Z
+// EOF MakGenUtility.js - Released 2017-08-01T15:54:50Z

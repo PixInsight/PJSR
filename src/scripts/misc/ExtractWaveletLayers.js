@@ -168,10 +168,12 @@ function ExtractWaveletLayers( data )
       // view of this image window.
       view.image.transfer( W[j] );
 
-      // Rescale to the normalized [0,1] range. This is necessary because detail
-      // wavelet layers contain wavelet difference coefficients that can be
-      // positive or negative real values outside the [0,1] range in absolute value.
-      view.image.rescale();
+      // Rescale detail layers to the normalized [0,1] range. This is necessary
+      // because detail wavelet layers contain wavelet difference coefficients
+      // that can be positive or negative real values outside the [0,1] range
+      // in absolute value. This script is for visualization purposes.
+      if ( j < n )
+         view.image.rescale();
 
       // Inform the core application that we have finished processing the view.
       view.endProcess();

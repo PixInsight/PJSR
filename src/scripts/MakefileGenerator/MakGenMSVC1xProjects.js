@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenMSVC1xProjects.js - Released 2017-04-14T16:45:58Z
+// MakGenMSVC1xProjects.js - Released 2017-08-01T15:54:50Z
 // ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Makefile Generator Script version 1.104
@@ -274,7 +274,27 @@ function MSVCxx( F, P, vcVersion )
    libraryDirectories32 = File.unixPathToWindows( libraryDirectories32 );
    libraryDirectories64 = File.unixPathToWindows( libraryDirectories64 );
 
+   let windowsLibraries = ";kernel32.lib" +
+                          ";user32.lib" +
+                          ";gdi32.lib" +
+                          ";winspool.lib" +
+                          ";comdlg32.lib" +
+                          ";advapi32.lib" +
+                          ";shell32.lib" +
+                          ";ole32.lib" +
+                          ";oleaut32.lib" +
+                          ";uuid.lib" +
+                          ";odbc32.lib" +
+                          ";odbccp32.lib" +
+                          ";userenv.lib" +
+                          ";imm32.lib" +
+                          ";shlwapi.lib" +
+                          ";ws2_32.lib" +
+                          ";wldap32.lib" +
+                          ";mscms.lib" +
+                          ";winmm.lib";
    let libraries = "";
+
    if ( P.isCore() )
    {
       libraries = "qtmain.lib" +
@@ -309,15 +329,7 @@ function MSVCxx( F, P, vcVersion )
                   ";curl-pxi.lib" +
                   ";lcms-pxi.lib" +
                   ";cminpack-pxi.lib" +
-                  ";shell32.lib" +
-                  ";gdi32.lib" +
-                  ";user32.lib" +
-                  ";imm32.lib" +
-                  ";shlwapi.lib" +
-                  ";Ws2_32.lib" +
-                  ";wldap32.lib" +
-                  ";Mscms.lib" +
-                  ";Winmm.lib";
+                  windowsLibraries;
    }
    else
    {
@@ -332,14 +344,7 @@ function MSVCxx( F, P, vcVersion )
                      ";lz4-pxi.lib" +
                      ";zlib-pxi.lib" +
                      ";RFC6234-pxi.lib" +
-                     ";shell32.lib" +
-                     ";gdi32.lib" +
-                     ";user32.lib" +
-                     ";imm32.lib" +
-                     ";shlwapi.lib" +
-                     ";Ws2_32.lib" +
-                     ";wldap32.lib" +
-                     ";Winmm.lib";
+                     windowsLibraries;
 
       if ( P.isModule() || P.isExecutable() )
          libraries = "PCL-pxi.lib" +
@@ -347,7 +352,8 @@ function MSVCxx( F, P, vcVersion )
                      ";zlib-pxi.lib" +
                      ";RFC6234-pxi.lib" +
                      ";lcms-pxi.lib" +
-                     ";cminpack-pxi.lib";
+                     ";cminpack-pxi.lib" +
+                     windowsLibraries;
 
       for ( let i = 0; i < P.extraLibraries.length; ++i )
       {
@@ -940,4 +946,4 @@ function MSVCxx( F, P, vcVersion )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenMSVC1xProjects.js - Released 2017-04-14T16:45:58Z
+// EOF MakGenMSVC1xProjects.js - Released 2017-08-01T15:54:50Z
