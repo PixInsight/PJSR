@@ -30,6 +30,9 @@
 /*
    Changelog:
 
+   5.0:   * Ignore the previews when solving the image. Previous versions failed
+            to solve the images when the first preview was very small.
+
    4.2.7: * Better error management in the online catalogs
 
    4.2.6: * Changed the ambiguous term "Epoch" by "Obs date"
@@ -202,7 +205,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.2.7"
+#define SOLVERVERSION "5.0"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -275,7 +278,6 @@ function SolverConfiguration(module)
    this.maxIterations = 100;
    this.sensitivity = -1;
    this.generateErrorImg = false;
-   this.templateSizeFactor = 1.5;
    this.showStars = false;
    this.catalog = "PPMXL";
    //this.polyDegree = 1;
@@ -1479,6 +1481,7 @@ function ImageSolver()
       align.noGUIMessages = true;
       align.useTriangles = this.solverCfg.alignAlgorithm != AlignAlgorithm.prototype.Polygons;
       align.polygonSides = 5;
+      align.restrictToPreviews = false;
       //align.onError = StarAlignment.prototype.Continue;
       if(this.solverCfg.useDistortionModel)
          align.distortionModel = this.solverCfg.distortionModelPath;
@@ -1526,19 +1529,10 @@ function ImageSolver()
 
    this.GenerateTemplate = function( metadata )
    {
-      var templateWidth, templateHeight;
- /*     if ( this.solverCfg.templateSizeFactor > 1 )
-      {*/
-         //var templateSize = Math.floor( Math.max( metadata.width, metadata.height )*this.solverCfg.templateSizeFactor );
-         var templateSize = Math.max( metadata.width, metadata.height );
-         templateWidth = templateSize;
-         templateHeight = templateSize;
-/*      }
-      else
-      {
-         templateWidth = Math.max( 256, metadata.width );
-         templateHeight = Math.max( 256, metadata.height );
-      }*/
+      var templateSize = Math.max( metadata.width, metadata.height );
+      var templateWidth = templateSize;
+      var templateHeight = templateSize;
+
 
       metadata.ref_S_G = new Matrix(
          -metadata.resolution,  0,                   metadata.resolution*templateWidth/2,
@@ -2474,13 +2468,12 @@ function ImageSolver()
          console.writeln("   Resolution: ", this.metadata.resolution * 3600);
 
          var clipRect = null;
-         if (targetWindow.numberOfPreviews > 0)
-         {
-            clipRect = targetWindow.previewRect(targetWindow.previews[0]);
-            console.writeln("ClipRect: ", clipRect);
-         }
+//         if (targetWindow.numberOfPreviews > 0)
+//         {
+//            clipRect = targetWindow.previewRect(targetWindow.previews[0]);
+//            console.writeln("ClipRect: ", clipRect);
+//         }
 
-         this.solverCfg.templateSizeFactor = 1.5;
          var iteration = 1;
          var stars = null;
          var finish = false;
@@ -2666,7 +2659,6 @@ function ImageSolver()
                finish = false;
 
             iteration++;
-            this.solverCfg.templateSizeFactor = 1;
             this.solverCfg.showStars = false;
 
             processEvents();
@@ -2778,9 +2770,9 @@ function CheckVersion( major, minor, release )
 function main()
 {
    //console.hide();
-   if (!CheckVersion(1, 8, 4))
+   if (!CheckVersion(1, 8, 5))
    {
-      new MessageBox("This script requires at least the version 1.8.4 of PixInsight", TITLE, StdIcon_Error, StdButton_Ok).execute();
+      new MessageBox("This script requires at least the version 1.8.5 of PixInsight", TITLE, StdIcon_Error, StdButton_Ok).execute();
       return;
    }
 
