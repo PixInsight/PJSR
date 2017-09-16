@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGlobal.js - Released 2017-04-14T16:45:58Z
+// MakGenGlobal.js - Released 2017-08-01T15:54:50Z
 // ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Makefile Generator Script version 1.104
@@ -155,4 +155,4 @@ var imageFileExtensions =
 #define OPTIMIZATION_DEFAULT_STR "3"
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGlobal.js - Released 2017-04-14T16:45:58Z
+// EOF MakGenGlobal.js - Released 2017-08-01T15:54:50Z

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGCCMakefiles.js - Released 2017-04-14T16:45:58Z
+// MakGenGCCMakefiles.js - Released 2017-08-01T15:54:50Z
 // ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Makefile Generator Script version 1.104
@@ -308,14 +308,6 @@ function GnuCxx( F, P )
           * application bundle directory.
           */
          f.outTextLn( "\tinstall_name_tool" +
-                      " -change @executable_path/liblcms-pxi.dylib" +
-                      " @executable_path/../Frameworks/liblcms-pxi.dylib " +
-                      appBundle + "/Contents/MacOS/PixInsight" );
-         f.outTextLn( "\tinstall_name_tool" +
-                      " -change @executable_path/libzlib-pxi.dylib" +
-                      " @executable_path/../Frameworks/libzlib-pxi.dylib " +
-                      appBundle + "/Contents/MacOS/PixInsight" );
-         f.outTextLn( "\tinstall_name_tool" +
                       " -change @executable_path/libmozjs-24.dylib" +
                       " @executable_path/../Frameworks/libmozjs-24.dylib " +
                       appBundle + "/Contents/MacOS/PixInsight" );
@@ -326,8 +318,10 @@ function GnuCxx( F, P )
          f.outTextLn( "\trm -rf " + appBundle + "/Contents/Frameworks/Qt*" );
          f.outTextLn( "\trm -rf " + appBundle + "/Contents/PlugIns" );
          f.outTextLn( "\trm -f " + appBundle + "/Contents/Resources/qt.conf" );
-         f.outTextLn( "\texport DYLD_FRAMEWORK_PATH=$(QTDIR)/qtbase/lib" );
          f.outTextLn( "\tmacdeployqt " + appBundle );
+         f.outTextLn( "\tinstall_name_tool -add_rpath @executable_path/../../../../../../../../Frameworks " +
+            appBundle + "/Contents/Frameworks/QtWebEngineCore.framework/" +
+                        "Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess" );
 
          /*
           * Update creation time for the core application bundle.
@@ -344,36 +338,20 @@ function GnuCxx( F, P )
           * works fine to simplify things by doing this recursively.
           */
          f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + appBundle );
-      }
-      else if ( P.isCoreAux() )
-      {
-         f.outTextLn( "\tinstall_name_tool -change QtCore.framework/Versions/5/QtCore" +
-                      " @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" +
-                      " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
-         f.outTextLn( "\tinstall_name_tool -change QtWidgets.framework/Versions/5/QtWidgets" +
-                      " @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets" +
-                      " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
-         f.outTextLn( "\tinstall_name_tool -change QtGui.framework/Versions/5/QtGui" +
-                      " @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui" +
-                      " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
+
+         /*
+          * The updater1 program requires administrative privileges on macOS
+          * since core version 1.8.5.
+          */
+         f.outTextLn( "\tchmod +s " + appBundle + "/Contents/MacOS/PixInsightUpdater" );
       }
       else if ( P.isModule() || P.isDynamicLibrary() || P.isExecutable() )
       {
          for ( let i = 0; i < P.extraLibraries.length; ++i )
-            if ( P.extraLibraries[i].startsWith( "Qt" ) )
-            {
-               // A Foo Qt framework is named QtFoo *instead* of Qt5Foo.
-               let qtFramework = P.extraLibraries[i].replace( "Qt5", "Qt" );
-               f.outTextLn( "\tinstall_name_tool -change " + qtFramework + ".framework/Versions/5/" + qtFramework +
-                            " " + "@executable_path/../Frameworks/" + qtFramework + ".framework/Versions/5/" + qtFramework +
-                            " " + P.destinationDirectory() + "/" + P.mainTarget() );
-            }
-            else
-            {
+            if ( !P.extraLibraries[i].startsWith( "Qt" ) )
                f.outTextLn( "\tinstall_name_tool -change @executable_path/lib" + P.extraLibraries[i] + ".dylib" +
                             " " + "@loader_path/lib" + P.extraLibraries[i] + ".dylib" +
                             " " + P.destinationDirectory() + "/" + P.mainTarget() );
-            }
          /*
           * In official distributions, all modules and executables are
           * digitally signed on OS X and Windows platforms.
@@ -449,4 +427,4 @@ function GnuCxx( F, P )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGCCMakefiles.js - Released 2017-04-14T16:45:58Z
+// EOF MakGenGCCMakefiles.js - Released 2017-08-01T15:54:50Z

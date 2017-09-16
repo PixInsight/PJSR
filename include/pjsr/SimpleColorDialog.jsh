@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/SimpleColorDialog.jsh - Released 2015/11/09 15:21:11 UTC
+// pjsr/SimpleColorDialog.jsh - Released 2017-08-01T14:29:08Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -240,4 +240,4 @@ SimpleColorDialog.prototype = new Dialog;
 #endif   // __PJSR_SimpleColorDialog_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/SimpleColorDialog.jsh - Released 2015/11/09 15:21:11 UTC
+// EOF pjsr/SimpleColorDialog.jsh - Released 2017-08-01T14:29:08Z

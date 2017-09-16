@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenParameters.js - Released 2017-04-14T16:45:58Z
+// MakGenParameters.js - Released 2017-08-01T15:54:50Z
 // ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Makefile Generator Script version 1.104
@@ -218,7 +218,7 @@ function GeneratorParameters()
 
    this.isExecutable = function()
    {
-      return this.type == "Executable";
+      return this.type == "Executable" || this.isCoreExecutable();
    };
 
    this.isOfficialExecutable = function()
@@ -234,6 +234,11 @@ function GeneratorParameters()
    this.isCoreAux = function()
    {
       return this.type == "CoreAux";
+   };
+
+   this.isCoreExecutable = function()
+   {
+      return this.type == "CoreExecutable";
    };
 
    this.isX11Installer = function()
@@ -491,7 +496,7 @@ function GeneratorParameters()
       if ( this.isMacOSXPlatform() )
       {
          s += " -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + this.osxSDKVersion + ".sdk";
-         s += " -mmacosx-version-min=10.9";
+         s += " -mmacosx-version-min=10.10";
       }
 
       s += " -D_REENTRANT -D" + this.platformMacroId();
@@ -716,7 +721,7 @@ function GeneratorParameters()
          //             macosx-how-to-collect-dependencies-into-a-local-bundle
          s += " -headerpad_max_install_names";
          s += " -Wl,-syslibroot,/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + this.osxSDKVersion + ".sdk";
-         s += " -mmacosx-version-min=10.9";
+         s += " -mmacosx-version-min=10.10";
          s += " -stdlib=libc++";
       }
       else
@@ -734,6 +739,15 @@ function GeneratorParameters()
       // Exclude unused sections.
       s += " -Wl," + (this.isMacOSXPlatform() ? "-dead_strip" : "--gc-sections");
 
+      // Be compatible with old Linux distributions without CXXABI_1.3.8, such
+      // as RHEL 7. This rpath allows us to use a libstdc++.so.6.0.22 or newer
+      // created by installing GCC >= 4.9. Note that the updater1 program is
+      // executed by root (through an SUID bit) on regular installations, so
+      // the process does not inherit the core application's environment.
+      if ( this.isLinuxPlatform() )
+         if ( this.mainTarget() == "PixInsightUpdater" )
+            s += " -Wl,-rpath,/usr/local/lib64/:/lib64/";
+
       // Strip all symbols by default, or optionally allow for significant
       // backtraces with demangled function names.
       if ( this.gccUnstrippedBinaries )
@@ -744,6 +758,9 @@ function GeneratorParameters()
       if ( this.isModule() || this.isDynamicLibrary() )
          s += (this.isMacOSXPlatform()) ?
                " -dynamiclib -install_name @executable_path/" + this.mainTarget() : " -shared";
+      if ( this.isMacOSXPlatform() )
+         if ( this.isCore() || this.isCoreAux() || this.dependsOnQt() )
+            s += " -rpath @executable_path/../Frameworks";
 
       // Link-time optimization for building modules and third-party shared
       // libraries. ### Warning: this option is experimental.
@@ -905,7 +922,7 @@ function GeneratorParameters()
 
       // Core executables inside the application bundle on Mac OS X.
       if ( this.isMacOSXPlatform() )
-         if ( this.isCore() || this.isCoreAux() )
+         if ( this.isCore() || this.isCoreAux() || this.isCoreExecutable() )
             return "$(PCLDIR)/dist/" + this.architecture + "/PixInsight/" + this.macOSXAppName() + "/Contents/MacOS";
 
       // Everything else on the bin distribution directory on all platforms.
@@ -914,4 +931,4 @@ function GeneratorParameters()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenParameters.js - Released 2017-04-14T16:45:58Z
+// EOF MakGenParameters.js - Released 2017-08-01T15:54:50Z

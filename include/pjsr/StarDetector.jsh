@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/StarDetector.jsh - Released 2016/04/28 10:09:39 UTC
+// pjsr/StarDetector.jsh - Released 2017-08-01T14:29:08Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -719,4 +719,4 @@ StarDetector.prototype = new Object;
 #endif   // __PJSR_StarDetector_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/StarDetector.jsh - Released 2016/04/28 10:09:39 UTC
+// EOF pjsr/StarDetector.jsh - Released 2017-08-01T14:29:08Z

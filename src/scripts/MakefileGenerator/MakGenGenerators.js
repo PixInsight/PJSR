@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGenerators.js - Released 2017-04-14T16:45:58Z
+// MakGenGenerators.js - Released 2017-08-01T15:54:50Z
 // ----------------------------------------------------------------------------
 //
 // This file is part of PixInsight Makefile Generator Script version 1.104
@@ -174,7 +174,7 @@ function GenerateUpdater1Makefiles()
 
    var parameters = new GeneratorParameters();
    parameters.id = "PixInsightUpdater";
-   parameters.type = "Executable";
+   parameters.type = "CoreExecutable";
    parameters.official = true;
    parameters.gccOptimization = "s";
    parameters.uacAdmin = true;  // updater1 requires administrative privileges on Windows
@@ -195,7 +195,7 @@ function GenerateUpdater2Makefiles()
 
    var parameters = new GeneratorParameters();
    parameters.id = "updater2";
-   parameters.type = "Executable";
+   parameters.type = "CoreExecutable";
    parameters.official = true;
    parameters.gccOptimization = "s";
 
@@ -399,7 +399,7 @@ function GenerateStandardProcessModuleMakefiles()
    GenerateStandardModuleMakefiles( "processes/Geometry",                                    [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/Global",                                      [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/GREYCstoration",                              [], [], [], [], [] );
-   GenerateStandardModuleMakefiles( "processes/Image",                                       [], [], [], [], [] );
+   GenerateStandardModuleMakefiles( "processes/Image",                                       [], ["CMINPACK_NO_DLL"], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/ImageCalibration",                            [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/ImageIntegration",                            [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/ImageRegistration",                           [], [], [], [], [] );
@@ -483,4 +483,4 @@ function GeneratePixInsightPlatformMakefiles()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGenerators.js - Released 2017-04-14T16:45:58Z
+// EOF MakGenGenerators.js - Released 2017-08-01T15:54:50Z

@@ -701,7 +701,7 @@ function FFTRegistrationEngine()
       // Open the reference image as a copy (disable Save As)
       var w = ImageWindow.open( this.referenceImage,
             this.integrate ? format( "Integration_of_%d", this.targetImages.length + 1 ) :
-                             "RegistrationReference", true );
+                             "RegistrationReference", ""/*formatHints*/, true/*asCopy*/ );
 
       if ( w.length == 0 )
          throw Error( TITLE + ": Unable to load the reference image: " + this.referenceImage );
@@ -808,18 +808,18 @@ function FFTRegistrationEngine()
                targetWindow.setSampleFormat( 16, false );
 
             // Build up the output path. To use another output file format
-            // (TIFF, etc) simply change the .fit file extension below.
+            // (TIFF, etc) simply change the .xisf file extension below.
             var name = File.extractName( this.targetImages[i] );
             var outputPath = "";
             if ( this.outputDirectory.length > 0 )
-               outputPath = this.outputDirectory + name + "_r.fit";
+               outputPath = this.outputDirectory + name + "_r.xisf";
             else
             {
                var drive = File.extractDrive( this.targetImages[i] );
                var dir = File.extractDirectory( this.targetImages[i] );
                if ( dir.length > 0 && dir[dir.length-1] != '/' )
                   dir += '/';
-               outputPath = drive + dir + name + "_r.fit";
+               outputPath = drive + dir + name + "_r.xisf";
             }
 
             // Write the image. We don't want to ask for format options, neither

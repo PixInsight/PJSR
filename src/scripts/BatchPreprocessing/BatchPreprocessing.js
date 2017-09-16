@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing.js - Released 2016/09/01 15:47:44 UTC
+// BatchPreprocessing.js - Released 2017-07-04T17:05:20Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.43
+// This file is part of Batch Preprocessing Script version 1.46
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2016 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2017 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,8 +52,8 @@
 #feature-info  A script for calibration and alignment of light frames.<br/>\
                Original script written by Kai Wiechen (c) 2012
 
-#iflt __PI_BUILD__ 1187
-#error This script requires PixInsight 1.8.4.1187 or higher.
+#iflt __PI_BUILD__ 1321
+#error This script requires PixInsight 1.8.5.1321 or higher.
 #endif
 
 #include <pjsr/Sizer.jsh>
@@ -168,4 +168,4 @@ function main()
 main();
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing.js - Released 2016/09/01 15:47:44 UTC
+// EOF BatchPreprocessing.js - Released 2017-07-04T17:05:20Z

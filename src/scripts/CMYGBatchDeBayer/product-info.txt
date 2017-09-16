@@ -1,0 +1,1 @@
+This file is part of Batch CMYG DeBayer Script version 1.16
