@@ -30,6 +30,10 @@
 /*
    Changelog:
 
+   5.0:   * Ignore the previews when solving the image. Previous versions failed
+            to solve the images when the first preview was very small.
+          * Automatic selection of the catalog and magnitude limit
+
    4.2.7: * Better error management in the online catalogs
 
    4.2.6: * Changed the ambiguous term "Epoch" by "Obs date"
@@ -202,7 +206,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "4.2.7"
+#define SOLVERVERSION "5.0"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -240,6 +244,7 @@ function SolverConfiguration(module)
       "solver",
       new Array(
          ["magnitude", DataType_Float],
+         ["autoMagnitude", DataType_Boolean],
          //["polyDegree", DataType_UInt8],
          ["noiseLayers", DataType_UInt8],
          ["databasePath", DataType_UCString],
@@ -267,17 +272,17 @@ function SolverConfiguration(module)
 
    this.useActive = true;
    this.files = [];
+   this.catalogMode = 2;
    this.availableCatalogs = [new UCAC3Catalog(),new PPMXLCatalog(),new TychoCatalog(),new HR_Catalog(),new Gaia_Catalog()];
-   this.catalogMode = 1;
    this.vizierServer = "http://vizier.u-strasbg.fr/";
    this.magnitude = 12;
    this.noiseLayers = 0;
    this.maxIterations = 100;
    this.sensitivity = -1;
    this.generateErrorImg = false;
-   this.templateSizeFactor = 1.5;
    this.showStars = false;
    this.catalog = "PPMXL";
+   this.autoMagnitude = true;
    //this.polyDegree = 1;
    this.showDistortion=false;
    this.distortionCorrection = false;
@@ -748,6 +753,18 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
 
    // Model options
 
+   // Automatic catalog
+   this.autoCatalog_RadioButton = new RadioButton( this );
+   this.autoCatalog_RadioButton.text = "Automatic catalog";
+   this.autoCatalog_RadioButton.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.autoCatalog_RadioButton.setMinWidth( labelWidth1 );
+   this.autoCatalog_RadioButton.checked = this.solverCfg.catalogMode==2;
+   this.autoCatalog_RadioButton.toolTip = "<p>The script automatically selects a star catalog based on the estimated field of view of the image.</p>";
+   this.autoCatalog_RadioButton.onCheck = function( value )
+   {
+      this.dialog.solverCfg.catalogMode = 2;
+   }
+
    // Local Catalog
    //this.dbPath_Label = new fieldLabel( this, "Star database:", labelWidth1 );
    this.dbPath_RadioButton = new RadioButton( this );
@@ -756,7 +773,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dbPath_RadioButton.setMinWidth( labelWidth1 );
    this.dbPath_RadioButton.checked = this.solverCfg.catalogMode==0;
    this.dbPath_RadioButton.toolTip = "<p>Use a locally stored star catalog.</p>"+
-      "The script supports database files for the StarGenerator process, which can be downloaded from http://pixinsight.com/download/</p>"+
+      "<p>The script supports database files for the StarGenerator process, which can be downloaded from http://pixinsight.com/download/</p>"+
    "<p>It also supports custom text files that can be created with a spreadsheet, or be downloaded from an online catalog server.</p>";
    this.dbPath_RadioButton.onCheck = function( value )
    {
@@ -823,7 +840,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    // VizieR Catalog
    //this.dbPath_Label = new fieldLabel( this, "Star database:", labelWidth1 );
    this.vizier_RadioButton = new RadioButton( this );
-   this.vizier_RadioButton.text = "VizieR star catalog:";
+   this.vizier_RadioButton.text = "Online star catalog:";
    this.vizier_RadioButton.textAlignment = TextAlign_Right|TextAlign_VertCenter;
    this.vizier_RadioButton.setMinWidth( labelWidth1 );
    this.vizier_RadioButton.checked = this.solverCfg.catalogMode==1;
@@ -855,24 +872,8 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
       this.dialog.solverCfg.catalog = this.dialog.solverCfg.availableCatalogs[this.dialog.catalog_Combo.currentItem].name;
    }
 
-/*   this.mirror_Combo = new ComboBox(this);
-   this.mirror_Combo.enabled = this.solverCfg.catalogMode==1;
-   this.mirror_Combo.editEnabled = false;
-   this.mirror_Combo.toolTip = "<p>Select the best VizieR server for your location</p>";
-   this.mirror_Combo.setFixedWidth(this.font.width("CFA Harvard (vizier.cfa.harvard.edu) Cambridge, USAMMMM"));
-   for ( var m = 0; m < VizierCatalog.mirrors.length; m++ )
-   {
-      this.mirror_Combo.addItem( VizierCatalog.mirrors[m].name );
-      if ( VizierCatalog.mirrors[m].address == this.solverCfg.vizierServer )
-         this.mirror_Combo.currentItem = parseInt( m );
-   }
-   this.mirror_Combo.onItemSelected = function()
-   {
-      this.dialog.solverCfg.vizierServer = VizierCatalog.mirrors[this.dialog.mirror_Combo.currentItem].address;
-   };*/
    this.server_Button = new ToolButton(this);
    this.server_Button.icon = this.scaledResource(":/icons/network-database.png");
-   //this.server_Button.setScaledFixedSize(20, 20);
    this.server_Button.toolTip = "<p>Select the best VizieR server for your location</p>";
    this.server_Button.enabled = solverCfg.catalogMode==1;
    this.server_Button.onClick = function ()
@@ -913,15 +914,28 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.magnitude_SpinBox.toolTip = "<p>Maximum star magnitude to use for the image registration and plate-solving algorithms.<br/>" +
                            "For wider fields, use lower values.</p>";
    this.magnitude_SpinBox.setFixedWidth( spinBoxWidth );
+   this.magnitude_SpinBox.enabled = !this.solverCfg.autoMagnitude;
    this.magnitude_SpinBox.onValueUpdated = function( value )
    {
       solverCfg.magnitude = value;
    };
 
+   this.autoMagnitude_Check = new CheckBox(this);
+   this.autoMagnitude_Check.text = "Automatic magnitude";
+   this.autoMagnitude_Check.toolTip = "<p>The script automatically selects the optimal magnitude limit based on the estimated field of view of the image.</p>";
+   this.autoMagnitude_Check.checked = this.solverCfg.autoMagnitude;
+   this.autoMagnitude_Check.onCheck = function (checked)
+   {
+      solverCfg.autoMagnitude = checked;
+      this.dialog.magnitude_SpinBox.enabled = !checked;
+   };
+
+
    this.magnitude_Sizer = new HorizontalSizer;
    this.magnitude_Sizer.spacing = 4;
-   this.magnitude_Sizer.add( this.magnitude_Label );
-   this.magnitude_Sizer.add( this.magnitude_SpinBox );
+   this.magnitude_Sizer.add(this.magnitude_Label);
+   this.magnitude_Sizer.add(this.magnitude_SpinBox);
+   this.magnitude_Sizer.add(this.autoMagnitude_Check);
    this.magnitude_Sizer.addStretch();
 
    // Advanced controls
@@ -1070,11 +1084,6 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    {
       solverCfg.showDistortion = checked;
    };
-   /*this.showDistortion_Sizer = new HorizontalSizer;
-   this.showDistortion_Sizer.spacing = 4;
-   //this.showDistortion_Sizer.addSpacing(labelWidth1);
-   this.showDistortion_Sizer.add( this.showDistortion_Check );
-   this.showDistortion_Sizer.addStretch();*/
    this.showDistortion_Sizer = this.showDistortion_Check;
 
       this.genDistortModel_Check = new CheckBox(this);
@@ -1090,7 +1099,6 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
 
    this.genDistortModel_Sizer = new HorizontalSizer;
    this.genDistortModel_Sizer.spacing = 4;
-   //this.genDistortModel_Sizer.addSpacing(labelWidth1);
    this.genDistortModel_Sizer.add( this.genDistortModel_Check );
    this.genDistortModel_Sizer.addStretch();
 
@@ -1207,7 +1215,6 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
 
    this.residualsImg_Sizer = new HorizontalSizer;
    this.residualsImg_Sizer.spacing = 4;
-   //this.residualsImg_Sizer.addSpacing(labelWidth1);
    this.residualsImg_Sizer.add( this.residualsImg_CheckBox );
    this.residualsImg_Sizer.addStretch();
 
@@ -1263,8 +1270,10 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.dseParGroupBox.sizer = new VerticalSizer;
    this.dseParGroupBox.sizer.margin = 6;
    this.dseParGroupBox.sizer.spacing = 4;
+   this.dseParGroupBox.sizer.add(this.autoCatalog_RadioButton);
    this.dseParGroupBox.sizer.add(this.dbPath_Sizer);
    this.dseParGroupBox.sizer.add(this.vizierSizer);
+   this.dseParGroupBox.sizer.addSpacing(8);
    this.dseParGroupBox.sizer.add(this.magnitude_Sizer);
 
 
@@ -1479,6 +1488,7 @@ function ImageSolver()
       align.noGUIMessages = true;
       align.useTriangles = this.solverCfg.alignAlgorithm != AlignAlgorithm.prototype.Polygons;
       align.polygonSides = 5;
+      align.restrictToPreviews = false;
       //align.onError = StarAlignment.prototype.Continue;
       if(this.solverCfg.useDistortionModel)
          align.distortionModel = this.solverCfg.distortionModelPath;
@@ -1526,19 +1536,10 @@ function ImageSolver()
 
    this.GenerateTemplate = function( metadata )
    {
-      var templateWidth, templateHeight;
- /*     if ( this.solverCfg.templateSizeFactor > 1 )
-      {*/
-         //var templateSize = Math.floor( Math.max( metadata.width, metadata.height )*this.solverCfg.templateSizeFactor );
-         var templateSize = Math.max( metadata.width, metadata.height );
-         templateWidth = templateSize;
-         templateHeight = templateSize;
-/*      }
-      else
-      {
-         templateWidth = Math.max( 256, metadata.width );
-         templateHeight = Math.max( 256, metadata.height );
-      }*/
+      var templateSize = Math.max( metadata.width, metadata.height );
+      var templateWidth = templateSize;
+      var templateHeight = templateSize;
+
 
       metadata.ref_S_G = new Matrix(
          -metadata.resolution,  0,                   metadata.resolution*templateWidth/2,
@@ -1547,7 +1548,6 @@ function ImageSolver()
 
       metadata.projection = ProjectionFactory(this.solverCfg, metadata.ra, metadata.dec );
 
-      //if ( this.solverCfg.catalogMode==0 )
       if(this.useStarGeneratorCatalog)
       {
          var generator = new StarGenerator;
@@ -1587,7 +1587,7 @@ function ImageSolver()
             }
          }
 
-         generator.limitMagnitude = this.solverCfg.magnitude;
+         generator.limitMagnitude = this.limitMagnitude;
          generator.outputMode = StarGenerator.prototype.Output_CSVFile;
          generator.outputFilePath = STAR_CSV_FILE;
          generator.sensorWidth = templateWidth;
@@ -1604,8 +1604,8 @@ function ImageSolver()
             }
             else
             {
-               this.catalog = __catalogRegister__.GetCatalog(this.solverCfg.catalog);
-               this.catalog.magMax = this.solverCfg.magnitude;
+               this.catalog = __catalogRegister__.GetCatalog(this.catalogName);
+               this.catalog.magMax = this.limitMagnitude;
             }
          }
          this.catalog.Load(metadata, this.solverCfg.vizierServer);
@@ -2105,7 +2105,6 @@ function ImageSolver()
          clipArea = new Rect(0, 0, metadata.width, metadata.height);
       // Load stars
       var catalogObjects;
-      //if ( this.solverCfg.catalogMode==0 )
       if ( this.useStarGeneratorCatalog )
       {
          var templateSize = Math.max(metadata.width, metadata.height) * Math.sqrt(2);
@@ -2125,7 +2124,7 @@ function ImageSolver()
          generator.projectionSystem = StarGenerator.prototype.Gnomonic;
          generator.pixelSize = 10;
          generator.focalLength = generator.pixelSize/metadata.resolution*0.18/Math.PI;
-         generator.limitMagnitude = this.solverCfg.magnitude;
+         generator.limitMagnitude = this.limitMagnitude;
          generator.outputMode = StarGenerator.prototype.Output_CSVFile;
          generator.outputFilePath = STAR_CSV_FILE;
          generator.sensorWidth = templateSize;
@@ -2166,8 +2165,8 @@ function ImageSolver()
             }
             else
             {
-               this.catalog = __catalogRegister__.GetCatalog(this.solverCfg.catalog);
-               this.catalog.magMax = this.solverCfg.magnitude;
+               this.catalog = __catalogRegister__.GetCatalog(this.catalogName);
+               this.catalog.magMax = this.limitMagnitude;
             }
          }
          this.catalog.Load(metadata, this.solverCfg.vizierServer);
@@ -2460,8 +2459,41 @@ function ImageSolver()
          console.show();
          console.abortEnabled = true;
 
-         this.useStarGeneratorCatalog = this.solverCfg.catalogMode==0 &&
+         this.useStarGeneratorCatalog = this.solverCfg.catalogMode == 0 &&
             File.extractExtension(this.solverCfg.databasePath) == ".bin";
+
+         if (this.solverCfg.autoMagnitude || this.solverCfg.catalogMode == 2)
+         {
+            var fov = this.metadata.resolution * Math.max(this.metadata.width, this.metadata.height);
+            // Empiric formula for 1000 stars at 20 deg of galactic latitude
+            var autoLimitMagnitudeFactor = 14.5;
+            var m = autoLimitMagnitudeFactor * Math.pow(fov, -0.179);
+            m = Math.round(100 * Math.min(20, Math.max(7, m))) / 100;
+            if (this.solverCfg.autoMagnitude)
+            {
+               this.limitMagnitude = m;
+               console.noteln('<end><cbr>* Using an automatically calculated limit magnitude of ' + m + '.');
+            }
+            else
+               this.limitMagnitude = this.solverCfg.magnitude;
+            if (this.solverCfg.catalogMode == 2)
+            {
+               if (m <= 7)
+                  this.catalogName = "Bright Stars";
+               else if (fov > 3)
+                  this.catalogName = "TYCHO-2";
+               else
+                  this.catalogName = "PPMXL";
+               console.noteln('<end><cbr>* Using the automatically selected ' + this.catalogName + ' catalog.');
+            }
+            else
+               this.catalogName = this.solvercfg.catalog;
+         }
+         else
+         {
+            this.limitMagnitude = this.solverCfg.magnitude;
+            this.catalogName = this.solverCfg.catalog;
+         }
 
          var denoisedWindow = targetWindow;
          if (this.solverCfg.noiseLayers > 0)
@@ -2474,13 +2506,12 @@ function ImageSolver()
          console.writeln("   Resolution: ", this.metadata.resolution * 3600);
 
          var clipRect = null;
-         if (targetWindow.numberOfPreviews > 0)
-         {
-            clipRect = targetWindow.previewRect(targetWindow.previews[0]);
-            console.writeln("ClipRect: ", clipRect);
-         }
+//         if (targetWindow.numberOfPreviews > 0)
+//         {
+//            clipRect = targetWindow.previewRect(targetWindow.previews[0]);
+//            console.writeln("ClipRect: ", clipRect);
+//         }
 
-         this.solverCfg.templateSizeFactor = 1.5;
          var iteration = 1;
          var stars = null;
          var finish = false;
@@ -2666,7 +2697,6 @@ function ImageSolver()
                finish = false;
 
             iteration++;
-            this.solverCfg.templateSizeFactor = 1;
             this.solverCfg.showStars = false;
 
             processEvents();
@@ -2778,9 +2808,9 @@ function CheckVersion( major, minor, release )
 function main()
 {
    //console.hide();
-   if (!CheckVersion(1, 8, 4))
+   if (!CheckVersion(1, 8, 5))
    {
-      new MessageBox("This script requires at least the version 1.8.4 of PixInsight", TITLE, StdIcon_Error, StdButton_Ok).execute();
+      new MessageBox("This script requires at least the version 1.8.5 of PixInsight", TITLE, StdIcon_Error, StdButton_Ok).execute();
       return;
    }
 
