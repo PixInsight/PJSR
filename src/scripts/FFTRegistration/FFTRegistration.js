@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// FFTRegistration.js - Released 2015/07/22 16:35:26 UTC
+// FFTRegistration.js - Released 2017-09-18T09:18:17Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of FFTRegistration Script version 1.20
+// This file is part of FFTRegistration Script version 1.21
 //
-// Copyright (c) 2005-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2005-2017 Pleiades Astrophoto S.L.
 // Written by Juan Conejero (PTeam)
 //
 // Redistribution and use in both source and binary forms, with or without
@@ -48,11 +48,11 @@
 // ----------------------------------------------------------------------------
 
 /*
- * FFTRegistration v1.20
+ * FFTRegistration v1.21
  *
  * Fourier-based image registration.
  *
- * Copyright (C) 2005-2015 Pleiades Astrophoto S.L.
+ * Copyright (C) 2005-2017 Pleiades Astrophoto S.L.
  * Written by Juan Conejero (PTeam)
  *
  * References:
@@ -103,7 +103,7 @@ References:<br>\
   images using finite Fourier transforms. IEEE Transactions on Pattern \
   Analysis and Machine Intelligence 95, 700-703.<br>\
 <br>\
-Copyright &copy; 2005-2015 Pleiades Astrophoto S.L.
+Copyright &copy; 2005-2017 Pleiades Astrophoto S.L.
 
 #feature-icon  FFTRegistration.xpm
 
@@ -116,7 +116,7 @@ Copyright &copy; 2005-2015 Pleiades Astrophoto S.L.
 #include <pjsr/UndoFlag.jsh>
 #include <pjsr/Interpolation.jsh>
 
-#define VERSION "1.20"
+#define VERSION "1.21"
 #define TITLE "FFTRegistration"
 
 /*
@@ -867,7 +867,7 @@ function FFTRegistrationDialog()
    this.helpLabel.useRichText = true;
    this.helpLabel.text = "<b>" + TITLE + " v" + VERSION + "</b> &mdash; A script for Fourier-based image registration.<br>" +
              "Written by Juan Conejero (PTeam). See the script source code for references.<br>" +
-             "Copyright &copy; 2005-2015 Pleiades Astrophoto";
+             "Copyright &copy; 2005-2017 Pleiades Astrophoto";
 
    //
 
@@ -1198,7 +1198,7 @@ function main()
 
       console.writeln( "<end><cbr><br>*****************************************"    );
       console.writeln(               "FFT Image Registration Script"                );
-      console.writeln(               "Copyright &copy; 2005-2015 Pleiades Astrophoto" );
+      console.writeln(               "Copyright &copy; 2005-2017 Pleiades Astrophoto" );
       console.writeln(               "*****************************************"    );
 
       // Perform the image registration procedure.
@@ -1212,4 +1212,4 @@ function main()
 main();
 
 // ----------------------------------------------------------------------------
-// EOF FFTRegistration.js - Released 2015/07/22 16:35:26 UTC
+// EOF FFTRegistration.js - Released 2017-09-18T09:18:17Z
