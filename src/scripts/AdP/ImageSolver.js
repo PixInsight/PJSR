@@ -2487,7 +2487,7 @@ function ImageSolver()
                console.noteln('<end><cbr>* Using the automatically selected ' + this.catalogName + ' catalog.');
             }
             else
-               this.catalogName = this.solvercfg.catalog;
+               this.catalogName = this.solverCfg.catalog;
          }
          else
          {
