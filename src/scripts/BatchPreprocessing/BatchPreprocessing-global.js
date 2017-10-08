@@ -62,6 +62,7 @@
 var ImageType = { UNKNOWN : -1, BIAS : 0, DARK : 1, FLAT : 2, LIGHT : 3 };
 
 // Default parameters
+#define DEFAULT_OUTPUT_SUFFIX                ".xisf"
 #define DEFAULT_OUTPUT_DIRECTORY             ""
 #define DEFAULT_CFA_IMAGES                   false
 #define DEFAULT_UP_BOTTOM_FITS               true

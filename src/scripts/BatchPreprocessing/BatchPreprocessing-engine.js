@@ -56,13 +56,14 @@
 
 // ----------------------------------------------------------------------------
 
-function FileItem( filePath, exposureTime )
+function FileItem( filePath, exposureTime, temperature )
 {
    this.__base__ = Object;
    this.__base__();
 
    this.filePath = filePath;
    this.exposureTime = exposureTime;
+   this.temperature = temperature;
    this.enabled = true;
 }
 
@@ -257,6 +258,7 @@ function StackEngine()
    this.frameGroups = new Array;
 
    // General options
+   this.outputSuffix = DEFAULT_OUTPUT_SUFFIX;
    this.outputDirectory = DEFAULT_OUTPUT_DIRECTORY;
    this.cfaImages = DEFAULT_CFA_IMAGES;
    this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
@@ -604,6 +606,8 @@ StackEngine.prototype.addFile = function( filePath, imageType, filter, binning, 
    if ( !forcedExposureTime || imageType == ImageType.BIAS )
       exposureTime = 0;
 
+   var forcedTemperature = false; // @todo will using in temperature grouping later
+
    if ( !forcedType || !forcedFilter || !forcedBinning || !forcedExposureTime )
    {
       var ext = File.extractExtension( filePath ).toLowerCase();
@@ -649,6 +653,10 @@ StackEngine.prototype.addFile = function( filePath, imageType, filter, binning, 
             if ( !forcedExposureTime )
                exposureTime = parseFloat( value );
             break;
+         case "CCD-TEMP":
+            if ( !forcedTemperature)
+               temperature = parseFloat( value );
+            break;
          }
       }
 
@@ -691,7 +699,7 @@ StackEngine.prototype.addFile = function( filePath, imageType, filter, binning, 
       break;
    }
 
-   var item = new FileItem( filePath, exposureTime );
+   var item = new FileItem( filePath, exposureTime, temperature );
 
    if ( this.frameGroups.length > 0 && !isMaster )
    {
@@ -826,9 +834,9 @@ StackEngine.prototype.readImage = function( filePath )
 StackEngine.prototype.writeImage = function( filePath,
                imageWindow, rejectionLowWindow, rejectionHighWindow, slopeMapWindow, imageIdentifiers )
 {
-   let F = new FileFormat( ".xisf", false/*toRead*/, true/*toWrite*/ );
+   let F = new FileFormat( this.outputSuffix, false/*toRead*/, true/*toWrite*/ );
    if ( F.isNull )
-      throw new Error( "No installed file format can write " + ".xisf" + " files." ); // shouldn't happen
+      throw new Error( "No installed file format can write " + this.outputSuffix + " files." ); // shouldn't happen
 
    let f = new FileFormatInstance( F );
    if ( f.isNull )
@@ -1024,7 +1032,7 @@ StackEngine.prototype.doLight = function()
 
             CC.targetFrames    = images.enableTargetFrames( 2 );
             CC.outputDir       = cosmetizedDirectory;
-            CC.outputExtension = ".xisf";
+            CC.outputExtension = this.outputSuffix;
             CC.prefix          = "";
             CC.postfix         = "_cc";
             CC.overwrite       = true;
@@ -1042,7 +1050,7 @@ StackEngine.prototype.doLight = function()
                var filePath = this.frameGroups[i].fileItems[c].filePath;
                var ccFilePath = cosmetizedDirectory + '/'
                               + File.extractName( filePath )
-                              + "_c_cc" + ".xisf";
+                              + "_c_cc" + this.outputSuffix;
                if ( filePath == this.referenceImage )
                   this.actualReferenceImage = ccFilePath;
                images.push( ccFilePath );
@@ -1071,7 +1079,7 @@ StackEngine.prototype.doLight = function()
             DB.targetItems            = images.enableTargetFrames( 2 );
             DB.noGUIMessages          = true;
             DB.outputDirectory        = debayerDirectory;
-            DB.outputExtension        = ".xisf";
+            DB.outputExtension        = this.outputSuffix;
             DB.outputPostfix          = "_d";
             DB.overwriteExistingFiles = true;
 
@@ -1128,7 +1136,7 @@ StackEngine.prototype.doLight = function()
             SA.maxStars                   = this.maxStars;
             SA.noiseReductionFilterRadius = this.noiseReductionFilterRadius;
             SA.useTriangles               = this.useTriangleSimilarity;
-            SA.outputExtension            = ".xisf";
+            SA.outputExtension            = this.outputSuffix;
             SA.outputPrefix               = "";
             SA.outputPostfix              = "_r";
             SA.outputSampleFormat         = StarAlignment.prototype.f32;
@@ -1172,8 +1180,13 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
 {
    var imageType = frameGroup.imageType;
    var frameSet = new Array;
-   for ( var i = 0; i < frameGroup.fileItems.length; ++i )
+   var temperatureSum = 0;
+
+   for ( var i = 0; i < frameGroup.fileItems.length; ++i ) {
       frameSet.push( frameGroup.fileItems[i].filePath );
+      temperatureSum += frameGroup.fileItems[i].temperature;
+   }
+
    if ( frameSet.length < 3 )
       throw new Error( "Cannot integrate less than three frames." );
 
@@ -1270,6 +1283,8 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
 
    keywords.push( new FITSKeyword( "IMAGETYP", StackEngine.imageTypeToMasterKeywordValue( imageType ), "Type of image" ) );
 
+   keywords.push( new FITSKeyword( "CCD-TEMP", (temperatureSum / frameSet.length).toString() , "Averate ccd-temperature" ) );
+
    var postfix = ""
 
    if ( !frameGroup.filter.isEmpty() )
@@ -1294,7 +1309,7 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
    window.keywords = keywords.concat( window.keywords );
 
    var filePath = File.existingDirectory( this.outputDirectory + "/master" );
-   filePath += '/' + StackEngine.imageTypeToString( imageType ) + postfix + ".xisf";
+   filePath += '/' + StackEngine.imageTypeToString( imageType ) + postfix + this.outputSuffix;
 
    console.noteln( "<end><cbr><br>* Writing master " + StackEngine.imageTypeToString( imageType ) + " frame:" );
    console.noteln( "<raw>" + filePath + "</raw>" );
@@ -1433,7 +1448,7 @@ StackEngine.prototype.doCalibrate = function( frameGroup )
    IC.darkOptimizationThreshold = this.darkOptimizationThreshold; // ### deprecated - retained for compatibility
    IC.darkOptimizationLow       = this.darkOptimizationLow;
    IC.darkOptimizationWindow    = this.darkOptimizationWindow;
-   IC.outputExtension           = ".xisf";
+   IC.outputExtension           = this.outputSuffix;
    IC.outputPrefix              = "";
    IC.outputPostfix             = "_c";
    IC.evaluateNoise             = this.evaluateNoise && imageType == ImageType.LIGHT && !this.cfaImages; // for CFAs, evaluate noise after debayer
@@ -1738,6 +1753,7 @@ StackEngine.prototype.saveSettings = function()
 
 StackEngine.prototype.setDefaultParameters = function()
 {
+   this.outputSuffix = DEFAULT_OUTPUT_SUFFIX;
    this.outputDirectory = DEFAULT_OUTPUT_DIRECTORY;
    this.cfaImages = DEFAULT_CFA_IMAGES;
    this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
@@ -1806,6 +1822,9 @@ StackEngine.prototype.importParameters = function()
    this.loadSettings();
 
    this.frameGroups.length = 0;
+
+   if ( Parameters.has( "outputSuffix" ) )
+      this.outputSuffix = Parameters.getString( "outputSuffix" );
 
    if ( Parameters.has( "outputDirectory" ) )
       this.outputDirectory = Parameters.getString( "outputDirectory" );
@@ -2134,7 +2153,7 @@ StackEngine.prototype.runDiagnostics = function()
    {
       try
       {
-         var F = new FileFormat( ".xisf", false/*toRead*/, true/*toWrite*/ );
+         var F = new FileFormat( this.outputSuffix, false/*toRead*/, true/*toWrite*/ );
          if ( F == null )
             throw '';
          if ( !F.canStoreFloat )
@@ -2148,7 +2167,7 @@ StackEngine.prototype.runDiagnostics = function()
       }
       catch ( x )
       {
-         this.error( "No installed file format can write " + ".xisf" + " files." );
+         this.error( "No installed file format can write " + this.outputSuffix + " files." );
       }
 
       if ( this.outputDirectory.isEmpty() )
