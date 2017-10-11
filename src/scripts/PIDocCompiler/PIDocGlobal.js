@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// PIDocGlobal.js - Released 2017/01/23 20:54:58 UTC
+// PIDocGlobal.js - Released 2017-10-11T18:41:38Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.6.2
+// This file is part of PixInsight Documentation Compiler Script version 1.6.3
 //
 // Copyright (c) 2010-2017 Pleiades Astrophoto S.L.
 //
@@ -61,7 +61,7 @@
  * Current compiler version.
  */
 
-#define VERSION "1.6.2"
+#define VERSION "1.6.3"
 #define TITLE   "PixInsight Documentation Compiler"
 
 /*
@@ -583,4 +583,4 @@ if ( !ByteArray.stringToUTF8 )
    };
 
 // ----------------------------------------------------------------------------
-// EOF PIDocGlobal.js - Released 2017/01/23 20:54:58 UTC
+// EOF PIDocGlobal.js - Released 2017-10-11T18:41:38Z

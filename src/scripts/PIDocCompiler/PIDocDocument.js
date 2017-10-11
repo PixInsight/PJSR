@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// PIDocDocument.js - Released 2017/01/23 20:54:58 UTC
+// PIDocDocument.js - Released 2017-10-11T18:41:38Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.6.2
+// This file is part of PixInsight Documentation Compiler Script version 1.6.3
 //
 // Copyright (c) 2010-2017 Pleiades Astrophoto S.L.
 //
@@ -181,6 +181,11 @@ function ParameterSection( title, text )
 
    this.title = title;
    this.text = text;
+
+   this.setSectionNumber = function( sn )
+   {
+      this.title = sn + "&emsp;" + this.title;
+   };
 
    this.toXhtml = function()
    {
@@ -365,6 +370,7 @@ function PIDocDocument()
 
    // Items specific to both the PIToolDoc and PIScriptDoc document classes
    this.toolId = ''
+   this.parametersSection = null;
    this.parameters = new Array;
 
    // Items specific to the PIToolDoc document class
@@ -486,6 +492,7 @@ function PIDocDocument()
       this.relatedDocuments = new Array;
       this.relatedResources = new Array;
       this.toolId = ''
+      this.parametersSection = null;
       this.parameters = new Array;
       this.moduleId = '';
       this.categories = new Array;
@@ -1011,6 +1018,8 @@ function PIDocDocument()
    {
       if ( !this.isToolDocument() && !this.isScriptDocument() )
          throw new ParseError( "Only tool and script documents can define parameter sections.", tokens, index );
+      if ( this.parametersSection == null )
+         this.parametersSection = new Section( null, "Parameters", "parameters" );
       this.parameters.push( new ParameterSection( parameterName, parameterDescription ) );
    };
 
@@ -2134,11 +2143,18 @@ function PIDocDocument()
       {
          if ( this.parameters.length > 0 )
          {
-            this.addXhtmlSource( "<li class=\"pidoc_tocItem\"><a href=\"#" + this.internalLabel( "parameters" ) + "\">Parameters</a></li>\n" );
+            this.addXhtmlSource( sectionTOC( this.parametersSection ) );
+            this.addXhtmlSource( "\n<ul>\n" );
             for ( let i = 0; i < this.parameters.length; ++i )
-               this.addXhtmlSource( "<li class=\"pidoc_tocSubitem\">" +
-                        "<a href=\"#" + this.internalLabel( format( "parameter%03d", i+1 ) ) + "\">" +
-                        this.parameters[i].title.removeTitleAnchorTags() + "</a></li>\n" );
+            {
+               if ( workingData.numberSections )
+                  this.parameters[i].setSectionNumber( sectionNumber.toString() + '.' + (i+1).toString() );
+               this.addXhtmlSource( "<li class=\"pidoc_tocSubitem\">"
+                                    + "<a href=\"#"
+                                    + this.internalLabel( format( "parameter%03d", i+1 ) ) + "\">"
+                                    + this.parameters[i].title.removeTitleAnchorTags() + "</a></li>\n" );
+            }
+            this.addXhtmlSource( "</ul>\n" );
          }
 
          if ( this.usage )
@@ -2308,7 +2324,7 @@ function PIDocDocument()
       {
          this.actionMessage( "Generating Parameters section..." );
 
-         this.addXhtmlSource( Section.startXhtml( "Parameters", "parameters" ) );
+         this.addXhtmlSource( Section.startXhtml( this.parametersSection.title, this.parametersSection.id ) );
 
          for ( let j = 0; j < this.parameters.length; ++j )
             this.addXhtmlSource( "      <div id=\"" + this.internalLabel( format( "parameter%03d", j+1 ) ) + "\">\n"
@@ -2794,4 +2810,4 @@ PIDocDocument.prototype = new Object;
 var document = new PIDocDocument;
 
 // ----------------------------------------------------------------------------
-// EOF PIDocDocument.js - Released 2017/01/23 20:54:58 UTC
+// EOF PIDocDocument.js - Released 2017-10-11T18:41:38Z
