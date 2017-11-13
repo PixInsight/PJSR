@@ -1756,7 +1756,7 @@ function parametersDialogPrototype() {
 
    this.resetButton = new ToolButton(this);
 
-   this.resetButton.icon = ":/process-interface/reset.png";
+   this.resetButton.icon = this.scaledResource( ":/process-interface/reset.png" );
    this.resetButton.toolTip =
       "<p>Reset all settings to default values.</p>";
    this.resetButton.onClick = function() {
@@ -1767,7 +1767,7 @@ function parametersDialogPrototype() {
 
    this.documentationButton = new ToolButton(this);
 
-   this.documentationButton.icon = ":/process-interface/browse-documentation.png";
+   this.documentationButton.icon = this.scaledResource( ":/process-interface/browse-documentation.png" );
    this.documentationButton.toolTip =
       "<p>Show script documentaion.</p>";
    this.documentationButton.onClick = function() {
@@ -1801,7 +1801,7 @@ function parametersDialogPrototype() {
    this.buttonPane.add(this.cancelButton);
 
 
-//===== Vertival Sizer =====
+//===== Vertical Sizer =====
 
    this.sizer = new VerticalSizer;
 
