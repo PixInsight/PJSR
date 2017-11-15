@@ -3,6 +3,13 @@ LocalFuzzyHistogramHyperbolization Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2017.11.15 - v1.02
+
+- Add PCLL license headers.
+- Fix several typos and layout issues.
+- First official release version.
+
+-------------------------------------------------------------------------------
 2017.11.13 - v1.01
 
 - Initial version available on official open-source repositories.
