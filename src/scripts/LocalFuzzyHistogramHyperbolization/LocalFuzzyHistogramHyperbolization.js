@@ -40,7 +40,7 @@ function parametersPrototype() {
       "Linear",
       "Sigmoid",
       "Gauss",
-      "Noramlized Gauss"
+      "Normalized Gauss"
    );
 
    this.segmentationLabels = new Array(
