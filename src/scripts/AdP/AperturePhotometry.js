@@ -3,7 +3,7 @@
 
  Script for measuring the flux of the known stars in astronomical images.
 
- Copyright (C) 2013-2016, Andres del Pozo, Vicent Peris (OAUV)
+ Copyright (C) 2013-2018, Andres del Pozo, Vicent Peris (OAUV)
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 
 /*
  Changelog:
+
+ 1.4.4: * Fixed null pointer (https://pixinsight.com/forum/index.php?topic=11982)
 
  1.4.3: * Better error management in the online catalogs
 
@@ -83,9 +85,9 @@
 
 #feature-info  Script for measuring the flux of the known stars in astronomical images.<br/>\
 <br/>\
-Copyright &copy;2013-2017 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
+Copyright &copy;2013-2018 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.4.3"
+#define VERSION "1.4.4"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -1773,7 +1775,7 @@ function PhotometryDialog(engine)
    this.helpLabel.text =
       "<p><b>" + TITLE + " v" + VERSION + "</b> &mdash; A script for measuring the flux of known stars in astronomical images.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2013-2017 Andr&eacute;s del Pozo, Vicent Peris (OAUV)</p>";
+         "Copyright &copy; 2013-2018 Andr&eacute;s del Pozo, Vicent Peris (OAUV)</p>";
 
 
    this.images_Tab = new ImagesTab(this, engine);
@@ -2156,7 +2158,7 @@ function PhotometryEngine(w)
       {
          var posPx = metadata.Convert_RD_I(catalogStars[i].posEq);
          var star = null;
-         if (posPx.x >= margin && posPx.x <= metadata.width - margin && posPx.y >= margin && posPx.y <= metadata.height - margin)
+         if (posPx && posPx.x >= margin && posPx.x <= metadata.width - margin && posPx.y >= margin && posPx.y <= metadata.height - margin)
          {
             star = new StarReference();
             star.orgPosPx = posPx;
