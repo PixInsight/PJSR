@@ -1,4 +1,4 @@
-﻿/*
+/*
    Annotate Image
 
    Annotation of astronomical images.
@@ -2840,6 +2840,7 @@ function main()
       }
 
       engine.Render();
+      ++__PJSR_AdpAnnotateImage_SuccessCount;
 
       console.show();
    }
@@ -2850,5 +2851,8 @@ function main()
       msgb.execute();
    }
 }
+
+// Global control variable for PCL invocation.
+var __PJSR_AdpAnnotateImage_SuccessCount = 0;
 
 main();

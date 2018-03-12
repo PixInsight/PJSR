@@ -2840,6 +2840,7 @@ function main()
          console.writeln("===============================================================================");
          solver.metadata.Print();
          console.writeln("===============================================================================");
+         ++__PJSR_AdpImageSolver_SuccessCount;
       }
    }
    else
