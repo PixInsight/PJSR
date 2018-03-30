@@ -2277,8 +2277,8 @@ function BatchFrameAcquisitionDialog()
                   node.setText( j, tokens[j].toString() );
                }
                targetItem.name = tokens[0].toString();
-               targetItem.ra   = sexadecimalStringToDouble(tokens[1].toString(),":");
-               targetItem.dec  = sexadecimalStringToDouble(tokens[2].toString(),":");
+               targetItem.ra   = sexadecimalStringToDouble(tokens[1].toString()," ");
+               targetItem.dec  = sexadecimalStringToDouble(tokens[2].toString()," ");
                engine.targets[lineIndex] = targetItem;
             }
          }
