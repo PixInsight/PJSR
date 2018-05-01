@@ -3,7 +3,7 @@
 
    Plate solving of astronomical images.
 
-   Copyright (C) 2012-2017, Andres del Pozo
+   Copyright (C) 2012-2018, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 
 /*
    Changelog:
+
+   5.1:   * Gaia DR2 catalog
 
    5.0:   * Ignore the previews when solving the image. Previous versions failed
             to solve the images when the first preview was very small.
@@ -189,7 +191,7 @@
 
 #feature-info  A script for plate-solving astronomical images.<br/>\
                <br/>\
-               Copyright &copy; 2012-2017 Andr&eacute;s del Pozo
+               Copyright &copy; 2012-2018 Andr&eacute;s del Pozo
 
 #include <pjsr/DataType.jsh>
 #include <pjsr/Sizer.jsh>
@@ -206,7 +208,7 @@
 #include <pjsr/SectionBar.jsh>
 #endif
 
-#define SOLVERVERSION "5.0"
+#define SOLVERVERSION "5.1"
 
 #ifndef USE_SOLVER_LIBRARY
 #define TITLE "Image Solver"
@@ -273,7 +275,7 @@ function SolverConfiguration(module)
    this.useActive = true;
    this.files = [];
    this.catalogMode = 2;
-   this.availableCatalogs = [new UCAC3Catalog(),new PPMXLCatalog(),new TychoCatalog(),new HR_Catalog(),new Gaia_Catalog()];
+   this.availableCatalogs = [new UCAC3Catalog(),new PPMXLCatalog(),new TychoCatalog(),new HR_Catalog(),new GaiaDR2_Catalog()];
    this.vizierServer = "http://vizier.u-strasbg.fr/";
    this.magnitude = 12;
    this.noiseLayers = 0;
@@ -326,7 +328,7 @@ function ImageSolverDialog( solverCfg, metadata, showTargetImage )
    this.helpLabel.useRichText = true;
    this.helpLabel.text =
       "<p><b>Image Plate Solver v" + SOLVERVERSION + "</b> &mdash; A script for plate-solving astronomical images.<br/>" +
-      "Copyright &copy; 2012-2017 Andr&eacute;s del Pozo</p>";
+      "Copyright &copy; 2012-2018 Andr&eacute;s del Pozo</p>";
 
    if(showTargetImage)
    {

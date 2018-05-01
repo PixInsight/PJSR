@@ -32,11 +32,10 @@
 // ******************************************************************
 function III_126_Catalog()
 {
-   this.name = "III/126 Burnashev";
    this.description = "Spectrophotometry of 1588 stars";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("III_126", "III/126 Burnashev");
 
    this.catalogMagnitude = 7;
 
@@ -120,11 +119,10 @@ __catalogRegister__.Register(new III_126_Catalog);
 // ******************************************************************
 function II_183A_Catalog()
 {
-   this.name = "II/183A Landolt";
    this.description = "UBVRI Photometric Standard Stars (526 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("II/183A", "II/183A Landolt");
 
    this.catalogMagnitude = 16;
 
@@ -191,11 +189,10 @@ __catalogRegister__.Register(new II_183A_Catalog);
 // ******************************************************************
 function III_201_Catalog()
 {
-   this.name = "III/201 Pulkovo";
    this.description = "Pulkovo Spectrophotometric Catalog (Alekseeva+ 609 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("III/201", "III/201 Pulkovo");
 
    this.catalogMagnitude = 7;
 
@@ -255,11 +252,10 @@ __catalogRegister__.Register(new III_201_Catalog);
 // ******************************************************************
 function III_202_Catalog()
 {
-   this.name = "III/202 Kharitonov";
    this.description = "Spectrophotometric Catalogue of Stars (1147 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("III/202", "III/202 Kharitonov");
 
    this.catalogMagnitude = 10;
 
@@ -318,11 +314,10 @@ __catalogRegister__.Register(new III_202_Catalog);
 // ******************************************************************
 function JA_AS_92_1_Catalog()
 {
-   this.name = "J/A+AS/92/1 Glushneva+";
    this.description = "Spectrophotometric Catalogue of Stars (238 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("J/A+AS/92/1", "J/A+AS/92/1 Glushneva+");
 
    this.catalogMagnitude = 7;
 

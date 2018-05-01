@@ -42,7 +42,7 @@
 function ObjectWithSettings( module, prefix, properties )
 {
    this.module = module;
-   this.prefix = prefix;
+   this.prefix = prefix ? prefix.replace(/ /g,'') : null;
    this.properties = properties;
 
    this.MakeSettingsKey = function( property )

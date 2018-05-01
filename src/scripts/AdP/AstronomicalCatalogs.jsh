@@ -33,13 +33,29 @@ function CatalogRegister()
 {
    this.catalogs = new Array();
 
-   this.Register = function ( catalog )
+   this.Register = function (catalog, id)
    {
-      this.catalogs.push( {name:catalog.name, constructor:catalog.GetConstructor() } );
+      this.catalogs.push({
+         id:          id ? id : catalog.id,
+         name:        catalog.name,
+         constructor: catalog.GetConstructor()
+      });
+   }
+
+   this.FindById = function ( catalogId )
+   {
+      if(!catalogId)
+         return null;
+      for( var i=0; i<this.catalogs.length; i++)
+         if( this.catalogs[i].id == catalogId )
+            return this.catalogs[i];
+      return null;
    }
 
    this.FindByName = function ( catalogName )
    {
+      if(!catalogName)
+         return null;
       catalogName = catalogName.trim();
       for( var i=0; i<this.catalogs.length; i++)
          if( this.catalogs[i].name == catalogName )
@@ -47,17 +63,19 @@ function CatalogRegister()
       return null;
    }
 
-   this.GetCatalog = function( idx )
+   this.GetCatalog = function (idx)
    {
-      if(typeof(idx)=="string")
+      if (typeof(idx) == "string")
       {
-         var cat = this.FindByName(idx);
-         if( cat==null )
+         var cat = this.FindById(idx);
+         if (cat === null)
+            cat = this.FindByName(idx);
+         if (cat === null)
             return null;
-         else
-            return eval( cat.constructor );
-      } else
-         return eval( this.catalogs[idx].constructor );
+         return eval(cat.constructor);
+      }
+      else
+         return eval(this.catalogs[idx].constructor);
    }
 }
 var __catalogRegister__ = new CatalogRegister();
@@ -77,17 +95,19 @@ function CatalogRecord(positionRD, diameter, name, magnitude)
 // ******************************************************************
 // Catalog: Base class for all catalogs
 // ******************************************************************
-function Catalog( name )
+function Catalog( id, name )
 {
    this.__base__ = ObjectWithSettings;
    this.__base__(
       SETTINGS_MODULE,
-      name,
+      id,
       new Array(
          ["visible",DataType_Boolean]
       )
    );
 
+   this.id = id;
+   this.name = name;
    this.properties = new Array();
    this.objects = null;
 
@@ -104,9 +124,8 @@ Catalog.prototype = new ObjectWithSettings;
 // ******************************************************************
 function NullCatalog()
 {
-   this.name = "null";
    this.__base__ = Catalog;
-   this.__base__( this.name );
+   this.__base__( "null", "null" );
 
    this.GetConstructor = function()
    {
@@ -118,10 +137,10 @@ NullCatalog.prototype = new Catalog;
 // ******************************************************************
 // NGCICCatalog: Catalog NGC/IC. Uses a file to store the info
 // ******************************************************************
-function LocalFileCatalog(name, filename)
+function LocalFileCatalog(id, name, filename)
 {
    this.__base__ = Catalog;
-   this.__base__( name );
+   this.__base__( id, name );
 
    this.catalogPath = File.extractDrive( #__FILE__ ) + File.extractDirectory( #__FILE__ );
    if ( this.catalogPath[this.catalogPath.length-1] != '/' )
@@ -217,12 +236,11 @@ LocalFileCatalog.prototype = new Catalog;
 // ******************************************************************
 function MessierCatalog()
 {
-   this.name = "Messier";
    this.description = "Messier catalog (109 objects)";
    this.fields = [ "Name", "Coordinates", "Common name" ];
 
    this.__base__ = LocalFileCatalog;
-   this.__base__(this.name, "messier.txt");
+   this.__base__("Messier", "Messier", "messier.txt");
 
    this.GetConstructor = function ()
    {
@@ -238,12 +256,11 @@ __catalogRegister__.Register(new MessierCatalog);
 // ******************************************************************
 function NGCICCatalog()
 {
-   this.name = "NGC-IC";
    this.description = "NGC and IC catalogs (9900 objects)";
    this.fields = [ "Name", "Coordinates", "Common name" ];
 
    this.__base__ = LocalFileCatalog;
-   this.__base__(this.name, "ngc2000.txt");
+   this.__base__("NGC-IC", "NGC-IC", "ngc2000.txt");
 
    this.GetConstructor = function ()
    {
@@ -259,12 +276,11 @@ __catalogRegister__.Register(new NGCICCatalog);
 // ******************************************************************
 function NamedStarsCatalog()
 {
-   this.name = "NamedStars";
    this.description = "Named stars catalog (3685 objects)";
    this.fields = [ "Name", "Coordinates", "HD", "HIP", "Common name" ];
 
    this.__base__ = LocalFileCatalog;
-   this.__base__(this.name, "namedStars.txt");
+   this.__base__("NamedStars", "NamedStars", "namedStars.txt");
 
    this.GetConstructor = function ()
    {
@@ -331,10 +347,10 @@ var __vizier_cache__;
 // VizierCatalog: Base class for all the catalogs downloaded from
 //                VizieR servers
 // ******************************************************************
-function VizierCatalog(name)
+function VizierCatalog(id, name)
 {
    this.__base__ = Catalog;
-   this.__base__(name);
+   this.__base__(id, name);
 
    this.UrlBuilder = null;
    this.ParseRecord = null;
@@ -687,11 +703,10 @@ VizierCatalog.mirrors = [
 // ******************************************************************
 function HR_Catalog()
 {
-   this.name="Bright Stars";
    this.description = "Bright Star Catalog, 5th ed. (Hoffleit+, 9110 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__( "BrightStars", "Bright Stars" );
 
    this.catalogMagnitude = 7;
    this.magMin = NULLMAG;
@@ -769,11 +784,10 @@ __catalogRegister__.Register( new HR_Catalog );
 // ******************************************************************
 function HipparcosCatalog()
 {
-   this.name="Hipparcos";
    this.description = "Hipparcos Main catalog (118,218 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__( "Hipparcos", "Hipparcos" );
 
    this.catalogMagnitude = 14;
 
@@ -846,11 +860,10 @@ __catalogRegister__.Register( new HipparcosCatalog );
 // ******************************************************************
 function TychoCatalog()
 {
-   this.name="TYCHO-2";
    this.description = "Tycho-2 catalog (2,539,913 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__( "TYCHO-2", "TYCHO-2" );
 
    this.catalogMagnitude = 16;
 
@@ -932,11 +945,10 @@ __catalogRegister__.Register( new TychoCatalog );
 // ******************************************************************
 function PGCCatalog()
 {
-   this.name="PGC";
    this.description = "PGC HYPERLEDA I catalog of galaxies (983,261 galaxies)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__( "PGC", "PGC" );
 
    this.fields = [ "Name", "Coordinates" ];
 
@@ -979,11 +991,10 @@ __catalogRegister__.Register( new PGCCatalog );
 // ******************************************************************
 function PPMXCatalog()
 {
-   this.name="PPMX";
    this.description = "PPMX catalog";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("PPMX", "PPMX");
 
    this.catalogMagnitude = 15;
    this.magMin = NULLMAG;
@@ -1058,11 +1069,10 @@ __catalogRegister__.Register( new PPMXCatalog );
 // ******************************************************************
 function PPMXLCatalog()
 {
-   this.name="PPMXL";
    this.description = "PPMXL catalog (910,469,430 objects)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("PPMXL", "PPMXL");
 
    this.catalogMagnitude = 20;
    this.magMin = NULLMAG;
@@ -1138,11 +1148,10 @@ __catalogRegister__.Register( new PPMXLCatalog );
 // ******************************************************************
 function USNOB1Catalog()
 {
-   this.name="USNO-B1";
    this.description = "USNO-B1.0 catalog (1,045,175,762 objects)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("USNO-B1", "USNO-B1");
 
    this.catalogMagnitude = 20;
    this.magMax = 15;
@@ -1214,11 +1223,10 @@ __catalogRegister__.Register( new USNOB1Catalog );
 // ******************************************************************
 function UCAC3Catalog()
 {
-   this.name="UCAC3";
    this.description = "UCAC3 catalog (100,765,502 objects)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("UCAC3", "UCAC3");
 
    this.catalogMagnitude = 15;
    this.magMax = 15;
@@ -1293,11 +1301,10 @@ __catalogRegister__.Register( new UCAC3Catalog );
 // ******************************************************************
 function VdBCatalog()
 {
-   this.name="VdB";
    this.description = "Catalog of Reflection Nebulae - Van den Bergh (159 nebulaes)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("VdB", "VdB");
 
    this.catalogMagnitude = 10.5;
 
@@ -1366,11 +1373,10 @@ __catalogRegister__.Register( new VdBCatalog );
 // ******************************************************************
 function SharplessCatalog()
 {
-   this.name="Sharpless";
    this.description = "Catalog of HII Regions - Sharpless (313 nebulaes)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("Sharpless", "Sharpless");
 
    this.fields = [ "Name", "Coordinates" ];
 
@@ -1418,11 +1424,10 @@ __catalogRegister__.Register( new SharplessCatalog );
 // ******************************************************************
 function BarnardCatalog()
 {
-   this.name="Barnard";
    this.description = "Barnard's Catalog of Dark Objects in the Sky (349 objects)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("Barnard", "Barnard");
 
    this.fields = [ "Name", "Coordinates" ];
 
@@ -1472,11 +1477,10 @@ __catalogRegister__.Register( new BarnardCatalog );
 
 function BVCatalog()
 {
-   this.name="NOMAD-1 B-V WB";
    this.description = "NOMAD-1 star catalog with B-V filtering for white balance";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("NOMAD-1", "NOMAD-1 B-V WB");
 
    this.catalogMagnitude = 14;
    this.bvMin = 0.6;
@@ -1685,10 +1689,10 @@ __catalogRegister__.Register( new BVCatalog );
 // ******************************************************************
 // SDSSBase: Base class of SDSS catalog versions
 // ******************************************************************
-function SDSSBase(catalogName)
+function SDSSBase(catalogId, catalogName)
 {
    this.__base__ = VizierCatalog;
-   this.__base__( catalogName );
+   this.__base__(catalogId, catalogName );
 
    this.catalogMagnitude = 25;
 
@@ -1748,7 +1752,7 @@ function SDSSBase(catalogName)
          "&-c.r=" + format("%f",fov) +
          "&-c.u=deg&-out.form=|"+
          format("&-out.max=%d", this.maxRecords)+
-         "&-out="+this.idField+"&-out=RAJ2000&-out=DEJ2000&-out=pmRA&-out=pmDE&-out=cl&-out=zsp" +
+         "&-oc.form=dec&-out.add=_RAJ,_DEJ"+"&-out="+this.idField+"&-out=pmRA&-out=pmDE&-out=cl&-out=zsp" +
          "&-out=umag&-out=gmag&-out=rmag&-out=imag&-out=zmag" +
          this.CreateMagFilter( this.magnitudeFilter, this.magMin, this.magMax ) ;
       if( this.classFilter==1 )
@@ -1771,10 +1775,10 @@ function SDSSBase(catalogName)
 
    this.ParseRecord = function( tokens, epoch )
    {
-      if( tokens.length>=12 && parseFloat(tokens[1])>0 )
+      if( tokens.length>=12 && parseFloat(tokens[0])>0 )
       {
-         var x=parseFloat(tokens[1]);
-         var y=parseFloat(tokens[2]);
+         var x=parseFloat(tokens[0]);
+         var y=parseFloat(tokens[1]);
          if( !(x>=0 && x<=360 && y>=-90 && y<=90) )
             return null;
 
@@ -1787,7 +1791,7 @@ function SDSSBase(catalogName)
             x += dx;
             y += dy;
          }
-         var record = new CatalogRecord( new Point( x, y ), 0, "SDSS"+tokens[0].trim(), 0 );
+         var record = new CatalogRecord( new Point( x, y ), 0, "SDSS"+tokens[2].trim(), 0 );
          record.Redshift = tokens[6].trim();
          record.Class = tokens[5].trim();
          record.umag = tokens[7].trim();
@@ -1810,11 +1814,10 @@ SDSSBase.prototype=new VizierCatalog;
 // ******************************************************************
 function SDSSCatalog()
 {
-   this.name="SDSS";
    this.description = "SDSS R9 catalog (469,053,874 objects)";
 
    this.__base__ = SDSSBase;
-   this.__base__( this.name );
+   this.__base__("SDSS", "SDSS R9");
 
    this.vizierSource = "V/139"
    this.idField = "SDSS9";
@@ -1838,7 +1841,7 @@ function SDSS7Catalog()
    this.description = "SDSS R7 catalog (357,175,411 objects)";
 
    this.__base__ = SDSSBase;
-   this.__base__( this.name );
+   this.__base__( "SDSS7", "SDSS R7");
 
    this.vizierSource = "II/294"
    this.idField = "SDSS";
@@ -1858,11 +1861,10 @@ __catalogRegister__.Register( new SDSS7Catalog );
 // ******************************************************************
 function GSCCatalog()
 {
-   this.name="GSC";
    this.description = "GSC2.3 catalog (945,592,683 objects)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("GSC", "GSC");
 
    this.catalogMagnitude = 23;
 
@@ -1981,11 +1983,10 @@ __catalogRegister__.Register( new GSCCatalog );
 // ******************************************************************
 function CMC14Catalog()
 {
-   this.name="CMC14";
    this.description = "CMC14 catalog (95,858,475 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("CMC14", "CMC14");
 
    this.catalogMagnitude = 17;
 
@@ -2046,11 +2047,10 @@ __catalogRegister__.Register( new CMC14Catalog );
 // ******************************************************************
 function ARPCatalog()
 {
-   this.name="ARP";
    this.description = "ARP catalog (592 galaxies)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("ARP", "ARP");
 
    this.catalogMagnitude = 17;
 
@@ -2074,23 +2074,23 @@ function ARPCatalog()
          format("%f %f",center.x, center.y) +
          "&-c.r=" + format("%f",fov) +
          "&-c.u=deg&-out.form=|"+
-         "&-out=Arp&-out=RA2000&-out=DE2000" +
-         "&-out=Name&-out=VT&-out=dim1&-out=MType" +
+         "&-oc.form=dec&-out.add=_RAJ,_DEJ"+
+         "&-out=Arp&-out=Name&-out=VT&-out=dim1&-out=MType" +
          this.CreateMagFilter( this.magnitudeFilter, this.magMin, this.magMax ) ;
       return url;
    }
 
    this.ParseRecord = function( tokens, epoch )
    {
-      if( tokens.length>=2 && parseFloat(tokens[1])>0 )
+      if( tokens.length>=2 && parseFloat(tokens[0])>0 )
       {
-         var x=DMSangle.FromString(tokens[1]).GetValue()*360/24;
-         var y=DMSangle.FromString(tokens[2]).GetValue();
+         var x=parseFloat(tokens[0]);
+         var y=parseFloat(tokens[1]);
          if( !(x>=0 && x<=360 && y>=-90 && y<=90) )
             return null;
 
          var diameter = parseFloat(tokens[5])/60;
-         var record = new CatalogRecord( new Point( x, y ), diameter, "ARP"+tokens[0].trim());
+         var record = new CatalogRecord( new Point( x, y ), diameter, "ARP"+tokens[2].trim());
          record["CommonName"] = tokens[3].trim();
          record["VTmag"] = tokens[4].trim();
          record["MType"] = tokens[6].trim();
@@ -2109,11 +2109,10 @@ __catalogRegister__.Register( new ARPCatalog );
 // ******************************************************************
 function GCVSCatalog()
 {
-   this.name="GCVS";
    this.description = "General Catalog of Variable Stars (47969 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__( this.name );
+   this.__base__("GCVS", "GCVS");
 
    this.catalogMagnitude = 17;
 
@@ -2174,15 +2173,14 @@ __catalogRegister__.Register( new GCVSCatalog );
 
 
 // ******************************************************************
-// Gaia_Catalog
+// GaiaDR1_Catalog
 // ******************************************************************
-function Gaia_Catalog()
+function GaiaDR1_Catalog()
 {
-   this.name = "Gaia";
    this.description = "Gaia Data Release 1 (Gaia collaboration 2016, 1,142,679,769 sources)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("GaiaDR1", "Gaia DR1");
 
    this.catalogMagnitude = 20.7;
    this.magMin = NULLMAG;
@@ -2198,7 +2196,7 @@ function Gaia_Catalog()
 
    this.GetConstructor = function ()
    {
-      return "new Gaia_Catalog()";
+      return "new GaiaDR1_Catalog()";
    }
 
    this.UrlBuilder = function (center, fov, mirrorServer)
@@ -2243,19 +2241,98 @@ function Gaia_Catalog()
    }
 }
 
-Gaia_Catalog.prototype=new VizierCatalog;
-__catalogRegister__.Register( new Gaia_Catalog );
+GaiaDR1_Catalog.prototype=new VizierCatalog;
+__catalogRegister__.Register(new GaiaDR1_Catalog);
+
+// ******************************************************************
+// GaiaDR2_Catalog
+// ******************************************************************
+function GaiaDR2_Catalog()
+{
+   this.description = "Gaia Data Release 2 (Gaia collaboration 2018, 1,692,919,135 sources)";
+
+   this.__base__ = VizierCatalog;
+   this.__base__("GaiaDR2", "Gaia DR2");
+
+   this.catalogMagnitude = 21;
+   this.magMin = NULLMAG;
+   this.magMax = 21;
+   this.fields = [ "SourceID", "Coordinates", "RPmag", "Gmag", "BPmag", "Parallax", "RadialVelocity", "Radius", "Luminosity"];
+
+   this.properties.push(["magMin", DataType_Double]);
+   this.properties.push(["magMax", DataType_Double]);
+   this.properties.push(["magnitudeFilter", DataType_UCString ]);
+
+   this.filters = [ "RPmag", "Gmag", "BPmag"];
+   this.magnitudeFilter = "Gmag";
+
+   this.GetConstructor = function ()
+   {
+      return "new GaiaDR2_Catalog()";
+   }
+
+   this.UrlBuilder = function (center, fov, mirrorServer)
+   {
+      var url = mirrorServer + "viz-bin/asu-tsv?-source=I/345/gaia2&-c=" +
+         format("%f %f", center.x, center.y) +
+         "&-c.r=" + format("%f", fov) +
+         "&-c.u=deg&-out.form=|" +
+         "&-out.add=_RAJ,_DEJ&-out=pmRA&-out=pmDE&-out=Source&-out=Gmag&-out=RPmag&-out=BPmag" +
+         "&-out=Plx&-out=RV&-out=Rad&-out=Lum" +
+         this.CreateMagFilter(this.magnitudeFilter, this.magMin, this.magMax);
+      return url;
+   }
+
+   this.ParseRecord = function (tokens, epoch)
+   {
+      if (tokens.length >= 5 && parseFloat(tokens[0]) > 0)
+      {
+         var x = parseFloat(tokens[0]);
+         var y = parseFloat(tokens[1]);
+         if (!(x >= 0 && x <= 360 && y >= -90 && y <= 90))
+            return null;
+
+         if (epoch != null && tokens[2].trim().length > 0 && tokens[3].trim().length > 0)
+         {
+            var pmX = parseFloat(tokens[2]);
+            var pmY = parseFloat(tokens[3]);
+            var dx = pmX * (epoch - 2000) / 3600000/* * Math.cos( y*Math.PI/180 )*/;
+            var dy = pmY * (epoch - 2000) / 3600000;
+            x += dx;
+            y += dy;
+         }
+         var name = tokens[4].trim();
+         var record = new CatalogRecord(new Point(x, y), 0, name, parseFloat(tokens[5]));
+         record["SourceID"] = name;
+         record["Gmag"] = tokens[5].trim();
+         record["RPmag"] = tokens[6].trim();
+         record["BPmag"] = tokens[7].trim();
+         record["Parallax"] = tokens[8].trim();
+         record["RadialVelocity"] = tokens[9].trim();
+         record["Radius"] = tokens[10].trim();
+         record["Luminosity"] = tokens[11].trim();
+         if (record[this.magnitudeFilter])
+            record.magnitude = parseFloat(record[this.magnitudeFilter]);
+         return record;
+      }
+      else
+         return null;
+   }
+}
+
+GaiaDR2_Catalog.prototype=new VizierCatalog;
+__catalogRegister__.Register(new GaiaDR2_Catalog);
+__catalogRegister__.Register(new GaiaDR2_Catalog, "Gaia");
 
 // ******************************************************************
 // APASS_Catalog
 // ******************************************************************
 function APASS_Catalog()
 {
-   this.name = "APASS";
    this.description = "AAVSO Photometric All Sky Survey DR9 (Henden+, 2016, 62 million stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("APASS", "APASS");
 
    this.catalogMagnitude = 17;
    this.magMin = 10;
@@ -2333,11 +2410,10 @@ __catalogRegister__.Register( new APASS_Catalog );
 // ******************************************************************
 function CustomCatalog()
 {
-   this.name = "Custom Catalog";
    this.description = "User defined catalog";
 
    this.__base__ = Catalog;
-   this.__base__( this.name );
+   this.__base__("Custom", "Custom Catalog");
 
    this.catalogPath = null;
 
