@@ -30,6 +30,9 @@
 /*
  Changelog:
 
+ 1.4.5: * Removed obsolete check when writing the result file which produced the
+          warning "Invalid out format"
+
  1.4.4: * Fixed null pointer (https://pixinsight.com/forum/index.php?topic=11982)
 
  1.4.3: * Better error management in the online catalogs
@@ -87,7 +90,7 @@
 <br/>\
 Copyright &copy;2013-2018 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.4.4"
+#define VERSION "1.4.5"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -3066,8 +3069,8 @@ function PhotometryEngine(w)
                line += this.FormatFloat("SNR" + a, imageStars[i].SNR[a], 8, 5) + separator;
             line += format("%04x\n", imageStars[i].flags);
 
-            if (line.length != lineLength)
-               warning = true;
+//            if (line.length != lineLength)
+//               warning = true;
 
             file.outText(line);
          }
