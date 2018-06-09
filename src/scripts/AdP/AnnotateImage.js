@@ -3,7 +3,7 @@
 
    Annotation of astronomical images.
 
-   Copyright (C) 2012-2017, Andres del Pozo
+   Copyright (C) 2012-2018, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,8 @@
 
 /*
    Changelog:
+
+   1.9.5:* AnnotateImage can now be used from another script
 
    1.9.4:* Better error management in the online catalogs
 
@@ -175,7 +177,7 @@
 
 #feature-info  A script for annotating astronomical images.<br/>\
                <br/>\
-               Copyright &copy; 2012-2017 Andr&eacute;s del Pozo
+               Copyright &copy; 2012-2018 Andr&eacute;s del Pozo
 
 #include <pjsr/DataType.jsh>
 #include <pjsr/FontFamily.jsh>
@@ -192,10 +194,12 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.9.4"
+#define VERSION "1.9.5"
 #define TITLE "Annotate Image"
-#define SETTINGS_MODULE "ANNOT"
+#define ANNOT_SETTINGS_MODULE "ANNOT"
 
+#ifndef USE_ANNOTATE_LIBRARY
+#define SETTINGS_MODULE "ANNOT"
 #include "WCSmetadata.jsh"
 #include "SearchCoordinatesDialog.js"
 #include "CommonUIControls.js"
@@ -203,6 +207,7 @@
 #include "AstronomicalCatalogs.jsh"
 //#include "SpectrophotometricCatalogs.js"
 #include "PreviewControl.js"
+#endif
 
 // Output modes
 #define Output_Image    0  // Image annotated
@@ -474,7 +479,7 @@ function Layer()
       this.layerName = null;
    this.__base__ = ObjectWithSettings;
    this.__base__(
-      SETTINGS_MODULE,
+      ANNOT_SETTINGS_MODULE,
       this.layerName,
       new Array(
          [ "visible", DataType_Boolean ],
@@ -483,7 +488,7 @@ function Layer()
    );
 
    this.visible = true;
-   this.gprops = new GraphicProperties( SETTINGS_MODULE, this.layerName );
+   this.gprops = new GraphicProperties( ANNOT_SETTINGS_MODULE, this.layerName );
 
    this.GetObjects = function ()
    {
@@ -1749,7 +1754,7 @@ function AnnotateDialog(engine)
          "The script requires the image to have coordinates stored in FITS header keywords following the WCS convention.<br/>" +
          "The Image Plate Solver script can be used to generate these coordinates and keywords.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2012-2017 Andr&eacute;s del Pozo</p>";
+         "Copyright &copy; 2012-2018 Andr&eacute;s del Pozo</p>";
 
    // Layers
    this.layer_TreeBox = new TreeBox(this);
@@ -2264,7 +2269,7 @@ function AnnotationEngine()
 {
    this.__base__ = ObjectWithSettings;
    this.__base__(
-      SETTINGS_MODULE,
+      ANNOT_SETTINGS_MODULE,
       "engine",
       new Array(
          [ "vizierServer", DataType_String ],
@@ -2425,7 +2430,7 @@ function AnnotationEngine()
 
    this.ResetSettings = function ()
    {
-      Settings.remove(SETTINGS_MODULE);
+      Settings.remove(ANNOT_SETTINGS_MODULE);
    }
 
 
@@ -2496,6 +2501,7 @@ function AnnotationEngine()
 
    this.Render = function ()
    {
+      var targetW = null;
       if (this.epoch)
          this.metadata.epoch = this.epoch;
       // Load data from catalogs
@@ -2571,7 +2577,7 @@ function AnnotationEngine()
          {
             var newid = this.window.mainView.fullId + "_Annotated";
             console.writeln("<end><cbr>Generating output image: ", newid);
-            var targetW = new ImageWindow(width, height, (this.outputMode == Output_Overlay) ? 4 : 3, this.window.bitsPerSample, this.window.isFloatSample, true, newid);
+            targetW = new ImageWindow(width, height, (this.outputMode == Output_Overlay) ? 4 : 3, this.window.bitsPerSample, this.window.isFloatSample, true, newid);
 
             targetW.mainView.beginProcess(UndoFlag_NoSwapFile);
 
@@ -2591,6 +2597,7 @@ function AnnotationEngine()
 
       if (this.writeObjects)
          this.WriteObjects();
+      return targetW;
    };
 
    this.RenderPreview = function ()
@@ -2786,6 +2793,8 @@ function AnnotationEngine()
    };
 }
 
+#ifndef USE_ANNOTATE_LIBRARY
+
 function CheckVersion(major, minor, release)
 {
    if (major == __PI_MAJOR__)
@@ -2856,3 +2865,4 @@ function main()
 var __PJSR_AdpAnnotateImage_SuccessCount = 0;
 
 main();
+#endif
