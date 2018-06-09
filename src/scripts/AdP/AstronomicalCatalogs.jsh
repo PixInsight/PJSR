@@ -685,6 +685,7 @@ function VizierCatalog(id, name)
 VizierCatalog.prototype = new Catalog;
 
 VizierCatalog.mirrors = [
+   {name:"VizieR (vizier.u-strasbg.fr) Strasbourg, France", address:"http://vizier.u-strasbg.fr/"},
    {name:"CDS (cdsarc.u-strasbg.fr) Strasbourg, France", address:"http://cdsarc.u-strasbg.fr/"},
    {name:"ADAC (vizier.nao.ac.jp) Tokyo, Japan", address:"http://vizier.nao.ac.jp/"},
    {name:"CADC (vizier.hia.nrc.ca) Victoria, Canada ", address:"http://vizier.hia.nrc.ca/"},
