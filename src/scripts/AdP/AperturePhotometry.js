@@ -30,6 +30,9 @@
 /*
  Changelog:
 
+ 1.4.6: * Use a wider aperture when searching for stars in high resolution images
+        * Fixed problem in stars too near an edge of the image
+
  1.4.5: * Removed obsolete check when writing the result file which produced the
           warning "Invalid out format"
 
@@ -90,7 +93,7 @@
 <br/>\
 Copyright &copy;2013-2018 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.4.5"
+#define VERSION "1.4.6"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -2393,6 +2396,11 @@ function PhotometryEngine(w)
 
    this.FindStarCentersDPSF = function (referenceWindow, referenceStars)
    {
+      // search aperture: Use a wider aperture for small resolutions. It must be at least 2 pixels
+      var searchAperture = 4 / (referenceWindow.metadataWCS.resolution * 3600);
+      searchAperture = Math.max(2, Math.min(20, searchAperture));
+      console.writeln(format("Star search aperture: %.2f pixels", searchAperture));
+
       var DPSF = new DynamicPSF;
       DPSF.views = [
          // id
@@ -2407,8 +2415,8 @@ function PhotometryEngine(w)
          {
             stars.push(
                [0, 0, DynamicPSF.prototype.Star_DetectedOk,
-                  referenceStars[i].orgPosPx.x - 2, referenceStars[i].orgPosPx.y - 2,
-                  referenceStars[i].orgPosPx.x + 2, referenceStars[i].orgPosPx.y + 2,
+                  referenceStars[i].orgPosPx.x - searchAperture, referenceStars[i].orgPosPx.y - searchAperture,
+                  referenceStars[i].orgPosPx.x + searchAperture, referenceStars[i].orgPosPx.y + searchAperture,
                   referenceStars[i].orgPosPx.x, referenceStars[i].orgPosPx.y]);
             translateIdx[psf.length] = i;
             psf.push(
@@ -2836,6 +2844,13 @@ function PhotometryEngine(w)
             else
                intersection = new CircleSquareIntersection(star.imgPosPx, aperture / 2);
 
+            var apertureRect = intersection.ApertureRect();
+            if (apertureRect.left < 0 || apertureRect.top < 0 || apertureRect.right >= window.metadataWCS.width || apertureRect.bottom >= window.metadataWCS.height)
+            {
+               star.flags |= STARFLAG_BADPOS;
+               continue;
+            }
+
             var photometry = this.AperturePhotometry(pixels, bkgPixels, star, intersection, window.metadataWCS.width);
             star.flux[a] = photometry.flux;
             if (this.bkgWindowMode == BKGWINDOW_RING)
@@ -3064,9 +3079,15 @@ function PhotometryEngine(w)
                line+="         ;          ;          ;         ;            ;";
 
             for (var a = 0; a < this.apertureSteps; a++)
-               line += this.FormatFloat("flux" + a, imageStars[i].flux[a], 9, 6) + separator;
+               if(imageStars[i].flux[a])
+                  line += this.FormatFloat("flux" + a, imageStars[i].flux[a], 9, 6) + separator;
+               else
+                  line += separator;
             for (var a = 0; a < this.apertureSteps; a++)
-               line += this.FormatFloat("SNR" + a, imageStars[i].SNR[a], 8, 5) + separator;
+               if(imageStars[i].SNR[a])
+                  line += this.FormatFloat("SNR" + a, imageStars[i].SNR[a], 8, 5) + separator;
+               else
+                  line += separator;
             line += format("%04x\n", imageStars[i].flags);
 
 //            if (line.length != lineLength)
@@ -3207,10 +3228,14 @@ function PhotometryEngine(w)
                         flags = flags | this.imagesData[i].stars[s].flags;
                      if (snrField)
                      {
-                        if (minSNR == null)
-                           minSNR = snrField(this.imagesData[i].stars[s]);
-                        else
-                           minSNR = Math.min(minSNR, snrField(this.imagesData[i].stars[s]));
+                        var snr = snrField(this.imagesData[i].stars[s]);
+                        if (snr !== null)
+                        {
+                           if (minSNR == null)
+                              minSNR = snr;
+                           else
+                              minSNR = Math.min(minSNR, snr);
+                        }
                      }
                   }
                   else
@@ -3229,14 +3254,19 @@ function PhotometryEngine(w)
                if (snrField)
                {
                   file.outText(";");
-                  if (minSNR != null)
+                  if (minSNR !== null)
                      file.outText(format("%f", minSNR));
                }
                for (var i = 0; i < this.imagesData.length; i++)
+               {
+                  file.outText(";");
                   if (this.imagesData[i].stars[s])
-                     file.outText(format(";%f", field(this.imagesData[i].stars[s])));
-                  else
-                     file.outText(";");
+                  {
+                     var fieldVal = field(this.imagesData[i].stars[s]);
+                     if (fieldVal !== null)
+                        file.outText(format("%f", fieldVal));
+                  }
+               }
                file.outText("\n");
             }
          }
@@ -3595,7 +3625,7 @@ function PhotometryEngine(w)
                "PSF_Flux",
                function (star)
                {
-                  return star.SNR[0];
+                  return star.SNR[0] ? star.SNR[0] : null;
                }
             );
          if (this.generateFluxTable)
@@ -3603,12 +3633,12 @@ function PhotometryEngine(w)
                this.WriteTable(
                   function (star)
                   {
-                     return star.flux[f];
+                     return star.flux[f] ? star.flux[f] : null;
                   },
                   format("Flux_Ap%g", this.minimumAperture + f * this.apertureStepSize),
                   function (star)
                   {
-                     return star.SNR[f];
+                     return star.SNR[f] ? star.SNR[f] : null;
                   }
                );
          if (this.generateBackgTable)
@@ -3621,7 +3651,7 @@ function PhotometryEngine(w)
                this.WriteTable(
                   function (star)
                   {
-                     return star.SNR[f];
+                     return star.SNR[f] ? star.SNR[f] : null;
                   },
                   format("SNR_Ap%g", this.minimumAperture + f * this.apertureStepSize));
          if (this.generateFlagTable)
