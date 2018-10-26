@@ -2307,14 +2307,14 @@ function AnnotationEngine()
       this.metadata.ExtractMetadata(w);
 
       if (this.metadata.ref_I_G == null)
-         throw Error("The image has not WCS coordinates");
+         throw Error("The image has no WCS coordinates");
 
       if (this.metadata.epoch)
          this.epoch = this.metadata.epoch;
       this.metadata.Print();
 
       if(this.metadata.width * this.metadata.height *4 >= 2*1024*1024*1024)
-         throw Error("The script can not annotate images bigger than 536,870,912 pixels");
+         throw Error("The script cannot annotate images bigger than 536,870,912 pixels");
    };
 
    this.SetDefaults = function ()
@@ -2555,7 +2555,7 @@ function AnnotationEngine()
             bmp.fill(0x00000000);
          var g = new VectorGraphics(bmp);
          if (!g.isPainting)
-            throw Error("The script can not draw on the image");
+            throw Error("The script cannot draw on the image");
 
          console.writeln("Rendering annotation");
          this.RenderGraphics(g, width, height);
@@ -2646,7 +2646,7 @@ function AnnotationEngine()
          bmp.fill(0x00000000);
       var g = new VectorGraphics(bmp);
       if (!g.isPainting)
-         throw Error("The script can not draw on the image");
+         throw Error("The script cannot draw on the image");
 
       console.writeln("Rendering annotation");
       this.RenderGraphics(g, width, height);

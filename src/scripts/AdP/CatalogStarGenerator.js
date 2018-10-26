@@ -185,7 +185,7 @@ function CatStarGeneratorDialog(engine)
    this.copyGeom_Button.text = "Copy";
    this.copyGeom_Button.toolTip = "<p>Copies the geometry of the active image to the user defined geometry.<br/><br/>" +
       "The copied geometry can be different from the geometry of the image because the image has some parameters that" +
-      " can not be copied.</p>";
+      " cannot be copied.</p>";
    this.copyGeom_Button.enabled = engine.window != null;
    this.copyGeom_Button.icon = this.scaledResource( ":/icons/window-export.png" );
    this.copyGeom_Button.onClick = function ()
@@ -1460,7 +1460,7 @@ function CatalogStarGenerator()
       if (!this.useImageMetadata)
          this.metadata = this.CreateUserMetadata();
       else if (this.metadata == null)
-         throw "The target image has not WCS coordinates.";
+         throw "The target image has no WCS coordinates.";
 
 
       var stars = this.LoadStars(this.catalog);

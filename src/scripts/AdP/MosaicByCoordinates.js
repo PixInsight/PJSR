@@ -938,7 +938,7 @@ function MosaicByCoordsEngine()
                var metadata = new ImageMetadata();
                metadata.ExtractMetadata(window);
                if (!metadata.projection || !metadata.ref_I_G_lineal)
-                  throw "The image has not WCS coordinates";
+                  throw "The image has no WCS coordinates";
                this.metadataCache[this.files[i]] = metadata;
                console.writeln(format("Metadata of '%ls' OK.", this.files[i]));
             } catch (exception)

@@ -1440,7 +1440,7 @@ function MosaicDialog(engine)
    };
 
    var lwidth = this.font.width("Object name:");
-   
+
    this.objectName_Label = new Label(this);
    this.objectName_Label.text = "Object name:";
    this.objectName_Label.setMinWidth(lwidth);
@@ -1529,7 +1529,7 @@ function MosaicDialog(engine)
    this.outputfile_Control.sizer.scaledSpacing = 4;
    this.outputfile_Control.hide();
    this.outputfile_Control.sizer.add(this.outputPathGroup);
-   
+
    this.outputfile_Section = new SectionBar(this, "Output file");
    this.outputfile_Section.setSection(this.outputfile_Control);
    this.outputfile_Section.toggleSection = function ()
@@ -1778,10 +1778,10 @@ function MosaicPlannerEngine()
       this.metadata.ExtractMetadata(imageWindow);
 
       if (this.metadata.ref_I_G == null)
-         throw Error("The image has not WCS coordinates");
+         throw Error("The image has no WCS coordinates");
 
       if (this.metadata.width * this.metadata.height * 4 >= 2 * 1024 * 1024 * 1024)
-         throw Error("The script can not work with images bigger than 536,870,912 pixels");
+         throw Error("The script cannot work with images bigger than 536,870,912 pixels");
 
       if (this.showGuideStars)
          this.LoadCatalog();
@@ -2209,8 +2209,8 @@ function MosaicPlannerEngine()
       for (var i = 0; i < this.tiles.length; i++)
       {
          var tile = this.tiles[i];
-         line += format("%s_%d,%ls,%ls,%.2f\n", this.objectName, i + 1, DMSangle.FromAngle(tile.center.x * 24 / 360).ToString(), DMSangle.FromAngle(tile.center.y).ToString(), tile.GetRotation()); 
-         
+         line += format("%s_%d,%ls,%ls,%.2f\n", this.objectName, i + 1, DMSangle.FromAngle(tile.center.x * 24 / 360).ToString(), DMSangle.FromAngle(tile.center.y).ToString(), tile.GetRotation());
+
       }
       file.write(  ByteArray.stringToUTF8( line ));
       file.close();
@@ -2265,12 +2265,12 @@ function main()
       engine.SaveSettings();
 
       engine.Render();
-      if (engine.writeDataToFile) 
+      if (engine.writeDataToFile)
       {
         engine.PrintTilesToCSV(engine.outputFile);
       }
       engine.PrintTiles();
-      
+
    } catch (ex)
    {
       console.writeln(ex);
