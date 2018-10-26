@@ -463,6 +463,9 @@ function CopyCoordsEngine()
       }
 
       // Set keywords
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+         this.window.mainView.beginProcess( UndoFlag_Keywords|UndoFlag_AstrometricSolution );
+#endif
       newMetadata.SaveKeywords(this.window,
 #ifgteq __PI_BUILD__ 1409 // core 1.8.6
                                false/*beginProcess*/
@@ -473,6 +476,7 @@ function CopyCoordsEngine()
       newMetadata.SaveProperties(this.window);
 #ifgteq __PI_BUILD__ 1409 // core 1.8.6
       this.window.regenerateAstrometricSolution();
+      this.window.mainView.endProcess();
 #endif
 
       // Print result
