@@ -2564,7 +2564,7 @@ function AnnotationEngine()
          {
             // if ( this.window.mainView.image.colorSpace != ColorSpace_RGB )
             // console.writeln("<end><cbr><b>WARNING</b>: The image is not RGB so the annotation will lose the colors");
-            this.window.mainView.beginProcess(UndoFlag_All);
+            this.window.mainView.beginProcess(UndoFlag_PixelData);
             if (this.window.mainView.image.colorSpace != ColorSpace_RGB)
             {
                var convertRGB = new ConvertToRGBColor();
