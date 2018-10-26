@@ -446,14 +446,14 @@ function CopyCoordsEngine()
       var metadata0 = new ImageMetadata();
       metadata0.ExtractMetadata(window0);
       if (!metadata0.projection || !metadata0.ref_I_G)
-         throw "The reference image has not WCS coordinates";
+         throw "The reference image has no WCS coordinates";
 
       // Generate the new metadata
       var newMetadata;
       if (this.simple)
       {
          if (metadata0.width != this.window.mainView.image.width || metadata0.height != this.window.mainView.image.height)
-            throw "Can not use the simple copy on images with different dimensions";
+            throw "Cannot use the simple copy on images with different dimensions";
          newMetadata = metadata0;
       }
       else
@@ -463,8 +463,17 @@ function CopyCoordsEngine()
       }
 
       // Set keywords
-      newMetadata.SaveKeywords(this.window);
+      newMetadata.SaveKeywords(this.window,
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+                               false/*beginProcess*/
+#else
+                               true/*beginProcess*/
+#endif
+                              );
       newMetadata.SaveProperties(this.window);
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+      this.window.regenerateAstrometricSolution();
+#endif
 
       // Print result
       newMetadata.Print();
