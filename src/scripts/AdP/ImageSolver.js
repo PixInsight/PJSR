@@ -2730,8 +2730,21 @@ function ImageSolver()
          }
 
          // Set FITS keywords
-         this.metadata.SaveKeywords(targetWindow);
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+         targetWindow.mainView.beginProcess( UndoFlag_Keywords|UndoFlag_AstrometricSolution );
+#endif
+         this.metadata.SaveKeywords(targetWindow,
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+                               false/*beginProcess*/
+#else
+                               true/*beginProcess*/
+#endif
+                              );
          this.metadata.SaveProperties(targetWindow);
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+         targetWindow.regenerateAstrometricSolution();
+         targetWindow.mainView.endProcess();
+#endif
 
          // Distortion model
          if (this.solverCfg.distortionCorrection && this.solverCfg.generateDistortModel)// && this.metadata.ref_I_G.polDegree != null && this.metadata.ref_I_G.polDegree > 1)
