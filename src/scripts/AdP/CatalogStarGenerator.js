@@ -1551,6 +1551,9 @@ function CatalogStarGenerator()
       }
 
       targetW.mainView.endProcess();
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+      targetW.regenerateAstrometricSolution();
+#endif
 
       jsAbortable = abortableBackup;
       return targetW;
