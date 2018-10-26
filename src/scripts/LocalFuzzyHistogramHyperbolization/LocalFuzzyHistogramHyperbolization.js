@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// LocalFuzzyHistogramHyperbolization.js - Released 2017-11-15T08:54:44Z
+// LocalFuzzyHistogramHyperbolization.js - Released 2018-10-26T11:23:18Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of LocalFuzzyHistogramHyperbolization Script version 1.02
+// This file is part of LocalFuzzyHistogramHyperbolization Script version 1.10
 //
-// Copyright (c) 2017 Frank Weidenbusch
+// Copyright (c) 2017-2018 Frank Weidenbusch
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -47,9 +47,9 @@
 // ----------------------------------------------------------------------------
 
 #define TITLE "LocalFuzzyHistogramHyperbolization Script"
-#define VERSION "1.02"
+#define VERSION "1.10"
 
-#feature-id Utilities > LocalFuzzyHistogramHyperbolization
+#feature-id My Scripts > LocalFuzzyHistogramHyperbolization
 #feature-info  A script for contrast enhancement
 
 #include <pjsr/ColorSpace.jsh>
@@ -72,23 +72,17 @@
 
 //==================================================================
 
-function defaultNullMinMaxValue(value, min, max, def) {
-   return value != null && !isNaN(value) && value >= min && value <= max ? value : def;
-}
-
-//------------------------------------------------------------------
-
 function parametersPrototype() {
    this.dialog = null;
-
    this.targetView = null;
    this.maskView = null;
 
    this.algorithmLabels = new Array(
       "Linear",
+      "MTF",
       "Sigmoid",
       "Gauss",
-      "Normalized Gauss"
+      "Masked MTF (linear stretch)"
    );
 
    this.segmentationLabels = new Array(
@@ -133,16 +127,19 @@ function parametersPrototype() {
    this.defGamma = 5;
    this.gamma = this.defGamma;
 
-   this.defX0 = 0.5;
-   this.x0 = this.defX0;
+   this.defMidtone = 0.5;
+   this.midtone = this.defMidtone;
 
    this.defSigma = 0.55;
    this.sigma = this.defSigma;
 
-   this.defMedianSTF = 0.2;
+   this.defMmtf = 1.15;
+   this.mmtf = this.defMmtf;
+
+   this.defMedianSTF = 0.25;
    this.medianSTF = this.defMedianSTF;
 
-   this.defAlgorithm_CBIndex = 2;
+   this.defAlgorithm_CBIndex = 3;
    this.algorithm_CBIndex = this.defAlgorithm_CBIndex;
 
    this.defSegmentation_CBIndex = 10;
@@ -166,8 +163,18 @@ function parametersPrototype() {
    this.defSigmoidFlag = false;
    this.sigmoidFlag = this.defSigmoidFlag;
 
+   this.defMtfFlag = false;
+   this.mtfFlag = this.defMtfFlag;
+
+   this.defMmtfFlag = false;
+   this.mmtfFlag = this.defMmtfFlag;
+
+   this.defNormalized = false;
+   this.normalized = this.defNormalized;
+
    this.defMaskFlag = false;
    this.maskFlag = this.defMaskFlag;
+
 
    this.storeSettings = function() {
       Settings.write(
@@ -207,15 +214,21 @@ function parametersPrototype() {
       );
 
       Settings.write(
-         TITLE + "." + VERSION + "_x0" ,
+         TITLE + "." + VERSION + "_midtone" ,
          DataType_Real32,
-         this.x0
+         this.midtone
       );
 
       Settings.write(
          TITLE + "." + VERSION + "_sigma" ,
          DataType_Real32,
          this.sigma
+      );
+
+      Settings.write(
+         TITLE + "." + VERSION + "_mmtf" ,
+         DataType_Real32,
+         this.mmtf
       );
 
       Settings.write(
@@ -272,7 +285,25 @@ function parametersPrototype() {
          this.sigmoidFlag
       );
 
+      Settings.write(
+         TITLE + "." + VERSION + "_mtfFlag" ,
+         DataType_Boolean,
+         this.mtfFlag
+      );
+
+      Settings.write(
+         TITLE + "." + VERSION + "_mmtfFlag" ,
+         DataType_Boolean,
+         this.mmtfFlag
+      );
+
+      Settings.write(
+         TITLE + "." + VERSION + "_normalized" ,
+         DataType_Boolean,
+         this.normalized
+      );
    };
+
 
    this.loadSettings = function() {
       var value = Settings.read(
@@ -312,16 +343,22 @@ function parametersPrototype() {
       this.gamma = ((value != null) ? value : this.defGamma);
 
       var value = Settings.read(
-         TITLE + "." + VERSION + "_x0",
+         TITLE + "." + VERSION + "_midtone",
          DataType_Real32
       );
-      this.x0 = ((value != null) ? value : this.defX0);
+      this.midtone = ((value != null) ? value : this.defMidtone);
 
       var value = Settings.read(
          TITLE + "." + VERSION + "_sigma",
          DataType_Real32
       );
       this.sigma = ((value != null) ? value : this.defSigma);
+
+      var value = Settings.read(
+         TITLE + "." + VERSION + "_mmtf",
+         DataType_Real32
+      );
+      this.mmtf = ((value != null) ? value : this.defMmtf);
 
       var value = Settings.read(
          TITLE + "." + VERSION + "_medianSTF",
@@ -376,11 +413,29 @@ function parametersPrototype() {
          DataType_Boolean
       );
       this.sigmoidFlag = ((value != null) ? value : this.defSigmoidFlag);
-   };
 
+      var value = Settings.read(
+         TITLE + "." + VERSION + "_mtfFlag",
+         DataType_Boolean
+      );
+      this.mtfFlag = ((value != null) ? value : this.defMtfFlag);
+
+      var value = Settings.read(
+         TITLE + "." + VERSION + "_mmtfFlag",
+         DataType_Boolean
+      );
+      this.mmtfFlag = ((value != null) ? value : this.defMmtfFlag);
+
+      var value = Settings.read(
+         TITLE + "." + VERSION + "_normalized",
+         DataType_Boolean
+      );
+      this.normalized = ((value != null) ? value : this.defNormalized);
+   };
 }
 
 var parameters = new parametersPrototype();
+
 
 //------------------------------------------------------------------
 
@@ -394,9 +449,11 @@ function disable() {
    parameters.dialog.beta_NC.enabled = false;
    parameters.dialog.lowerLimit_NC.enabled = false;
    parameters.dialog.upperLimit_NC.enabled = false;
+   parameters.dialog.normalized_CheckBox.enabled = false;
+   parameters.dialog.midtone_NC.enabled = false;
    parameters.dialog.gamma_NC.enabled = false;
-   parameters.dialog.x0_NC.enabled = false;
    parameters.dialog.sigma_NC.enabled = false;
+   parameters.dialog.mmtf_NC.enabled = false;
    parameters.dialog.medianSTF_NC.enabled = false;
    parameters.dialog.algorithm_CB.enabled = false;
    parameters.dialog.algorithm_Label.enabled = false;
@@ -411,10 +468,12 @@ function disable() {
    parameters.dialog.replace_CheckBox.enabled = false;
    parameters.dialog.replace_Label.enabled = false;
    parameters.dialog.resetButton.enabled = false;
+   parameters.dialog.documentationButton.enabled = false;
    parameters.dialog.okButton.enabled = false;
    parameters.dialog.cancelButton.enabled = false;
    parameters.dialog.adjustToContents();
 }
+
 
 //------------------------------------------------------------------
 
@@ -426,11 +485,13 @@ function enable() {
    parameters.dialog.clustering_NC.enabled = parameters.cbClustering;
    parameters.dialog.autoBeta_NC.enabled = parameters.cbAutoBeta;
    parameters.dialog.beta_NC.enabled = !(parameters.cbAutoBeta);
-   parameters.dialog.lowerLimit_NC.enabled = true;
-   parameters.dialog.upperLimit_NC.enabled = true;
+   parameters.dialog.lowerLimit_NC.enabled = !(parameters.mmtfFlag);
+   parameters.dialog.upperLimit_NC.enabled = !(parameters.mmtfFlag);
+   parameters.dialog.normalized_CheckBox.enabled = parameters.sigmoidFlag || parameters.gaussFlag;
+   parameters.dialog.midtone_NC.enabled = parameters.sigmoidFlag || parameters.mtfFlag;
    parameters.dialog.gamma_NC.enabled = parameters.sigmoidFlag;
-   parameters.dialog.x0_NC.enabled = parameters.sigmoidFlag;
    parameters.dialog.sigma_NC.enabled = parameters.gaussFlag;
+   parameters.dialog.mmtf_NC.enabled = parameters.mmtfFlag;
    parameters.dialog.medianSTF_NC.enabled = parameters.cbSTF;
    parameters.dialog.algorithm_CB.enabled = true;
    parameters.dialog.algorithm_Label.enabled = true;
@@ -445,10 +506,12 @@ function enable() {
    parameters.dialog.replace_CheckBox.enabled = true;
    parameters.dialog.replace_Label.enabled = true;
    parameters.dialog.resetButton.enabled = true;
+   parameters.dialog.documentationButton.enabled = true;
    parameters.dialog.okButton.enabled =
       parameters.targetView != null;
    parameters.dialog.cancelButton.enabled = true;
 }
+
 
 //------------------------------------------------------------------
 
@@ -458,9 +521,11 @@ function globalReset() {
    parameters.beta = parameters.defBeta;
    parameters.lowerLimit = parameters.defLowerLimit;
    parameters.upperLimit = parameters.defUpperLimit;
+   parameters.normalized = parameters.defNormalized;
+   parameters.midtone = parameters.defMidtone;
    parameters.gamma = parameters.defGamma;
-   parameters.x0 = parameters.defX0;
    parameters.sigma = parameters.defSigma;
+   parameters.mmtf = parameters.defMmtf;
    parameters.medianSTF = parameters.defMedianSTF;
    parameters.algorithm_CBIndex = parameters.defAlgorithm_CBIndex;
    parameters.segmentation_CBIndex = parameters.defSegmentation_CBIndex;
@@ -470,12 +535,14 @@ function globalReset() {
    parameters.replace = parameters.defReplace;
    parameters.gaussFlag = parameters.defGaussFlag;
    parameters.sigmoidFlag = parameters.defSigmoidFlag;
+   parameters.mmtfFlag = parameters.defMmtfFlag;
    parameters.maskFlag = parameters.defMaskFlag;
 
    parameters.storeSettings();
    parameters.dialog.cancel();
    main();
 }
+
 
 //------------------------------------------------------------------
 
@@ -486,6 +553,7 @@ function uniqueViewIdNoLeadingZero(baseId) {
    }
    return id;
 }
+
 
 //------------------------------------------------------------------
 
@@ -527,6 +595,7 @@ function lc(image) {
    return c;
 }
 
+
 //------------------------------------------------------------------
 
 function snr(image) {
@@ -562,17 +631,21 @@ function imageQuality(iqImage, iqImageId) {
    console.writeln("Local Contrast: " + format("%5.2f", LC * 100) + "% | SNR: " + format("%3.2f", SNR) + "db");
 }
 
+
 //------------------------------------------------------------------
 
-function FHH(sample, mask, gmin, gmax, gmean) {
+function FHH(sample, mask, gmin, gmax, gmed, gmedmed) {
    sample = Math.max(gmin, Math.min(gmax, sample));
 
    var c = 1 / (Math.exp(-1) - 1);
    var f = parameters.autoBeta / 1.414;
 
+
+// *** Linar Membership Function ***
+
    if (parameters.algorithm_CBIndex == 0) {
       if (parameters.cbAutoBeta == true) {
-         var beta = 1.5 - 0.75 * (gmean - gmin) / (gmax - gmin);
+         var beta = 1.5 - 0.75 * (gmed - gmin) / (gmax - gmin);
          beta = f * beta;
       }
       else {
@@ -581,20 +654,66 @@ function FHH(sample, mask, gmin, gmax, gmean) {
 
       var fuzzy = c * (Math.exp(-Math.pow((sample - gmin) / (gmax - gmin), beta)) - 1);
    }
-   else if (parameters.algorithm_CBIndex == 1) {
+
+
+// *** MTF Membership Function ***
+
+   if (parameters.algorithm_CBIndex == 1) {
       if (parameters.cbAutoBeta == true) {
-         var beta = 1.5 - 0.75 * (1 / (1 + Math.exp(parameters.gamma * (-(gmean - gmin) / (gmax - gmin) + parameters.x0))));
+         var beta = 1.5 - 0.75 * (gmed - gmin) / (gmax - gmin);
          beta = f * beta;
       }
       else {
          var beta = parameters.beta;
       }
 
-      var fuzzy = c * (Math.exp(-Math.pow(1 / (1 + Math.exp(parameters.gamma * (-(sample - gmin) / (gmax - gmin) + parameters.x0))), beta)) - 1);
+      var fuzzy = c * (Math.exp(-Math.pow((parameters.midtone - 1) * (sample - gmin) / (gmax - gmin) / ((2 * parameters.midtone - 1) * (sample - gmin) / (gmax - gmin) - parameters.midtone), beta)) - 1);
    }
-   else if (parameters.algorithm_CBIndex == 2) {
+
+
+// *** Sigmoid Membership Function ***
+
+   else if ((parameters.algorithm_CBIndex == 2) && (parameters.normalized == false)) {
       if (parameters.cbAutoBeta == true) {
-         var beta = 1.5 - 0.75 * Math.exp(-0.5 * Math.pow((gmean - gmax) / parameters.sigma / (gmax - gmin), 2));
+         var beta = 1.5 - 0.75 * (1 / (1 + Math.exp(parameters.gamma * (-(gmed - gmin) / (gmax - gmin) + parameters.midtone))));
+         beta = f * beta;
+      }
+      else {
+         var beta = parameters.beta;
+      }
+
+      var fuzzy = c * (Math.exp(-Math.pow(1 / (1 + Math.exp(parameters.gamma * (-(sample - gmin) / (gmax - gmin) + parameters.midtone))), beta)) - 1);
+   }
+
+
+// *** Noramlized Sigmoid Membership Function ***
+
+   else if ((parameters.algorithm_CBIndex == 2) && (parameters.normalized == true)) {
+      var sig0 = -(1 / (1 + Math.exp(parameters.gamma * (-(0 - gmin) / (gmax - gmin) + parameters.midtone))));
+      var sig1 = 1 - 1 / (1 + Math.exp(parameters.gamma * (-(1 - gmin) / (gmax - gmin) + parameters.midtone)));
+
+      var w = (sig1 * parameters.midtone - sig0 * (1 - parameters.midtone)) / (Math.pow(parameters.midtone, 2) * (1 - parameters.midtone) + parameters.midtone * Math.pow(1 - parameters.midtone, 2));
+      var v = (w * Math.pow(parameters.midtone, 2) - sig0) / parameters.midtone;
+
+      var sigNorm = v * (sample - parameters.midtone) + w * Math.pow(sample - parameters.midtone, 2);
+
+      if (parameters.cbAutoBeta == true) {
+         var beta = 1.5 - 0.75 * (1 / (1 + Math.exp(parameters.gamma * (-(gmed - gmin) / (gmax - gmin) + parameters.midtone))) + sigNorm);
+         beta = f * beta;
+      }
+      else {
+         var beta = parameters.beta;
+      }
+
+      var fuzzy = c * (Math.exp(-Math.pow(1 / (1 + Math.exp(parameters.gamma * (-(sample - gmin) / (gmax - gmin) + parameters.midtone))) + sigNorm, beta)) - 1);
+   }
+
+
+ // *** Gaussian Membership Function ***
+
+   else if ((parameters.algorithm_CBIndex == 3) && (parameters.normalized == false)) {
+      if (parameters.cbAutoBeta == true) {
+         var beta = 1.5 - 0.75 * Math.exp(-0.5 * Math.pow((gmed - gmax) / parameters.sigma / (gmax - gmin), 2));
          beta = f * beta;
       }
       else {
@@ -603,12 +722,16 @@ function FHH(sample, mask, gmin, gmax, gmean) {
 
       var fuzzy = c * (Math.exp(-Math.pow(Math.exp(-0.5 * Math.pow((sample - gmax) / parameters.sigma / (gmax - gmin), 2)), beta)) - 1);
    }
-   else {
+
+
+// *** Normalized Gaussian Membership Function ***
+
+   else if ((parameters.algorithm_CBIndex == 3) && (parameters.normalized == true)) {
       var y0 = Math.exp(-Math.pow(Math.exp(-0.5 / Math.pow(parameters.sigma, 2)), parameters.beta)) - 1;
       var c0 = 1 / (Math.exp(-1) - 1 - y0);
 
       if (parameters.cbAutoBeta == true) {
-         var beta = 1.5 - 0.75 * Math.exp(-0.5 * Math.pow((gmean - gmax) / parameters.sigma / (gmax - gmin), 2));
+         var beta = 1.5 - 0.75 * Math.exp(-0.5 * Math.pow((gmed - gmax) / parameters.sigma / (gmax - gmin), 2));
          beta = f * beta;
       }
       else {
@@ -618,14 +741,48 @@ function FHH(sample, mask, gmin, gmax, gmean) {
       var fuzzy = c0 * (Math.exp(-Math.pow(Math.exp(-0.5 * Math.pow((sample - gmax) / parameters.sigma / (gmax - gmin), 2)), beta)) - 1 - y0);
    }
 
+
+// *** MMTF Membership Function ***
+
+   else {
+      gmed = Math.min(20 * gmedmed, Math.max(0.0001, gmed));
+
+      var M = (3 * gmedmed - 1) / (6 * gmedmed - 4);
+      var m = Math.mtf(M, gmed);
+      var mm = 0.52036 * Math.pow(3 * gmedmed, 0.18794);
+
+      mm = mm * parameters.mmtf;
+
+      var ss = Math.mtf(m, sample);
+
+      var s0 = sample;
+      var s1 = Math.mtf(mm, s0) * (1 - s0) + (s0 * s0);
+      var s2 = Math.mtf(mm, s1) * (1 - s1) + (s1 * s1);
+      var s3 = Math.mtf(mm, s2) * (1 - s2) + (s2 * s2);
+      var s4 = Math.mtf(mm, s3) * (1 - s3) + (s3 * s3);
+
+      var s = Math.min(ss, s4);
+
+      if (parameters.cbAutoBeta == true) {
+         var beta = 1.5 - 0.75 * (gmed - gmin) / (gmax - gmin);
+         beta = f * beta;
+      }
+      else {
+         var beta = parameters.beta;
+      }
+
+      var fuzzy = c * (Math.exp(-Math.pow(s, beta)) - 1);
+   }
+
    fuzzy = Math.max(0, Math.min(1, fuzzy));
 
    return fuzzy;
 }
 
+
 //------------------------------------------------------------------
 
-function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskImageId, id) {
+function generateFuzzyImageWindow(targetImage, maskImage, id) {
    var fuzzyImageWindow = new ImageWindow(
       targetImage.width,
       targetImage.height,
@@ -646,38 +803,42 @@ function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskIma
       uniqueViewIdNoLeadingZero("clone")
    );
 
+   cloneImageWindow.mainView.beginProcess(UndoFlag_NoSwapFile);
+   cloneImageWindow.mainView.image.apply(targetImage);
+   cloneImageWindow.mainView.endProcess();
+
    var cloneImage = cloneImageWindow.mainView.image;
 
-   var P = new PixelMath;
-   P.expression = "max(0, " + targetImageId + " - " + maskImageId + ")";
-   P.expression1 = "";
-   P.expression2 = "";
-   P.expression3 = "";
-   P.useSingleExpression = true;
-   P.symbols = "";
-   P.generateOutput = true;
-   P.singleThreaded = false;
-   P.use64BitWorkingImage = false;
-   P.rescale = false;
-   P.rescaleLower = 0;
-   P.rescaleUpper = 1;
-   P.truncate = true;
-   P.truncateLower = 0;
-   P.truncateUpper = 1;
-   P.createNewImage = false;
-   P.showNewImage = true;
-   P.newImageId = "";
-   P.newImageWidth = 0;
-   P.newImageHeight = 0;
-   P.newImageAlpha = false;
-   P.newImageColorSpace = PixelMath.prototype.SameAsTarget;
-   P.newImageSampleFormat = PixelMath.prototype.SameAsTarget;
 
-   P.executeOn(cloneImageWindow.mainView);
+// *** Shadow Clipping (only for MMTF) ***
+
+   if (parameters.mmtfFlag) {
+      var clip = cloneImage.minimum();
+
+      var P = new HistogramTransformation;
+      P.H = [ // c0, m, c1, r0, r1
+         [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+         [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+         [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+         [clip, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+         [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000]
+      ];
+
+      P.executeOn(cloneImageWindow.mainView);
+   }
+
+
+// *** Console Output ***
 
    console.writeln();
    console.writeln("<b>FuzzyContrastEnhance</b>: Processing View: " + fuzzyImageWindow.mainView.id);
-   console.writeln("Fuzzy membership function: " + parameters.algorithmLabels[parameters.algorithm_CBIndex]);
+   if (parameters.normalized && (parameters.sigmoidFlag || parameters.gaussFlag)) {
+      var normalized = "Normalized ";
+   }
+   else {
+      var normalized = "";
+   }
+   console.writeln("Fuzzy membership function: " + normalized + parameters.algorithmLabels[parameters.algorithm_CBIndex]);
    console.writeln("Image segmentation: " + parameters.segmentationLabels[parameters.segmentation_CBIndex]);
    if (parameters.cbClustering == true) {
       console.writeln("Clustering threshold: "+ format("%4.2f", parameters.clustering));
@@ -688,14 +849,22 @@ function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskIma
    else {
       console.writeln("Constant FHH beta: "+ format("%4.2f", parameters.beta));
    }
-   console.writeln("FHH lower bound: "+ format("%4.2f", parameters.lowerLimit));
-   console.writeln("FHH upper bound: "+ format("%4.2f", parameters.upperLimit));
+   if (parameters.mmtfFlag == false) {
+      console.writeln("FHH lower bound: "+ format("%4.2f", parameters.lowerLimit));
+      console.writeln("FHH upper bound: "+ format("%4.2f", parameters.upperLimit));
+   }
+   if (parameters.mtfFlag == true) {
+      console.writeln("MTF midtone: " + format("%4.2f", parameters.midtone));
+   }
    if (parameters.sigmoidFlag == true) {
       console.writeln("Sigmoid gamma: " + format("%4.2f", parameters.gamma));
-      console.writeln("Sigmoid x0: " + format("%4.2f", parameters.x0));
+      console.writeln("Sigmoid midtone: " + format("%4.2f", parameters.midtone));
    }
    if (parameters.gaussFlag == true) {
       console.writeln("Gauss sigma: "+ format("%4.2f", parameters.sigma));
+   }
+   if (parameters.mmtfFlag == true) {
+      console.writeln("Masked MTF strength: "+ format("%4.2f", parameters.mmtf));
    }
    console.flush();
 
@@ -703,8 +872,8 @@ function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskIma
 // *** Segmentation ***
 
    var segments = parameters.segmentation_CBIndex + 5;
-   var segmentSizeX = Math.round(targetImage.width / segments - 0.5);
-   var segmentSizeY = Math.round(targetImage.height / segments - 0.5);
+   var segmentSizeX = Math.round(cloneImage.width / segments - 0.5);
+   var segmentSizeY = Math.round(cloneImage.height / segments - 0.5);
 
    var gMin = new Array();
    var gMax = new Array();
@@ -722,29 +891,35 @@ function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskIma
          var startX = (i - 1) * segmentSizeX;
          var endX = i * segmentSizeX
          if (i == segments) {
-            endX = targetImage.width - 1;
+            endX = cloneImage.width - 1;
          }
 
          var startY = (j - 1) * segmentSizeY;
          var endY = j * segmentSizeY;
          if (j == segments) {
-            endY = targetImage.height - 1;
+            endY = cloneImage.height - 1;
          }
 
          var seg = new Rect(startX, startY, endX, endY)
 
          if (parameters.cbClustering == true) {
-            gMinBitmap.setPixel(i - 1, j - 1, Math.round(targetImage.minimum(seg) * 100));
-            gMaxBitmap.setPixel(i - 1, j - 1, Math.round(targetImage.maximum(seg) * 100));
-            gMedBitmap.setPixel(i - 1, j - 1, Math.round(targetImage.median(seg) * 100));
-            gMeanBitmap.setPixel(i - 1, j - 1, Math.round(targetImage.mean(seg) * 100));
+            gMinBitmap.setPixel(i - 1, j - 1, Math.round(cloneImage.minimum(seg) * 10000));
+            gMaxBitmap.setPixel(i - 1, j - 1, Math.round(cloneImage.maximum(seg) * 10000));
+            gMedBitmap.setPixel(i - 1, j - 1, Math.round(cloneImage.median(seg) * 10000));
+            gMeanBitmap.setPixel(i - 1, j - 1, Math.round(cloneImage.mean(seg) * 10000));
 
          }
          else {
-            gMin[i - 1 + segments * (j - 1)] = Math.min(parameters.lowerLimit, targetImage.minimum(seg));
-            gMax[i - 1 + segments * (j - 1)] = Math.max(parameters.upperLimit, targetImage.maximum(seg));
-            gMed[i - 1 + segments * (j - 1)] = targetImage.median(seg);
-            gMean[i - 1 + segments * (j - 1)] = targetImage.mean(seg);
+            if (parameters.mmtfFlag == true) {
+               gMin[i - 1 + segments * (j - 1)] = cloneImage.minimum(seg);
+               gMax[i - 1 + segments * (j - 1)] = cloneImage.maximum(seg);
+            }
+            else {
+               gMin[i - 1 + segments * (j - 1)] = Math.min(parameters.lowerLimit, cloneImage.minimum(seg));
+               gMax[i - 1 + segments * (j - 1)] = Math.max(parameters.upperLimit, cloneImage.maximum(seg));
+            }
+            gMed[i - 1 + segments * (j - 1)] = cloneImage.median(seg);
+            gMean[i - 1 + segments * (j - 1)] = cloneImage.mean(seg);
          }
       }
    }
@@ -794,10 +969,16 @@ function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskIma
 
       for (var i = 1; i <= segments; ++i){
          for (var j = 1;  j <= segments; ++j){
-            gMin[i - 1 + segments * (j - 1)] = Math.min(parameters.lowerLimit, gMinBitmap.pixel(i - 1, j - 1) / 100);
-            gMax[i - 1 + segments * (j - 1)] = Math.max(parameters.upperLimit, gMaxBitmap.pixel(i - 1, j - 1) / 100);
-            gMed[i - 1 + segments * (j - 1)] = gMedBitmap.pixel(i - 1, j - 1) / 100;
-            gMean[i - 1 + segments * (j - 1)] = gMeanBitmap.pixel(i - 1, j - 1) / 100;
+            if (parameters.mmtfFlag == true) {
+               gMin[i - 1 + segments * (j - 1)] = gMinBitmap.pixel(i - 1, j - 1) / 10000;
+               gMax[i - 1 + segments * (j - 1)] = gMaxBitmap.pixel(i - 1, j - 1) / 10000;
+            }
+            else {
+               gMin[i - 1 + segments * (j - 1)] = Math.min(parameters.lowerLimit, gMinBitmap.pixel(i - 1, j - 1) / 10000);
+               gMax[i - 1 + segments * (j - 1)] = Math.max(parameters.upperLimit, gMaxBitmap.pixel(i - 1, j - 1) / 10000);
+            }
+            gMed[i - 1 + segments * (j - 1)] = gMedBitmap.pixel(i - 1, j - 1) / 10000;
+            gMean[i - 1 + segments * (j - 1)] = gMeanBitmap.pixel(i - 1, j - 1) / 10000;
 
             gMedBitmap.setPixel(i - 1, j - 1,  255*256*256*256 + Math.round(gMedBitmap.pixel(i - 1, j - 1) / 100 * 255) * (1 + 256 + 256*256));
          }
@@ -806,10 +987,10 @@ function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskIma
       var gMedImageWindow = new ImageWindow(
          segments,
          segments,
-         targetImage.numberOfChannels,
+         cloneImage.numberOfChannels,
          32,
          true,
-         targetImage.colorSpace != ColorSpace_Gray,
+         cloneImage.colorSpace != ColorSpace_Gray,
          uniqueViewIdNoLeadingZero("Clusters")
       );
 
@@ -824,30 +1005,44 @@ function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskIma
 */
    }
 
-// *** Interpolation ***
+   var gMedSort = new Array();
 
-   var overlayBitmap = new Bitmap(targetImage.width, targetImage.height);
+   for (var i = 1; i <= segments; ++i){
+      for (var j = 1;  j <= segments; ++j){
+         gMedSort[i - 1 + segments * (j - 1)] = gMed[i - 1 + segments * (j - 1)];
+      }
+   }
+
+   gMedSort.sort();
+
+   var med = Math.round(gMedSort.length / 2) - 1;
+   var gMedMed = gMedSort[med];
+
+
+// *** FHH & Interpolation of Segments ***
+
+   var overlayBitmap = new Bitmap(cloneImage.width, cloneImage.height);
    overlayBitmap.fill(0);
 
    for (var ix = 0; ix != Math.round(segmentSizeX / 2 - 0.5); ++ix) {
       var segmentXi = Math.round(Math.max(0, ix - Math.round(segmentSizeX / 2 - 0.5)) / segmentSizeX - 0.5);
       for (var iy = 0; iy != Math.round(segmentSizeY / 2 - 0.5); ++iy) {
-         var fuzzy = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[0], gMax[0], gMean[0]);
-         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * targetImage.sample(ix, iy);
+         var fuzzy = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[0], gMax[0], gMed[0], gMedMed);
+         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * cloneImage.sample(ix, iy);
          overlayBitmap.setPixel(ix, iy, 255*256*256*256 + Math.round(fuzzy * 255) * (1 + 256 + 256*256));
       }
       for (var iy = Math.round(segmentSizeY / 2 - 0.5); iy != Math.round(segmentSizeY / 2 - 0.5) + (segments - 1) * segmentSizeY; ++iy) {
          var segmentYi = Math.round(Math.max(0, iy - Math.round(segmentSizeY / 2 - 0.5)) / segmentSizeY - 0.5);
-         var fuzzy1 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMean[segmentXi + segments * segmentYi]);
-         var fuzzy2 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * (segmentYi + 1)], gMax[segmentXi + segments * (segmentYi + 1)], gMean[segmentXi + segments * (segmentYi + 1)]);
+         var fuzzy1 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMed[segmentXi + segments * segmentYi], gMedMed);
+         var fuzzy2 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * (segmentYi + 1)], gMax[segmentXi + segments * (segmentYi + 1)], gMed[segmentXi + segments * (segmentYi + 1)], gMedMed);
          var v = (iy - Math.round(segmentSizeY / 2 - 0.5)) / segmentSizeY - segmentYi;
          var fuzzy = (1 - v) * fuzzy1 + v * fuzzy2;
-         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * targetImage.sample(ix, iy);
+         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * cloneImage.sample(ix, iy);
          overlayBitmap.setPixel(ix, iy, 255*256*256*256 + Math.round(fuzzy * 255) * (1 + 256 + 256*256));
       }
-      for (var iy = Math.round(segmentSizeY / 2 - 0.5) + (segments - 1) * segmentSizeY; iy != targetImage.height; ++iy) {
-         var fuzzy = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segments * (segments - 1)], gMax[segments * (segments - 1)], gMean[segments * (segments - 1)]);
-         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * targetImage.sample(ix, iy);
+      for (var iy = Math.round(segmentSizeY / 2 - 0.5) + (segments - 1) * segmentSizeY; iy != cloneImage.height; ++iy) {
+         var fuzzy = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segments * (segments - 1)], gMax[segments * (segments - 1)], gMed[segments * (segments - 1)], gMedMed);
+         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * cloneImage.sample(ix, iy);
          overlayBitmap.setPixel(ix, iy, 255*256*256*256 + Math.round(fuzzy * 255) * (1 + 256 + 256*256));
       }
    }
@@ -856,57 +1051,57 @@ function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskIma
       var segmentXi = Math.round(Math.max(0, ix - Math.round(segmentSizeX / 2 - 0.5)) / segmentSizeX - 0.5);
       for (var iy = 0; iy != Math.round(segmentSizeY / 2 - 0.5); ++iy) {
          var segmentYi = Math.round(Math.max(0, iy - Math.round(segmentSizeY / 2 - 0.5)) / segmentSizeY - 0.5);
-         var fuzzy1 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMean[segmentXi + segments * segmentYi]);
-         var fuzzy2 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + 1 + segments * segmentYi], gMax[segmentXi + 1 + segments * segmentYi], gMean[segmentXi + 1 + segments * segmentYi]);
+         var fuzzy1 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMed[segmentXi + segments * segmentYi], gMedMed);
+         var fuzzy2 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + 1 + segments * segmentYi], gMax[segmentXi + 1 + segments * segmentYi], gMed[segmentXi + 1 + segments * segmentYi], gMedMed);
          var w = (ix - Math.round(segmentSizeX / 2 - 0.5)) / segmentSizeX - segmentXi;
          var fuzzy = (1 - w) * fuzzy1 + w * fuzzy2;
-         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * targetImage.sample(ix, iy);
+         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * cloneImage.sample(ix, iy);
          overlayBitmap.setPixel(ix, iy, 255*256*256*256 + Math.round(fuzzy * 255) * (1 + 256 + 256*256));
       }
       for (var iy = Math.round(segmentSizeY / 2 - 0.5); iy != Math.round(segmentSizeY / 2 - 0.5) + (segments - 1) * segmentSizeY; ++iy) {
          var segmentYi = Math.round(Math.max(0, iy - Math.round(segmentSizeY / 2 - 0.5)) / segmentSizeY - 0.5);
-         var fuzzy1 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMean[segmentXi + segments * segmentYi]);
-         var fuzzy2 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * (segmentYi + 1)], gMax[segmentXi + segments * (segmentYi + 1)], gMean[segmentXi + segments * (segmentYi + 1)]);
-         var fuzzy3 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + 1 + segments * segmentYi], gMax[segmentXi + 1 + segments * segmentYi], gMean[segmentXi + 1 + segments * segmentYi]);
-         var fuzzy4 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + 1 + segments * (segmentYi + 1)], gMax[segmentXi + 1 + segments * (segmentYi + 1)], gMean[segmentXi + 1 + segments * (segmentYi + 1)]);
+         var fuzzy1 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMed[segmentXi + segments * segmentYi], gMedMed);
+         var fuzzy2 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * (segmentYi + 1)], gMax[segmentXi + segments * (segmentYi + 1)], gMed[segmentXi + segments * (segmentYi + 1)], gMedMed);
+         var fuzzy3 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + 1 + segments * segmentYi], gMax[segmentXi + 1 + segments * segmentYi], gMed[segmentXi + 1 + segments * segmentYi], gMedMed);
+         var fuzzy4 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + 1 + segments * (segmentYi + 1)], gMax[segmentXi + 1 + segments * (segmentYi + 1)], gMed[segmentXi + 1 + segments * (segmentYi + 1)], gMedMed);
          var v = (iy - Math.round(segmentSizeY / 2 - 0.5)) / segmentSizeY - segmentYi;
          var fuzzy12 = (1 - v) * fuzzy1 + v * fuzzy2;
          var fuzzy34 = (1 - v) * fuzzy3 + v * fuzzy4;
          var w = (ix - Math.round(segmentSizeX / 2 - 0.5)) / segmentSizeX - segmentXi;
          var fuzzy = (1 - w) * fuzzy12 + w * fuzzy34;
-         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * targetImage.sample(ix, iy);
+         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * cloneImage.sample(ix, iy);
          overlayBitmap.setPixel(ix, iy, 255*256*256*256 + Math.round(fuzzy * 255) * (1 + 256 + 256*256));
       }
-      for (var iy = Math.round(segmentSizeY / 2 - 0.5) + (segments - 1) * segmentSizeY; iy != targetImage.height; ++iy) {
+      for (var iy = Math.round(segmentSizeY / 2 - 0.5) + (segments - 1) * segmentSizeY; iy != cloneImage.height; ++iy) {
          var segmentYi = Math.round(Math.max(0, iy - Math.round(segmentSizeY / 2 - 0.5)) / segmentSizeY - 0.5);
-         var fuzzy1 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMean[segmentXi + segments * segmentYi]);
-         var fuzzy2 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + 1 + segments * segmentYi], gMax[segmentXi + 1 + segments * segmentYi], gMean[segmentXi + 1 + segments * segmentYi]);
+         var fuzzy1 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMed[segmentXi + segments * segmentYi], gMedMed);
+         var fuzzy2 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + 1 + segments * segmentYi], gMax[segmentXi + 1 + segments * segmentYi], gMed[segmentXi + 1 + segments * segmentYi], gMedMed);
          var w = (ix - Math.round(segmentSizeX / 2 - 0.5)) / segmentSizeX - segmentXi;
          var fuzzy = (1 - w) * fuzzy1 + w * fuzzy2;
-         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * targetImage.sample(ix, iy);
+         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * cloneImage.sample(ix, iy);
          overlayBitmap.setPixel(ix, iy, 255*256*256*256 + Math.round(fuzzy * 255) * (1 + 256 + 256*256));
       }
    }
 
-   for (var ix = Math.round(segmentSizeX / 2 - 0.5) + (segments - 1) * segmentSizeX; ix != targetImage.width; ++ix) {
+   for (var ix = Math.round(segmentSizeX / 2 - 0.5) + (segments - 1) * segmentSizeX; ix != cloneImage.width; ++ix) {
       var segmentXi = Math.round(Math.max(0, ix - Math.round(segmentSizeX / 2 - 0.5)) / segmentSizeX - 0.5);
       for (var iy = 0; iy != Math.round(segmentSizeY / 2 - 0.5); ++iy) {
-         var fuzzy = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segments -1], gMax[segments - 1], gMean[segments - 1]);
-         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * targetImage.sample(ix, iy);
+         var fuzzy = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segments -1], gMax[segments - 1], gMed[segments - 1], gMedMed);
+         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * cloneImage.sample(ix, iy);
          overlayBitmap.setPixel(ix, iy, 255*256*256*256 + Math.round(fuzzy * 255) * (1 + 256 + 256*256));
       }
       for (var iy = Math.round(segmentSizeY / 2 - 0.5); iy != Math.round(segmentSizeY / 2 - 0.5) + (segments - 1) * segmentSizeY; ++iy) {
          var segmentYi = Math.round(Math.max(0, iy - Math.round(segmentSizeY / 2 - 0.5)) / segmentSizeY - 0.5);
-         var fuzzy1 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMean[segmentXi + segments * segmentYi]);
-         var fuzzy2 = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * (segmentYi + 1)], gMax[segmentXi + segments * (segmentYi + 1)], gMean[segmentXi + segments * (segmentYi + 1)]);
+         var fuzzy1 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * segmentYi], gMax[segmentXi + segments * segmentYi], gMed[segmentXi + segments * segmentYi], gMedMed);
+         var fuzzy2 = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segmentXi + segments * (segmentYi + 1)], gMax[segmentXi + segments * (segmentYi + 1)], gMed[segmentXi + segments * (segmentYi + 1)], gMedMed);
          var v = (iy - Math.round(segmentSizeY / 2 - 0.5)) / segmentSizeY - segmentYi;
          var fuzzy = (1 - v) * fuzzy1 + v * fuzzy2;
-         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * targetImage.sample(ix, iy);
+         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * cloneImage.sample(ix, iy);
          overlayBitmap.setPixel(ix, iy, 255*256*256*256 + Math.round(fuzzy * 255) * (1 + 256 + 256*256));
       }
-      for (var iy = Math.round(segmentSizeY / 2 - 0.5) + (segments - 1) * segmentSizeY; iy != targetImage.height; ++iy) {
-         var fuzzy = FHH(targetImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segments * segments - 1], gMax[segments * segments - 1], gMean[segments * segments - 1]);
-         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * targetImage.sample(ix, iy);
+      for (var iy = Math.round(segmentSizeY / 2 - 0.5) + (segments - 1) * segmentSizeY; iy != cloneImage.height; ++iy) {
+         var fuzzy = FHH(cloneImage.sample(ix, iy), maskImage.sample(ix, iy), gMin[segments * segments - 1], gMax[segments * segments - 1], gMed[segments * segments - 1], gMedMed);
+         fuzzy = (1 - maskImage.sample(ix, iy)) * fuzzy + maskImage.sample(ix, iy) * cloneImage.sample(ix, iy);
          overlayBitmap.setPixel(ix, iy, 255*256*256*256 + Math.round(fuzzy * 255) * (1 + 256 + 256*256));
       }
    }
@@ -924,6 +1119,236 @@ function generateFuzzyImageWindow(targetImage, targetImageId, maskImage, maskIma
    return fuzzyImageWindow;
 }
 
+
+//------------------------------------------------------------------
+
+function stretchLRGB(targetImageWindow_RGB_L, fuzzyImageWindow_RGB_L) {
+   var targetMedian = targetImageWindow_RGB_L.mainView.image.median();
+
+   var median = fuzzyImageWindow_RGB_L.mainView.image.median();
+   var avgDev = fuzzyImageWindow_RGB_L.mainView.image.avgDev();
+   var min = fuzzyImageWindow_RGB_L.mainView.image.minimum();
+
+   var c0 = Math.max(0.7 * min , Math.range(median - 2.8 * avgDev, 0.0, 1.0));
+   var m = Math.mtf(1.33 * targetMedian, median - c0);
+
+   var P = new HistogramTransformation;
+   P.H = [ // c0, m, c1, r0, r1
+      [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+      [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+      [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+      [c0, m, 1.00000000, 0.00000000, 1.00000000],
+      [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000]
+   ];
+
+   P.executeOn(fuzzyImageWindow_RGB_L.mainView);
+
+
+   var startTime = new Date;
+
+   var fuzzyImageWindow = new ImageWindow(
+      parameters.targetView.image.width,
+      parameters.targetView.image.height,
+      parameters.targetView.image.numberOfChannels,
+      32,
+      true,
+      parameters.targetView.image.colorSpace != ColorSpace_Gray,
+      uniqueViewIdNoLeadingZero("LFHH")
+   );
+
+   var overlayBitmap = new Bitmap(parameters.targetView.image.width, parameters.targetView.image.height);
+   overlayBitmap.fill(0);
+
+   var targetImage_RGB_L = targetImageWindow_RGB_L.mainView.image;
+   var fuzzyImage_RGB_L = fuzzyImageWindow_RGB_L.mainView.image;
+
+   console.writeln();
+   console.writeln("<b>RGB ContrastEnhancement</b>: Processing View: " + fuzzyImageWindow.mainView.id);
+   console.flush();
+
+   for (var i = 0; i < targetImage_RGB_L.width; ++i){
+      for (var j = 0;  j < targetImage_RGB_L.height; ++j){
+         var f = fuzzyImage_RGB_L.sample(i, j) / targetImage_RGB_L.sample(i, j);
+
+         var red = Math.min(1, f * parameters.targetView.image.sample(i, j, 0));
+         var green = Math.min(1, f * parameters.targetView.image.sample(i, j, 1));
+         var blue = Math.min(1, f * parameters.targetView.image.sample(i, j, 2));
+
+         overlayBitmap.setPixel(i, j, 255*256*256*256 + Math.round(red * 255) * 256 * 256 + Math.round(green * 255) * 256 + Math.round(blue * 255));
+      }
+   }
+
+   fuzzyImageWindow.mainView.beginProcess(UndoFlag_NoSwapFile);
+
+   fuzzyImageWindow.mainView.image.selectedPoint = new Point(0, 0);
+   fuzzyImageWindow.mainView.image.blend(overlayBitmap);
+   fuzzyImageWindow.mainView.image.resetSelections();
+
+   fuzzyImageWindow.mainView.endProcess();
+
+   var endTime = new Date;
+
+   console.writeln(format("%.03f s", 0.001 * (endTime.getTime() - startTime.getTime())));
+
+   return fuzzyImageWindow;
+}
+
+
+//------------------------------------------------------------------
+
+function combineLRGB(targetImageWindow_RGB_L, fuzzyImageWindow_RGB_L) {
+   var targetMedian = targetImageWindow_RGB_L.mainView.image.median();
+
+   var median = fuzzyImageWindow_RGB_L.mainView.image.median();
+   var avgDev = fuzzyImageWindow_RGB_L.mainView.image.avgDev();
+   var min = fuzzyImageWindow_RGB_L.mainView.image.minimum();
+
+   var c0 = Math.max(0.7 * min , Math.range(median - 2.8 * avgDev, 0.0, 1.0));
+   var m = Math.mtf(1.33 * targetMedian, median - c0);
+
+   var P = new HistogramTransformation;
+   P.H = [ // c0, m, c1, r0, r1
+      [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+      [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+      [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+      [c0, m, 1.00000000, 0.00000000, 1.00000000],
+      [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000]
+   ];
+
+   P.executeOn(fuzzyImageWindow_RGB_L.mainView);
+
+   var fuzzyImageWindow = new ImageWindow(
+      parameters.targetView.image.width,
+      parameters.targetView.image.height,
+      parameters.targetView.image.numberOfChannels,
+      32,
+      true,
+      parameters.targetView.image.colorSpace != ColorSpace_Gray,
+      uniqueViewIdNoLeadingZero("LFHH")
+   );
+
+   fuzzyImageWindow.mainView.beginProcess(UndoFlag_NoSwapFile);
+   fuzzyImageWindow.mainView.image.apply(parameters.targetView.image);
+   fuzzyImageWindow.mainView.endProcess();
+
+   var P = new LRGBCombination;
+   P.channels = [ // enabled, id, k
+      [false, "", 1.00000],
+      [false, "", 1.00000],
+      [false, "", 1.00000],
+      [true, "LFHH_fuzzyRGB_L", 1.00000]
+   ];
+   P.mL = 0.500;
+   P.mc = 0.500;
+   P.clipHighlights = true;
+   P.noiseReduction = true;
+   P.layersRemoved = 4;
+   P.layersProtected = 2;
+
+   P.executeOn(fuzzyImageWindow.mainView);
+
+   return fuzzyImageWindow;
+}
+
+
+//------------------------------------------------------------------
+
+function writeFITSHeader(fuzzyImageWindow) {
+   var param1 = " - ";
+   var param2 = " - ";
+   var param3 = " - ";
+   var param4 = " - ";
+   var param5 = " - ";
+
+   if (parameters.maskView == null) {
+      var maskName = "none";
+   }
+   else {
+      var maskName = parameters.maskView.id;
+   }
+   if (parameters.cbClustering == true) {
+      var clusterYN ="yes";
+      var clusterThreshold = format("%4.2f", parameters.clustering);
+   }
+   else {
+      var clusterYN = "no";
+      var clusterThreshold = " - ";
+   }
+   if (parameters.mmtfFlag == false) {
+      var glb = format("%4.2f", parameters.lowerLimit);
+      var lub = format("%4.2f", parameters.upperLimit);
+   }
+   else {
+      var glb = " - ";
+      var lub = " - ";
+   }
+   if (parameters.cbAutoBeta == true) {
+      var autoBetaYN = "yes";
+      var aBeta = format("%4.2f", parameters.autoBeta);
+      var cBeta = " - ";
+   }
+   else {
+      var autoBetaYN = "no";
+      var aBeta = " - ";
+      var cBeta = format("%4.2f", parameters.beta);
+   }
+   if (parameters.normalized == true) {
+      var normalYN = "yes";
+   }
+   else {
+      var normalYN = "no";
+   }
+   if (parameters.mtfFlag == true) {
+      param1 = format("%4.2f", parameters.midtone);
+   }
+   if (parameters.sigmoidFlag == true) {
+      param2 = format("%4.2f", parameters.gamma);
+      param3 = format("%4.2f", parameters.midtone);
+   }
+   if (parameters.gaussFlag == true) {
+      param4 = format("%4.2f", parameters.sigma);
+   }
+   if (parameters.mmtfFlag == true) {
+      param5 = format("%4.2f", parameters.mmtf);
+   }
+   if (parameters.cbSTF == true) {
+      var autoHTYN  = "yes";
+      var medHT = format("%4.2f", parameters.medianSTF);
+   }
+   else {
+      var autoHTYN  = "no";
+      var medHT = " - ";
+   }
+
+   var P = new FITSHeader;
+   P.keywords = [ // name, value, comment
+      ["Script", TITLE, ""],
+      ["Version", VERSION, ""],
+      ["Target Image", parameters.targetView.id, ""],
+      ["Mask", maskName, ""],
+      ["Segmentation", parameters.segmentationLabels[parameters.segmentation_CBIndex], ""],
+      ["Clustering", clusterYN, ""],
+      ["Clustering thres", clusterThreshold, ""],
+      ["FHH lower bound", glb, ""],
+      ["FHH upper bound", lub, ""],
+      ["Local FHH beta", autoBetaYN, ""],
+      ["Auto FHH beta", aBeta, ""],
+      ["Const FHH beta", cBeta, ""],
+      ["Algorithm", parameters.algorithmLabels[parameters.algorithm_CBIndex], ""],
+      ["Normalized", normalYN, ""],
+      ["MTF midtone", param1, ""],
+      ["Sigmoid gamma", param2, ""],
+      ["Sigmoid midtone", param3, ""],
+      ["Gauss sigma", param4, ""],
+      ["MMTF strength", param5, ""],
+      ["Automatic HT", autoHTYN, ""],
+      ["HT target median", medHT, ""]
+   ];
+
+   P.executeOn(fuzzyImageWindow.mainView);
+}
+
+
 //------------------------------------------------------------------
 
 function mainFunction() {
@@ -937,16 +1362,34 @@ function mainFunction() {
    var targetImage = parameters.targetView.image;
    var targetWindow = parameters.targetView.window;
 
-   if (!targetImage.isGrayscale) {
+   if (!targetImage.isGrayscale && targetImage.median() < 0.01) {
       enable();
       console.hide();
+
       (new MessageBox(
-         "<p>Error: Target image must be Grayscale.</p>",
+         "<p>Error: Signal stregth too low for RGB stretch.</p>",
          TITLE + "." + VERSION,
          StdIcon_Warning,
          StdButton_Ok
       )).execute();
       return;
+   }
+
+   if (!targetImage.isGrayscale) {
+      var P = new ChannelExtraction;
+      P.colorSpace = ChannelExtraction.prototype.CIELab;
+      P.channels = [ // enabled, id
+         [true, "LFHH_targetRGB_L"],
+         [false, ""],
+         [false, ""]
+      ];
+      P.sampleFormat = ChannelExtraction.prototype.SameAsSource;
+
+      P.executeOn(parameters.targetView);
+
+      var targetView_RGB_L = View.viewById("LFHH_targetRGB_L");
+
+      targetView_RGB_L.window.hide();
    }
 
    if (parameters.maskView == null) {
@@ -973,15 +1416,41 @@ function mainFunction() {
       var maskWindow = parameters.maskView.window;
    }
 
-   var startTime = new Date;
-   var fuzzyImageWindow = generateFuzzyImageWindow(targetImage, parameters.targetView.id, maskImage, maskView.id, "LFHH");
-   var endTime = new Date;
 
-   console.writeln(format("%.03f s", 0.001 * (endTime.getTime() - startTime.getTime())));
+// *** LFHH ***
+
+   var startTime = new Date;
+
+   if (!targetImage.isGrayscale) {
+      var fuzzyImageWindow_RGB_L = generateFuzzyImageWindow(targetView_RGB_L.image, maskImage, "LFHH_fuzzyRGB_L");
+
+      var endTime = new Date;
+
+      console.writeln(format("%.03f s", 0.001 * (endTime.getTime() - startTime.getTime())));
+
+      fuzzyImageWindow_RGB_L.hide();
+
+      var fuzzyImageWindow = stretchLRGB(targetView_RGB_L.window, fuzzyImageWindow_RGB_L);
+
+      fuzzyImageWindow_RGB_L.forceClose();
+      targetView_RGB_L.window.forceClose();
+   }
+   else {
+      var fuzzyImageWindow = generateFuzzyImageWindow(targetImage, maskImage, "LFHH");
+
+      var endTime = new Date;
+
+      console.writeln(format("%.03f s", 0.001 * (endTime.getTime() - startTime.getTime())));
+   }
 
    if (!parameters.maskFlag) {
       maskWindow.forceClose();
    }
+
+   writeFITSHeader(fuzzyImageWindow);
+
+
+// *** Auto STF-HT ***
 
    if (parameters.cbSTF == true) {
       if (parameters.maskFlag) {
@@ -990,21 +1459,31 @@ function mainFunction() {
          fuzzyImageWindow.maskInverted = true;
       }
 
-      var median = fuzzyImageWindow.mainView.image.median();
-      var avgDev = fuzzyImageWindow.mainView.image.avgDev();
-      var min = fuzzyImageWindow.mainView.image.minimum();
+      var n = fuzzyImageWindow.mainView.image.isColor ? 3 : 1;
 
-      var c0 = Math.max(0.7 * min , Math.range(median - 2.8 * avgDev, 0.0, 1.0));
-      var m = Math.mtf(parameters.medianSTF, median - c0);
+      var c0 = 1.0;
+      var m = 0.5;
+
+      for ( var c = 0; c < n; ++c )
+      {
+         fuzzyImageWindow.mainView.image.selectedChannel = c;
+
+         var median = fuzzyImageWindow.mainView.image.median();
+         var avgDev = fuzzyImageWindow.mainView.image.avgDev();
+         var min = fuzzyImageWindow.mainView.image.minimum();
+
+         c0 = Math.min(c0, Math.max(0.7 * min , Math.range(median - 2.8 * avgDev, 0.0, 1.0)));
+         m = Math.min(m, Math.mtf(parameters.medianSTF, median - c0));
+      }
 
       var P = new HistogramTransformation;
-         P.H = [ // c0, m, c1, r0, r1
-            [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
-            [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
-            [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
-            [c0, m, 1.00000000, 0.00000000, 1.00000000],
-            [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000]
-         ];
+      P.H = [ // c0, m, c1, r0, r1
+         [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+         [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+         [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000],
+         [c0, m, 1.00000000, 0.00000000, 1.00000000],
+         [0.00000000, 0.50000000, 1.00000000, 0.00000000, 1.00000000]
+      ];
 
       P.executeOn(fuzzyImageWindow.mainView);
 
@@ -1013,12 +1492,17 @@ function mainFunction() {
       }
    }
 
+
+// *** Image Quality ***
+
    var startTime = new Date;
-// imageQuality(targetImage, parameters.targetView.id);
    imageQuality(fuzzyImageWindow.mainView.image, fuzzyImageWindow.mainView.id);
    var endTime = new Date;
 
    console.writeln(format("%.03f s", 0.001 * (endTime.getTime() - startTime.getTime())));
+
+
+// *** Replace Target Image ***
 
    if (parameters.replace == true) {
       var P = new PixelMath;
@@ -1090,7 +1574,7 @@ function parametersDialogPrototype() {
       + "A user-defined specification of the segmentation offers the possibility to consider the target image characteristics. "
       + "Additionally, a special clustering algorithm can be chosen to qualify the impact of the segmentation. "
       + "An optional star protection is provided by selecting a star mask.</p>"
-      + "<p>Copyright &copy; 2017 Frank Weidenbusch</p>";
+      + "<p>Copyright &copy; 2018 Frank Weidenbusch</p>";
 
 
 //===== Select Target Image =====
@@ -1122,7 +1606,8 @@ function parametersDialogPrototype() {
    this.viewList2_Label.setFixedWidth(alignmentWidth);
    this.viewList2_Label.text = "Star Mask Image:";
    this.viewList2_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
-   this.viewList2_Label.toolTip = "<p>Optional star mask for star protection.</p>";
+   this.viewList2_Label.toolTip = "<p>Optional star mask for star protection.</p>"
+      + "<p>Do not use a star mask for MMTF linear stretch!</p>";
 
    this.viewList2 = new ViewList(this);
    this.viewList2.getMainViews();
@@ -1139,17 +1624,6 @@ function parametersDialogPrototype() {
    this.viewList2_Sizer.add(this.viewList2);
 
 
-//===== GroupBox Image Selection =====
-/*
-   this.image_GroupBox = new GroupBox( this );
-   this.image_GroupBox.title = "Image Selection";
-   this.image_GroupBox.sizer = new VerticalSizer;
-   this.image_GroupBox.sizer.margin = 6;
-   this.image_GroupBox.sizer.spacing = 4;
-   this.image_GroupBox.sizer.add(this.viewList1_Sizer);
-   this.image_GroupBox.sizer.add(this.viewList2_Sizer);
-
-*/
 //===== Section Bar for Fuzzy Parameters =====
 
    this.imageSection = new Control(this);
@@ -1263,18 +1737,6 @@ function parametersDialogPrototype() {
    this.clustering_Sizer.addStretch();
 
 
-//===== GroupBox Segmentation Parameters =====
-/*
-   this.setSegmentParameter_GroupBox = new GroupBox (this);
-   this.setSegmentParameter_GroupBox.title = "Segmentation Parameters";
-   this.setSegmentParameter_GroupBox.sizer = new VerticalSizer;
-   this.setSegmentParameter_GroupBox.sizer.margin = 6;
-   this.setSegmentParameter_GroupBox.sizer.spacing = 4;
-   this.setSegmentParameter_GroupBox.sizer.add(this.segmentation_Sizer);
-   this.setSegmentParameter_GroupBox.sizer.add(this.cbClustering_Sizer);
-   this.setSegmentParameter_GroupBox.sizer.add(this.clustering_Sizer);
-
-*/
 //===== Section Bar for Segmentation Parameters =====
 
    this.setSegmentParameterSection = new Control(this);
@@ -1401,7 +1863,7 @@ function parametersDialogPrototype() {
    {
       label.text = "FHH greatest lower bound:";
       label.setFixedWidth(alignmentWidth);
-      enabled = true;
+      enabled = !(parameters.mmtfFlag);
       enableScientificNotation = false;
       setRange (0, 0.5);
       slider.setRange (0, 100);
@@ -1432,7 +1894,7 @@ function parametersDialogPrototype() {
    {
       label.text = "FHH least upper bound:";
       label.setFixedWidth(alignmentWidth);
-      enabled = true;
+      enabled = !(parameters.mmtfFlag);
       enableScientificNotation = false;
       setRange (0.5, 1);
       slider.setRange (0, 100);
@@ -1456,20 +1918,6 @@ function parametersDialogPrototype() {
    this.upperLimit_Sizer.addStretch();
 
 
-//===== GroupBox Fuzzy Parameters =====
-/*
-   this.setFuzzyParameter_GroupBox = new GroupBox (this);
-   this.setFuzzyParameter_GroupBox.title = "Fuzzy Parameters";
-   this.setFuzzyParameter_GroupBox.sizer = new VerticalSizer;
-   this.setFuzzyParameter_GroupBox.sizer.margin = 6;
-   this.setFuzzyParameter_GroupBox.sizer.spacing = 4;
-   this.setFuzzyParameter_GroupBox.sizer.add(this.lowerLimit_Sizer);
-   this.setFuzzyParameter_GroupBox.sizer.add(this.upperLimit_Sizer);
-   this.setFuzzyParameter_GroupBox.sizer.add(this.cbAutoBeta_Sizer);
-   this.setFuzzyParameter_GroupBox.sizer.add(this.autoBeta_Sizer);
-   this.setFuzzyParameter_GroupBox.sizer.add(this.beta_Sizer);
-
-*/
 //===== Section Bar for Fuzzy Parameters =====
 
    this.setFuzzyParameterSection = new Control(this);
@@ -1522,21 +1970,66 @@ function parametersDialogPrototype() {
    this.algorithm_CB.onItemSelected = function(item) {
       if (parameters.algorithm_CBIndex != item) {
          parameters.algorithm_CBIndex = item;
+         parameters.mtfFlag = false;
          parameters.sigmoidFlag = false;
          parameters.gaussFlag = false;
+         parameters.mmtfFlag = false;
          if (item == 1) {
+            parameters.mtfFlag = true;
+         }
+         else if (item == 2) {
             parameters.sigmoidFlag = true;
          }
-         else if (item > 1) {
+         else if (item == 3) {
             parameters.gaussFlag = true;
          }
+         else if (item == 4) {
+            parameters.mmtfFlag = true;
+         }
+         parameters.dialog.normalized_CheckBox.enabled = parameters.sigmoidFlag || parameters.gaussFlag;
+         if (!(parameters.sigmoidFlag || parameters.gaussFlag)) {
+            parameters.normalized = true;
+         }
+         else {
+            parameters.normalized = false;
+         }
+         parameters.dialog.normalized_CheckBox.checked = parameters.normalized;
+         parameters.dialog.midtone_NC.enabled = parameters.sigmoidFlag || parameters.mtfFlag;
          parameters.dialog.gamma_NC.enabled = parameters.sigmoidFlag;
-         parameters.dialog.x0_NC.enabled = parameters.sigmoidFlag;
          parameters.dialog.sigma_NC.enabled = parameters.gaussFlag;
+         parameters.dialog.mmtf_NC.enabled = parameters.mmtfFlag;
+         parameters.dialog.lowerLimit_NC.enabled = !(parameters.mmtfFlag);
+         parameters.dialog.upperLimit_NC.enabled = !(parameters.mmtfFlag);
       }
    };
 
    this.algorithm_Sizer.add(this.algorithm_CB);
+
+
+//===== Define CB Normalized =====
+
+   this.normalized_Label = new Label (this);
+   this.normalized_Label.text = "   Normalized:";
+   this.normalized_Label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+   this.normalized_Label.toolTip =
+      "<p>Configuration of the fuzzy membership function.</p>" +
+      "<p>The Sigmoid and Gaussian membership functions are not normalized, that means that the pixel values of the resulting image not fully utilize the range from zero to one. " +
+      "With this option selected a normalization will be imposed to achieve a stronger contrast enhancement.</p>";
+
+   this.normalized_CheckBox = new CheckBox( this );
+   this.normalized_CheckBox.enabled = (parameters.sigmoidFlag == true) || (parameters.gaussFlag == true);
+   if (!((parameters.sigmoidFlag == true) || (parameters.gaussFlag == true))) {
+      parameters.normalized = true;
+   }
+   this.normalized_CheckBox.checked = parameters.normalized;
+   this.normalized_CheckBox.onClick = function( checked )
+   {
+      parameters.normalized = checked;
+   }
+   this.normalized_CheckBox.toolTip = this.normalized_Label.toolTip;
+
+   this.algorithm_Sizer.add(this.normalized_Label);
+   this.algorithm_Sizer.add(this.normalized_CheckBox);
    this.algorithm_Sizer.addStretch();
 
 
@@ -1571,12 +2064,12 @@ function parametersDialogPrototype() {
    this.gamma_Sizer.addStretch();
 
 
-//===== Define Sigmoid x0 =====
+//===== Define midtone =====
 
-   this.x0_NC = new NumericControl (this);
-   with ( this.x0_NC )
+   this.midtone_NC = new NumericControl (this);
+   with ( this.midtone_NC )
    {
-      label.text = "Sigmoid x0:";
+      label.text = "MTF / Sigmoid midtone:";
       label.setFixedWidth(alignmentWidth);
       enabled = parameters.sigmoidFlag;
       enableScientificNotation = false;
@@ -1584,22 +2077,22 @@ function parametersDialogPrototype() {
       slider.setRange (0, 100);
       slider.minWidth = 300;
       setPrecision (2);
-      setValue (parameters.x0);
+      setValue (parameters.midtone);
       edit.setFixedWidth(editWidth);
       onValueUpdated = function (value)
       {
-         parameters.x0 = value;
+         parameters.midtone = value;
       };
    }
-   this.x0_NC.toolTip =
+   this.midtone_NC.toolTip =
       "<p>Configuration of the fuzzy membership function.</p>" +
-      "<p>This parameter is used to stretch the Sigmoid membership function. "+
+      "<p>This parameter is used to stretch the MTF / Sigmoid membership function. "+
       "Values between 0.4 and 0.6 are typical.</p>";
 
-   this.x0_Sizer = new HorizontalSizer;
-   this.x0_Sizer.spacing = 4;
-   this.x0_Sizer.add(this.x0_NC);
-   this.x0_Sizer.addStretch();
+   this.midtone_Sizer = new HorizontalSizer;
+   this.midtone_Sizer.spacing = 4;
+   this.midtone_Sizer.add(this.midtone_NC);
+   this.midtone_Sizer.addStretch();
 
 
 //===== Define Gauss sigma =====
@@ -1633,20 +2126,38 @@ function parametersDialogPrototype() {
    this.sigma_Sizer.addStretch();
 
 
-//===== GroupBox Membership Function Parameters =====
-/*
-   this.setMSFParameter_GroupBox = new GroupBox (this);
-   this.setMSFParameter_GroupBox.title = "Membership Function Parameters";
-   this.setMSFParameter_GroupBox.sizer = new VerticalSizer;
-   this.setMSFParameter_GroupBox.sizer.margin = 6;
-   this.setMSFParameter_GroupBox.sizer.spacing = 4;
-   this.setMSFParameter_GroupBox.sizer.add(this.algorithm_Sizer);
-   this.setMSFParameter_GroupBox.sizer.add(this.gamma_Sizer);
-   this.setMSFParameter_GroupBox.sizer.add(this.x0_Sizer);
-   this.setMSFParameter_GroupBox.sizer.add(this.sigma_Sizer);
+//===== Define MMTF Strength =====
 
-*/
-//===== Section Bar for MSF Parameters =====
+   this.mmtf_NC = new NumericControl (this);
+   with ( this.mmtf_NC )
+   {
+      label.text = "Masked MTF strength:";
+      label.setFixedWidth(alignmentWidth);
+      enabled = parameters.mmtfFlag;
+      enableScientificNotation = false;
+      setRange (0.5, 1.5);
+      slider.setRange (0, 100);
+      slider.minWidth = 300;
+      setPrecision (2);
+      setValue (parameters.mmtf);
+      edit.setFixedWidth(editWidth);
+      onValueUpdated = function (value)
+      {
+         parameters.mmtf = value;
+      };
+   }
+   this.mmtf_NC.toolTip =
+      "<p>Configuration of the fuzzy membership function.</p>" +
+      "<p>This parameter is used to define the strength of the masked MTF linear stretch. "+
+      "Values between 1.0 and 1.2 are typical.</p>";
+
+   this.mmtf_Sizer = new HorizontalSizer;
+   this.mmtf_Sizer.spacing = 4;
+   this.mmtf_Sizer.add(this.mmtf_NC);
+   this.mmtf_Sizer.addStretch();
+
+
+//===== Section Bar for Membership Function Parameters =====
 
    this.setMSFParameterSection = new Control(this);
    with (this.setMSFParameterSection) {
@@ -1658,9 +2169,11 @@ function parametersDialogPrototype() {
             margin = 6;
             spacing = 4;
             add(this.algorithm_Sizer);
+            add(this.midtone_Sizer);
             add(this.gamma_Sizer);
-            add(this.x0_Sizer);
+            add(this.midtone_Sizer);
             add(this.sigma_Sizer);
+            add(this.mmtf_Sizer);
          }
          add(this.setMSFParameterSectionVSizer);
       }
@@ -1756,18 +2269,6 @@ function parametersDialogPrototype() {
    this.replace_Sizer.addStretch();
 
 
-//===== GroupBox Output Options =====
-/*
-   this.outputOptions_GroupBox = new GroupBox (this);
-   this.outputOptions_GroupBox.title = "Output Options";
-   this.outputOptions_GroupBox.sizer = new VerticalSizer;
-   this.outputOptions_GroupBox.sizer.margin = 4;
-   this.outputOptions_GroupBox.sizer.spacing = 4;
-   this.outputOptions_GroupBox.sizer.add(this.cbSTF_Sizer);
-   this.outputOptions_GroupBox.sizer.add(this.medianSTF_Sizer);
-   this.outputOptions_GroupBox.sizer.add(this.replace_Sizer);
-
-*/
 //===== Section Bar for Output Options =====
 
    this.outputOptionsSection = new Control(this);
@@ -1856,11 +2357,6 @@ function parametersDialogPrototype() {
    this.sizer.margin = 6;
    this.sizer.spacing = 6;
    this.sizer.add(this.helpLabel);
-// this.sizer.add(this.image_GroupBox);
-// this.sizer.add(this.setSegmentParameter_GroupBox);
-// this.sizer.add(this.setFuzzyParameter_GroupBox);
-// this.sizer.add(this.setMSFParameter_GroupBox);
-// this.sizer.add(this.outputOptions_GroupBox);
    this.sizer.add(this.imageSectionBar);
    this.sizer.add(this.imageSection);
    this.sizer.add(this.setSegmentParameterSectionBar);
@@ -1899,4 +2395,4 @@ function main() {
 main();
 
 // ----------------------------------------------------------------------------
-// EOF LocalFuzzyHistogramHyperbolization.js - Released 2017-11-15T08:54:44Z
+// EOF LocalFuzzyHistogramHyperbolization.js - Released 2018-10-26T11:23:18Z
