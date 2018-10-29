@@ -2474,7 +2474,7 @@ function ImageSolver()
             if (this.solverCfg.autoMagnitude)
             {
                this.limitMagnitude = m;
-               console.noteln('<end><cbr>* Using an automatically calculated limit magnitude of ' + m + '.');
+               console.noteln('<end><cbr>* Using an automatically calculated limit magnitude of ' + format( "%.2f", m ) + '.');
             }
             else
                this.limitMagnitude = this.solverCfg.magnitude;
