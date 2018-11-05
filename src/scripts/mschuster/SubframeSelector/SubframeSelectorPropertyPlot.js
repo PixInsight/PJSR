@@ -1,13 +1,13 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// SubframeSelectorPropertyPlot.js - Released 2016/12/28 00:00:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// SubframeSelectorPropertyPlot.js - Released 2018-11-05T16:53:08Z
+// ----------------------------------------------------------------------------
 //
-// This file is part of SubframeSelector Script version 1.11
+// This file is part of SubframeSelector Script version 1.12
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2018 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 function julianDay(date) {
    if (date == "") {
@@ -834,5 +834,5 @@ function generatePropertyPlotData(propertyPlotOrdinate) {
    );
 }
 
-// ****************************************************************************
-// EOF SubframeSelectorPropertyPlot.js - Released 2016/12/28 00:00:00 UTC
+// ----------------------------------------------------------------------------
+// EOF SubframeSelectorPropertyPlot.js - Released 2018-11-05T16:53:08Z
