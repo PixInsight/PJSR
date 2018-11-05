@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/DataType.jsh - Released 2017-08-01T14:29:08Z
+// pjsr/DataType.jsh - Released 2018-10-18T17:24:41Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -90,4 +90,4 @@
 #endif   // __PJSR_DataType_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/DataType.jsh - Released 2017-08-01T14:29:08Z
+// EOF pjsr/DataType.jsh - Released 2018-10-18T17:24:41Z
