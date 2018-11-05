@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// PixInsight JavaScript Runtime API - PJSR Version 1.0
+// PixInsight JavaScript Runtime API - PJSR Version 1.1
 // ----------------------------------------------------------------------------
 // LocalFuzzyHistogramHyperbolization.js - Released 2018-10-26T11:23:18Z
 // ----------------------------------------------------------------------------
@@ -49,7 +49,7 @@
 #define TITLE "LocalFuzzyHistogramHyperbolization Script"
 #define VERSION "1.10"
 
-#feature-id My Scripts > LocalFuzzyHistogramHyperbolization
+#feature-id Utilities > LocalFuzzyHistogramHyperbolization
 #feature-info  A script for contrast enhancement
 
 #include <pjsr/ColorSpace.jsh>
