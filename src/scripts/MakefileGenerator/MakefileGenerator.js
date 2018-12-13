@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakefileGenerator.js - Released 2017-08-01T15:54:50Z
+// MakefileGenerator.js - Released 2018-12-13T19:20:07Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.104
+// This file is part of PixInsight Makefile Generator Script version 1.108
 //
-// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2018, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Executable file.
@@ -65,12 +65,12 @@
    Mac OS X and Windows, x86 and x64.<br/>\
    <br/>\
    Written by Juan Conejero (PTeam)<br/>\
-   Copyright &copy; 2009-2017 Pleiades Astrophoto, S.L.
+   Copyright &copy; 2009-2018 Pleiades Astrophoto, S.L.
 
 #feature-icon  MakefileGenerator.xpm
 
-#iflt __PI_BUILD__ 1165
-#error This script requires PixInsight 1.8.4.1165 or higher.
+#iflt __PI_BUILD__ 1352
+#error This script requires PixInsight 1.8.5.1352 or higher.
 #endif
 
 #include <pjsr/Sizer.jsh>
@@ -94,4 +94,4 @@
 main();
 
 // ----------------------------------------------------------------------------
-// EOF MakefileGenerator.js - Released 2017-08-01T15:54:50Z
+// EOF MakefileGenerator.js - Released 2018-12-13T19:20:07Z

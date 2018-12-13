@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenParameters.js - Released 2017-08-01T15:54:50Z
+// MakGenParameters.js - Released 2018-12-13T19:20:07Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.104
+// This file is part of PixInsight Makefile Generator Script version 1.108
 //
-// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2018, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Project generation parameters.
@@ -92,6 +92,18 @@ function GeneratorParameters()
     * code signing certificates.
     */
    this.official = false;
+
+   /*
+    * If true, sign modules and executables with the codesign and signtool
+    * utilities on macOS and Windows, respectively.
+    */
+   this.signed = DEFAULT_SIGNED_CODE;
+
+   /*
+    * When signing code, use this identity for codesign's -s argument. For the
+    * signtool on Windows, the signing identity is selected automatically.
+    */
+   this.signingIdentity = DEFAULT_CODE_SIGNING_IDENTITY;
 
    /*
     * Remove existing build directories before generating new makefiles.
@@ -295,11 +307,14 @@ function GeneratorParameters()
          throw new Error( "Unknown platform: " + this.platform );
       if ( !this.is32BitProject() && !this.is64BitProject() )
          throw new Error( "Unknown architecture: " + this.architecture );
+      if ( this.signed )
+         if ( this.signingIdentity.length == 0 )
+            throw new Error( "Empty signing identity." );
    };
 
    this.isSourceFile = function( fileName )
    {
-      var ext = File.extractExtension( fileName );
+      let ext = File.extractExtension( fileName );
       return ext == ".cpp" || ext == ".c" || ext == ".cxx" || this.isMacOSXPlatform() && ext == ".mm";
    };
 
@@ -307,7 +322,7 @@ function GeneratorParameters()
    {
       if ( this.isModule() || this.isDynamicLibrary() )
       {
-         var s = this.id;
+         let s = this.id;
 
          if ( this.isModule() )
             s += "-pxm";
@@ -330,7 +345,7 @@ function GeneratorParameters()
 
       if ( this.isStaticLibrary() )
       {
-         var s = this.id;
+         let s = this.id;
 
          if ( this.isLinuxPlatform() || this.isFreeBSDPlatform() || this.isMacOSXPlatform() )
             s = "lib" + s + "-pxi.a";
@@ -437,7 +452,7 @@ function GeneratorParameters()
 
    this.gccMakefile = function()
    {
-      var makefile = "makefile-" + this.architecture;
+      let makefile = "makefile-" + this.architecture;
       if ( this.gccDebug )
          makefile += "-debug";
       return makefile;
@@ -496,7 +511,7 @@ function GeneratorParameters()
       if ( this.isMacOSXPlatform() )
       {
          s += " -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + this.osxSDKVersion + ".sdk";
-         s += " -mmacosx-version-min=10.10";
+         s += " -mmacosx-version-min=" + MIN_OSX_VERSION;
       }
 
       s += " -D_REENTRANT -D" + this.platformMacroId();
@@ -507,7 +522,7 @@ function GeneratorParameters()
               " -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" +
               " -DQT_EDITION=QT_EDITION_OPENSOURCE" + // Qt/LGPL
               " -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_SHARED" +
-              " -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_MTDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT";
+              " -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT";
          if ( this.isMacOSXPlatform() )
             s += " -DQT_NO_EVDEV";
       }
@@ -519,12 +534,12 @@ function GeneratorParameters()
                  " -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE" +
                  " -DQT_EDITION=QT_EDITION_OPENSOURCE" + // Qt/LGPL
                  " -DQT_NO_EXCEPTIONS -DQT_NO_DEBUG -DQT_SHARED" +
-                 " -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_MTDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT";
+                 " -DQT_NO_MTDEV -DQT_NO_LIBUDEV -DQT_NO_TSLIB -DQT_NO_LIBINPUT";
             if ( this.isMacOSXPlatform() )
                s += " -DQT_NO_EVDEV";
          }
 
-         for ( var i = 0; i < this.extraDefinitions.length; ++i )
+         for ( let i = 0; i < this.extraDefinitions.length; ++i )
             s += " -D\"" + this.extraDefinitions[i] + "\"";
       }
 
@@ -680,6 +695,8 @@ function GeneratorParameters()
          if ( this.isMacOSXPlatform() )
             s += " -stdlib=libc++"; // ?! - required since Xcode 6 - hmmm...
       }
+      else
+         s += " -std=c99";
 
       // - Enable all warnings.
       // - Suppress some useless warnings related to parentheses.
@@ -721,14 +738,17 @@ function GeneratorParameters()
          //             macosx-how-to-collect-dependencies-into-a-local-bundle
          s += " -headerpad_max_install_names";
          s += " -Wl,-syslibroot,/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX" + this.osxSDKVersion + ".sdk";
-         s += " -mmacosx-version-min=10.10";
+         s += " -mmacosx-version-min=" + MIN_OSX_VERSION;
          s += " -stdlib=libc++";
       }
       else
       {
-         // On Linux, always use the gold linker.
+         // On Linux:
+         //    - Always use the gold linker.
+         //    - Use the --enable-new-dtags linker option to prevent rpath issues.
+         //      See: https://news.ycombinator.com/item?id=14222349
          if ( this.isLinuxPlatform() )
-            s += " -pthread -Wl,-fuse-ld=gold"
+            s += " -pthread -Wl,-fuse-ld=gold -Wl,--enable-new-dtags"
          // On Linux and FreeBSD, mark all executables and shared objects as
          // not requiring an executable stack.
          s += " -Wl,-z,noexecstack";
@@ -877,14 +897,14 @@ function GeneratorParameters()
          {
             s += " -framework AppKit -framework ApplicationServices" +
                  " -framework DiskArbitration -framework IOKit -framework OpenGL -framework AGL" +
-                 " -framework QtWidgets -framework QtGui -framework QtCore";
+                 " -framework QtWidgets -framework QtGui -framework QtSvg -framework QtCore";
          }
          else
          {
             s += " -lSM -lICE -lXext -lX11 -lm -lpthread";
             if ( !this.isFreeBSDPlatform() )
                s += " -ldl -lresolv";
-            s += " -lQt5Widgets -lQt5Gui -lQt5Core";
+            s += " -lQt5Widgets -lQt5Gui -lQt5Svg -lQt5Core";
          }
 
          s += " -lPCL-pxi";
@@ -931,4 +951,4 @@ function GeneratorParameters()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenParameters.js - Released 2017-08-01T15:54:50Z
+// EOF MakGenParameters.js - Released 2018-12-13T19:20:07Z

@@ -4,7 +4,7 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/FrameStyle.jsh - Released 2018-10-18T17:24:41Z
+// pjsr/FrameStyle.jsh - Released 2018-11-30T21:30:59Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
@@ -65,4 +65,4 @@
 #endif   // __PJSR_FrameStyle_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/FrameStyle.jsh - Released 2018-10-18T17:24:41Z
+// EOF pjsr/FrameStyle.jsh - Released 2018-11-30T21:30:59Z

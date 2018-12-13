@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// CoreIconsBrowser.js - Released 2015/12/01 15:27:58 UTC
+// CoreIconsBrowser.js - Released 2018-12-13T19:36:50Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of Core Icons Browser Script version 1.10
+// This file is part of Core Icons Browser Script version 1.13
 //
-// Copyright (c) 2013-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2013-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -51,7 +51,7 @@
  *
  * A script to browse PixInsight Core resource icons.
  *
- * Copyright (c) 2013-2017, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2013-2018, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  */
 
@@ -63,11 +63,11 @@
 
 #feature-icon  CoreIconsBrowser.xpm
 
-#iflt __PI_BUILD__ 1343
-#error This script requires PixInsight 1.8.5.1343 or higher.
+#iflt __PI_BUILD__ 1445
+#error This script requires PixInsight 1.8.6.1445 or higher.
 #endif
 
-#define VERSION "1.12"
+#define VERSION "1.13"
 #define TITLE   "Core Icons Browser"
 
 #include <pjsr/Color.jsh>
@@ -84,9 +84,29 @@ function IconBrowser()
 
    this.coreIcons =
    [
-      /*
-       * Automatically generated on 2017 July 27 for Core build 1343
-       */
+   /*
+    * Automatically generated on 2018 December 13 for core version 1.8.6.1445
+    */
+":/appicon/pixinsight-icon.128.png",
+":/appicon/pixinsight-icon.16.png",
+":/appicon/pixinsight-icon.24.png",
+":/appicon/pixinsight-icon.256.png",
+":/appicon/pixinsight-icon.32.png",
+":/appicon/pixinsight-icon.512.png",
+":/appicon/pixinsight-icon.64.png",
+":/appicon/pixinsight-icon.96.png",
+":/appicon/pixinsight32-icon.128.png",
+":/appicon/pixinsight32-icon.16.png",
+":/appicon/pixinsight32-icon.256.png",
+":/appicon/pixinsight32-icon.32.png",
+":/appicon/pixinsight32-icon.512.png",
+":/appicon/pixinsight32-icon.64.png",
+":/appicon/pixinsight64-icon.128.png",
+":/appicon/pixinsight64-icon.16.png",
+":/appicon/pixinsight64-icon.256.png",
+":/appicon/pixinsight64-icon.32.png",
+":/appicon/pixinsight64-icon.512.png",
+":/appicon/pixinsight64-icon.64.png",
 ":/arrows/arrow-bottom.png",
 ":/arrows/arrow-down-limit.png",
 ":/arrows/arrow-down.png",
@@ -247,6 +267,7 @@ function IconBrowser()
 ":/file-explorer/read-write.png",
 ":/file-explorer/rename.png",
 ":/file-format/bmp-format-icon.png",
+":/file-format/default-format-icon.png",
 ":/file-format/default-format-icon.svg",
 ":/file-format/fits-format-icon.png",
 ":/file-format/gif-format-icon.png",
@@ -1102,6 +1123,15 @@ function IconBrowser()
 ":/object-explorer/read-write-property.svg",
 ":/object-explorer/standard-object-inherited.svg",
 ":/object-explorer/standard-object.svg",
+":/planets/asteroid.png",
+":/planets/earth.png",
+":/planets/jupiter.png",
+":/planets/moon.png",
+":/planets/orbit.png",
+":/planets/planet.png",
+":/planets/saturn.png",
+":/planets/solar-system.png",
+":/planets/sun.png",
 ":/print-dialog/center-horz-page.png",
 ":/print-dialog/center-horz.png",
 ":/print-dialog/center-page.png",
@@ -1116,6 +1146,7 @@ function IconBrowser()
 ":/print-dialog/portrait.png",
 ":/print-dialog/right-bottom.png",
 ":/print-dialog/right-top.png",
+":/process/default-process-icon.png",
 ":/process/default-process-icon.svg",
 ":/process/execute-global.png",
 ":/process/execute-view.png",
@@ -1181,6 +1212,8 @@ function IconBrowser()
 ":/qss/combobox-disabled-down-arrow.png",
 ":/qss/combobox-down-arrow-dark.png",
 ":/qss/combobox-down-arrow-light.png",
+":/qss/header-down-arrow-dark.png",
+":/qss/header-up-arrow-dark.png",
 ":/qss/menu-checked.png",
 ":/qss/menu-disabled-checked.png",
 ":/qss/messagebox-critical-icon.png",
@@ -1317,6 +1350,10 @@ function IconBrowser()
 ":/script-editor/unmodified-document.png",
 ":/script-editor/uppercase.png",
 ":/script-editor/word-wrap.png",
+":/shapes/shape-sphere-blue.png",
+":/shapes/shape-sphere-gray.png",
+":/shapes/shape-sphere-green.png",
+":/shapes/shape-sphere-red.png",
 ":/splash/activation-platform-logo-v.png",
 ":/splash/splash-about.png",
 ":/splash/splash-ack.png",
@@ -1527,6 +1564,7 @@ function IconBrowser()
 ":/view-explorer/view-explorer-icon.png",
 ":/view-explorer/view-explorer-icon.svg",
 ":/view-explorer/view-explorer-window-icon.png",
+":/wallpaper/wallpaper-1.8.5.svg",
 ":/web-browser/back.png",
 ":/web-browser/find.png",
 ":/web-browser/forward.png",
@@ -1623,7 +1661,7 @@ function IconBrowser()
 ":/workspace/macosx/shade-inactive.png",
 ":/workspace/macosx/shade-pressed.png",
 ":/workspace/macosx/shade.png"
-];
+   ];
 
    this.htmlFilePath = File.systemTempDirectory + "/pi-core-icons.html";
 
@@ -1747,4 +1785,4 @@ console.hide();
 (new IconBrowser).execute();
 
 // ----------------------------------------------------------------------------
-// EOF CoreIconsBrowser.js - Released 2015/12/01 15:27:58 UTC
+// EOF CoreIconsBrowser.js - Released 2018-12-13T19:36:50Z

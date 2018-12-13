@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenUtility.js - Released 2017-08-01T15:54:50Z
+// MakGenUtility.js - Released 2018-12-13T19:20:07Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.104
+// This file is part of PixInsight Makefile Generator Script version 1.108
 //
-// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2018, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Utility routines.
@@ -72,14 +72,14 @@ function createDirectoryIfNotExists( dir, createIntermediateDirectories )
    if ( !File.directoryExists( dir ) )
    {
       if ( createIntermediateDirectories )
-         for ( var p0 = 0; ; )
+         for ( let p0 = 0; ; )
          {
-            var p = dir.indexOf( '/', p0 );
+            let p = dir.indexOf( '/', p0 );
             if ( p < 0 )
                break;
             if ( p > 0 )
             {
-               var d = dir.substring( 0, p );
+               let d = dir.substring( 0, p );
                if ( !File.directoryExists( d ) )
                   createDirectory( d );
             }
@@ -107,15 +107,15 @@ function removeDirectory( dirPath )
       if ( !File.directoryExists( dirPath ) )
          throw new Error( "removeDirectory(): Attempt to remove a nonexistent directory." );
 
-      var currentDir = dirPath;
+      let currentDir = dirPath;
       if ( currentDir[currentDir.length-1] != '/' )
          currentDir += '/';
 
-      var f = new FileFind;
+      let f = new FileFind;
       if ( f.begin( currentDir + "*" ) )
          do
          {
-            var itemPath = currentDir + f.name;
+            let itemPath = currentDir + f.name;
             if ( f.isDirectory )
             {
                if ( f.name != "." && f.name != ".." )
@@ -159,4 +159,4 @@ function UUID()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenUtility.js - Released 2017-08-01T15:54:50Z
+// EOF MakGenUtility.js - Released 2018-12-13T19:20:07Z

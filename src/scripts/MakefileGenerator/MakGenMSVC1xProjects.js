@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenMSVC1xProjects.js - Released 2017-08-01T15:54:50Z
+// MakGenMSVC1xProjects.js - Released 2018-12-13T19:20:07Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.104
+// This file is part of PixInsight Makefile Generator Script version 1.108
 //
-// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2018, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Generation of project files for Microsoft Visual C++ 2010, 2012 and 2013
@@ -92,7 +92,15 @@ function MSVCxx14( F, P )
 }
 
 /*
- * Microsoft Visual C++ 2010/2012/2013/2015 project (.vcxproj)
+ * Microsoft Visual C++ 2017 project (.vcxproj)
+ */
+function MSVCxx15( F, P )
+{
+   MSVCxx( F, P, 15 );
+}
+
+/*
+ * Microsoft Visual C++ 2010/2012/2013/2015/2017 project (.vcxproj)
  */
 function MSVCxx( F, P, vcVersion )
 {
@@ -174,6 +182,12 @@ function MSVCxx( F, P, vcVersion )
       toolsVersion = "14.0";
       platformToolset32 = "v140_xp";
       platformToolset64 = "v140";
+      break;
+   case 15:
+      vcYear = "2017";
+      toolsVersion = "15.0";
+      platformToolset32 = "v141_xp";
+      platformToolset64 = "v141";
       break;
    default:
       throw new Error( "Internal error: Invalid/unsupported Visual C++ compiler version: " + vcVersion.toString() );
@@ -292,7 +306,9 @@ function MSVCxx( F, P, vcVersion )
                           ";ws2_32.lib" +
                           ";wldap32.lib" +
                           ";mscms.lib" +
-                          ";winmm.lib";
+                          ";winmm.lib" +
+                          ";crypt32.lib";
+
    let libraries = "";
 
    if ( P.isCore() )
@@ -337,6 +353,7 @@ function MSVCxx( F, P, vcVersion )
          libraries = "qtmain.lib" +
                      ";Qt5Widgets.lib" +
                      ";Qt5Gui.lib" +
+                     ";Qt5Svg.lib" +
                      ";Qt5Core.lib" +
                      ";libEGL.lib" +
                      ";libGLESv2.lib" +
@@ -530,7 +547,8 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() ||
+           P.signed && (P.isModule() || P.isExecutable() || P.isDynamicLibrary()) )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -596,7 +614,8 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() ||
+           P.signed && (P.isModule() || P.isExecutable() || P.isDynamicLibrary()) )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -654,7 +673,8 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() ||
+           P.signed && (P.isModule() || P.isExecutable() || P.isDynamicLibrary()) )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -709,7 +729,8 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() ||
+           P.signed && (P.isModule() || P.isExecutable() || P.isDynamicLibrary()) )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -946,4 +967,4 @@ function MSVCxx( F, P, vcVersion )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenMSVC1xProjects.js - Released 2017-08-01T15:54:50Z
+// EOF MakGenMSVC1xProjects.js - Released 2018-12-13T19:20:07Z

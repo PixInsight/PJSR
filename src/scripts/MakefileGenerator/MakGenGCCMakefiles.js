@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGCCMakefiles.js - Released 2017-08-01T15:54:50Z
+// MakGenGCCMakefiles.js - Released 2018-12-13T19:20:07Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.104
+// This file is part of PixInsight Makefile Generator Script version 1.108
 //
-// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2018, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Generation of makefiles for GCC and Clang compilers.
@@ -92,7 +92,7 @@ function GnuCxxAll( F, P )
 
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# PixInsight Makefile Generator Script v" + VERSION );
-   f.outTextLn( "# Copyright (C) 2009-2017 Pleiades Astrophoto" );
+   f.outTextLn( "# Copyright (C) 2009-" + YEAR + " Pleiades Astrophoto" );
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# Generated on .... " + (new Date( Date.now() )).toISOString() );
    f.outTextLn( "# Project id ...... " + P.id );
@@ -182,7 +182,7 @@ function GnuCxx( F, P )
 
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# PixInsight Makefile Generator Script v" + VERSION );
-   f.outTextLn( "# Copyright (C) 2009-2017 Pleiades Astrophoto" );
+   f.outTextLn( "# Copyright (C) 2009-" + YEAR + " Pleiades Astrophoto" );
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# Generated on .... " + (new Date( Date.now() )).toISOString() );
    f.outTextLn( "# Project id ...... " + P.id );
@@ -358,9 +358,10 @@ function GnuCxx( F, P )
           * ### N.B.: Updater executables are already signed within the core
           * application bundle on OS X.
           */
-         if ( P.isOfficialModule() || P.isOfficialDynamicLibrary() )
-            if ( P.isMacOSXPlatform() )
-               f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + P.destinationDirectory() + "/" + P.mainTarget() );
+         if ( P.official )
+            f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + P.destinationDirectory() + "/" + P.mainTarget() );
+         else if ( P.signed )
+            f.outTextLn( "\tcodesign --deep -s " + P.signingIdentity + " -f -v --timestamp " + P.destinationDirectory() + "/" + P.mainTarget() );
       }
    }
    f.outTextLn( '' );
@@ -427,4 +428,4 @@ function GnuCxx( F, P )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGCCMakefiles.js - Released 2017-08-01T15:54:50Z
+// EOF MakGenGCCMakefiles.js - Released 2018-12-13T19:20:07Z

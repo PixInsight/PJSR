@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGenerators.js - Released 2017-08-01T15:54:50Z
+// MakGenGenerators.js - Released 2018-12-13T19:20:07Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.104
+// This file is part of PixInsight Makefile Generator Script version 1.108
 //
-// Copyright (c) 2009-2017 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2017, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2018, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Makefile generation
@@ -129,9 +129,9 @@ function GeneratePCLMakefiles()
    console.writeln( "Generating makefiles for PixInsight Class Library" );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + "/pcl" );
+   let files = new FileLists( PCLSRCDIR + "/pcl" );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = "PCL";
    parameters.type = "StaticLibrary";
    parameters.official = true;
@@ -150,9 +150,9 @@ function GenerateCoreMakefiles()
    console.writeln( "Generating makefiles for PixInsight Core executable" );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + "/core", true/*noImages*/ );
+   let files = new FileLists( PCLSRCDIR + "/core", true/*noImages*/ );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = "PixInsight";
    parameters.type = "Core";
    parameters.official = true;
@@ -170,9 +170,9 @@ function GenerateUpdater1Makefiles()
    console.writeln( "Generating makefiles for PixInsight updater1 program" );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + "/core-aux/updater1" );
+   let files = new FileLists( PCLSRCDIR + "/core-aux/updater1" );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = "PixInsightUpdater";
    parameters.type = "CoreExecutable";
    parameters.official = true;
@@ -191,9 +191,9 @@ function GenerateUpdater2Makefiles()
    console.writeln( "Generating makefiles for PixInsight updater2 program" );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + "/core-aux/updater2" );
+   let files = new FileLists( PCLSRCDIR + "/core-aux/updater2" );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = "updater2";
    parameters.type = "CoreExecutable";
    parameters.official = true;
@@ -211,9 +211,9 @@ function GenerateUpdater3Makefiles()
    console.writeln( "Generating makefiles for PixInsight updater3 program" );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + "/core-aux/updater3" );
+   let files = new FileLists( PCLSRCDIR + "/core-aux/updater3" );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = "updater3";
    parameters.type = "CoreAux";
    parameters.official = true;
@@ -241,9 +241,9 @@ function GenerateX11InstallerMakefiles()
    console.writeln( "Generating makefiles for PixInsight X11 UNIX/Linux installer program" );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + "/installer/x11" );
+   let files = new FileLists( PCLSRCDIR + "/installer/x11" );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = "installer";
    parameters.type = "X11Installer";
    parameters.official = true;
@@ -272,9 +272,9 @@ function GeneratePCLHMakefiles()
    console.writeln( "Generating makefiles for PixInsight pclh utility" );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + "/utils/pclh" );
+   let files = new FileLists( PCLSRCDIR + "/utils/pclh" );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = "pclh";
    parameters.type = "Executable";
    parameters.official = true;
@@ -293,23 +293,23 @@ function GenerateStandardModuleMakefiles( module,
    console.writeln( "Generating makefiles for PixInsight module: " + module );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + "/modules/" + module );
+   let files = new FileLists( PCLSRCDIR + "/modules/" + module );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = File.extractName( module );
    parameters.type = "Module";
    parameters.official = true;
    parameters.gccOptimization = "3";
    parameters.winExtraDefinitions.push( "_CRT_SECURE_NO_WARNINGS" );
-   for ( var i = 0; i < extraDefinitions.length; ++i )
+   for ( let i = 0; i < extraDefinitions.length; ++i )
       parameters.extraDefinitions.push( extraDefinitions[i] );
-   for ( var i = 0; i < winExtraDefinitions.length; ++i )
+   for ( let i = 0; i < winExtraDefinitions.length; ++i )
       parameters.winExtraDefinitions.push( winExtraDefinitions[i] );
-   for ( var i = 0; i < extraIncludeDirs.length; ++i )
+   for ( let i = 0; i < extraIncludeDirs.length; ++i )
       parameters.extraIncludeDirs.push( extraIncludeDirs[i] );
-   for ( var i = 0; i < extraLibDirs.length; ++i )
+   for ( let i = 0; i < extraLibDirs.length; ++i )
       parameters.extraLibDirs.push( extraLibDirs[i] );
-   for ( var i = 0; i < extraLibraries.length; ++i )
+   for ( let i = 0; i < extraLibraries.length; ++i )
       parameters.extraLibraries.push( extraLibraries[i] );
 
    GenerateAll( files, parameters );
@@ -325,23 +325,23 @@ function GenerateStandardDynamicLibraryMakefiles( library,
    console.writeln( "Generating makefiles for dynamic library: " + library );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + '/' + library );
+   let files = new FileLists( PCLSRCDIR + '/' + library );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = File.extractName( library );
    parameters.type = "DynamicLibrary";
    parameters.official = true;
    parameters.winDefFile = winDefFile;
    parameters.winExtraDefinitions.push( "_CRT_SECURE_NO_WARNINGS" );
-   for ( var i = 0; i < extraDefinitions.length; ++i )
+   for ( let i = 0; i < extraDefinitions.length; ++i )
       parameters.extraDefinitions.push( extraDefinitions[i] );
-   for ( var i = 0; i < winExtraDefinitions.length; ++i )
+   for ( let i = 0; i < winExtraDefinitions.length; ++i )
       parameters.winExtraDefinitions.push( winExtraDefinitions[i] );
-   for ( var i = 0; i < extraIncludeDirs.length; ++i )
+   for ( let i = 0; i < extraIncludeDirs.length; ++i )
       parameters.extraIncludeDirs.push( extraIncludeDirs[i] );
-   for ( var i = 0; i < extraLibDirs.length; ++i )
+   for ( let i = 0; i < extraLibDirs.length; ++i )
       parameters.extraLibDirs.push( extraLibDirs[i] );
-   for ( var i = 0; i < extraLibraries.length; ++i )
+   for ( let i = 0; i < extraLibraries.length; ++i )
       parameters.extraLibraries.push( extraLibraries[i] );
 
    GenerateAll( files, parameters );
@@ -356,18 +356,18 @@ function GenerateStandardStaticLibraryMakefiles( library, extraDefinitions, winE
    console.writeln( "Generating makefiles for static library: " + library );
    console.flush();
 
-   var files = new FileLists( PCLSRCDIR + '/' + library );
+   let files = new FileLists( PCLSRCDIR + '/' + library );
 
-   var parameters = new GeneratorParameters();
+   let parameters = new GeneratorParameters();
    parameters.id = File.extractName( library );
    parameters.type = "StaticLibrary";
    parameters.official = true;
    parameters.winExtraDefinitions.push( "_CRT_SECURE_NO_WARNINGS" );
-   for ( var i = 0; i < extraDefinitions.length; ++i )
+   for ( let i = 0; i < extraDefinitions.length; ++i )
       parameters.extraDefinitions.push( extraDefinitions[i] );
-   for ( var i = 0; i < winExtraDefinitions.length; ++i )
+   for ( let i = 0; i < winExtraDefinitions.length; ++i )
       parameters.winExtraDefinitions.push( winExtraDefinitions[i] );
-   for ( var i = 0; i < extraIncludeDirs.length; ++i )
+   for ( let i = 0; i < extraIncludeDirs.length; ++i )
       parameters.extraIncludeDirs.push( extraIncludeDirs[i] );
 
    GenerateAll( files, parameters );
@@ -376,10 +376,10 @@ function GenerateStandardStaticLibraryMakefiles( library, extraDefinitions, winE
 function GenerateStandardFileFormatModuleMakefiles()
 {
    GenerateStandardModuleMakefiles( "file-formats/BMP",      [], [], [], [], [] );
-   GenerateStandardModuleMakefiles( "file-formats/DSLR_RAW", [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "file-formats/FITS",     [], [], [], [], ["cfitsio-pxi"] );
    GenerateStandardModuleMakefiles( "file-formats/JPEG",     [], [], [], [], ["jpeg-pxi"] );
    GenerateStandardModuleMakefiles( "file-formats/JPEG2000", [], [], [], [], ["jasper-pxi"] );
+   GenerateStandardModuleMakefiles( "file-formats/RAW",      [], ["LIBRAW_NODLL"], [], [], ["libraw-pxi"] );
    GenerateStandardModuleMakefiles( "file-formats/TIFF",     [], [], [], [], ["libtiff-pxi", "jpeg-pxi"] );
    GenerateStandardModuleMakefiles( "file-formats/XISF",     [], [], [], [], [] );
 }
@@ -416,12 +416,14 @@ function GenerateStandardProcessModuleMakefiles()
    GenerateStandardModuleMakefiles( "processes/Sandbox",                                     [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/StarGenerator",                               [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/TGV",                                         [], [], [], [], [] );
+   GenerateStandardModuleMakefiles( "processes/contrib/cleger/SubframeSelector",             [], ["CMINPACK_NO_DLL"], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/contrib/gviehoever/GradientDomain",           [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/contrib/kkretzschmar/INDIClient",             [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/contrib/nvolkov/Blink",                       [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/contrib/nvolkov/CometAlignment",              [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/contrib/nvolkov/CosmeticCorrection",          [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/contrib/nvolkov/SplitCFA",                    [], [], [], [], [] );
+   GenerateStandardModuleMakefiles( "processes/contrib/sharkmelley/ArcsinhStretch",          [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/contrib/spool/Debayer",                       [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/contrib/zvrastil/Annotation",                 [], [], [], [], [] );
    GenerateStandardModuleMakefiles( "processes/contrib/zvrastil/AssistedColorCalibration",   [], [], [], [], [] );
@@ -434,7 +436,7 @@ function GeneratePixInsightPlatformMakefiles()
    GeneratePCLMakefiles();
 
    // CFITSIO FITS format support library - version >= 3.37
-   GenerateStandardStaticLibraryMakefiles( "3rdparty/cfitsio", [], ["_MBCS", "FF_NO_UNISTD_H"], [] );
+   GenerateStandardStaticLibraryMakefiles( "3rdparty/cfitsio", ["f2cFortran"], ["_MBCS", "FF_NO_UNISTD_H"], [] );
 
    // CMINPACK library
    GenerateStandardStaticLibraryMakefiles( "3rdparty/cminpack", [], ["CMINPACK_NO_DLL"], [] );
@@ -447,6 +449,9 @@ function GeneratePixInsightPlatformMakefiles()
 
    // Little CMS engine
    GenerateStandardStaticLibraryMakefiles( "3rdparty/lcms", [], [], [] );
+
+   // LibRaw format support library
+   GenerateStandardStaticLibraryMakefiles( "3rdparty/libraw", [], ["LIBRAW_NODLL"], ["$(PCLSRCDIR)/3rdparty/libraw"] );
 
    // LibTIFF TIFF format support library
    GenerateStandardStaticLibraryMakefiles( "3rdparty/libtiff", [], [], ["$(PCLSRCDIR)/3rdparty/jpeg", "$(PCLSRCDIR)/3rdparty/zlib"] );
@@ -483,4 +488,4 @@ function GeneratePixInsightPlatformMakefiles()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGenerators.js - Released 2017-08-01T15:54:50Z
+// EOF MakGenGenerators.js - Released 2018-12-13T19:20:07Z

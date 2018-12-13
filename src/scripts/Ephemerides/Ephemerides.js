@@ -1,16 +1,12 @@
-//     ____       __ _____  ____
-//    / __ \     / // ___/ / __ \
-//   / /_/ /__  / / \__ \ / /_/ /
-//  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
-// /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/Assert.jsh - Released 2018-11-30T21:30:59Z
+// PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// This file is part of the PixInsight JavaScript Runtime (PJSR).
-// PJSR is an ECMA-262-5 compliant framework for development of scripts on the
-// PixInsight platform.
+// Ephemerides.js - Released 2018-12-13T19:24:09Z
+// ----------------------------------------------------------------------------
 //
-// Copyright (c) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
+// This file is part of Ephemerides Script version 1.0
+//
+// Copyright (c) 2017-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -50,41 +46,60 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // ----------------------------------------------------------------------------
 
-#ifndef __PJSR_Assert_jsh
-#define __PJSR_Assert_jsh
+/*
+ * An ephemeris generation script.
+ *
+ * Copyright (C) 2017-2018 Pleiades Astrophoto. All Rights Reserved.
+ * Written by Juan Conejero (PTeam)
+ */
 
-function assert( condition, message, caller )
+#feature-id    Ephemerides > Ephemerides
+
+#feature-info  A script for calculation of ephemerides of solar system bodies \
+               and stars.<br/>\
+               <br/>\
+               Written by Juan Conejero (PTeam)<br/>\
+               Copyright &copy; 2017-2018 Pleiades Astrophoto, S.L.
+
+#iflt __PI_BUILD__ 1437
+#error This script requires PixInsight version 1.8.6 or higher.
+#endif
+
+#define VERSION "1.0"
+#define TITLE   "Ephemerides"
+
+#include <pjsr/StdButton.jsh>
+#include <pjsr/StdIcon.jsh>
+
+#include "EphemerisDialog.js"
+#include "EphemerisEngine.js"
+
+// ----------------------------------------------------------------------------
+
+function main()
 {
-   if ( !condition )
+   console.hide();
+
+   let engine = new EphemerisEngine;
+   engine.load();
+
+   let dialog = new EphemerisDialog( engine );
+
+   for ( ;; )
    {
-      let info = "";
-      if ( typeof caller != "function" )
-         caller = this.caller;
-      if ( typeof caller == "function" )
-         info += "(" + caller.name() + ") ";
-      info += "Assertion failed";
-      if ( message != undefined )
-         info += ": " + message.toString();
-      throw new Error( info );
+      if ( !dialog.execute() )
+      {
+         if ( (new MessageBox( "Do you really want to exit the " + TITLE + " script?",
+              TITLE, StdIcon_Question, StdButton_No, StdButton_Yes )).execute() == StdButton_Yes )
+            break;
+         continue;
+      }
+      processEvents();
+      gc();
    }
 }
 
-function assertType( expected, value, caller )
-{
-   assert( typeof expected == typeof value,
-           "(" + this.caller + ") Expression type mismatch: Expected \'" + typeof expected + "\', got \'" + typeof value + "\'",
-           caller || this.caller );
-}
-
-function assertValue( expected, value, caller )
-{
-   assertType( expected, value, caller || this.caller );
-   assert( expected === value,
-           "Expression value mismatch: Expected \'" + expected.toString() + "\', got \'" + value.toString() + "\'",
-           caller || this.caller );
-}
-
-#endif   // __PJSR_Assert_jsh
+main();
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/Assert.jsh - Released 2018-11-30T21:30:59Z
+// EOF Ephemerides.js - Released 2018-12-13T19:24:09Z

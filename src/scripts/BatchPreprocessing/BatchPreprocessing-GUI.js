@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-GUI.js - Released 2017-07-04T17:05:20Z
+// BatchPreprocessing-GUI.js - Released 2018-11-30T21:29:47Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.46
+// This file is part of Batch Preprocessing Script version 1.47
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2017 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -1834,7 +1834,7 @@ function StackDialog()
    this.helpLabel.text =
       "<p>A script for calibration and alignment of light frames<br/>"
     + "Copyright (c) 2012 Kai Wiechen.<br/>"
-    + "Copyright (c) 2012-2017 Pleiades Astrophoto.</p>";
+    + "Copyright (c) 2012-2018 Pleiades Astrophoto.</p>";
 
    //
 
@@ -2159,6 +2159,7 @@ function StackDialog()
 
    //
 
+   /*
    this.exportCalibrationFilesCheckBox = new CheckBox( this );
    this.exportCalibrationFilesCheckBox.text = "Export calibration files";
    this.exportCalibrationFilesCheckBox.toolTip = "<p>When checked, calibration file names will be exported in generated instances.</p>";
@@ -2166,6 +2167,7 @@ function StackDialog()
    {
       engine.exportCalibrationFiles = checked;
    };
+   */
 
     //
 
@@ -2236,7 +2238,7 @@ function StackDialog()
    this.optionsSizer1.add( this.cfaImagesCheckBox );
    this.optionsSizer1.add( this.optimizeDarksCheckBox );
    this.optionsSizer1.add( this.generateRejectionMapsCheckBox );
-   this.optionsSizer1.add( this.exportCalibrationFilesCheckBox );
+//   this.optionsSizer1.add( this.exportCalibrationFilesCheckBox );
    this.optionsSizer1.add( this.saveProcessLogCheckBox );
 
    this.optionsSizer2 = new VerticalSizer;
@@ -2445,7 +2447,7 @@ StackDialog.prototype.updateControls = function()
    this.cfaImagesCheckBox.checked              = engine.cfaImages;
    this.optimizeDarksCheckBox.checked          = engine.optimizeDarks;
    this.generateRejectionMapsCheckBox.checked  = engine.generateRejectionMaps;
-   this.exportCalibrationFilesCheckBox.checked = engine.exportCalibrationFiles;
+//   this.exportCalibrationFilesCheckBox.checked = engine.exportCalibrationFiles;
    this.saveProcessLogCheckBox.checked         = engine.saveProcessLog;
    this.upBottomFITSCheckBox.checked           = engine.upBottomFITS;
    this.useAsMasterBiasCheckBox.checked        = engine.useAsMaster[ImageType.BIAS];
@@ -2559,4 +2561,4 @@ StackDialog.prototype.refreshTreeBoxes = function()
 };
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-GUI.js - Released 2017-07-04T17:05:20Z
+// EOF BatchPreprocessing-GUI.js - Released 2018-11-30T21:29:47Z

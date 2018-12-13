@@ -2,6 +2,10 @@
 Core Icons Browser Script Changelog
 ===============================================================================
 
+1.13 - Released with PixInsight 1.8.6 Ripley
+
+-------------------------------------------------------------------------------
+
 1.10 - 2015 December 1
 
        - Removed two wrong icon names.

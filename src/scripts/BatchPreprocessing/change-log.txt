@@ -3,6 +3,12 @@ Batch Preprocessing Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2018.11.30 - v1.47
+
+- Remove the 'Export calibration files' check box from the script's dialog.
+  This option was causing more confusion and problems than anything else.
+
+-------------------------------------------------------------------------------
 2017.07.04 - v1.46
 
 - The script now requires PixInsight Core version 1.8.5.1321 or higher.

@@ -2,6 +2,37 @@
 Makefile Generator Script Changelog
 ===============================================================================
 
+1.108 - Released with PI 1.8.6 Ripley
+
+   - New options to control generation of signed code on macOS and Windows.
+
+1.107 - Unreleased (internal)
+
+   - GCC 7.3.0 is now the default compiler for all Linux builds.
+   - Use the --enable-new-dtags linker flag on Linux to prevent rpath issues.
+   - The SubframeSelector module is now part of the standard core distribution.
+   - Visual C++ 2017 (vc15) required for all Windows builds.
+   - The minimum macOS version supported is now 10.11.
+
+-------------------------------------------------------------------------------
+1.106 - Unreleased (internal)
+
+   - Implement special '__private' project subdirectories, which are
+     automatically excluded from source file lists.
+   - Support for the LibRaw third-party library.
+   - New RAW file format support module based on LibRaw. The DSLR_RAW module is
+     now deprecated and replaced by RAW on all core builds.
+   - Enable the C99 standard for compilation of .c files with gcc and clang.
+   - PixInsight 1.8.5.1352 or higher required.
+   - Support for macOS SDKs 10.13 and (future, as of writing this) 10.14.
+   - Minor source code tweaks.
+
+-------------------------------------------------------------------------------
+1.105 - Unreleased (internal)
+
+   - Include the ArcsinhStretch module in the standard core distribution.
+
+-------------------------------------------------------------------------------
 1.104 - Released with PI 1.8.5 Ripley
 
    - Core builds adapted to Qt 5.9.0.

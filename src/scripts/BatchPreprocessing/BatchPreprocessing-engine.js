@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-engine.js - Released 2017-07-04T17:05:20Z
+// BatchPreprocessing-engine.js - Released 2018-11-30T21:29:47Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.46
+// This file is part of Batch Preprocessing Script version 1.47
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2017 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -2299,4 +2299,4 @@ StackEngine.prototype.getPath = function( filePath, imageType )
 };
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-engine.js - Released 2017-07-04T17:05:20Z
+// EOF BatchPreprocessing-engine.js - Released 2018-11-30T21:29:47Z
