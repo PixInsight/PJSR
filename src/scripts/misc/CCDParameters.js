@@ -1,5 +1,5 @@
 /*
-   CCDParameters.js v0.3.1
+   CCDParameters.js v0.3.3
    Determine basic parameters of your CCD camera.
 
    Copyright (C) 2009 Georg Viehoever
@@ -19,6 +19,8 @@
 
 /*
    Changelog:
+
+   0.3.3  * (tstibor) Fixed warning reference to undefined property this.x0
 
    0.3.2  * (jconejero) Fixed 'onvalueUpdated' typos (replaced with
             'onValueUpdated'), which were raising 'assignment to undeclared
@@ -123,8 +125,8 @@ function DoImageStatistics( img, imgFunc, params )
 	if ( img.length < 1 || img.length > 2 ) {
 		throw( "DoImageStatistics: one image or two images with supplied image operator function required" );
 	}
-	var x0		= params.x0			|| 0;
-	var y0		= params.y0			|| 0;
+	var x0		= params.x0	|| 0;
+	var y0		= params.y0	|| 0;
 	var width	= params.width	|| ( img[0].width  - x0 );
 	var height= params.height	|| ( img[0].height - y0 );
 	var isCFA	= params.isCFA	|| false;
@@ -150,7 +152,7 @@ function DoImageStatistics( img, imgFunc, params )
 		if ( img[0].numberOfChannels != img[1].numberOfChannels || img[0].colorSpace != img[1].colorSpace ) {
 			throw( "DoImageStatistics: incompatible colorspaces or number of channels" );
 		}
-		if ( this.x0 + this.width > img[0].width || this.y0 + this.height > img[0].height ) {
+		if ( x0 + width > img[0].width || y0 + height > img[0].height ) {
 			throw( "DoImageStatistics: image rectangle out of bounds" );
 		}
 		if ( typeof( imgFunc ) != 'function' ) {
