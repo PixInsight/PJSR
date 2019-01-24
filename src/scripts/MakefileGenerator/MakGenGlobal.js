@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGlobal.js - Released 2018-12-13T19:20:07Z
+// MakGenGlobal.js - Released 2019-01-20T14:05:16Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.108
+// This file is part of PixInsight Makefile Generator Script version 1.109
 //
-// Copyright (c) 2009-2018 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,13 +52,13 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2018, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Global variables and definitions.
  */
 
-#define VERSION "1.108"
+#define VERSION "1.109"
 #define TITLE   "Makefile Generator"
 
 var YEAR = (new Date).getFullYear().toString();
@@ -172,4 +172,4 @@ var imageFileExtensions =
 #define OPTIMIZATION_DEFAULT_STR "3"
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGlobal.js - Released 2018-12-13T19:20:07Z
+// EOF MakGenGlobal.js - Released 2019-01-20T14:05:16Z

@@ -3,6 +3,19 @@ Batch Channel Extraction Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2018/12/27 - v1.2.4
+
+Maintenance modifications by PTeam staff:
+
+- The script was failing when not all channels were selected; see bug report:
+      https://pixinsight.com/forum/index.php?topic=13050.0
+
+- The script was using an obsolete way to measure execution time. It has been
+  replaced with much simpler code based on the ElapsedTime core PJSR object.
+
+- ### TODO: This script requires a complete code revision.
+
+-------------------------------------------------------------------------------
 2017/05/29 - v1.2.3
 
 Minor changes by Thomas Stibor:

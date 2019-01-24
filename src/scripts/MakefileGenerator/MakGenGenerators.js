@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGenerators.js - Released 2018-12-13T19:20:07Z
+// MakGenGenerators.js - Released 2019-01-20T14:05:16Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.108
+// This file is part of PixInsight Makefile Generator Script version 1.109
 //
-// Copyright (c) 2009-2018 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2018, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Makefile generation
@@ -60,7 +60,7 @@
 
 function writeSeparator()
 {
-   console.writeln( "<end><cbr><br>======================================================================" );
+   console.writeln( "<end><cbr><br>" + '='.repeat( 70 ) );
 }
 
 function GenerateAll( files, parameters, with32Bit/*optional, undefined by default*/ )
@@ -278,7 +278,7 @@ function GeneratePCLHMakefiles()
    parameters.id = "pclh";
    parameters.type = "Executable";
    parameters.official = true;
-   parameters.gccOptimization = "3";
+   parameters.gccOptimization = "2";
 
    GenerateAll( files, parameters );
 }
@@ -451,7 +451,7 @@ function GeneratePixInsightPlatformMakefiles()
    GenerateStandardStaticLibraryMakefiles( "3rdparty/lcms", [], [], [] );
 
    // LibRaw format support library
-   GenerateStandardStaticLibraryMakefiles( "3rdparty/libraw", [], ["LIBRAW_NODLL"], ["$(PCLSRCDIR)/3rdparty/libraw"] );
+   GenerateStandardStaticLibraryMakefiles( "3rdparty/libraw", ["LIBRAW_LIBRARY_BUILD"], ["LIBRAW_NODLL"], ["$(PCLSRCDIR)/3rdparty/libraw"] );
 
    // LibTIFF TIFF format support library
    GenerateStandardStaticLibraryMakefiles( "3rdparty/libtiff", [], [], ["$(PCLSRCDIR)/3rdparty/jpeg", "$(PCLSRCDIR)/3rdparty/zlib"] );
@@ -488,4 +488,4 @@ function GeneratePixInsightPlatformMakefiles()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGenerators.js - Released 2018-12-13T19:20:07Z
+// EOF MakGenGenerators.js - Released 2019-01-20T14:05:16Z

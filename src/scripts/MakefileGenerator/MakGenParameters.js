@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenParameters.js - Released 2018-12-13T19:20:07Z
+// MakGenParameters.js - Released 2019-01-20T14:05:16Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.108
+// This file is part of PixInsight Makefile Generator Script version 1.109
 //
-// Copyright (c) 2009-2018 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2018, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Project generation parameters.
@@ -124,17 +124,17 @@ function GeneratorParameters()
    this.gccOptimization = OPTIMIZATION_DEFAULT_STR;
 
    /*
-    * GCC link-time optimization (-flto). Disabled by default because it
-    * produces very slow code in our tests.
+    * GCC link-time optimization (-flto). Experimental option - disabled by
+    * default because it produces very slow code in our tests.
     */
    this.gccLinkTimeOptimization = false;
 
    /*
     * Do not strip binaries. If true, the -rdynamic flag will be used to enable
     * backtraces with demangled function names. If false, the -s flag will be
-    * used to strip all executable files.
+    * used to strip all executable files (Linux only).
     */
-   this.gccUnstrippedBinaries = false;
+   this.gccUnstrippedBinaries = true;
 
    /*
     * GCC C++ compiler executable suffix for Linux builds.
@@ -617,20 +617,16 @@ function GeneratorParameters()
             if ( optimization == "fast" )
                optimization = "3";
 
-         // Optimize for a common Intel EM64 architecture (Core i7) on
+         // Optimize for a common Intel EM64 architecture (Core i7/i9) on
          // Linux and UNIX builds.
-         s += " -mtune=corei7";
+         s += " -mtune=skylake";
 
-         // OS X builds require SSSE3 support. Linux and FreeBSD builds require
-         // only SSE3, for compatibility with vintage AMD machines.
-         if ( this.isMacOSXPlatform() )
-            s += " -mssse3";
-         else
-         {
-            if ( this.isLinuxPlatform() )
-               s += " -mfpmath=sse";
-            s += " -msse3";
-         }
+         // Since core version 1.8.6 we require the SSE 4.1 instruction set on
+         // all Linux/UNIX builds. This excludes some 2007/2008 CPUs and all
+         // vintage 2006 and older machines.
+         if ( this.isLinuxPlatform() )
+            s += " -mfpmath=sse";
+         s += " -msse4.1";
 
          // Inline string operations for small blocks with runtime checks, and
          // use library calls for large blocks.
@@ -669,8 +665,9 @@ function GeneratorParameters()
          }
       }
 
-      // GCC 4.2 on OS X requires hidden visibility enabled also for executables
-      // ### FIXME: Doesn't hurt, but, is this still true for Clang?
+      // Hidden visibility enabled for modules by default.
+      // Clang on macOS also requires these flags enabled for executables.
+      // ### TODO: Make this a user-selectable option.
       if ( this.hidden || this.isModule() || (this.isCore() || this.isCoreAux() || this.isExecutable()) && this.isMacOSXPlatform() )
       {
          s += " -fvisibility=hidden";
@@ -683,17 +680,12 @@ function GeneratorParameters()
       if ( !this.isMacOSXPlatform() && !this.isFreeBSDPlatform() )
          s += " -fnon-call-exceptions";
 
-      // Optional unstripped binaries to allow for significant backtraces with
-      // demangled function names.
-      if ( this.gccUnstrippedBinaries )
-         s += " -rdynamic";
-
       // Since Core version 1.8.3, we require C++11 support.
       if ( isCpp )
       {
          s += " -std=c++11";
          if ( this.isMacOSXPlatform() )
-            s += " -stdlib=libc++"; // ?! - required since Xcode 6 - hmmm...
+            s += " -stdlib=libc++"; // required since Xcode 6
       }
       else
          s += " -std=c99";
@@ -768,8 +760,8 @@ function GeneratorParameters()
          if ( this.mainTarget() == "PixInsightUpdater" )
             s += " -Wl,-rpath,/usr/local/lib64/:/lib64/";
 
-      // Strip all symbols by default, or optionally allow for significant
-      // backtraces with demangled function names.
+      // Either strip all symbols, or allow for significant backtraces with
+      // demangled function names.
       if ( this.gccUnstrippedBinaries )
          s += " -rdynamic";
       else if ( !this.isMacOSXPlatform() ) // -s declared obsolete in latest versions of clang
@@ -951,4 +943,4 @@ function GeneratorParameters()
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenParameters.js - Released 2018-12-13T19:20:07Z
+// EOF MakGenParameters.js - Released 2019-01-20T14:05:16Z

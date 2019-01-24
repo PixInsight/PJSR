@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// CoreIconsBrowser.js - Released 2018-12-13T19:36:50Z
+// CoreIconsBrowser.js - Released 2019-01-19T18:43:13Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of Core Icons Browser Script version 1.13
+// This file is part of Core Icons Browser Script version 1.14
 //
-// Copyright (c) 2013-2018 Pleiades Astrophoto S.L.
+// Copyright (c) 2013-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -51,7 +51,7 @@
  *
  * A script to browse PixInsight Core resource icons.
  *
- * Copyright (c) 2013-2018, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2013-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  */
 
@@ -63,11 +63,11 @@
 
 #feature-icon  CoreIconsBrowser.xpm
 
-#iflt __PI_BUILD__ 1445
-#error This script requires PixInsight 1.8.6.1445 or higher.
+#iflt __PI_BUILD__ 1457
+#error This script requires PixInsight 1.8.6.1457 or higher.
 #endif
 
-#define VERSION "1.13"
+#define VERSION "1.14"
 #define TITLE   "Core Icons Browser"
 
 #include <pjsr/Color.jsh>
@@ -75,7 +75,7 @@
 #include <pjsr/Slider.jsh>
 #include <pjsr/TextAlign.jsh>
 
-#define MAX_ICON_SIZE 64
+#define MAX_ICON_SIZE 96
 
 function IconBrowser()
 {
@@ -85,28 +85,10 @@ function IconBrowser()
    this.coreIcons =
    [
    /*
-    * Automatically generated on 2018 December 13 for core version 1.8.6.1445
+    * Automatically generated on 2019 January 19 for core version 1.8.6.1457
     */
-":/appicon/pixinsight-icon.128.png",
-":/appicon/pixinsight-icon.16.png",
-":/appicon/pixinsight-icon.24.png",
-":/appicon/pixinsight-icon.256.png",
-":/appicon/pixinsight-icon.32.png",
-":/appicon/pixinsight-icon.512.png",
-":/appicon/pixinsight-icon.64.png",
-":/appicon/pixinsight-icon.96.png",
-":/appicon/pixinsight32-icon.128.png",
-":/appicon/pixinsight32-icon.16.png",
-":/appicon/pixinsight32-icon.256.png",
-":/appicon/pixinsight32-icon.32.png",
-":/appicon/pixinsight32-icon.512.png",
-":/appicon/pixinsight32-icon.64.png",
-":/appicon/pixinsight64-icon.128.png",
-":/appicon/pixinsight64-icon.16.png",
-":/appicon/pixinsight64-icon.256.png",
-":/appicon/pixinsight64-icon.32.png",
-":/appicon/pixinsight64-icon.512.png",
-":/appicon/pixinsight64-icon.64.png",
+":/appicon/pixinsight-bundle-icon.svg",
+":/appicon/pixinsight-icon.svg",
 ":/arrows/arrow-bottom.png",
 ":/arrows/arrow-down-limit.png",
 ":/arrows/arrow-down.png",
@@ -1663,42 +1645,50 @@ function IconBrowser()
 ":/workspace/macosx/shade.png"
    ];
 
+   this.cssFilePath = File.systemTempDirectory + "/pi-core-icons.css";
    this.htmlFilePath = File.systemTempDirectory + "/pi-core-icons.html";
+
+   this.generateCSS = function( bgColor )
+   {
+      let css = this.scaledStyleSheet(
+               "body {" +
+               "   margin: 0;" +
+               "   padding: 1em;" +
+               "   height: 100%;" +
+               "   font-family: OpenSans,\"DejaVu Sans\",Verdana,Arial,Helvetica,sans-serif;" +
+               "   font-size: 8pt;" +
+               "   color: " + ((bgColor > 100) ? "black" : "white") + ";" +
+               "   background-color: " + format( "#%02x%02x%02x", bgColor, bgColor, bgColor ) + ";" +
+               "}" +
+               "table {" +
+               "   border-collapse: collapse;" +
+               "   width: 100%;" +
+               "}" +
+               "td {" +
+               "   border: 1px solid #a0a0a0;" +
+               "   padding-top: 0.50em;" +
+               "   padding-bottom: 0.50em;" +
+               "   padding-left: 0.55em;" +
+               "   padding-right: 0.55em;" +
+               "}\n" );
+
+      File.writeTextFile( this.cssFilePath, css );
+   };
 
    this.generateHTML = function( tableColumns )
    {
-      let s = this.scaledStyleSheet( "<!DOCTYPE html>\n" +
-              "<html>\n" +
-              "<head>\n" +
-              "<meta charset=\"utf-8\">\n" +
-              "<style type=\"text/css\">" +
-              "body {" +
-              "   margin: 0px;" +
-              "   padding: 1em;" +
-              "   height: 100%;" +
-              "   font-family: OpenSans,\"DejaVu Sans\",Verdana,Arial,Helvetica,sans-serif;" +
-              "   font-size: 8pt;" +
-              "   color: #000000;" +
-              "}" +
-              "table {" +
-              "   border-collapse: collapse;" +
-              "   width: 100%;" +
-              "}" +
-              "td {" +
-              "   border: 1px solid #a0a0a0;" +
-              "   padding-top: 0.50em;" +
-              "   padding-bottom: 0.50em;" +
-              "   padding-left: 0.55em;" +
-              "   padding-right: 0.55em;" +
-              "}" +
-              "</style>" +
-              "</head>\n" +
-              "<body>\n" +
-              "<table>\n" );
+      let html = this.scaledStyleSheet( "<!DOCTYPE html>\n" +
+               "<html>\n" +
+               "<head>\n" +
+               "<meta charset=\"utf-8\">\n" +
+               "<link type=\"text/css\" href=\"file:\/\/" + this.cssFilePath + "\" rel=\"stylesheet\"/>" +
+               "</head>\n" +
+               "<body>\n" +
+               "<table>\n" );
 
       for ( let i = 0; i < this.coreIcons.length; )
       {
-         s += "<tr>\n";
+         html += "<tr>\n";
          for ( let c = 0; c < tableColumns && i < this.coreIcons.length; ++c, ++i )
          {
             let iconResource = (File.extractSuffix( this.coreIcons[i] ) != ".svg") ? // don't scale vector resources
@@ -1716,22 +1706,22 @@ function IconBrowser()
                imgHeight = Math.round( scaleFactor*imgHeight )|0;
             }
 
-            s += "<td>\n";
-            s += "<img width=\"" + imgWidth.toString() + "\" " +
+            html += "<td>\n";
+            html += "<img width=\"" + imgWidth.toString() + "\" " +
                       "height=\"" + imgHeight.toString() + "\" " +
                       "src=\"" + iconResource.replace( ":/", "qrc:/" ) + "\" " +
                       "title=\"" + this.coreIcons[i] + format( " (%dx%d)", iconWidth, iconHeight ) + "\"/><br/>\n";
-            s += this.coreIcons[i] + format( " (%dx%d)\n", iconWidth, iconHeight );
-            s += "</td>\n";
+            html += this.coreIcons[i] + format( " (%dx%d)\n", iconWidth, iconHeight );
+            html += "</td>\n";
          }
-         s += "</tr>\n";
+         html += "</tr>\n";
       }
 
-      s += "</table>\n" +
+      html += "</table>\n" +
            "</body>\n" +
            "</html>";
 
-      File.writeTextFile( this.htmlFilePath, s );
+      File.writeTextFile( this.htmlFilePath, html );
    };
 
    this.generateHTML( 4 );
@@ -1746,10 +1736,11 @@ function IconBrowser()
    this.bkgColor_SpinBox = new SpinBox( this );
    this.bkgColor_SpinBox.minValue = 0;
    this.bkgColor_SpinBox.maxValue = 255;
-   this.bkgColor_SpinBox.value = 0xe0;
+   this.bkgColor_SpinBox.value = 255;
    this.bkgColor_SpinBox.onValueUpdated = function( value )
    {
-      this.dialog.browser_WebView.backgroundColor = Color.rgbaColor( value, value, value );
+      this.dialog.generateCSS( value );
+      this.dialog.browser_WebView.reload();
    };
 
    this.close_PushButton = new PushButton( this );
@@ -1785,4 +1776,4 @@ console.hide();
 (new IconBrowser).execute();
 
 // ----------------------------------------------------------------------------
-// EOF CoreIconsBrowser.js - Released 2018-12-13T19:36:50Z
+// EOF CoreIconsBrowser.js - Released 2019-01-19T18:43:13Z

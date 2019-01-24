@@ -96,8 +96,12 @@ EphUtility.angleString = function( angle, range, sign, precision, units )
       mu = '\u2032';
       su = '\u2033';
    }
-   let result = format( "%c%" + dw.toString() + "d%c%02d%c%0" + sw.toString() + "." + precision.toString() + "f",
-                        sign ? ((d[0] < 0) ? '-' : '+') : '', dd, du, mm, mu, ss );
+   let result = (sign ? ((d[0] < 0) ? '-' : '+') : '')
+              + format( "%" + dw.toString() + "d", dd )
+              + du
+              + format( "%02d", mm )
+              + mu
+              + format( "%0" + sw.toString() + "." + precision.toString() + "f", ss );
    if ( units )
    {
       if ( precision > 0 )

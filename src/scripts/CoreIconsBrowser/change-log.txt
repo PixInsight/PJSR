@@ -2,22 +2,25 @@
 Core Icons Browser Script Changelog
 ===============================================================================
 
-1.13 - Released with PixInsight 1.8.6 Ripley
+1.14 - 2019 January 19
+
+      - Updated for core version 1.8.6.1457
+      - Improved background color management.
 
 -------------------------------------------------------------------------------
+1.13 - 2018 December 17 - Released with PixInsight 1.8.6 Ripley
 
+-------------------------------------------------------------------------------
 1.10 - 2015 December 1
 
-       - Removed two wrong icon names.
-       - Fixed icon scaling bugs in the HTML generation routine.
-       - Added a spin box to control the dialog's background color and a close
+      - Removed two wrong icon names.
+      - Fixed icon scaling bugs in the HTML generation routine.
+      - Added a spin box to control the dialog's background color and a close
          button.
 
 -------------------------------------------------------------------------------
-
 1.00 - 2015 November 30 - Released as an official core distribution script for
        PixInsight Core 1.8.4.1194 Ripley
 
 -------------------------------------------------------------------------------
-
 ?.?? - 2013 April 2 - Initial release on PixInsight Forum.

@@ -41,7 +41,7 @@
 #include <pjsr/StdCursor.jsh>
 #include <pjsr/UndoFlag.jsh>
 
-#define VERSION "1.2.3"
+#define VERSION "1.2.4"
 #define TITLE   "Batch Channel Extraction"
 
 #define DEFAULT_EXTENSION     ".xisf"
@@ -51,6 +51,9 @@
 #define DEFAULT_REDPOSTFIX    "_R"
 #define DEFAULT_GRNPOSTFIX    "_G"
 #define DEFAULT_BLUPOSTFIX    "_B"
+
+
+// ### TODO: 2018/12/27 - This script requires a complete code revision.
 
 //////////// Reusable Code %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -226,36 +229,6 @@ function numericControl(parent, ncVal, ncPrec, ncLow, ncHigh, slLow, slHigh, min
    return this.nc;
 }
 
-//function to parse time given in seconds
-var tTime = new Array(0,0,0);
-function Time()
-{
-   this.parseTime = function(sec)
-   {
-      var res = 0;
-      tTime[0] = 0;
-      tTime[1] = 0;
-      tTime[2] = 0;
-
-      if(sec >= 3600)
-      {
-         res = Math.floor(sec/3600);
-         tTime[0] = res;
-         sec = sec - (3600*res);
-      }
-
-      if(sec >= 60)
-      {
-         res = Math.floor(sec/60);
-         tTime[1] = res;
-         sec = sec - (60*res);
-      }
-
-      tTime[2] =sec;
-   }
-}
-var myTime = new Time();
-
 function GlobalData()
 {
    this.inputFiles = new Array;
@@ -288,7 +261,7 @@ function ChannelExtractionEngine()
    this.execute = function()
    {
       var errors = 0;
-      var pStart = Date.now();
+      var T = new ElapsedTime;
 
       if(data.clearConsole)
          console.clear();
@@ -480,48 +453,37 @@ function ChannelExtractionEngine()
             bluPath = dir + prefix + name + postfix + ext;
          }
 
-	 var keywords = new Array;
-	 if (typeof srcWin[0].keywords != "undefined")
-	 {
-	     keywords = srcWin[0].keywords;
-	 }
-	 updateKeyword(keywords, "FILTER", "R", "BatchChannelExtraction red channel");
-	 redWin.keywords = keywords.slice();
+         var keywords = srcWin[0].keywords;
 
-	 updateKeyword(keywords, "FILTER", "G", "BatchChannelExtraction green channel");
-	 grnWin.keywords = keywords.slice();
-
-	 updateKeyword(keywords, "FILTER", "B", "BatchChannelExtraction blue channel");
-	 bluWin.keywords = keywords;
-
-         //save the separated channel image files
-         if(data.extractRed)
-            redWin.saveAs(redPath, false, false, false, false);
-         if(data.extractGrn)
-            grnWin.saveAs(grnPath, false, false, false, false);
-         if(data.extractBlu)
-            bluWin.saveAs(bluPath, false, false, false, false);
-
-         //close all windows
-         if(data.extractRed)
+         if ( data.extractRed )
+         {
+            updateKeyword( keywords, "FILTER", "R", "BatchChannelExtraction: Red channel" );
+            redWin.keywords = keywords;
+            redWin.saveAs( redPath, false, false, false, false );
             redWin.forceClose();
-         if(data.extractGrn)
+         }
+
+         if ( data.extractGrn )
+         {
+            updateKeyword( keywords, "FILTER", "G", "BatchChannelExtraction: Green channel" );
+            grnWin.keywords = keywords;
+            grnWin.saveAs( grnPath, false, false, false, false );
             grnWin.forceClose();
-         if(data.extractBlu)
+         }
+
+         if ( data.extractBlu )
+         {
+            updateKeyword( keywords, "FILTER", "B", "BatchChannelExtraction: Blue channel" );
+            bluWin.keywords = keywords;
+            bluWin.saveAs( bluPath, false, false, false, false );
             bluWin.forceClose();
+         }
+
          srcWin[0].forceClose();
       }
-      var pStop = Date.now();
-      var dTime = (pStop-pStart)/1000;
-      myTime.parseTime(dTime);
-      var copStr = format("%i hours   %i mins   %.3f secs", tTime[0], tTime[1], tTime[2]);
-      console.writeln("<br>Channel extraction complete: ", (data.ipCount - errors), " succeeded, ",
-                           errors, " failed");
-      console.writeln("<br>Process time: ", copStr);
 
-      //console.writeln("<br>");
-      //console.execute("memory");
-      //console.writeln("<br>");
+      console.writeln( "<end><cbr><br>Channel extraction complete: ", (data.ipCount - errors), " succeeded, ", errors, " failed" );
+      console.writeln( "Process time: ", T.text );
    }
 }
 var engine = new ChannelExtractionEngine();
@@ -1240,3 +1202,6 @@ function main()
 }
 
 main();
+
+// ----------------------------------------------------------------------------
+// EOF BatchChannelExtraction.js - Released 2018-12-27T15:17:02Z
