@@ -42,7 +42,7 @@
 function ObjectWithSettings( module, prefix, properties )
 {
    this.module = module;
-   this.prefix = prefix;
+   this.prefix = prefix ? prefix.replace(/ /g,'') : null;
    this.properties = properties;
 
    this.MakeSettingsKey = function( property )
@@ -701,9 +701,9 @@ function ImageMetadata(module)
       ref.Print();
       var projOrgPx=this.ref_G_I.Apply(new Point(0,0));
       var projOrgRD = new Point(this.projection.ra0*180/Math.PI, this.projection.dec0*180/Math.PI);
-      console.writeln( format(    "Projection origin.. [%.6f %.6f]pix -> [RA:%ls Dec:%ls]",
+      console.writeln( format(    "Projection origin.. [%.6f %.6f]px -> [RA:%ls Dec:%ls]",
          projOrgPx.x,projOrgPx.y,
-         DMSangle.FromAngle(projOrgRD.x*24/360).ToString(),DMSangle.FromAngle(projOrgRD.y).ToString()) );
+         DMSangle.FromAngle(projOrgRD.x*24/360).ToString(true),DMSangle.FromAngle(projOrgRD.y).ToString()) );
       if(this.ref_I_G.polDegree && this.ref_I_G.polDegree>1)
          console.writeln(  format("Polynomial degree.. %d", this.ref_I_G.polDegree) );
       if (this.controlPoints && (this.ref_I_G instanceof ReferSpline))
@@ -711,7 +711,7 @@ function ImageMetadata(module)
          console.writeln(  format("Spline order ...... %d", this.ref_I_G.order));
          console.writeln(  format("Num. ControlPoints. %d", this.controlPoints.pI.length));
       }
-      console.writeln( format(    "Resolution ........ %.3f arcsec/pix", this.resolution*3600 ) );
+      console.writeln( format(    "Resolution ........ %.3f arcsec/px", this.resolution*3600 ) );
       var rotation = this.GetRotation();
       console.writeln( format(    "Rotation .......... %.3f deg", rotation[0] ), rotation[1] ? " (flipped)" : "" );
 

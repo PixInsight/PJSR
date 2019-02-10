@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenUtility.js - Released 2015/11/26 08:53:10 UTC
+// MakGenUtility.js - Released 2019-01-20T14:05:16Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.109
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Utility routines.
@@ -72,14 +72,14 @@ function createDirectoryIfNotExists( dir, createIntermediateDirectories )
    if ( !File.directoryExists( dir ) )
    {
       if ( createIntermediateDirectories )
-         for ( var p0 = 0; ; )
+         for ( let p0 = 0; ; )
          {
-            var p = dir.indexOf( '/', p0 );
+            let p = dir.indexOf( '/', p0 );
             if ( p < 0 )
                break;
             if ( p > 0 )
             {
-               var d = dir.substring( 0, p );
+               let d = dir.substring( 0, p );
                if ( !File.directoryExists( d ) )
                   createDirectory( d );
             }
@@ -101,21 +101,21 @@ function removeDirectory( dirPath )
    function removeDirectory_recursive( dirPath, baseDir )
    {
       if ( dirPath.indexOf( ".." ) >= 0 )
-         throw Error( "removeDirectory(): Attempt to climb up the filesystem." );
+         throw new Error( "removeDirectory(): Attempt to climb up the filesystem." );
       if ( dirPath.indexOf( baseDir ) != 0 )
-         throw Error( "removeDirectory(): Attempt to redirect outside the base directory." );
+         throw new Error( "removeDirectory(): Attempt to redirect outside the base directory." );
       if ( !File.directoryExists( dirPath ) )
-         throw Error( "removeDirectory(): Attempt to remove a nonexistent directory." );
+         throw new Error( "removeDirectory(): Attempt to remove a nonexistent directory." );
 
-      var currentDir = dirPath;
+      let currentDir = dirPath;
       if ( currentDir[currentDir.length-1] != '/' )
          currentDir += '/';
 
-      var f = new FileFind;
+      let f = new FileFind;
       if ( f.begin( currentDir + "*" ) )
          do
          {
-            var itemPath = currentDir + f.name;
+            let itemPath = currentDir + f.name;
             if ( f.isDirectory )
             {
                if ( f.name != "." && f.name != ".." )
@@ -135,7 +135,7 @@ function removeDirectory( dirPath )
    if ( dirPath.indexOf( '/' ) != 0 )
       throw new Error( "removeDirectory(): Relative directory." );
    if ( !File.directoryExists( dirPath ) )
-      throw Error( "removeDirectory(): Nonexistent directory." );
+      throw new Error( "removeDirectory(): Nonexistent directory." );
 
    // Remove all files and subdirectories recursively
    removeDirectory_recursive( dirPath, dirPath );
@@ -143,5 +143,20 @@ function removeDirectory( dirPath )
    File.removeDirectory( dirPath );
 }
 
+/*
+ * Returns a universally unique identifier (UUID) version 4 (truly random UUID)
+ * in canonical form.
+ * http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+ */
+function UUID()
+{
+   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace( /[xy]/g,
+      function( c )
+      {
+         let r = Math.random()*16|0, v = (c == 'x') ? r : (r&0x3|0x8);
+         return v.toString( 16 );
+      } );
+}
+
 // ----------------------------------------------------------------------------
-// EOF MakGenUtility.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenUtility.js - Released 2019-01-20T14:05:16Z

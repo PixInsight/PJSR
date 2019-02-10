@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/StdButton.jsh - Released 2015/11/09 15:21:11 UTC
+// pjsr/StdButton.jsh - Released 2018-11-30T21:30:58Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -70,4 +70,4 @@
 #endif   // __PJSR_StdButton_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/StdButton.jsh - Released 2015/11/09 15:21:11 UTC
+// EOF pjsr/StdButton.jsh - Released 2018-11-30T21:30:58Z

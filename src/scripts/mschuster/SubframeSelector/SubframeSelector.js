@@ -1,13 +1,13 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// SubframeSelector.js - Released 2016/12/28 00:00:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// SubframeSelector.js - Released 2018-11-05T16:53:08Z
+// ----------------------------------------------------------------------------
 //
-// This file is part of SubframeSelector Script version 1.11
+// This file is part of SubframeSelector Script version 1.12
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2018 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,10 +45,10 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 #define TITLE "SubframeSelector"
-#define VERSION "1.11"
+#define VERSION "1.12"
 
 #feature-id Batch Processing > SubframeSelector
 
@@ -61,8 +61,8 @@ to output directories for postprocessing. Subframe weights may be recorded in th
 FITS header of the copies.<br/>\
 For more information see the script documentation and the dialog tool tip \
 messages.<br/>\
-Copyright &copy; 2012-2016 Mike Schuster. All Rights Reserved.<br>\
-Copyright &copy; 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+Copyright &copy; 2012-2018 Mike Schuster. All Rights Reserved.<br>\
+Copyright &copy; 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 
 #include <pjsr/ButtonCodes.jsh>
 #include <pjsr/Color.jsh>
@@ -711,6 +711,7 @@ function tabulationEvaluate(dialog) {
    parameters.evaluationsDescriptions = evaluationsDescriptions;
 
    var evaluationsDescriptions = [];
+   var descriptionStatistics = generateEvaluationDescriptionStatistics(parameters.evaluationsDescriptions);
    for (var i = 0; i != parameters.evaluationsDescriptions.length; ++i) {
       var description = parameters.evaluationsDescriptions[i];
 
@@ -720,7 +721,8 @@ function tabulationEvaluate(dialog) {
          parameters.evaluationsDescriptions,
          parameters.actualSubframeScale(),
          parameters.actualCameraGain(),
-         parameters.cameraResolutionValues[parameters.cameraResolution]
+         parameters.cameraResolutionValues[parameters.cameraResolution],
+         descriptionStatistics
       );
       var weight = weightEvaluator.evaluate();
       if (weight != null) {
@@ -732,6 +734,7 @@ function tabulationEvaluate(dialog) {
    parameters.evaluationsDescriptions = evaluationsDescriptions;
 
    var evaluationsDescriptions = [];
+   var descriptionStatistics = generateEvaluationDescriptionStatistics(parameters.evaluationsDescriptions);
    for (var i = 0; i != parameters.evaluationsDescriptions.length; ++i) {
       var description = parameters.evaluationsDescriptions[i];
 
@@ -741,7 +744,8 @@ function tabulationEvaluate(dialog) {
          parameters.evaluationsDescriptions,
          parameters.actualSubframeScale(),
          parameters.actualCameraGain(),
-         parameters.cameraResolutionValues[parameters.cameraResolution]
+         parameters.cameraResolutionValues[parameters.cameraResolution],
+         descriptionStatistics
       );
       var checked = selectorEvaluator.evaluate();
       if (checked != null && !description.locked) {
@@ -2199,5 +2203,5 @@ function main() {
 
 main();
 
-// ****************************************************************************
-// EOF SubframeSelector.js - Released 2016/12/28 00:00:00 UTC
+// ----------------------------------------------------------------------------
+// EOF SubframeSelector.js - Released 2018-11-05T16:53:08Z

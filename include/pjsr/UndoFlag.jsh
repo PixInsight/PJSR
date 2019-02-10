@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/UndoFlag.jsh - Released 2015/11/09 15:21:11 UTC
+// pjsr/UndoFlag.jsh - Released 2018-11-30T21:30:58Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -55,23 +55,28 @@
 
 /*
  * Undo flags recognized by View.beginProcess()
+ *
+ * ### N.B.: These values must be coherent with the constants defined in the
+ *           pcl::UndoFlag namespace, with the only exception of
+ *           UndoFlag_NoSwapFile, which is private to PJSR.
  */
-#define UndoFlag_DefaultMode           0x00000000  // Save pixel data and previews
-#define UndoFlag_PixelData             0x00000001  // Save pixel data
-#define UndoFlag_RGBWS                 0x00000002  // RGB Working Space data
-#define UndoFlag_ICCProfile            0x00000004  // ICC profile
-#define UndoFlag_Keywords              0x00000008  // FITS keywords
-#define UndoFlag_Metadata              0x00000010  // Metadata
-#define UndoFlag_IPTCPhotoInfo         0x00000020  // IPTC Photo Info data
-#define UndoFlag_FormatData            0x00000040  // Format-specific data
-#define UndoFlag_ImageId               0x00000080  // Image identifier
-#define UndoFlag_Resolution            0x00000100  // Image resolution
-#define UndoFlag_All                   0x0000FFFF  // Save all data items
-#define UndoFlag_ExcludePreviews       0x80000000  // Don't save state of previews
-#define UndoFlag_ExcludeMaskRelations  0x40000000  // Don't save masking dependencies
-#define UndoFlag_NoSwapFile            0xFFFFFFFF  // Don't create a swap file
+
+#define UndoFlag_DefaultMode           0x00000000 // Save pixel data, astrometric solution and previews.
+#define UndoFlag_PixelData             0x00000001 // Save pixel data.
+#define UndoFlag_RGBWS                 0x00000002 // RGB Working Space data.
+#define UndoFlag_ICCProfile            0x00000004 // ICC profile.
+#define UndoFlag_Keywords              0x00000008 // FITS keywords.
+//#define UndoFlag_Metadata            0x00000010 // *deprecated* - Keep unused for now, for compatibility with existing projects.
+#define UndoFlag_FormatData            0x00000020 // Format-specific data.
+#define UndoFlag_ImageId               0x00000040 // Image identifier.
+#define UndoFlag_Resolution            0x00000080 // Image resolution.
+#define UndoFlag_AstrometricSolution   0x00000100 // Save the current astrometric solution.
+#define UndoFlag_All                   0x000FFFFF // Save all data items.
+#define UndoFlag_ExcludePreviews       0x80000000 // Don't save state of previews.
+#define UndoFlag_ExcludeMaskRelations  0x40000000 // Don't save masking dependencies.
+#define UndoFlag_NoSwapFile            0xFFFFFFFF // Don't create a swap file.
 
 #endif   // __PJSR_UndoFlag_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/UndoFlag.jsh - Released 2015/11/09 15:21:11 UTC
+// EOF pjsr/UndoFlag.jsh - Released 2018-11-30T21:30:58Z

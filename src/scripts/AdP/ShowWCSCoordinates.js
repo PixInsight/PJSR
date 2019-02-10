@@ -12,7 +12,7 @@ function main()
       var metadata = new ImageMetadata();
       metadata.ExtractMetadata(window);
       if (metadata.ref_I_G == null){
-         console.writeln("The image has not WCS coordinates");
+         console.writeln("The image has no WCS coordinates");
       } else
          metadata.Print();
    } else

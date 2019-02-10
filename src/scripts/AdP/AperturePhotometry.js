@@ -3,7 +3,7 @@
 
  Script for measuring the flux of the known stars in astronomical images.
 
- Copyright (C) 2013-2016, Andres del Pozo, Vicent Peris (OAUV)
+ Copyright (C) 2013-2018, Andres del Pozo, Vicent Peris (OAUV)
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,33 @@
 
 /*
  Changelog:
+
+ 1.4.6: * Use a wider aperture when searching for stars in high resolution images
+        * Fixed problem in stars too near an edge of the image
+
+ 1.4.5: * Removed obsolete check when writing the result file which produced the
+          warning "Invalid out format"
+
+ 1.4.4: * Fixed null pointer (https://pixinsight.com/forum/index.php?topic=11982)
+
+ 1.4.3: * Better error management in the online catalogs
+
+ 1.4.2: * Fixed the photometry with small apertures.
+
+ 1.4.1: * Added resetSettings and resetSettingsAndExit script parameters for
+          reinitialization from PCL hybrid modules.
+
+ 1.4:   * Added selection of the units of the aperture: pixels or arcseconds
+        * Added support and warning for apertures less that 2 pixels
+
+ 1.3.1: * Added generation of global control variables for invocation from
+          PCL-based modules.
+        * Require core version 1.8.4
+        * Fixed release year
+        * Improved some text messages and labels.
+
+ 1.3:   * Changes by Colin McGill: new PSF_FLUX table and write
+          all the available magnitudes and the airmass in all the tables.
 
  1.2.3: * Option for choosing in the solver between using the image metadata
           or the configuration of the solver dialog.
@@ -64,9 +91,9 @@
 
 #feature-info  Script for measuring the flux of the known stars in astronomical images.<br/>\
 <br/>\
-Copyright &copy;2013-2016 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
+Copyright &copy;2013-2018 Andr&eacute;s del Pozo, Vicent Peris (OAUV)
 
-#define VERSION "1.2.3"
+#define VERSION "1.4.6"
 #define TITLE "Aperture Photometry"
 #define SETTINGS_MODULE "PHOT"
 #ifndef STAR_CSV_FILE
@@ -153,12 +180,12 @@ function ImagesTab(parent, engine)
    {
       if (engine.useActive && engine.currentWindow == null)
       {
-         new MessageBox("There is not any active window", TITLE, StdIcon_Error, StdButton_Ok).execute();
+         new MessageBox("There is no active image window", TITLE, StdIcon_Error, StdButton_Ok).execute();
          return false;
       }
       if (!engine.useActive && (engine.files == null || engine.files.length == 0))
       {
-         new MessageBox("The list of files is empty", TITLE, StdIcon_Error, StdButton_Ok).execute();
+         new MessageBox("The list of target files is empty", TITLE, StdIcon_Error, StdButton_Ok).execute();
          return false;
       }
       return true;
@@ -168,7 +195,7 @@ function ImagesTab(parent, engine)
    this.selected_Radio.text = "Active image";
    this.selected_Radio.checked = engine.useActive == true;
    this.selected_Radio.minWidth = parent.labelWidth;
-   this.selected_Radio.toolTip = "<p>The photometry is only computed for the active image in Pixinsight.</p>";
+   this.selected_Radio.toolTip = "<p>The photometry will only be computed for the active image.</p>";
    this.selected_Radio.onCheck = function (value)
    {
       engine.useActive = true;
@@ -179,7 +206,7 @@ function ImagesTab(parent, engine)
    this.files_Radio.text = "Local files:";
    this.files_Radio.checked = !engine.useActive;
    this.files_Radio.minWidth = parent.labelWidth;
-   this.files_Radio.toolTip = "<p>The photometry is computed for the selected files.</p>";
+   this.files_Radio.toolTip = "<p>The photometry will be computed for the selected files.</p>";
    this.files_Radio.onCheck = function (value)
    {
       engine.useActive = false;
@@ -296,8 +323,8 @@ function ImagesTab(parent, engine)
 
    //
    this.autoSolve_Check = new CheckBox(this);
-   this.autoSolve_Check.text = "Plate-solve the unsolved images";
-   this.autoSolve_Check.toolTip = "<p>When this option is active, the unsolved images are solved using the script ImageSolver.</p>";
+   this.autoSolve_Check.text = "Plate-solve unsolved images";
+   this.autoSolve_Check.toolTip = "<p>When this option is active, unsolved images are solved using the ImageSolver script.</p>";
    this.autoSolve_Check.checked = engine.autoSolve;
    this.autoSolve_Check.onCheck = function (checked)
    {
@@ -307,7 +334,7 @@ function ImagesTab(parent, engine)
 
    this.configSolver_Button = new PushButton(this);
    this.configSolver_Button.text = "Configure solver";
-   this.configSolver_Button.toolTip = "<p>Opens the configuration dialog for the script ImageSolver</p>";
+   this.configSolver_Button.toolTip = "<p>Opens the configuration dialog for the ImageSolver script</p>";
    this.configSolver_Button.enabled = engine.autoSolve || engine.forceSolve;
    this.configSolver_Button.onClick = function ()
    {
@@ -320,7 +347,7 @@ function ImagesTab(parent, engine)
          else if (engine.files != null && engine.files.length > 0)
             solverWindow = ImageWindow.open(engine.files[0])[0];
          if (solverWindow == null)
-            return new MessageBox("There is not any selected file or window", TITLE, StdIcon_Error, StdButton_Ok).execute();
+            return new MessageBox("There is no selected file or window.", TITLE, StdIcon_Error, StdButton_Ok).execute();
          solver.Init(solverWindow);
          var dialog = new ImageSolverDialog(solver.solverCfg, solver.metadata, false);
          var res = dialog.execute();
@@ -349,8 +376,8 @@ function ImagesTab(parent, engine)
    this.UseImageMetadata_Radio = new RadioButton(this);
    this.UseImageMetadata_Radio.text = "Use image metadata";
    this.UseImageMetadata_Radio.checked = engine.solverUseImageMetadata == true;
-   this.UseImageMetadata_Radio.toolTip = "<p>When solving an image the solver will prioritize the image metadata (Coordinates, focal length, epoch)." +
-      " If any of the parameters is not available the solver will substitute them with the values in the solver dialog.</p>";
+   this.UseImageMetadata_Radio.toolTip = "<p>When solving an image, the solver will prioritize the image metadata (coordinates, focal length, epoch)." +
+      " If any of the parameters is not available then the solver will replace them with the values specified in the solver dialog.</p>";
    this.UseImageMetadata_Radio.enabled = engine.autoSolve || engine.forceSolve;
    this.UseImageMetadata_Radio.onCheck = function (value)
    {
@@ -361,8 +388,8 @@ function ImagesTab(parent, engine)
    this.UseSolverMetadata_Radio = new RadioButton(this);
    this.UseSolverMetadata_Radio.text = "Use solver configuration";
    this.UseSolverMetadata_Radio.checked = engine.solverUseImageMetadata != true;
-   this.UseSolverMetadata_Radio.toolTip = "<p>When solving an image the solver will use the configuration in the solver dialog" +
-      " while ignoring the values (coordinates, focal length, epoch, ...) that the images could have.</p>";
+   this.UseSolverMetadata_Radio.toolTip = "<p>When solving an image, the solver will use the configuration specified in the solver dialog, " +
+      " ignoring the values (coordinates, focal length, epoch, ...) that the images could have.</p>";
    this.UseSolverMetadata_Radio.enabled = engine.autoSolve || engine.forceSolve;
    this.UseSolverMetadata_Radio.onCheck = function (value)
    {
@@ -379,9 +406,9 @@ function ImagesTab(parent, engine)
 
    //
    this.forceSolve_Check = new CheckBox(this);
-   this.forceSolve_Check.text = "Force plate-solving the already solved images";
-   this.forceSolve_Check.toolTip = "<p>When this option is active, all the images are solved using the script ImageSolver.<br/>" +
-      "This option can be used when the current referentiation is not good enough and you desire to improve it.</p>";
+   this.forceSolve_Check.text = "Force plate-solving already solved images";
+   this.forceSolve_Check.toolTip = "<p>When this option is active, all of the images are solved using the ImageSolver script.<br/>" +
+      "This option can be used when the current referentiation is not good enough and you want to improve it.</p>";
    this.forceSolve_Check.checked = engine.forceSolve!=null && engine.forceSolve;
    this.forceSolve_Check.onCheck = function (checked)
    {
@@ -391,8 +418,8 @@ function ImagesTab(parent, engine)
 
    //
    this.saveSolve_Check = new CheckBox(this);
-   this.saveSolve_Check.text = "Save the solution of the plate solving";
-   this.saveSolve_Check.toolTip = "<p>When this option is active, the solution of the plate solving is saved in the file of the image.</p>";
+   this.saveSolve_Check.text = "Save the plate solving solution";
+   this.saveSolve_Check.toolTip = "<p>When this option is active, the plate solving solution is saved in the image file.</p>";
    this.saveSolve_Check.checked = engine.saveSolve;
    this.saveSolve_Check.enabled = engine.autoSolve || engine.forceSolve;
    this.saveSolve_Check.onCheck = function (checked)
@@ -426,7 +453,7 @@ function ImagesTab(parent, engine)
 
    // SOLVER FRAME
    this.solve_Section = new SectionBar(this, "Plate-solve parameters");
-   this.solve_Section.toolTip = "This section contains the options for plate-solving the images.";
+   this.solve_Section.toolTip = "This section contains the options for plate-solving images.";
    this.solve_Section.onToggleSection = function(bar, toggleBegin )
    {
       if(!toggleBegin)
@@ -514,7 +541,7 @@ function StarsTab(parent, engine)
       }
    }
    this.catalog_Combo.minWidth = parent.editWidth;
-   this.catalog_Combo.toolTip = "<p>Catalog that contains the coordinates of the stars that are going to be measured.</p>";
+   this.catalog_Combo.toolTip = "<p>Catalog that contains the coordinates of the stars that will be measured.</p>";
    this.catalog_Combo.onItemSelected = function ()
    {
       engine.catalogName = this.itemText(this.currentItem)
@@ -537,7 +564,7 @@ function StarsTab(parent, engine)
 
    this.mirror_Combo = new ComboBox(this);
    this.mirror_Combo.editEnabled = false;
-   this.mirror_Combo.toolTip = "<p>Select the best VizieR server for your location</p>";
+   this.mirror_Combo.toolTip = "<p>Select the best VizieR server for your location.</p>";
    this.mirror_Combo.setFixedWidth(this.font.width("Mnananai") * 5);
    for (var m = 0; m < VizierCatalog.mirrors.length; m++)
    {
@@ -589,7 +616,7 @@ function StarsTab(parent, engine)
 
    // MANUAL OBJECTS
    this.manual_SectionBar = new SectionBar(this, "User defined objects");
-   this.manual_SectionBar.toolTip = "This panel contains objects that will be measured but aren't in the catalog.";
+   this.manual_SectionBar.toolTip = "<p>This panel contains objects that will be measured but are not included in the catalog.</p>";
    this.manual_SectionBar.onToggleSection = function(bar, toggleBegin )
    {
       var tab = this.dialog.stars_Tab;
@@ -663,7 +690,7 @@ function StarsTab(parent, engine)
    this.manualDelete_Button = new ToolButton(parent);
    this.manualDelete_Button.icon = this.scaledResource( ":/icons/delete.png" );
    this.manualDelete_Button.setScaledFixedSize( 20, 20 );
-   this.manualDelete_Button.toolTip = "<p>Delete the selected objects</p>";
+   this.manualDelete_Button.toolTip = "<p>Delete the selected objects.</p>";
    this.manualDelete_Button.enabled = false;
    this.manualDelete_Button.onMousePress = function ()
    {
@@ -681,7 +708,7 @@ function StarsTab(parent, engine)
    this.manualEdit_Button = new ToolButton(parent);
    this.manualEdit_Button.icon = this.scaledResource( ":/icons/list-edit.png" );
    this.manualEdit_Button.setScaledFixedSize( 20, 20 );
-   this.manualEdit_Button.toolTip = "<p>Edit the coordinates of the selected object</p>";
+   this.manualEdit_Button.toolTip = "<p>Edit the coordinates of the selected object.</p>";
    this.manualEdit_Button.enabled = false;
    this.manualEdit_Button.onMousePress = function ()
    {
@@ -722,10 +749,10 @@ function StarsTab(parent, engine)
    this.catalog_Radio.styleSheet = "QRadioButton { padding-left: 24px;}";
    this.catalog_Radio.checked = engine.extractMode == EXTRACTMODE_CATALOG;
    //this.each_Radio.minWidth = parent.labelWidth;
-   this.catalog_Radio.toolTip = "<p>The position of the stars is calculated by projecting the catalog coordinates " +
+   this.catalog_Radio.toolTip = "<p>The positions of the stars are calculated by projecting the catalog coordinates " +
       "to image coordinates using the referentiation stored in the image.<br/>" +
       "This option is only valid when the referentiation is very good. However, if the referentiation " +
-      "is good enough, it allows to predict the position of stars in the image with very low SNR.</p>";
+      "is good enough, it allows to predict the positions of stars in the image with very low SNR.</p>";
    this.catalog_Radio.onCheck = function (value)
    {
       engine.extractMode = EXTRACTMODE_CATALOG;
@@ -738,7 +765,7 @@ function StarsTab(parent, engine)
    this.each_Radio.styleSheet = "QRadioButton { padding-left: 24px;}";
    this.each_Radio.checked = engine.extractMode == EXTRACTMODE_IMAGE;
    //this.each_Radio.minWidth = parent.labelWidth;
-   this.each_Radio.toolTip = "<p>The stars are extracted from each image searching for the best position " +
+   this.each_Radio.toolTip = "<p>The stars are extracted from each image searching for the best position, " +
       "using the catalog coordinates as a starting point.</p>";
    this.each_Radio.onCheck = function (value)
    {
@@ -752,7 +779,7 @@ function StarsTab(parent, engine)
    this.reference_Radio.checked = engine.extractMode == EXTRACTMODE_REFERENCE;
    //this.reference_Radio.minWidth = parent.labelWidth;
    this.reference_Radio.toolTip = "<p>The stars are extracted from a reference image and then mapped to each image.<br/>" +
-      "If the reference image is the integration of several images the SNR is better and the star extraction process " +
+      "If the reference image is the integration of several images, then the SNR is higher and the star extraction process " +
       "<i>should</i> be more precise.<br/><b>THIS OPTION IS EXPERIMENTAL</b></p>";
    this.reference_Radio.onCheck = function (value)
    {
@@ -787,7 +814,7 @@ function StarsTab(parent, engine)
 
    //
    this.starExtraction_SectionBar = new SectionBar(this, "Source for star extraction");
-   this.starExtraction_SectionBar.toolTip = "This panel configures how are the stars found on the image.";
+   this.starExtraction_SectionBar.toolTip = "<p>This panel configures how stars are found on the image.</p>";
    this.starExtraction_SectionBar.onToggleSection = function(bar, toggleBegin )
    {
       var tab = this.dialog.stars_Tab;
@@ -829,7 +856,7 @@ function StarsTab(parent, engine)
    this.margin_Edit = new Edit(parent);
    if (engine.margin != null)
       this.margin_Edit.text = format("%d", engine.margin);
-   this.margin_Edit.toolTip = "<p>Minimum distance in pixels to the borders.</p>";
+   this.margin_Edit.toolTip = "<p>Minimum distance in pixels to the image borders.</p>";
    this.margin_Edit.minWidth = parent.editWidth;
    this.margin_Edit.onTextUpdated = function (value)
    {
@@ -885,21 +912,21 @@ function FluxTab(parent, engine)
          return false;
       }
 
-      if (engine.minimumAperture < 2)
+      if (engine.minimumAperture <= 0)
       {
-         new MessageBox("The minimum aperture can not be less than 2", TITLE, StdIcon_Error, StdButton_Ok).execute();
+         new MessageBox("The aperture must be greater than 0.", TITLE, StdIcon_Error, StdButton_Ok).execute();
          return false;
       }
 
       if (engine.apertureSteps < 1)
       {
-         new MessageBox("The number of aperture steps must be 1 or more.", TITLE, StdIcon_Error, StdButton_Ok).execute();
+         new MessageBox("The number of aperture steps must be greater than zero.", TITLE, StdIcon_Error, StdButton_Ok).execute();
          return false;
       }
 
       if (engine.apertureSteps >= 2 && engine.apertureStepSize <= 0)
       {
-         new MessageBox("The aperture step size must be greater than 0", TITLE, StdIcon_Error, StdButton_Ok).execute();
+         new MessageBox("The aperture step size must be greater than zero", TITLE, StdIcon_Error, StdButton_Ok).execute();
          return false;
       }
 
@@ -937,7 +964,7 @@ function FluxTab(parent, engine)
    if (engine.filter)
       this.filter_Combo.editText = engine.filter;
 
-   this.filter_Combo.toolTip = "<p>Filter used in the images.</p>";
+   this.filter_Combo.toolTip = "<p>Filter used to acquire the images.</p>";
    this.filter_Combo.onItemSelected = function ()
    {
       engine.filter = this.itemText(this.currentItem)
@@ -972,7 +999,7 @@ function FluxTab(parent, engine)
    if (engine.filterKeyword)
       this.filterKey_Combo.editText = engine.filterKeyword;
 
-   this.filterKey_Combo.toolTip = "<p>FITS keyword that contains the filter used in the image.</p>";
+   this.filterKey_Combo.toolTip = "<p>FITS keyword that contains the filter used to acquire the images.</p>";
    this.filterKey_Combo.onItemSelected = function ()
    {
       engine.filterKeyword = this.itemText(this.currentItem)
@@ -1006,7 +1033,7 @@ function FluxTab(parent, engine)
 
    //
    this.apertureShape_Label = new Label(this);
-   this.apertureShape_Label.text = "Aperture Shape:";
+   this.apertureShape_Label.text = "Aperture shape:";
    this.apertureShape_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
    this.apertureShape_Label.minWidth = parent.labelWidth;
 
@@ -1042,41 +1069,52 @@ function FluxTab(parent, engine)
 
    //
    this.minimumAperture_Label = new Label(this);
-   this.minimumAperture_Label.text = "Minimum Aperture:";
+   this.minimumAperture_Label.text = "Minimum aperture:";
    this.minimumAperture_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
    this.minimumAperture_Label.minWidth = parent.labelWidth;
 
    this.minimumAperture_Edit = new Edit(this);
    if (engine.minimumAperture != null)
       this.minimumAperture_Edit.text = format("%g", engine.minimumAperture);
-   this.minimumAperture_Edit.toolTip = "<p>Minimum aperture used for computing the flux.<br/>It is the side of a square or the diameter of a circle centered on the star.</p>";
+   this.minimumAperture_Edit.toolTip = "<p>Minimum aperture used for computing flux.<br/>" +
+                           "It is the side of a square or the diameter of a circle centered on the star.</p>";
    this.minimumAperture_Edit.minWidth = parent.editWidth;
    this.minimumAperture_Edit.onTextUpdated = function (value)
    {
       engine.minimumAperture = parseFloat(value);
    };
 
-   this.minimumApertureUnits_Label = new Label(this);
-   this.minimumApertureUnits_Label.text = "pixels";
-   this.minimumApertureUnits_Label.textAlignment = TextAlign_Left | TextAlign_VertCenter;
+   //this.minimumApertureUnits_Label = new Label(this);
+   //this.minimumApertureUnits_Label.text = "pixels";
+   //this.minimumApertureUnits_Label.textAlignment = TextAlign_Left | TextAlign_VertCenter;
+   this.minimumApertureUnits_Combo = new ComboBox(this);
+   this.minimumApertureUnits_Combo.editEnabled = false;
+   this.minimumApertureUnits_Combo.addItem("pixels");
+   this.minimumApertureUnits_Combo.addItem("arcseconds");
+   this.minimumApertureUnits_Combo.currentItem = (engine.apertureUnit!=null && engine.apertureUnit != 0) ? 1 : 0;
+   this.minimumApertureUnits_Combo.onItemSelected = function ()
+   {
+      engine.apertureUnit = this.currentItem;
+      this.dialog.SetApertureUnit();
+   };
 
    this.minimumAperture_Sizer = new HorizontalSizer;
    this.minimumAperture_Sizer.spacing = 6;
    this.minimumAperture_Sizer.add(this.minimumAperture_Label);
    this.minimumAperture_Sizer.add(this.minimumAperture_Edit);
-   this.minimumAperture_Sizer.add(this.minimumApertureUnits_Label);
+   this.minimumAperture_Sizer.add(this.minimumApertureUnits_Combo);
    this.minimumAperture_Sizer.addStretch();
 
    //
    this.apertureSteps_Label = new Label(this);
-   this.apertureSteps_Label.text = "Aperture Steps:";
+   this.apertureSteps_Label.text = "Aperture steps:";
    this.apertureSteps_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
    this.apertureSteps_Label.minWidth = parent.labelWidth;
 
    this.apertureSteps_Edit = new Edit(this);
    if (engine.apertureSteps != null)
       this.apertureSteps_Edit.text = format("%d", engine.apertureSteps);
-   this.apertureSteps_Edit.toolTip = "<p>Number of aperture steps in the photometry calculation.</p>";
+   this.apertureSteps_Edit.toolTip = "<p>Number of aperture steps used in the photometry calculation.</p>";
    this.apertureSteps_Edit.minWidth = parent.editWidth;
    this.apertureSteps_Edit.onTextUpdated = function (value)
    {
@@ -1084,7 +1122,7 @@ function FluxTab(parent, engine)
       if (steps > 0)
          engine.apertureSteps = steps;
       else
-         (new MessageBox("The number of steps must be greater than 0", TITLE, StdIcon_Error, StdButton_Ok)).execute();
+         (new MessageBox("The number of steps must be greater than zero.", TITLE, StdIcon_Error, StdButton_Ok)).execute();
    };
 
    this.apertureSteps_Sizer = new HorizontalSizer;
@@ -1095,14 +1133,15 @@ function FluxTab(parent, engine)
 
    //
    this.apertureStepSize_Label = new Label(this);
-   this.apertureStepSize_Label.text = "Aperture Step Size:";
+   this.apertureStepSize_Label.text = "Aperture step size:";
    this.apertureStepSize_Label.textAlignment = TextAlign_Right | TextAlign_VertCenter;
    this.apertureStepSize_Label.minWidth = parent.labelWidth;
 
    this.apertureStepSize_Edit = new Edit(this);
    if (engine.apertureStepSize != null)
       this.apertureStepSize_Edit.text = format("%g", engine.apertureStepSize);
-   this.apertureStepSize_Edit.toolTip = "<p>When doing multiaperture photometry (Aperture Steps > 1), this field defines the increment of the aperture size in each step.</p>";
+   this.apertureStepSize_Edit.toolTip = "<p>When doing multiaperture photometry (Aperture steps > 1), this field defines " +
+                           "the increment of aperture size applied in each step.</p>";
    this.apertureStepSize_Edit.minWidth = parent.editWidth;
    this.apertureStepSize_Edit.onTextUpdated = function (value)
    {
@@ -1166,7 +1205,7 @@ function FluxTab(parent, engine)
             }
          }
          if (!gainOk)
-            new MessageBox("The image has not a 'EGAIN' keyword", TITLE, StdIcon_Error, StdButton_Ok).execute();
+            new MessageBox("The image has no 'EGAIN' keyword", TITLE, StdIcon_Error, StdButton_Ok).execute();
          if (!engine.useActive)
             window.close();
       }
@@ -1190,7 +1229,8 @@ function FluxTab(parent, engine)
    if (engine.minSNR != null)
       this.minSNR_Edit.text = format("%g", engine.minSNR);
    this.minSNR_Edit.minWidth = parent.editWidth;
-   this.minSNR_Edit.toolTip = "<p>The stars with a Signal to Noise Ratio (SNR) less than this threshold are measured but the value 4 (LOWSNR) is added to the flags.</p>";
+   this.minSNR_Edit.toolTip = "<p>Stars with a Signal to Noise Ratio (SNR) less than this threshold will be " +
+                           "measured but the value 4 (LOWSNR) will be added to the flags.</p>";
    this.minSNR_Edit.onTextUpdated = function (value)
    {
       engine.minSNR = parseFloat(value);
@@ -1212,7 +1252,8 @@ function FluxTab(parent, engine)
    if (engine.saturationThreshold != null)
       this.saturation_Edit.text = format("%g", engine.saturationThreshold * 100);
    this.saturation_Edit.minWidth = parent.editWidth;
-   this.saturation_Edit.toolTip = "<p>The stars that have a pixel with a value over this threshold are measured but the value 8 (SATURATED) is added to the flags.</p>";
+   this.saturation_Edit.toolTip = "<p>Stars that have one or more pixels with a value above this threshold will be " +
+                           "measured but the value 8 (SATURATED) will be added to the flags.</p>";
    this.saturation_Edit.onTextUpdated = function (value)
    {
       engine.saturationThreshold = parseFloat(value) / 100;
@@ -1281,7 +1322,7 @@ function BackgroundTab(parent, engine)
    this.ring_Radio.text = "Square ring:";
    this.ring_Radio.checked = engine.bkgWindowMode == BKGWINDOW_RING;
    this.ring_Radio.minWidth = parent.labelWidth;
-   this.ring_Radio.toolTip = "<p>The background is extracted from an square ring around each star</p>";
+   this.ring_Radio.toolTip = "<p>The background is extracted from a square ring around each star.</p>";
    this.ring_Radio.onCheck = function (value)
    {
       if (value)
@@ -1339,8 +1380,8 @@ function BackgroundTab(parent, engine)
    this.bkgPhoto_Radio.text = "Photometric aperture";
    this.bkgPhoto_Radio.checked = engine.bkgWindowMode == BKGWINDOW_PHOTOMETRIC;
    this.bkgPhoto_Radio.minWidth = parent.labelWidth;
-   this.bkgPhoto_Radio.toolTip = "<p>The background is extracted from the same window as the flux calculation.<br/>" +
-      "This option requires an MMT or ABE model.</p>";
+   this.bkgPhoto_Radio.toolTip = "<p>The background is extracted from the same window used for flux calculation.<br/>" +
+                           "This option requires an MMT or ABE model.</p>";
    this.bkgPhoto_Radio.onCheck = function (value)
    {
       if (value)
@@ -1368,8 +1409,8 @@ function BackgroundTab(parent, engine)
    this.bkgSourceModel_Radio.text = "Source image";
    this.bkgSourceModel_Radio.checked = engine.bkgModel == BKGMODEL_SOURCE;
    this.bkgSourceModel_Radio.minWidth = parent.labelWidth;
-   this.bkgSourceModel_Radio.toolTip = "<p>The background is extracted from the same window as the flux calculation.<br/>" +
-      "This option can not be used with the option 'Photometric window'.</p>";
+   this.bkgSourceModel_Radio.toolTip = "<p>The background is extracted from the same window used for flux calculation.<br/>" +
+                           "This option cannot be used with the option 'Photometric window'.</p>";
    this.bkgSourceModel_Radio.onCheck = function (value)
    {
       if (value)
@@ -1392,7 +1433,7 @@ function BackgroundTab(parent, engine)
    if (engine.backgroundSigmaLow != null)
       this.backgroundSigmaLow_Edit.text = format("%g", engine.backgroundSigmaLow);
    this.backgroundSigmaLow_Edit.setFixedWidth(parent.editWidth2);
-   this.backgroundSigmaLow_Edit.toolTip = "<p>Rejection factor in the 'Median Sigma Clipping' used for computing the background around a star.</p>";
+   this.backgroundSigmaLow_Edit.toolTip = "<p>Rejection factor in the 'Median Sigma Clipping' process used for computing the background around a star.</p>";
    this.backgroundSigmaLow_Edit.onTextUpdated = function (value)
    {
       engine.backgroundSigmaLow = parseFloat(value);
@@ -1406,7 +1447,7 @@ function BackgroundTab(parent, engine)
    if (engine.backgroundSigmaHigh != null)
       this.backgroundSigmaHigh_Edit.text = format("%g", engine.backgroundSigmaHigh);
    this.backgroundSigmaHigh_Edit.setFixedWidth(parent.editWidth2);
-   this.backgroundSigmaHigh_Edit.toolTip = "<p>Rejection factor in the 'Median Sigma Clipping' used for computing the background around a star.</p>";
+   this.backgroundSigmaHigh_Edit.toolTip = "<p>Rejection factor in the 'Median Sigma Clipping' process used for computing the background around a star.</p>";
    this.backgroundSigmaHigh_Edit.onTextUpdated = function (value)
    {
       engine.backgroundSigmaHigh = parseFloat(value);
@@ -1429,7 +1470,7 @@ function BackgroundTab(parent, engine)
    this.bkgMMTModel_Radio.checked = engine.bkgModel == BKGMODEL_MMT;
    this.bkgMMTModel_Radio.minWidth = parent.labelWidth;
    this.bkgMMTModel_Radio.toolTip = "<p>The background is extracted from a model image generated using the" +
-      "process Multiscale Median Transform. This process removes the smaller scale layers in order to elminate the stars.</p>";
+      "Multiscale Median Transform algorithm. This process removes small-scale layers in order to elminate the stars.</p>";
    this.bkgMMTModel_Radio.onCheck = function (value)
    {
       if (value)
@@ -1446,7 +1487,7 @@ function BackgroundTab(parent, engine)
    this.bkgMMTLayers_Combo = new ComboBox(this);
    this.bkgMMTLayers_Combo.editEnabled = false;
    //this.bkgMMTLayers_Combo.setFixedWidth(this.font.width("8MMM"));
-   this.bkgMMTLayers_Combo.toolTip = "<p>Select the number of layers to remove to obtain the background.<br/>" +
+   this.bkgMMTLayers_Combo.toolTip = "<p>Select the number of layers removed to obtain the background.<br/>" +
       "This parameter can be fine tuned using the option '<i>Show MultiscaleMedianTransform background</i>' " +
       "in the output tab.</p>";
    for (var i = 1; i <= 8; i++)
@@ -1471,7 +1512,7 @@ function BackgroundTab(parent, engine)
    this.bkgABEModel_Radio.checked = engine.bkgModel == BKGMODEL_ABE;
    this.bkgABEModel_Radio.minWidth = parent.labelWidth;
    this.bkgABEModel_Radio.toolTip = "<p>The background is extracted from a model image generated using the " +
-      "process Automatic Background Extraction.</p>";
+                           "AutomaticBackgroundExtraction process.</p>";
    this.bkgABEModel_Radio.onCheck = function (value)
    {
       if (value)
@@ -1510,8 +1551,8 @@ function OutputTab(parent, engine)
    if (engine.outputDir)
       this.outDir_Edit.text = engine.outputDir;
    this.outDir_Edit.setScaledMinWidth(300);
-   this.outDir_Edit.toolTip = "<p>Path of the directory where the output tables will be written.<br/>" +
-      "If it is empty, the tables will be written in the directory of the first image.</p>";
+   this.outDir_Edit.toolTip = "<p>Path to the directory where the output tables will be written.<br/>" +
+      "If it is empty, the tables will be written on the directory of the first image.</p>";
    this.outDir_Edit.onTextUpdated = function (value)
    {
       if (value.trim().length > 0)
@@ -1546,8 +1587,8 @@ function OutputTab(parent, engine)
    //
    this.foundStars_Check = new CheckBox(this);
    this.foundStars_Check.text = "Generate images with detected stars";
-   this.foundStars_Check.toolTip = "<p>Generates images the with detected stars.</p>"+
-      "<p>The images are shown in new windows or saved in files depending on the value of the option 'Save debug images'.</p>";
+   this.foundStars_Check.toolTip = "<p>Generates images with the detected stars.</p>"+
+      "<p>The images are shown on new windows or saved to files, depending on the value of the 'Save debug images' option.</p>";
    this.foundStars_Check.checked = engine.showFoundStars;
    this.foundStars_Check.onCheck = function (checked)
    {
@@ -1557,8 +1598,8 @@ function OutputTab(parent, engine)
    //
    this.backModel_Check = new CheckBox(this);
    this.backModel_Check.text = "Show background model";
-   this.backModel_Check.toolTip = "<p>Generates images the with the background model for each target image.</p>"+
-      "<p>The images are shown in new windows or saved in files depending on the value of the option 'Save debug images'.</p>";
+   this.backModel_Check.toolTip = "<p>Generates images with the background model for each target image.</p>"+
+      "<p>The images are shown on new windows or saved to files, depending on the value of the 'Save debug images' option.</p>";
    this.backModel_Check.checked = engine.showBackgroundModel;
    this.backModel_Check.onCheck = function (checked)
    {
@@ -1569,7 +1610,7 @@ function OutputTab(parent, engine)
    this.saveDiag_Check = new CheckBox(this);
    this.saveDiag_Check.text = "Save debug images";
    this.saveDiag_Check.toolTip = "<p>Saves the debug images (detected stars and background model).</p>"+
-      "<p>The images are saved in the output directory or, if it is not set in the directory of the images.</p>";
+      "<p>The images are saved on the output directory or, if it is not set, on the directories of the images.</p>";
    this.saveDiag_Check.checked = engine.saveDiagnostic;
    this.saveDiag_Check.onCheck = function (checked)
    {
@@ -1613,7 +1654,7 @@ function OutputTab(parent, engine)
    //
    this.fileTable_Check = new CheckBox(this);
    this.fileTable_Check.text = "Generate a table for each image with its information";
-   this.fileTable_Check.toolTip = "This tables contains all the information available for the image, including catalog data and photometry calculations";
+   this.fileTable_Check.toolTip = "<p>These tables contain all the information available for each image, including catalog data and photometry calculations.</p>";
    this.fileTable_Check.checked = engine.generateFileTable;
    this.fileTable_Check.onCheck = function (checked)
    {
@@ -1623,7 +1664,8 @@ function OutputTab(parent, engine)
    //
    this.fluxTable_Check = new CheckBox(this);
    this.fluxTable_Check.text = "Generate flux tables";
-   this.fluxTable_Check.toolTip = "The flux tables contains a summary of the measured fluxes of all the stars and images. The table will be generated in the output directory.";
+   this.fluxTable_Check.toolTip = "<p>Each flux table contains a summary of the measured fluxes for all the stars and images, computed for a given aperture.</p>" +
+                           "<p>These tables will be generated on the output directory.</p>";
    this.fluxTable_Check.checked = engine.generateFluxTable;
    this.fluxTable_Check.onCheck = function (checked)
    {
@@ -1631,9 +1673,22 @@ function OutputTab(parent, engine)
    };
 
    //
+   this.psfFluxTable_Check = new CheckBox(this);
+   this.psfFluxTable_Check.text = "Generate PSF flux table";
+   this.psfFluxTable_Check.toolTip = "<p>The flux table contains a summary of the fluxes of all the stars and images, calculated from " +
+                           "the PSF fittings of the stars.</p>" +
+                           "<p>This table will be generated on the output directory.</p>";
+   this.psfFluxTable_Check.checked = engine.generatePSFFluxTable;
+   this.psfFluxTable_Check.onCheck = function (checked)
+   {
+      engine.generatePSFFluxTable = checked;
+   };
+
+   //
    this.backgTable_Check = new CheckBox(this);
    this.backgTable_Check.text = "Generate background table";
-   this.backgTable_Check.toolTip = "The background table contains a summary of the measured backgrounds of all the stars and images. The table will be generated in the output directory.";
+   this.backgTable_Check.toolTip = "<p>The background table contains a summary of the measured backgrounds of all the stars and images.</p>" +
+                           "<p>This table will be generated on the output directory.</p>";
    this.backgTable_Check.checked = engine.generateBackgTable;
    this.backgTable_Check.onCheck = function (checked)
    {
@@ -1643,7 +1698,8 @@ function OutputTab(parent, engine)
    //
    this.snrTable_Check = new CheckBox(this);
    this.snrTable_Check.text = "Generate SNR table";
-   this.snrTable_Check.toolTip = "The SNR table contains a summary of the measured SNR (Signal to Noise Ratio) of all the stars and images. The table will be generated in the output directory.";
+   this.snrTable_Check.toolTip = "<p>The SNR table contains a summary of the measured SNR (Signal to Noise Ratio) of all the stars and images.</p>" +
+                           "<p>This table will be generated on the output directory.</p>";
    this.snrTable_Check.checked = engine.generateSNRTable;
    this.snrTable_Check.onCheck = function (checked)
    {
@@ -1653,7 +1709,8 @@ function OutputTab(parent, engine)
    //
    this.flagTable_Check = new CheckBox(this);
    this.flagTable_Check.text = "Generate flags table";
-   this.flagTable_Check.toolTip = "The flags table contains a summary of the flags of all the stars and images. The table will be generated in the output directory.";
+   this.flagTable_Check.toolTip = "<p>The flags table contains a summary of the flags of all the stars and images.</p>" +
+                           "<p>This table will be generated on the output directory.</p>";
    this.flagTable_Check.checked = engine.generateFlagTable;
    this.flagTable_Check.onCheck = function (checked)
    {
@@ -1663,7 +1720,8 @@ function OutputTab(parent, engine)
    //
    this.errorLog_Check = new CheckBox(this);
    this.errorLog_Check.text = "Generate error file";
-   this.errorLog_Check.toolTip = "The error file contains all the errors that occurred in the process. It is only written if there is at least one error.";
+   this.errorLog_Check.toolTip = "<p>The error file contains all the errors that occurred during the process. " +
+                           "It is only written if there is at least one error.<p>";
    this.errorLog_Check.checked = engine.generateErrorLog;
    this.errorLog_Check.onCheck = function (checked)
    {
@@ -1679,6 +1737,7 @@ function OutputTab(parent, engine)
    this.tables_Group.sizer.add(this.outPrefix_Sizer);
    this.tables_Group.sizer.add(this.fileTable_Check);
    this.tables_Group.sizer.add(this.fluxTable_Check);
+   this.tables_Group.sizer.add(this.psfFluxTable_Check);
    this.tables_Group.sizer.add(this.backgTable_Check);
    this.tables_Group.sizer.add(this.snrTable_Check);
    this.tables_Group.sizer.add(this.flagTable_Check);
@@ -1706,6 +1765,13 @@ function PhotometryDialog(engine)
    this.editWidth = this.font.width("MMMMMMMMMMM");
    this.editWidth2 = this.font.width("M2.5M");
 
+   this.SetApertureUnit = function()
+   {
+      var label = (engine.apertureUnit!=null && engine.apertureUnit != 0) ? "arcseconds" : "pixels";
+      this.flux_Tab.apertureStepSizeUnits_Label.text = label;
+      this.background_Tab.bkgRingUnits_Label.text = label;
+   };
+
    this.helpLabel = new Label(this);
    this.helpLabel.frameStyle = FrameStyle_Box;
    this.helpLabel.minWidth = 45 * this.font.width('M');
@@ -1713,9 +1779,9 @@ function PhotometryDialog(engine)
    this.helpLabel.wordWrapping = true;
    this.helpLabel.useRichText = true;
    this.helpLabel.text =
-      "<p><b>" + TITLE + " v" + VERSION + "</b> &mdash; A script for measuring the flux of the known stars in astronomical images.<br/>" +
+      "<p><b>" + TITLE + " v" + VERSION + "</b> &mdash; A script for measuring the flux of known stars in astronomical images.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2013-2016 Andr&eacute;s del Pozo, Vicent Peris (OAUV)</p>";
+         "Copyright &copy; 2013-2018 Andr&eacute;s del Pozo, Vicent Peris (OAUV)</p>";
 
 
    this.images_Tab = new ImagesTab(this, engine);
@@ -1751,7 +1817,7 @@ function PhotometryDialog(engine)
    this.reset_Button = new ToolButton(this);
    this.reset_Button.icon = this.scaledResource( ":/icons/reload.png" );
    this.reset_Button.setScaledFixedSize( 20, 20 );
-   this.reset_Button.toolTip = "<p>Resets all settings to default values.<br />" +
+   this.reset_Button.toolTip = "<p>Resets all settings to default values.<br/>" +
       "This action closes the dialog, so the script has to be executed again for changes to take effect.</p>";
    this.reset_Button.onClick = function ()
    {
@@ -1816,6 +1882,7 @@ function PhotometryDialog(engine)
 
    this.sizer.addSpacing(8);
    this.sizer.add(this.buttons_Sizer);
+   this.SetApertureUnit();
 
    this.windowTitle = TITLE;
    this.adjustToContents();
@@ -1920,6 +1987,7 @@ function PhotometryEngine(w)
          ["minimumAperture", DataType_Double],
          ["apertureSteps", DataType_UInt32],
          ["apertureStepSize", DataType_Double],
+         ["apertureUnit", DataType_UInt32],
          ["bkgWindowMode", DataType_UInt32],
          ["bkgModel", DataType_UInt32],
          ["backgroundSigmaLow", DataType_Double],
@@ -1949,6 +2017,7 @@ function PhotometryEngine(w)
          ["outputPrefix", DataType_UCString],
          ["generateFileTable", DataType_Boolean],
          ["generateFluxTable", DataType_Boolean],
+         ["generatePSFFluxTable", DataType_Boolean],
          ["generateBackgTable", DataType_Boolean],
          ["generateSNRTable", DataType_Boolean],
          ["generateFlagTable", DataType_Boolean],
@@ -1972,6 +2041,7 @@ function PhotometryEngine(w)
    this.apertureShape = 0;
    this.apertureSteps = 1;
    this.apertureStepSize = 1;
+   this.apertureUnit = 0; // 0-Pixels, 1-ArcSeconds
    this.backgroundSigmaLow = 5;
    this.backgroundSigmaHigh = 2.5;
    this.bkgFlatten = false;
@@ -2004,6 +2074,7 @@ function PhotometryEngine(w)
    this.starsReference = null;
    this.generateFileTable = true;
    this.generateFluxTable = true;
+   this.generatePSFFluxTable = true;
    this.generateBackgTable = false;
    this.generateSNRTable = false;
    this.generateFlagTable = false;
@@ -2048,9 +2119,12 @@ function PhotometryEngine(w)
 
    this.LoadStars = function (imgMetadata)
    {
+      this.catalog.magMin = 0;
       this.catalog.magMax = this.maxMagnitude;
       this.catalog.queryMargin = 1.5; // It loads all the stars in an area 50% bigger than the first image
       this.catalog.Load(imgMetadata, this.vizierServer);
+      if (this.catalog.objects == null)
+         throw "Catalog error";
       var stars = new Array();
       var margin = Math.max(0, this.margin - 5);
       for (var i = 0; i < this.catalog.objects.length; i++)
@@ -2090,7 +2164,7 @@ function PhotometryEngine(w)
       {
          var posPx = metadata.Convert_RD_I(catalogStars[i].posEq);
          var star = null;
-         if (posPx.x >= margin && posPx.x <= metadata.width - margin && posPx.y >= margin && posPx.y <= metadata.height - margin)
+         if (posPx && posPx.x >= margin && posPx.x <= metadata.width - margin && posPx.y >= margin && posPx.y <= metadata.height - margin)
          {
             star = new StarReference();
             star.orgPosPx = posPx;
@@ -2322,6 +2396,11 @@ function PhotometryEngine(w)
 
    this.FindStarCentersDPSF = function (referenceWindow, referenceStars)
    {
+      // search aperture: Use a wider aperture for small resolutions. It must be at least 2 pixels
+      var searchAperture = 4 / (referenceWindow.metadataWCS.resolution * 3600);
+      searchAperture = Math.max(2, Math.min(20, searchAperture));
+      console.writeln(format("Star search aperture: %.2f pixels", searchAperture));
+
       var DPSF = new DynamicPSF;
       DPSF.views = [
          // id
@@ -2336,8 +2415,8 @@ function PhotometryEngine(w)
          {
             stars.push(
                [0, 0, DynamicPSF.prototype.Star_DetectedOk,
-                  referenceStars[i].orgPosPx.x - 2, referenceStars[i].orgPosPx.y - 2,
-                  referenceStars[i].orgPosPx.x + 2, referenceStars[i].orgPosPx.y + 2,
+                  referenceStars[i].orgPosPx.x - searchAperture, referenceStars[i].orgPosPx.y - searchAperture,
+                  referenceStars[i].orgPosPx.x + searchAperture, referenceStars[i].orgPosPx.y + searchAperture,
                   referenceStars[i].orgPosPx.x, referenceStars[i].orgPosPx.y]);
             translateIdx[psf.length] = i;
             psf.push(
@@ -2428,7 +2507,7 @@ function PhotometryEngine(w)
       var height = window.mainView.image.height;
       if (width * height * 4 >= 2 * 1024 * 1024 * 1024)
       {
-         console.warningln("Cannot draw the image: The size is too big");
+         console.warningln("** Warning: Cannot draw the image: The size is too big");
          return;
       }
 
@@ -2464,8 +2543,8 @@ function PhotometryEngine(w)
       var backgroundPen = new Pen(0xff0000A0, 1);
 
       //console.writeln("Rendering");
-      var radius = this.minimumAperture / 2 + 0.5;
-      var radius2 = (this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1)) / 2 + 0.5;
+      var radius = this.minimumAperture * this.apertureUnitFactor / 2 + 0.5;
+      var radius2 = (this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1)) * this.apertureUnitFactor / 2 + 0.5;
       for (var s = 0; s < imageStars.length; s++)
       {
          if (imageStars[s] == null)
@@ -2601,7 +2680,7 @@ function PhotometryEngine(w)
 
    this.ValidateStars = function (imageStars)
    {
-      var maxAperture = this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1);
+      var maxAperture = (this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1)) * this.apertureUnitFactor;
       for (var i = 0; i < imageStars.length - 1; i++)
       {
          var star1 = imageStars[i];
@@ -2663,7 +2742,7 @@ function PhotometryEngine(w)
       // ASSERT: Checks that the square/circle intersection algorithm is OK.
       if (Math.abs(totalArea - apertureArea) > 1e-5)
       {
-         console.warningln("Warning: Precision problem in the aperture algorithm");
+         console.warningln("** Warning: Precision problem in the aperture algorithm");
          console.writeln(totalArea, " ", apertureArea);
          //console.writeln(left," ",top," ",right," ",bottom);
          //console.writeln(star.imgPosPx," ",aperture/2);
@@ -2711,7 +2790,17 @@ function PhotometryEngine(w)
             bkgWindow.close();
       }
 
-      console.write("Calculating Photometry: ");
+      console.writeln("Aperture Photometry:");
+      if (this.apertureSteps > 1)
+      {
+         console.writeln(format("  Minimum aperture: %f px", this.minimumAperture * this.apertureUnitFactor));
+         console.writeln(format("  Maximum aperture: %f px", (this.minimumAperture + this.apertureStepSize * (this.apertureSteps - 1)) * this.apertureUnitFactor));
+      }
+      else
+         console.writeln(format("  Aperture: %f px", this.minimumAperture * this.apertureUnitFactor));
+      console.writeln(format("  Image resolution: %f sec/px", window.metadataWCS.resolution * 3600));
+      if (this.minimumAperture * this.apertureUnitFactor < 2)
+         console.warningln("The aperture is less than 2 pixels. The precision of the photometry is going to be low.");
       processEvents();
 
       var lastProcess = (new Date).getTime();
@@ -2746,7 +2835,7 @@ function PhotometryEngine(w)
          star.SNR = new Array(this.apertureSteps);
          for (var a = 0; a < this.apertureSteps; a++)
          {
-            var aperture = this.minimumAperture + this.apertureStepSize * a;
+            var aperture = (this.minimumAperture + this.apertureStepSize * a) * this.apertureUnitFactor;
             var backNoise2;
             var intersection;
 
@@ -2754,6 +2843,13 @@ function PhotometryEngine(w)
                intersection = new SquareSquareIntersection(star.imgPosPx, aperture);
             else
                intersection = new CircleSquareIntersection(star.imgPosPx, aperture / 2);
+
+            var apertureRect = intersection.ApertureRect();
+            if (apertureRect.left < 0 || apertureRect.top < 0 || apertureRect.right >= window.metadataWCS.width || apertureRect.bottom >= window.metadataWCS.height)
+            {
+               star.flags |= STARFLAG_BADPOS;
+               continue;
+            }
 
             var photometry = this.AperturePhotometry(pixels, bkgPixels, star, intersection, window.metadataWCS.width);
             star.flux[a] = photometry.flux;
@@ -2778,7 +2874,7 @@ function PhotometryEngine(w)
          if (time - lastProcess > 1000)
          {
             lastProcess = time;
-            console.write(format("<end><clrbol>Calculating Photometry: Processing stars (%.2f%%)", i * 100 / imageStars.length));
+            console.write(format("<end><clrbol>Calculating photometry: Processing stars (%.2f%%)", i * 100 / imageStars.length));
             processEvents();
             if (console.abortRequested)
                throw "Abort!!";
@@ -2789,7 +2885,7 @@ function PhotometryEngine(w)
       {
          return star && star.flux ? num + 1 : num;
       }, 0);
-      console.writeln(format("<end><clrbol>Calculating Photometry: Processed %d stars in %f seconds", numProc, (endTime - startTime) / 1000));
+      console.writeln(format("<end><clrbol>Calculating photometry: Processed %d stars in %f seconds", numProc, (endTime - startTime) / 1000));
       gc();
    }
 
@@ -2845,6 +2941,24 @@ function PhotometryEngine(w)
       }
    }
 
+   this.GetWindowAirMass = function (window)
+   {
+       var keywords = window.keywords;
+       for (var i = 0; i < keywords.length; i++)
+       {
+           var key = keywords[i];
+           if (key && key.name == "AIRMASS")
+           {
+               var value = key.value;
+               // Remove the enclosing '' if necessary
+               if (value[0] == "'" && value[value.length - 1] == "'")
+                   value = value.substr(1, value.length - 2);
+               return value.trim();
+           }
+       }
+       return "UNK";
+   }
+
    this.WriteResult = function (window, metadataWCS, catalogStars, imageStars)
    {
       var filePath = window.filePath;
@@ -2882,14 +2996,17 @@ function PhotometryEngine(w)
       {
          var area = this.FindBounds(catalogStars, imageStars);
          var boundsStr = format("Bounds;%f;%f;%f;%f\n", area.x0, area.y0, area.x1, area.y1);
-         var apertureStr = format("Aperture;%g;%d;%g\n", this.minimumAperture, this.apertureSteps, this.apertureStepSize);
+         var apertureStr = format("Aperture;%g;%d;%g\n", this.minimumAperture * this.apertureUnitFactor, this.apertureSteps, this.apertureStepSize * this.apertureUnitFactor);
          var backgroundStr;
          if (this.bkgWindowMode == BKGWINDOW_RING)
             backgroundStr = format("Background ring window;%d;%d\n", this.bkgAperture1, this.bkgAperture2);
          else
             backgroundStr = "Background photometric window\n";
 
-         file.outText(format("%04d;%04d\n", boundsStr.length + apertureStr.length + backgroundStr.length + lineLength, lineLength));
+         var airmasStr = format("Airmass;%s\n", this.GetWindowAirMass(window));
+
+         file.outText(format("%04d;%04d\n", boundsStr.length + apertureStr.length + backgroundStr.length +airmasStr.length + lineLength, lineLength));
+
 
          var columns = "DATE_OBS     ;NAME                     ;";
          columns += format("%-" + filterColWidth + "ls", "FILTER");
@@ -2902,14 +3019,15 @@ function PhotometryEngine(w)
          columns += "BKGROUND;BGSTDDEV;BGRJCT;";
          columns += "PSF_A    ;PSF_SIGMAX;PSF_SIGMAY;PSF_THETA;PSF_MAD     ;"
          for (var a = 0; a < this.apertureSteps; a++)
-            columns += format("%-9ls", "FLUX" + format("%g", this.minimumAperture + this.apertureStepSize * a)) + separator;
+            columns += format("%-9ls", "FLUX" + format("%g", (this.minimumAperture + this.apertureStepSize * a)* this.apertureUnitFactor)) + separator;
          for (var a = 0; a < this.apertureSteps; a++)
-            columns += format("%-8ls", "SNR" + format("%g", this.minimumAperture + this.apertureStepSize * a)) + separator;
+            columns += format("%-8ls", "SNR" + format("%g", (this.minimumAperture + this.apertureStepSize * a)* this.apertureUnitFactor)) + separator;
          columns += "FLAG\n";
 
          file.outText(boundsStr);
          file.outText(apertureStr);
          file.outText(backgroundStr);
+         file.outText(airmasStr);
          file.outText(columns);
          //console.writeln(lineLength, " ", columns.length);
       }
@@ -2961,13 +3079,19 @@ function PhotometryEngine(w)
                line+="         ;          ;          ;         ;            ;";
 
             for (var a = 0; a < this.apertureSteps; a++)
-               line += this.FormatFloat("flux" + a, imageStars[i].flux[a], 9, 6) + separator;
+               if(imageStars[i].flux[a])
+                  line += this.FormatFloat("flux" + a, imageStars[i].flux[a], 9, 6) + separator;
+               else
+                  line += separator;
             for (var a = 0; a < this.apertureSteps; a++)
-               line += this.FormatFloat("SNR" + a, imageStars[i].SNR[a], 8, 5) + separator;
+               if(imageStars[i].SNR[a])
+                  line += this.FormatFloat("SNR" + a, imageStars[i].SNR[a], 8, 5) + separator;
+               else
+                  line += separator;
             line += format("%04x\n", imageStars[i].flags);
 
-            if (line.length != lineLength)
-               warning = true;
+//            if (line.length != lineLength)
+//               warning = true;
 
             file.outText(line);
          }
@@ -2992,6 +3116,7 @@ function PhotometryEngine(w)
       imageData.dateObs = window.metadataWCS.epoch;
       imageData.stars = imageStars;
       imageData.filter = this.GetWindowFilter(window);
+      imageData.airmass = this.GetWindowAirMass(window);
 
       return imageData;
    };
@@ -3008,7 +3133,7 @@ function PhotometryEngine(w)
          else
             firstFilePath = this.files[0];
          if (firstFilePath == null || firstFilePath.length == 0)
-            throw "The first file has not file path";
+            throw "The first file has no file path";
          var drive = File.extractDrive(firstFilePath);
          var dir = File.extractDirectory(firstFilePath);
          outDir = drive + dir;
@@ -3030,19 +3155,24 @@ function PhotometryEngine(w)
          // Create file
          var file = new File;
          file.createForWriting(path);
+         var headerprefix = ";;;";
+
+          // Calculate prefix - depends on number of filters
+         for (var f = 0; f < this.catalog.filters.length; f++)
+         {
+             headerprefix += ";";
+         }
+         if (snrField)
+            headerprefix += ";";
 
          // Write image ID row
-         if (snrField)
-            file.outText(";");
-         file.outText(";;;;ImageId");
+         file.outText(headerprefix+"ImageId");
          for (var i = 0; i < this.imagesData.length; i++)
             file.outText(";" + this.imagesData[i].id);
          file.outText("\n");
 
          // Write image DATE_OBS row
-         if (snrField)
-            file.outText(";");
-         file.outText(";;;;DATE_OBS");
+         file.outText(headerprefix+"DATE_OBS");
          for (var i = 0; i < this.imagesData.length; i++)
             if (this.imagesData[i].dateObs == null)
                file.outText(";");
@@ -3051,18 +3181,28 @@ function PhotometryEngine(w)
          file.outText("\n");
 
          // Write image FILTER row
-         if (snrField)
-            file.outText(";");
-         file.outText(";;;;FILTER");
+         file.outText(headerprefix+"FILTER");
          for (var i = 0; i < this.imagesData.length; i++)
             file.outText(format(";%ls", this.imagesData[i].filter));
          file.outText("\n");
 
+          // Write image AIRMASS row
+         file.outText(headerprefix+"AIRMASS");
+         for (var i = 0; i < this.imagesData.length; i++)
+             file.outText(format(";%ls", this.imagesData[i].airmass));
+         file.outText("\n");
+
          // Write stars header
+         file.outText("StarId;RA;Dec;Flags");
+         for (var f = 0; f < this.catalog.filters.length; f++)
+         {
+             var filter = this.catalog.filters[f];
+             file.outText(";Catalog_" + filter);
+         }
+
          if (snrField)
-            file.outText("StarId;RA;Dec;Flags;Catalog_" + this.catalogFilter + ";MinSNR");
-         else
-            file.outText("StarId;RA;Dec;Flags;Catalog_" + this.catalogFilter);
+             file.outText(";MinSNR");
+
          for (var i = 0; i < this.imagesData.length; i++)
             file.outText(format(";%ls_%d", fieldName, i + 1));
          file.outText("\n");
@@ -3088,28 +3228,45 @@ function PhotometryEngine(w)
                         flags = flags | this.imagesData[i].stars[s].flags;
                      if (snrField)
                      {
-                        if (minSNR == null)
-                           minSNR = snrField(this.imagesData[i].stars[s]);
-                        else
-                           minSNR = Math.min(minSNR, snrField(this.imagesData[i].stars[s]));
+                        var snr = snrField(this.imagesData[i].stars[s]);
+                        if (snr !== null)
+                        {
+                           if (minSNR == null)
+                              minSNR = snr;
+                           else
+                              minSNR = Math.min(minSNR, snr);
+                        }
                      }
                   }
                   else
                      flags |= STARFLAG_LOWSNR;
-               file.outText(format("%d;", flags));
-               if (this.catalogStars[s][this.catalogFilter] != null)
-                  file.outText(format("%f", this.catalogStars[s][this.catalogFilter]));
+               file.outText(format("%d", flags));
+               for (f = 0; f < this.catalog.filters.length; f++)
+               {
+                   var filter = this.catalog.filters[f];
+                   if (this.catalogStars[s][filter]) {
+                       file.outText(format(";%f", this.catalogStars[s][filter]));
+                   } else {
+                       file.outText(";");
+                   }
+               }
+
                if (snrField)
                {
                   file.outText(";");
-                  if (minSNR != null)
+                  if (minSNR !== null)
                      file.outText(format("%f", minSNR));
                }
                for (var i = 0; i < this.imagesData.length; i++)
+               {
+                  file.outText(";");
                   if (this.imagesData[i].stars[s])
-                     file.outText(format(";%f", field(this.imagesData[i].stars[s])));
-                  else
-                     file.outText(";");
+                  {
+                     var fieldVal = field(this.imagesData[i].stars[s]);
+                     if (fieldVal !== null)
+                        file.outText(format("%f", fieldVal));
+                  }
+               }
                file.outText("\n");
             }
          }
@@ -3117,7 +3274,7 @@ function PhotometryEngine(w)
       } catch (ex)
       {
          console.flush();
-         console.criticalln("Error writing table");
+         console.criticalln("*** Error: Failure to write output table.");
          console.flush();
          this.errorList.push({id: filename, message: ex});
       }
@@ -3176,11 +3333,11 @@ function PhotometryEngine(w)
             }
 
             if (window.metadataWCS.ref_I_G == null)
-               throw "The image hasn't coordinates";
+               throw "The image has no coordinates";
 
          }
          if (window.metadataWCS.ref_I_G == null)
-            throw "The image hasn't coordinates";
+            throw "The image has no coordinates";
       }
    }
 
@@ -3190,7 +3347,7 @@ function PhotometryEngine(w)
       var prefix = this.outputPrefix == null ? "Table_" : this.outputPrefix;
       var outDir = this.GetOutputDir();
       var path = outDir + "/" + prefix + "Errors.txt";
-      console.criticalln("Writing error log: ", path);
+      console.noteln("* Writing error log: ", path);
 
       // Create file
       var file = new File;
@@ -3229,6 +3386,12 @@ function PhotometryEngine(w)
    this.ProcessWindow = function (window)
    {
       this.LoadMetadata(window);
+
+      // Calculates the conversion between aperture units and pixels
+      if (this.apertureUnit != null && this.apertureUnit != 0)
+         this.apertureUnitFactor = 1 / (window.metadataWCS.resolution * 3600);
+      else
+         this.apertureUnitFactor = 1;
 
       // Get reference image
       var referenceWindow = null;
@@ -3400,10 +3563,11 @@ function PhotometryEngine(w)
             numImages = 1;
             this.ProcessWindow(this.currentWindow);
             numImagesOK++;
+            ++__PJSR_AdpPhotometry_SuccessCount;
          } catch (ex)
          {
             console.writeln("*******************************")
-            console.criticalln("Error in image " + this.currentWindow.mainView.id + ": " + ex);
+            console.criticalln("*** Error: Failure to process image " + this.currentWindow.mainView.id + ": " + ex);
             this.errorList.push({id:this.currentWindow.mainView.id, message:ex});
          }
          this.CloseTemporalWindows();
@@ -3427,9 +3591,10 @@ function PhotometryEngine(w)
                this.ProcessWindow(fileWindow);
                fileWindow.forceClose();
                numImagesOK++;
+               ++__PJSR_AdpPhotometry_SuccessCount;
             } catch (ex)
             {
-               console.criticalln("Error in image " + this.files[i] + ": " + ex);
+               console.criticalln("*** Error: Failure to process image file <raw>'" + this.files[i] + "'</raw>: " + ex);
                this.errorList.push({id:this.files[i], message:ex});
             }
             this.CloseTemporalWindows();
@@ -3451,17 +3616,29 @@ function PhotometryEngine(w)
       {
          this.RemoveEmptyStars();
 
+         if (this.generatePSFFluxTable)
+            this.WriteTable(
+               function (star)
+               {
+                  return star.psf.A * star.psf.sigmaX * star.psf.sigmaY;
+               },
+               "PSF_Flux",
+               function (star)
+               {
+                  return star.SNR[0] ? star.SNR[0] : null;
+               }
+            );
          if (this.generateFluxTable)
             for (var f = 0; f < this.apertureSteps; f++)
                this.WriteTable(
                   function (star)
                   {
-                     return star.flux[f];
+                     return star.flux[f] ? star.flux[f] : null;
                   },
                   format("Flux_Ap%g", this.minimumAperture + f * this.apertureStepSize),
                   function (star)
                   {
-                     return star.SNR[f];
+                     return star.SNR[f] ? star.SNR[f] : null;
                   }
                );
          if (this.generateBackgTable)
@@ -3474,7 +3651,7 @@ function PhotometryEngine(w)
                this.WriteTable(
                   function (star)
                   {
-                     return star.SNR[f];
+                     return star.SNR[f] ? star.SNR[f] : null;
                   },
                   format("SNR_Ap%g", this.minimumAperture + f * this.apertureStepSize));
          if (this.generateFlagTable)
@@ -3510,10 +3687,20 @@ function main()
 {
    console.abortEnabled = true;
 
-   if (!CheckVersion(1, 8, 3))
+   if (!CheckVersion(1, 8, 4))
    {
-      new MessageBox("This script requires at least the version 1.8 of PixInsight", TITLE, StdIcon_Error, StdButton_Ok).execute();
+      new MessageBox("This script requires at least version 1.8.4 of PixInsight", TITLE, StdIcon_Error, StdButton_Ok).execute();
       return;
+   }
+
+   if ( Parameters.getBoolean( "resetSettingsAndExit" ) )
+   {
+      Settings.remove( SETTINGS_MODULE );
+      return;
+   }
+   else if ( Parameters.getBoolean( "resetSettings" ) )
+   {
+      Settings.remove( SETTINGS_MODULE );
    }
 
    var engine = new PhotometryEngine;
@@ -3549,5 +3736,8 @@ function main()
 
    engine.Calculate();
 }
+
+// Global control variable for PCL invocation.
+var __PJSR_AdpPhotometry_SuccessCount = 0;
 
 main();

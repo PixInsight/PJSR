@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/PropertyType.jsh - Released 2015/11/09 15:21:11 UTC
+// pjsr/PropertyType.jsh - Released 2018-11-30T21:30:58Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -56,6 +56,9 @@
 /*
  * Data types recognized by View.setPropertyValue(), View.propertyType(), and
  * FileFormatInstance.writeProperty().
+ *
+ * N.B.: The values of these macros must be the same used in pcl::Variant, as
+ * defined by the pcl::VariantType namespace.
  */
 #define PropertyType_Invalid         0 // Invalid value type
 #define PropertyType_Auto            0 // Automatic type detection
@@ -79,50 +82,51 @@
 #define PropertyType_Real64         PropertyType_Float64
 #define PropertyType_Complex32      12 // 32-bit IEEE 754 floating point complex
 #define PropertyType_Complex64      13 // 64-bit IEEE 754 floating point complex
-#define PropertyType_I8Vector       20 // Vector of 8-bit signed integers
-#define PropertyType_UI8Vector      21 // Vector of 8-bit unsigned integers
+#define PropertyType_TimePoint      14
+#define PropertyType_I8Vector       21 // Vector of 8-bit signed integers
+#define PropertyType_UI8Vector      22 // Vector of 8-bit unsigned integers
 #define PropertyType_ByteVector     PropertyType_UI8Vector
-#define PropertyType_I16Vector      22 // Vector of 16-bit signed integers
+#define PropertyType_I16Vector      23 // Vector of 16-bit signed integers
 #define PropertyType_ShortVector    PropertyType_I16Vector
-#define PropertyType_UI16Vector     23 // Vector of 16-bit unsigned integers
+#define PropertyType_UI16Vector     24 // Vector of 16-bit unsigned integers
 #define PropertyType_UShortVector   PropertyType_UI16Vector
-#define PropertyType_I32Vector      24 // Vector of 32-bit signed integers
+#define PropertyType_I32Vector      25 // Vector of 32-bit signed integers
 #define PropertyType_IVector        PropertyType_I32Vector
-#define PropertyType_UI32Vector     25 // Vector of 32-bit unsigned integers
+#define PropertyType_UI32Vector     26 // Vector of 32-bit unsigned integers
 #define PropertyType_UIVector       PropertyType_UI32Vector
-#define PropertyType_I64Vector      26 // Vector of 64-bit signed integers
-#define PropertyType_UI64Vector     27 // Vector of 64-bit unsigned integers
-#define PropertyType_F32Vector      28 // Vector of 32-bit floating point real values
-#define PropertyType_F64Vector      29 // Vector of 64-bit floating point real values
-#define PropertyType_C32Vector      30 // Vector of 32-bit floating point complex values
-#define PropertyType_C64Vector      31 // Vector of 64-bit floating point complex values
-#define PropertyType_I8Matrix       32 // Matrix of 8-bit signed integers
-#define PropertyType_UI8Matrix      33 // Matrix of 8-bit unsigned integers
+#define PropertyType_I64Vector      27 // Vector of 64-bit signed integers
+#define PropertyType_UI64Vector     28 // Vector of 64-bit unsigned integers
+#define PropertyType_F32Vector      29 // Vector of 32-bit floating point real values
+#define PropertyType_F64Vector      30 // Vector of 64-bit floating point real values
+#define PropertyType_C32Vector      31 // Vector of 32-bit floating point complex values
+#define PropertyType_C64Vector      32 // Vector of 64-bit floating point complex values
+#define PropertyType_I8Matrix       33 // Matrix of 8-bit signed integers
+#define PropertyType_UI8Matrix      34 // Matrix of 8-bit unsigned integers
 #define PropertyType_ByteMatrix     PropertyType_UI8Matrix
-#define PropertyType_I16Matrix      34 // Matrix of 16-bit signed integers
+#define PropertyType_I16Matrix      35 // Matrix of 16-bit signed integers
 #define PropertyType_ShortMatrix    PropertyType_I16Matrix
-#define PropertyType_UI16Matrix     35 // Matrix of 16-bit unsigned integers
+#define PropertyType_UI16Matrix     36 // Matrix of 16-bit unsigned integers
 #define PropertyType_UShortMatrix   PropertyType_UI16Matrix
-#define PropertyType_I32Matrix      36 // Matrix of 32-bit signed integers
+#define PropertyType_I32Matrix      37 // Matrix of 32-bit signed integers
 #define PropertyType_IMatrix        PropertyType_I32Matrix
-#define PropertyType_UI32Matrix     37 // Matrix of 32-bit unsigned integers
+#define PropertyType_UI32Matrix     38 // Matrix of 32-bit unsigned integers
 #define PropertyType_UIMatrix       PropertyType_UI32Matrix
-#define PropertyType_I64Matrix      38 // Matrix of 64-bit signed integers
-#define PropertyType_UI64Matrix     39 // Matrix of 64-bit unsigned integers
-#define PropertyType_F32Matrix      40 // Matrix of 32-bit floating point real values
-#define PropertyType_F64Matrix      41 // Matrix of 64-bit floating point real values
-#define PropertyType_C32Matrix      42 // Matrix of 32-bit floating point complex values
-#define PropertyType_C64Matrix      43 // Matrix of 64-bit floating point complex values
-#define PropertyType_ByteArray      44 // Native pcl::ByteArray type
-#define PropertyType_String16       45 // Unicode string (16-bit characters)
+#define PropertyType_I64Matrix      39 // Matrix of 64-bit signed integers
+#define PropertyType_UI64Matrix     40 // Matrix of 64-bit unsigned integers
+#define PropertyType_F32Matrix      41 // Matrix of 32-bit floating point real values
+#define PropertyType_F64Matrix      42 // Matrix of 64-bit floating point real values
+#define PropertyType_C32Matrix      43 // Matrix of 32-bit floating point complex values
+#define PropertyType_C64Matrix      44 // Matrix of 64-bit floating point complex values
+#define PropertyType_ByteArray      45 // Native pcl::ByteArray type
+#define PropertyType_String16       46 // Unicode string (16-bit characters)
 #define PropertyType_String         PropertyType_String16
 #define PropertyType_UCString       PropertyType_String16
 #define PropertyType_UTF16String    PropertyType_String16
-#define PropertyType_String8        46 // ISO/IEC 8859-1 or UTF-8 string (8-bit characters)
+#define PropertyType_String8        47 // ISO/IEC 8859-1 or UTF-8 string (8-bit characters)
 #define PropertyType_IsoString      PropertyType_String8
 #define PropertyType_UTF8String     PropertyType_String8
 
 #endif   // __PJSR_PropertyType_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/PropertyType.jsh - Released 2015/11/09 15:21:11 UTC
+// EOF pjsr/PropertyType.jsh - Released 2018-11-30T21:30:58Z

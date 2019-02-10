@@ -30,6 +30,8 @@
 /*
  Changelog:
 
+ 1.2.2:* Better error management in the online catalogs
+
  1.2.1:* Added test for too big images (>0.5GigaPixels)
 
  1.2:  * Use downloaded catalogs
@@ -64,7 +66,7 @@
 #endif
 
 
-#define VERSION "1.2.1"
+#define VERSION "1.2.2"
 #define TITLE "Mosaic Planner"
 #define SETTINGS_MODULE "MosaicPlan"
 #define STAR_CSV_FILE   File.systemTempDirectory + "/stars.csv"
@@ -1437,6 +1439,110 @@ function MosaicDialog(engine)
       }
    };
 
+   var lwidth = this.font.width("Object name:");
+
+   this.objectName_Label = new Label(this);
+   this.objectName_Label.text = "Object name:";
+   this.objectName_Label.setMinWidth(lwidth);
+   this.objectName_Label.textAlignment = TextAlign_Left | TextAlign_VertCenter;
+
+
+   this.objectName_Edit = new Edit(this);
+   if (engine.objectName)
+      this.objectName_Edit.text = engine.objectName;
+   this.objectName_Edit.setScaledMinWidth(150);
+   this.objectName_Edit.toolTip = "<p>Output filename for mosaic data in csv format</p>";
+   this.objectName_Edit.onTextUpdated = function (value)
+   {
+      engine.objectName = value;
+   };
+
+   this.objectName_Sizer = new HorizontalSizer;
+   this.objectName_Sizer.scaledSpacing = 4;
+   this.objectName_Sizer.add(this.objectName_Label);
+   this.objectName_Sizer.add(this.objectName_Edit);
+   this.objectName_Sizer.addStretch();
+
+
+   this.outputPath_Label = new Label(this);
+   this.outputPath_Label.text = "Filename:";
+   this.outputPath_Label.setMinWidth(lwidth);
+   this.outputPath_Label.textAlignment = TextAlign_Left | TextAlign_VertCenter;
+
+
+   this.outputPath_Edit = new Edit(this);
+   if (engine.outputFile)
+      this.outputPath_Edit.text = engine.outputFile;
+   this.outputPath_Edit.setScaledMinWidth(150);
+   this.outputPath_Edit.toolTip = "<p>Output filename for mosaic data in csv format</p>";
+   this.outputPath_Edit.onTextUpdated = function (value)
+   {
+      engine.outputFile = value;
+   };
+
+   this.outputPath_Button = new ToolButton(this);
+   this.outputPath_Button.icon = this.scaledResource(":/icons/select-file.png");
+   this.outputPath_Button.setScaledFixedSize(20, 20);
+   this.outputPath_Button.toolTip = "<p>Specify output csv file.</p>";
+   this.outputPath_Button.onClick = function ()
+   {
+      var gdd = new SaveFileDialog;
+      gdd.overwritePrompt = true;
+      gdd.initialPath = this.dialog.outputPath_Edit.text;
+      gdd.caption = "Select Output File";
+      gdd.filters = [["CSV file", "*.csv"],
+      ];
+      if (gdd.execute())
+      {
+         engine.outputFile = gdd.fileName;
+         this.dialog.outputPath_Edit.text = gdd.fileName;
+      }
+   };
+
+   this.outputPath_Sizer = new HorizontalSizer;
+   this.outputPath_Sizer.scaledSpacing = 4;
+   this.outputPath_Sizer.add(this.outputPath_Label);
+   this.outputPath_Sizer.add(this.outputPath_Edit);
+   this.outputPath_Sizer.add(this.outputPath_Button);
+   this.outputPath_Sizer.addStretch();
+
+
+   this.outputPathGroup = new GroupBox(this);
+   this.outputPathGroup.titleCheckBox = true;
+   this.outputPathGroup.title = "Write data to file";
+   this.outputPathGroup.checked = false;
+
+   this.outputPathGroup.sizer = new VerticalSizer;
+   this.outputPathGroup.sizer.scaledMargin = 6;
+   this.outputPathGroup.sizer.scaledSpacing = 4;
+   this.outputPathGroup.sizer.add(this.objectName_Sizer);
+   this.outputPathGroup.sizer.add(this.outputPath_Sizer);
+   this.outputPathGroup.onCheck = function (checked)
+   {
+         engine.writeDataToFile = checked;
+   };
+
+   // Outputfile section
+   this.outputfile_Control = new Control(this);
+   this.outputfile_Control.sizer = new VerticalSizer;
+   this.outputfile_Control.sizer.scaledMargin = 6;
+   this.outputfile_Control.sizer.scaledSpacing = 4;
+   this.outputfile_Control.hide();
+   this.outputfile_Control.sizer.add(this.outputPathGroup);
+
+   this.outputfile_Section = new SectionBar(this, "Output file");
+   this.outputfile_Section.setSection(this.outputfile_Control);
+   this.outputfile_Section.toggleSection = function ()
+   {
+      if (this.section.visible)
+         this.section.hide();
+      else
+      {
+         this.section.adjustToContents();
+         this.section.show();
+      }
+   };
+
 
    this.config_Frame = new Control(this);
    //this.config_Frame.setFixedWidth(320);
@@ -1456,6 +1562,8 @@ function MosaicDialog(engine)
    this.config_Frame.sizer.add(this.guideStars_Control);
    this.config_Frame.sizer.add(this.graphicProps_Section);
    this.config_Frame.sizer.add(this.graphicProps_Control);
+   this.config_Frame.sizer.add(this.outputfile_Section);
+   this.config_Frame.sizer.add(this.outputfile_Control);
    this.config_Frame.sizer.addStretch();
 
 
@@ -1592,6 +1700,9 @@ function MosaicPlannerEngine()
          ["adjustRotation", DataType_Boolean ],
          ["catalogMode", DataType_UInt8],
          ["databasePath", DataType_UCString],
+         ["outputFile", DataType_UCString],
+         ["writeDataToFile ", DataType_Boolean],
+         ["objectName", DataType_UCString],
          ["vizierServer", DataType_UCString],
          ["maxMagnitude", DataType_Double],
          ["customTileRot", Ext_DataType_JSON],
@@ -1667,10 +1778,10 @@ function MosaicPlannerEngine()
       this.metadata.ExtractMetadata(imageWindow);
 
       if (this.metadata.ref_I_G == null)
-         throw Error("The image has not WCS coordinates");
+         throw Error("The image has no WCS coordinates");
 
       if (this.metadata.width * this.metadata.height * 4 >= 2 * 1024 * 1024 * 1024)
-         throw Error("The script can not work with images bigger than 536,870,912 pixels");
+         throw Error("The script cannot work with images bigger than 536,870,912 pixels");
 
       if (this.showGuideStars)
          this.LoadCatalog();
@@ -1956,21 +2067,24 @@ function MosaicPlannerEngine()
          this.catalog.magMax = this.maxMagnitude;
          this.catalog.Load(this.metadata, this.vizierServer);
 
-         for (var i = 0; i < this.catalog.objects.length; i++)
+         if (this.catalog.objects)
          {
-            if (this.catalog.objects[i] == null)
-               continue;
-            var posPx = this.metadata.Convert_RD_I(this.catalog.objects[i].posRD);
-            if (posPx && posPx.x >= 0 && posPx.x <= this.metadata.width && posPx.y >= 0 && posPx.y <= this.metadata.height)
+            for (var i = 0; i < this.catalog.objects.length; i++)
             {
-               var star = {};
-               //               star.name = catalog.objects[i].name;
-               //               star.catPosEq = catalog.objects[i].posRD;
-               star.catPosPx = posPx;
-               star.magnitude = this.catalog.objects[i].magnitude;
-               this.catalogStars.stars.push(star);
+               if (this.catalog.objects[i] == null)
+                  continue;
+               var posPx = this.metadata.Convert_RD_I(this.catalog.objects[i].posRD);
+               if (posPx && posPx.x >= 0 && posPx.x <= this.metadata.width && posPx.y >= 0 && posPx.y <= this.metadata.height)
+               {
+                  var star = {};
+                  //               star.name = catalog.objects[i].name;
+                  //               star.catPosEq = catalog.objects[i].posRD;
+                  star.catPosPx = posPx;
+                  star.magnitude = this.catalog.objects[i].magnitude;
+                  this.catalogStars.stars.push(star);
+               }
+               // if(stars.length>200) break;
             }
-            // if(stars.length>200) break;
          }
       }
       else
@@ -2088,6 +2202,19 @@ function MosaicPlannerEngine()
       }
       console.writeln("-------------");
    };
+
+   this.PrintTilesToCSV = function ( filePath ) {
+      var file = File.createFileForWriting( filePath );
+      line = "";
+      for (var i = 0; i < this.tiles.length; i++)
+      {
+         var tile = this.tiles[i];
+         line += format("%s_%d,%ls,%ls,%.2f\n", this.objectName, i + 1, DMSangle.FromAngle(tile.center.x * 24 / 360).ToString(), DMSangle.FromAngle(tile.center.y).ToString(), tile.GetRotation());
+
+      }
+      file.write(  ByteArray.stringToUTF8( line ));
+      file.close();
+   }
 }
 
 MosaicPlannerEngine.prototype = new ObjectWithSettings;
@@ -2138,7 +2265,12 @@ function main()
       engine.SaveSettings();
 
       engine.Render();
+      if (engine.writeDataToFile)
+      {
+        engine.PrintTilesToCSV(engine.outputFile);
+      }
       engine.PrintTiles();
+
    } catch (ex)
    {
       console.writeln(ex);

@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-GUI.js - Released 2016/09/01 15:47:44 UTC
+// BatchPreprocessing-GUI.js - Released 2018-11-30T21:29:47Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.43
+// This file is part of Batch Preprocessing Script version 1.47
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2016 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -715,6 +715,82 @@ function ImageIntegrationControl( parent, imageType, expand )
    this.add( this.linearFitLowControl );
    this.add( this.linearFitHighControl );
 
+   if ( this.imageType == ImageType.FLAT )
+   {
+      this.largeScaleRejectionCheckBox = new CheckBox( this );
+      this.largeScaleRejectionCheckBox.text = "Large-scale pixel rejection";
+      this.largeScaleRejectionCheckBox.toolTip = "<p>Apply large-scale pixel rejection, high pixel sample values. " +
+         "Useful to improve rejection of stars for integration of sky flats.</p>";
+      this.largeScaleRejectionCheckBox.onCheck = function( checked )
+      {
+         engine.flatsLargeScaleRejection = checked;
+         this.parent.parent.updateControls();
+      };
+
+      this.largeScaleRejectionSizer = new HorizontalSizer;
+      this.largeScaleRejectionSizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
+      this.largeScaleRejectionSizer.add( this.largeScaleRejectionCheckBox );
+      this.largeScaleRejectionSizer.addStretch();
+
+      //
+
+      this.largeScaleRejectionLayersLabel = new Label( this );
+      this.largeScaleRejectionLayersLabel.text = "Large-scale layers:";
+      this.largeScaleRejectionLayersLabel.minWidth = this.dialog.labelWidth1;
+      this.largeScaleRejectionLayersLabel.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+
+      this.largeScaleRejectionLayersSpinBox = new SpinBox( this );
+      this.largeScaleRejectionLayersSpinBox.minValue = 1;
+      this.largeScaleRejectionLayersSpinBox.maxValue = 6;
+      this.largeScaleRejectionLayersSpinBox.setFixedWidth( this.dialog.numericEditWidth + this.logicalPixelsToPhysical( 16 ) );
+      this.largeScaleRejectionLayersSpinBox.onValueUpdated = function( value )
+      {
+         engine.flatsLargeScaleRejectionLayers = value;
+      };
+
+      this.largeScaleRejectionLayersLabel.toolTip = this.largeScaleRejectionLayersSpinBox.toolTip =
+         "<p>Large-scale pixel rejection, number of protected small-scale wavelet layers. " +
+         "Increase it to restrict large-scale rejection to larger structures of contiguous rejected pixels.</p>";
+
+      this.largeScaleRejectionLayersSizer = new HorizontalSizer;
+      this.largeScaleRejectionLayersSizer.spacing = 4;
+      this.largeScaleRejectionLayersSizer.add( this.largeScaleRejectionLayersLabel );
+      this.largeScaleRejectionLayersSizer.add( this.largeScaleRejectionLayersSpinBox );
+      this.largeScaleRejectionLayersSizer.addStretch();
+
+      //
+
+      this.largeScaleRejectionGrowthLabel = new Label( this );
+      this.largeScaleRejectionGrowthLabel.text = "Large-scale growth:";
+      this.largeScaleRejectionGrowthLabel.minWidth = this.dialog.labelWidth1;
+      this.largeScaleRejectionGrowthLabel.textAlignment = TextAlign_Right|TextAlign_VertCenter;
+
+      this.largeScaleRejectionGrowthSpinBox = new SpinBox( this );
+      this.largeScaleRejectionGrowthSpinBox.minValue = 1;
+      this.largeScaleRejectionGrowthSpinBox.maxValue = 20;
+      this.largeScaleRejectionGrowthSpinBox.setFixedWidth( this.dialog.numericEditWidth + this.logicalPixelsToPhysical( 16 ) );
+      this.largeScaleRejectionGrowthSpinBox.onValueUpdated = function( value )
+      {
+         engine.flatsLargeScaleRejectionGrowth = value;
+      };
+
+      this.largeScaleRejectionGrowthLabel.toolTip = this.largeScaleRejectionGrowthSpinBox.toolTip =
+         "<p>Large-scale pixel rejection, growth of large-scale pixel rejection structures. " +
+         "Increase to extend rejection to more adjacent pixels.</p>";
+
+      this.largeScaleRejectionGrowthSizer = new HorizontalSizer;
+      this.largeScaleRejectionGrowthSizer.spacing = 4;
+      this.largeScaleRejectionGrowthSizer.add( this.largeScaleRejectionGrowthLabel );
+      this.largeScaleRejectionGrowthSizer.add( this.largeScaleRejectionGrowthSpinBox );
+      this.largeScaleRejectionGrowthSizer.addStretch();
+
+      //
+
+      this.add( this.largeScaleRejectionSizer );
+      this.add( this.largeScaleRejectionLayersSizer );
+      this.add( this.largeScaleRejectionGrowthSizer );
+   }
+
    this.updateControls = function()
    {
       this.combinationComboBox.currentItem        = engine.combination[this.imageType];
@@ -763,6 +839,18 @@ function ImageIntegrationControl( parent, imageType, expand )
          this.linearFitLowControl.enabled = true;
          this.linearFitHighControl.enabled = true;
          break;
+      }
+
+      if ( this.imageType == ImageType.FLAT )
+      {
+         this.largeScaleRejectionCheckBox.checked = engine.flatsLargeScaleRejection;
+         this.largeScaleRejectionLayersSpinBox.value = engine.flatsLargeScaleRejectionLayers;
+         this.largeScaleRejectionGrowthSpinBox.value = engine.flatsLargeScaleRejectionGrowth;
+
+         let enabled = engine.rejection[this.imageType] != ImageIntegration.prototype.NoRejection;
+         this.largeScaleRejectionCheckBox.enabled = enabled;
+         this.largeScaleRejectionLayersSpinBox.enabled = enabled && engine.flatsLargeScaleRejection;
+         this.largeScaleRejectionGrowthSpinBox.enabled = enabled && engine.flatsLargeScaleRejection;
       }
 
       if ( this.imageType != ImageType.LIGHT )
@@ -860,35 +948,24 @@ function DeBayerControl( parent )
 
    //
 
-   this.bayerDrizzleCheckBox = new CheckBox( this );
-   this.bayerDrizzleCheckBox.text = "Bayer drizzle";
-   this.bayerDrizzleCheckBox.toolTip = "<p>Apply the drizzle integration process to calibrated Bayer " +
-      "CFA data instead of deBayered images.</p>";
-   this.bayerDrizzleCheckBox.onCheck = function( checked )
-   {
-      engine.bayerDrizzle = checked;
-   };
-
-   this.bayerDrizzleSizer = new HorizontalSizer;
-   this.bayerDrizzleSizer.addUnscaledSpacing( this.dialog.labelWidth1 + this.logicalPixelsToPhysical( 4 ) );
-   this.bayerDrizzleSizer.add( this.bayerDrizzleCheckBox );
-   this.bayerDrizzleSizer.addStretch();
-
-   //
-
    this.bayerPatternLabel = new Label( this );
    this.bayerPatternLabel.text = "Bayer/mosaic pattern:";
    this.bayerPatternLabel.minWidth = this.dialog.labelWidth1;
    this.bayerPatternLabel.textAlignment = TextAlign_Right|TextAlign_VertCenter;
 
    this.bayerPatternComboBox = new ComboBox( this );
+   this.bayerPatternComboBox.addItem( "Auto" );
    this.bayerPatternComboBox.addItem( "RGGB" );
    this.bayerPatternComboBox.addItem( "BGGR" );
    this.bayerPatternComboBox.addItem( "GBRG" );
    this.bayerPatternComboBox.addItem( "GRBG" );
-   this.bayerPatternComboBox.onItemSelected = function( item )
+   this.bayerPatternComboBox.addItem( "GRGB" );
+   this.bayerPatternComboBox.addItem( "GBGR" );
+   this.bayerPatternComboBox.addItem( "RGBG" );
+   this.bayerPatternComboBox.addItem( "BGRG" );
+   this.bayerPatternComboBox.onItemSelected = function( itemIndex )
    {
-      engine.bayerPattern = item;
+      engine.bayerPattern = itemIndex;
    };
 
    this.bayerPatternSizer = new HorizontalSizer;
@@ -907,9 +984,9 @@ function DeBayerControl( parent )
    this.debayerMethodComboBox.addItem( "SuperPixel" );
    this.debayerMethodComboBox.addItem( "Bilinear" );
    this.debayerMethodComboBox.addItem( "VNG" );
-   this.debayerMethodComboBox.onItemSelected = function( item )
+   this.debayerMethodComboBox.onItemSelected = function( itemIndex )
    {
-      engine.debayerMethod = item;
+      engine.debayerMethod = itemIndex;
    };
 
    this.debayerMethodSizer = new HorizontalSizer;
@@ -919,15 +996,12 @@ function DeBayerControl( parent )
 
    //
 
-   this.add( this.bayerDrizzleSizer );
    this.add( this.bayerPatternSizer );
    this.add( this.debayerMethodSizer );
 
    this.updateControls = function()
    {
       this.enabled = engine.cfaImages;
-      this.bayerDrizzleCheckBox.enabled = engine.cfaImages && engine.generateDrizzleData;
-      this.bayerDrizzleCheckBox.checked = engine.bayerDrizzle;
       this.bayerPatternComboBox.currentItem = engine.bayerPattern;
       this.debayerMethodComboBox.currentItem = engine.debayerMethod;
    };
@@ -1151,7 +1225,7 @@ function LightsRegistrationControl( parent )
 
    this.generateDrizzleDataCheckBox = new CheckBox( this );
    this.generateDrizzleDataCheckBox.text = "Generate drizzle data";
-   this.generateDrizzleDataCheckBox.toolTip = "<p>Generate .drz files in the image registration task. " +
+   this.generateDrizzleDataCheckBox.toolTip = "<p>Generate .xdrz files in the image registration task. " +
          "These files can later be used with the ImageIntegration and DrizzleIntegration tools to " +
          "perform a drizzle integration process.</p>";
    this.generateDrizzleDataCheckBox.onCheck = function( checked )
@@ -1760,7 +1834,7 @@ function StackDialog()
    this.helpLabel.text =
       "<p>A script for calibration and alignment of light frames<br/>"
     + "Copyright (c) 2012 Kai Wiechen.<br/>"
-    + "Copyright (c) 2012-2015 Pleiades Astrophoto.</p>";
+    + "Copyright (c) 2012-2018 Pleiades Astrophoto.</p>";
 
    //
 
@@ -2085,6 +2159,7 @@ function StackDialog()
 
    //
 
+   /*
    this.exportCalibrationFilesCheckBox = new CheckBox( this );
    this.exportCalibrationFilesCheckBox.text = "Export calibration files";
    this.exportCalibrationFilesCheckBox.toolTip = "<p>When checked, calibration file names will be exported in generated instances.</p>";
@@ -2092,6 +2167,7 @@ function StackDialog()
    {
       engine.exportCalibrationFiles = checked;
    };
+   */
 
     //
 
@@ -2157,33 +2233,13 @@ function StackDialog()
 
    //
 
-   var outputFileSuffixToolTip = "<p>File suffix for output files. The BatchPreprocessing script uses " +
-      "the Extensible Image Serialization Format (XISF) by default (.xisf file suffix).</p>";
-
-   this.outputSuffixLabel = new Label( this );
-   this.outputSuffixLabel.text = "Output file suffix:";
-   this.outputSuffixLabel.toolTip = outputFileSuffixToolTip;
-   this.outputSuffixLabel.textAlignment = TextAlign_Right|TextAlign_VertCenter;
-
-   this.outputSuffixEdit = new Edit( this );
-   this.outputSuffixEdit.minWidth = this.suffixEditWidth;
-   this.outputSuffixEdit.text = engine.outputSuffix;
-   this.outputSuffixEdit.toolTip = outputFileSuffixToolTip;
-   this.outputSuffixEdit.onEditCompleted = function()
-   {
-      this.text = engine.outputSuffix = this.text.trim().toLowerCase();
-   };
-
-   //
-
    this.optionsSizer1 = new VerticalSizer;
    this.optionsSizer1.spacing = 4;
    this.optionsSizer1.add( this.cfaImagesCheckBox );
    this.optionsSizer1.add( this.optimizeDarksCheckBox );
    this.optionsSizer1.add( this.generateRejectionMapsCheckBox );
-   this.optionsSizer1.add( this.exportCalibrationFilesCheckBox );
+//   this.optionsSizer1.add( this.exportCalibrationFilesCheckBox );
    this.optionsSizer1.add( this.saveProcessLogCheckBox );
-   this.optionsSizer1.add( this.outputSuffixLabel );
 
    this.optionsSizer2 = new VerticalSizer;
    this.optionsSizer2.spacing = 4;
@@ -2191,8 +2247,7 @@ function StackDialog()
    this.optionsSizer2.add( this.useAsMasterBiasCheckBox );
    this.optionsSizer2.add( this.useAsMasterDarkCheckBox );
    this.optionsSizer2.add( this.useAsMasterFlatCheckBox );
-   this.optionsSizer2.add( new Label( this ) );
-   this.optionsSizer2.add( this.outputSuffixEdit );
+   this.optionsSizer2.addStretch();
 
    this.optionsSizer = new HorizontalSizer;
    this.optionsSizer.margin = 6;
@@ -2392,7 +2447,7 @@ StackDialog.prototype.updateControls = function()
    this.cfaImagesCheckBox.checked              = engine.cfaImages;
    this.optimizeDarksCheckBox.checked          = engine.optimizeDarks;
    this.generateRejectionMapsCheckBox.checked  = engine.generateRejectionMaps;
-   this.exportCalibrationFilesCheckBox.checked = engine.exportCalibrationFiles;
+//   this.exportCalibrationFilesCheckBox.checked = engine.exportCalibrationFiles;
    this.saveProcessLogCheckBox.checked         = engine.saveProcessLog;
    this.upBottomFITSCheckBox.checked           = engine.upBottomFITS;
    this.useAsMasterBiasCheckBox.checked        = engine.useAsMaster[ImageType.BIAS];
@@ -2400,7 +2455,6 @@ StackDialog.prototype.updateControls = function()
    this.useAsMasterFlatCheckBox.checked        = engine.useAsMaster[ImageType.FLAT];
    this.referenceImageEdit.text                = engine.referenceImage;
    this.outputDirectoryEdit.text               = engine.outputDirectory;
-   this.outputSuffixEdit.text                  = engine.outputSuffix;
 };
 
 StackDialog.prototype.refreshTreeBoxes = function()
@@ -2507,4 +2561,4 @@ StackDialog.prototype.refreshTreeBoxes = function()
 };
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-GUI.js - Released 2016/09/01 15:47:44 UTC
+// EOF BatchPreprocessing-GUI.js - Released 2018-11-30T21:29:47Z

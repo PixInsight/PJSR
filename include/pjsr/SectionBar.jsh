@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/SectionBar.jsh - Released 2015/11/09 15:21:11 UTC
+// pjsr/SectionBar.jsh - Released 2018-11-30T21:30:59Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -257,11 +257,8 @@ function SectionBar( parent, title, collapsible )
          if ( typeof( this.onToggleSection ) === "function" )
             this.onToggleSection( this, true/*toggleBegin*/ );
 
-#ifeq __PI_PLATFORM__ MACOSX
-         this.dialog.showAlias();
-#else
          this.dialog.canUpdate = false;
-#endif
+
          let fixedWidth = this.dialog.isFixedWidth;
          let saveMinWidth, saveMaxWidth;
          if ( !fixedWidth )
@@ -294,11 +291,8 @@ function SectionBar( parent, title, collapsible )
          if ( fixedHeight )
             this.dialog.setFixedHeight();
 
-#ifeq __PI_PLATFORM__ MACOSX
-         this.dialog.hideAlias();
-#else
          this.dialog.canUpdate = true;
-#endif
+
          if ( typeof( this.onToggleSection ) === "function" )
             this.onToggleSection( this, false/*toggleBegin*/ );
       }
@@ -345,4 +339,4 @@ SectionBar.prototype = new Control;
 #endif   // __PJSR_SectionBar_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/SectionBar.jsh - Released 2015/11/09 15:21:11 UTC
+// EOF pjsr/SectionBar.jsh - Released 2018-11-30T21:30:59Z

@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-engine.js - Released 2016/09/01 15:47:44 UTC
+// BatchPreprocessing-engine.js - Released 2018-11-30T21:29:47Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.43
+// This file is part of Batch Preprocessing Script version 1.47
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2016 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -257,7 +257,6 @@ function StackEngine()
    this.frameGroups = new Array;
 
    // General options
-   this.outputSuffix = DEFAULT_OUTPUT_SUFFIX;
    this.outputDirectory = DEFAULT_OUTPUT_DIRECTORY;
    this.cfaImages = DEFAULT_CFA_IMAGES;
    this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
@@ -286,14 +285,16 @@ function StackEngine()
    this.sigmaHigh = new Array( 4 );
    this.linearFitLow = new Array( 4 );
    this.linearFitHigh = new Array( 4 );
+   this.flatsLargeScaleRejection = DEFAULT_FLATS_LARGE_SCALE_REJECTION;
+   this.flatsLargeScaleRejectionLayers = DEFAULT_FLATS_LARGE_SCALE_LAYERS;
+   this.flatsLargeScaleRejectionGrowth = DEFAULT_FLATS_LARGE_SCALE_GROWTH;
 
    // Cosmetic correction
    this.cosmeticCorrection = DEFAULT_COSMETIC_CORRECTION;
    this.cosmeticCorrectionTemplateId = DEFAULT_COSMETIC_CORRECTION_TEMPLATE; // id of a CC instance
 
    this.calibrateOnly = DEFAULT_CALIBRATE_ONLY; // skip the registration and integration tasks
-   this.generateDrizzleData = DEFAULT_GENERATE_DRIZZLE_DATA; // generate .drz files in the registration task
-   this.bayerDrizzle = DEFAULT_BAYER_DRIZZLE; // apply drizzle to CFA Bayer data instead of deBayered images
+   this.generateDrizzleData = DEFAULT_GENERATE_DRIZZLE_DATA; // generate .xdrz files in the registration task
 
    // Debayering options (only when cfaImages=true)
    this.bayerPattern = DEFAULT_CFA_PATTERN;
@@ -781,28 +782,40 @@ StackEngine.prototype.outputHints = function()
 
 StackEngine.prototype.readImage = function( filePath )
 {
-   var ext = File.extractExtension( filePath );
-   var F = new FileFormat( ext, true/*toRead*/, false/*toWrite*/ );
+   let ext = File.extractExtension( filePath );
+   let F = new FileFormat( ext, true/*toRead*/, false/*toWrite*/ );
    if ( F.isNull )
       throw new Error( "No installed file format can read \'" + ext + "\' files." ); // shouldn't happen
 
-   var f = new FileFormatInstance( F );
+   let f = new FileFormatInstance( F );
    if ( f.isNull )
       throw new Error( "Unable to instantiate file format: " + F.name );
 
-   var d = f.open( filePath, this.inputHints() );
+   let d = f.open( filePath, this.inputHints() );
    if ( d.length < 1 )
       throw new Error( "Unable to open file: " + filePath );
    if ( d.length > 1 )
       throw new Error( "Multi-image files are not supported by this script: " + filePath );
 
-   var window = new ImageWindow( 1, 1, 1,/*numberOfChannels*/ 32,/*bitsPerSample*/ true/*floatSample*/ );
+   let window = new ImageWindow( 1, 1, 1,/*numberOfChannels*/ 32,/*bitsPerSample*/ true/*floatSample*/ );
 
-   var view = window.mainView;
+   let view = window.mainView;
    view.beginProcess( UndoFlag_NoSwapFile );
+
    if ( !f.readImage( view.image ) )
       throw new Error( "Unable to read file: " + filePath );
-   window.keywords = f.keywords;
+
+   if ( F.canStoreImageProperties )
+      if ( F.supportsViewProperties )
+      {
+         let info = view.importProperties( f );
+         if ( !info.isEmpty() )
+            console.criticalln( "<end><cbr>*** Error reading image properties:\n", info );
+      }
+
+   if ( F.canStoreKeywords )
+      window.keywords = f.keywords;
+
    view.endProcess();
 
    f.close();
@@ -813,93 +826,59 @@ StackEngine.prototype.readImage = function( filePath )
 StackEngine.prototype.writeImage = function( filePath,
                imageWindow, rejectionLowWindow, rejectionHighWindow, slopeMapWindow, imageIdentifiers )
 {
-   var F = new FileFormat( this.outputSuffix, false/*toRead*/, true/*toWrite*/ );
+   let F = new FileFormat( ".xisf", false/*toRead*/, true/*toWrite*/ );
    if ( F.isNull )
-      throw new Error( "No installed file format can write " + this.outputSuffix + " files." ); // shouldn't happen
+      throw new Error( "No installed file format can write " + ".xisf" + " files." ); // shouldn't happen
 
-   var f = new FileFormatInstance( F );
+   let f = new FileFormatInstance( F );
    if ( f.isNull )
       throw new Error( "Unable to instantiate file format: " + F.name );
 
-   var hints = this.outputHints();
-#iflteq __PI_BUILD__ 1123
-   if ( imageIdentifiers )
-      hints += " image-ids integration,rejection_low,rejection_high,slope_map"; // ### See FIXME comment below
-#endif
-   if ( !f.create( filePath, hints ) )
+   if ( !f.create( filePath, this.outputHints() ) )
       throw new Error( "Error creating output file: " + filePath );
 
-   var d = new ImageDescription;
+   let d = new ImageDescription;
    d.bitsPerSample = 32;
    d.ieeefpSampleFormat = true;
    if ( !f.setOptions( d ) )
       throw new Error( "Unable to set output file options: " + filePath );
 
-   // ### FIXME: Core 1.8.3.x: New FileFormatInstance.setImageId() method
-   //            voids the need to add HDUNAME/EXTNAME keywords and the
-   //            image-ids XISF format hint above.
-
-#ifgt __PI_BUILD__ 1123
    if ( imageIdentifiers )
       f.setImageId( "integration" );
-   f.keywords = imageWindow.keywords;
-#else
-   if ( imageIdentifiers )
-      f.keywords = imageWindow.keywords.concat(
-            [new FITSKeyword( "HDUNAME", "integration", "Integrated image" )] );
-   else
+
+   if ( F.canStoreImageProperties )
+      if ( F.supportsViewProperties )
+         imageWindow.mainView.exportProperties( f );
+
+   if ( F.canStoreKeywords )
       f.keywords = imageWindow.keywords;
-#endif
+
    if ( !f.writeImage( imageWindow.mainView.image ) )
       throw new Error( "Error writing output file: " + filePath );
 
    if ( rejectionLowWindow && !rejectionLowWindow.isNull )
    {
-#ifgt __PI_BUILD__ 1123
       if ( imageIdentifiers )
          f.setImageId( "rejection_low" );
       f.keywords = rejectionLowWindow.keywords;
-#else
-      if ( imageIdentifiers )
-         f.keywords = rejectionLowWindow.keywords.concat(
-            [new FITSKeyword( "EXTNAME", "rejection_low", "Pixel rejection map: Low clipped pixels" )] );
-      else
-         f.keywords = rejectionLowWindow.keywords;
-#endif
       if ( !f.writeImage( rejectionLowWindow.mainView.image ) )
          throw new Error( "Error writing output file (low rejection map): " + filePath );
    }
 
    if ( rejectionHighWindow && !rejectionHighWindow.isNull )
    {
-#ifgt __PI_BUILD__ 1123
       if ( imageIdentifiers )
          f.setImageId( "rejection_high" );
       f.keywords = rejectionHighWindow.keywords;
-#else
-      if ( imageIdentifiers )
-         f.keywords = rejectionHighWindow.keywords.concat(
-            [new FITSKeyword( "EXTNAME", "rejection_high", "Pixel rejection map: High clipped pixels" )] );
-      else
-         f.keywords = rejectionHighWindow.keywords;
-#endif
       if ( !f.writeImage( rejectionHighWindow.mainView.image ) )
          throw new Error( "Error writing output file (high rejection map): " + filePath );
    }
 
    if ( slopeMapWindow && !slopeMapWindow.isNull )
    {
-#ifgt __PI_BUILD__ 1123
       if ( imageIdentifiers )
          f.setImageId( "slope_map" );
       f.keywords = slopeMapWindow.keywords;
-#else
-      if ( imageIdentifiers )
-         f.keywords = slopeMapWindow.keywords.concat(
-            [new FITSKeyword( "EXTNAME", "slope_map", "Pixel rejection map: Linear fit slope" )] );
-      else
-         f.keywords = slopeMapWindow.keywords;
-#endif
       if ( !f.writeImage( slopeMapWindow.mainView.image ) )
          throw new Error( "Error writing output file (slope map): " + filePath );
    }
@@ -1045,7 +1024,7 @@ StackEngine.prototype.doLight = function()
 
             CC.targetFrames    = images.enableTargetFrames( 2 );
             CC.outputDir       = cosmetizedDirectory;
-            CC.outputExtension = this.outputSuffix;
+            CC.outputExtension = ".xisf";
             CC.prefix          = "";
             CC.postfix         = "_cc";
             CC.overwrite       = true;
@@ -1063,7 +1042,7 @@ StackEngine.prototype.doLight = function()
                var filePath = this.frameGroups[i].fileItems[c].filePath;
                var ccFilePath = cosmetizedDirectory + '/'
                               + File.extractName( filePath )
-                              + "_c_cc" + this.outputSuffix;
+                              + "_c_cc" + ".xisf";
                if ( filePath == this.referenceImage )
                   this.actualReferenceImage = ccFilePath;
                images.push( ccFilePath );
@@ -1077,131 +1056,49 @@ StackEngine.prototype.doLight = function()
 
          if ( this.cfaImages )
          {
-            if ( this.bayerDrizzle )
-            {
-               console.noteln( "<end><cbr><br>",
-                               "************************************************************" );
-               console.noteln( "* Begin generation of Bayer drizzle source frames" );
-               console.noteln( "************************************************************" );
-
-               var P = new PixelMath;
-
-               var Rx, Ry, Gx0, Gx1, Bx, By;
-               switch ( this.bayerPattern )
-               {
-               // R G
-               // G B
-               case Debayer.prototype.RGGB:
-                  Rx  = 0; Ry  = 0;
-                  Gx0 = 1; Gx1 = 0;
-                  Bx  = 1; By  = 1;
-                  break;
-               // B G
-               // G R
-               case Debayer.prototype.BGGR:
-                  Rx  = 1; Ry  = 1;
-                  Gx0 = 1; Gx1 = 0;
-                  Bx  = 0; By  = 0;
-                  break;
-               // G R
-               // B G
-               case Debayer.prototype.GRBG:
-                  Rx  = 1; Ry  = 0;
-                  Gx0 = 0; Gx1 = 1;
-                  Bx  = 0; By  = 1;
-                  break;
-               // G B
-               // R G
-               case Debayer.prototype.GBRG:
-                  Rx  = 0; Ry  = 1;
-                  Gx0 = 0; Gx1 = 1;
-                  Bx  = 1; By  = 0;
-                  break;
-               }
-               P.expression0 = "iif( x()%2 == " + Rx.toString() + " && y()%2 == " + Ry.toString() + ", $T, 0 )";
-               P.expression1 = "iif( iif( y()%2 == 0, x()%2 == " + Gx0.toString() + ", x()%2 == " + Gx1.toString() + " ), $T, 0 )";
-               P.expression2 = "iif( x()%2 == " + Bx.toString() + " && y()%2 == " + By.toString() + ", $T, 0 )";
-
-               P.useSingleExpression = false;
-               P.createNewImage = true;
-               P.showNewImage = false;
-               P.newImageId = "__bayer_drizzle__";
-               P.newImageWidth = 0;
-               P.newImageHeight = 0;
-               P.newImageColorSpace = PixelMath.prototype.RGB;
-               P.newImageSampleFormat = PixelMath.prototype.f32;
-
-               var bayerDirectory = File.existingDirectory( this.outputDirectory + "/calibrated/light/bayer" );
-
-               this.bayerDrizzleFiles = [];
-
-               for ( var j = 0; j < images.length; ++j )
-               {
-                  var window = this.readImage( images[j] );
-                  P.executeOn( window.mainView, false/*swapFile*/ );
-                  window.forceClose();
-                  processEvents();
-
-                  window = ImageWindow.windowById( "__bayer_drizzle__" );
-                  var bFilePath = bayerDirectory
-                                    + '/' + File.extractName( images[j] )
-                                    + "_b" + this.outputSuffix;
-                  this.writeImage( bFilePath, window );
-                  window.forceClose();
-                  processEvents();
-
-                  this.bayerDrizzleFiles.push( bFilePath );
-               }
-
-               console.noteln( "<end><cbr><br>",
-                               "************************************************************" );
-               console.noteln( "* End generation of Bayer drizzle source frames" );
-               console.noteln( "************************************************************" );
-            }
-
             console.noteln( "<end><cbr><br>",
                             "************************************************************" );
-            console.noteln( "* Begin deBayering of light frames" );
+            console.noteln( "* Begin demosaicing of light frames" );
             console.noteln( "************************************************************" );
 
             var DB = new Debayer;
 
-            DB.bayerPattern  = this.bayerPattern;
-            DB.debayerMethod = this.debayerMethod;
-            DB.evaluateNoise = this.evaluateNoise;
-            DB.showImages    = false;
-
-            var debayerImages = new Array;
             var debayerDirectory = File.existingDirectory( this.outputDirectory + "/calibrated/light/debayered" );
 
-            for ( var j = 0; j < images.length; ++j )
+            DB.cfaPattern             = this.bayerPattern;
+            DB.debayerMethod          = this.debayerMethod;
+            DB.evaluateNoise          = this.evaluateNoise;
+            DB.targetItems            = images.enableTargetFrames( 2 );
+            DB.noGUIMessages          = true;
+            DB.outputDirectory        = debayerDirectory;
+            DB.outputExtension        = ".xisf";
+            DB.outputPostfix          = "_d";
+            DB.overwriteExistingFiles = true;
+
+            DB.executeGlobal();
+
+            var debayerImages = new Array;
+            for ( var c = 0; c < DB.outputFileData.length; ++c )
             {
-               var window = this.readImage( images[j] );
-               DB.executeOn( window.mainView, false/*swapFile*/ );
-               window.forceClose();
-               processEvents();
-
-               window = ImageWindow.windowById( DB.outputImage );
-               var dFilePath = debayerDirectory
-                                 + '/' + File.extractName( images[j] )
-                                 + "_d" + this.outputSuffix;
-               this.writeImage( dFilePath, window );
-               window.forceClose();
-               processEvents();
-
-               debayerImages.push( dFilePath );
-
-               if ( images[j] == this.actualReferenceImage )
-                  this.actualReferenceImage = dFilePath;
-
-               gc();
+               var filePath = DB.outputFileData[c][0]; // outputFileData.filePath
+               if ( !filePath.isEmpty() )
+                  if ( File.exists( filePath ) )
+                  {
+                     debayerImages.push( filePath );
+                     if ( images[c] == this.actualReferenceImage )
+                        this.actualReferenceImage = filePath;
+                  }
+                  else
+                     console.warningln( "** Warning: File does not exist after image demosaicing: " + filePath );
             }
+            if ( images.length < 1 )
+               throw new Error( "All demosaiced light frame files have been removed or cannot be accessed." );
 
             images = debayerImages;
 
             console.noteln( "<end><cbr><br>",
                             "************************************************************" );
-            console.noteln( "* End deBayering of light frames" );
+            console.noteln( "* End demosaicing of light frames" );
             console.noteln( "************************************************************" );
          }
 
@@ -1231,7 +1128,7 @@ StackEngine.prototype.doLight = function()
             SA.maxStars                   = this.maxStars;
             SA.noiseReductionFilterRadius = this.noiseReductionFilterRadius;
             SA.useTriangles               = this.useTriangleSimilarity;
-            SA.outputExtension            = this.outputSuffix;
+            SA.outputExtension            = ".xisf";
             SA.outputPrefix               = "";
             SA.outputPostfix              = "_r";
             SA.outputSampleFormat         = StarAlignment.prototype.f32;
@@ -1244,61 +1141,6 @@ StackEngine.prototype.doLight = function()
                             "************************************************************" );
             console.noteln( "* End registration of light frames" );
             console.noteln( "************************************************************" );
-
-            if ( this.cfaImages )
-               if ( this.generateDrizzleData )
-                  if ( this.bayerDrizzle )
-                  {
-                     console.noteln( "<end><cbr><br>",
-                                     "************************************************************" );
-                     console.noteln( "* Begin generation of Bayer drizzle data files" );
-                     console.noteln( "************************************************************" );
-
-                     var bayerDrizzleDirectory = registerDirectory + "/bayer";
-                     bayerDrizzleDirectory = File.existingDirectory( bayerDrizzleDirectory );
-
-                     for ( var c = 0; c < SA.outputData.length; ++c )
-                     {
-                        var filePath = SA.outputData[c][0]; // outputData.outputImage
-                        if ( !filePath.isEmpty() )
-                        {
-                           filePath = File.changeSuffix( filePath, ".drz" );
-                           if ( !File.exists( filePath ) )
-                           {
-                              console.warningln( "** Warning: The drizzle data file does not exist after image registration: " + filePath );
-                              continue;
-                           }
-
-                           var file = new File;
-                           file.openForReading( filePath );
-                           var text = file.read( DataType_ByteArray, file.size ).utf8ToString();
-                           file.close();
-
-                           if ( text.indexOf( images[c] ) < 0 )
-                           {
-                              console.warningln( "** Warning: Invalid or corrupted drizzle data file: " + filePath );
-                              continue;
-                           }
-
-                           // Replace the alignment input image with our Bayer drizzle source image.
-                           text = text.replace( images[c], this.bayerDrizzleFiles[c] );
-
-                           filePath = bayerDrizzleDirectory
-                                          + '/' + File.extractName( filePath )
-                                          + "_b.drz";
-                           file.createForWriting( filePath );
-                           file.write( ByteArray.stringToUTF8( text ) );
-                           file.close();
-
-                           console.writeln( filePath );
-                        }
-                     }
-
-                     console.noteln( "<end><cbr><br>",
-                                     "************************************************************" );
-                     console.noteln( "* End generation of Bayer drizzle data files" );
-                     console.noteln( "************************************************************" );
-                  }
 
             if ( this.integrate )
             {
@@ -1359,24 +1201,32 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
    II.linearFitHigh         = this.linearFitHigh[imageType]
    II.clipLow               = true;
    II.clipHigh              = true;
+   II.largeScaleClipLow     = false;
+   II.largeScaleClipHigh    = false;
    II.generate64BitResult   = false;
+   II.noGUIMessages         = true;
+   II.useFileThreads        = true;
+   II.fileThreadOverload    = 1.00;
 
    switch ( imageType )
    {
    case ImageType.LIGHT:
-      II.normalization          = ImageIntegration.prototype.AdditiveWithScaling;
-      II.rejectionNormalization = ImageIntegration.prototype.Scale;
-      II.weightScale            = ImageIntegration.prototype.WeightScale_IKSS;
+      II.normalization                     = ImageIntegration.prototype.AdditiveWithScaling;
+      II.rejectionNormalization            = ImageIntegration.prototype.Scale;
+      II.weightScale                       = ImageIntegration.prototype.WeightScale_IKSS;
       break;
    case ImageType.FLAT:
-      II.normalization          = ImageIntegration.prototype.Multiplicative;
-      II.rejectionNormalization = ImageIntegration.prototype.EqualizeFluxes;
-      II.weightScale            = ImageIntegration.prototype.WeightScale_IKSS;
+      II.normalization                     = ImageIntegration.prototype.Multiplicative;
+      II.rejectionNormalization            = ImageIntegration.prototype.EqualizeFluxes;
+      II.weightScale                       = ImageIntegration.prototype.WeightScale_IKSS;
+      II.largeScaleClipHigh                = this.flatsLargeScaleRejection;
+      II.largeScaleClipHighProtectedLayers = this.flatsLargeScaleRejectionLayers;
+      II.largeScaleClipHighGrowth          = this.flatsLargeScaleRejectionGrowth;
       break;
    default:
-      II.normalization          = ImageIntegration.prototype.NoNormalization;
-      II.rejectionNormalization = ImageIntegration.prototype.NoRejectionNormalization;
-      II.weightScale            = ImageIntegration.prototype.WeightScale_MAD;
+      II.normalization                     = ImageIntegration.prototype.NoNormalization;
+      II.rejectionNormalization            = ImageIntegration.prototype.NoRejectionNormalization;
+      II.weightScale                       = ImageIntegration.prototype.WeightScale_MAD;
       break;
    }
 
@@ -1444,7 +1294,7 @@ StackEngine.prototype.doIntegrate = function( frameGroup )
    window.keywords = keywords.concat( window.keywords );
 
    var filePath = File.existingDirectory( this.outputDirectory + "/master" );
-   filePath += '/' + StackEngine.imageTypeToString( imageType ) + postfix + this.outputSuffix;
+   filePath += '/' + StackEngine.imageTypeToString( imageType ) + postfix + ".xisf";
 
    console.noteln( "<end><cbr><br>* Writing master " + StackEngine.imageTypeToString( imageType ) + " frame:" );
    console.noteln( "<raw>" + filePath + "</raw>" );
@@ -1583,7 +1433,7 @@ StackEngine.prototype.doCalibrate = function( frameGroup )
    IC.darkOptimizationThreshold = this.darkOptimizationThreshold; // ### deprecated - retained for compatibility
    IC.darkOptimizationLow       = this.darkOptimizationLow;
    IC.darkOptimizationWindow    = this.darkOptimizationWindow;
-   IC.outputExtension           = this.outputSuffix;
+   IC.outputExtension           = ".xisf";
    IC.outputPrefix              = "";
    IC.outputPostfix             = "_c";
    IC.evaluateNoise             = this.evaluateNoise && imageType == ImageType.LIGHT && !this.cfaImages; // for CFAs, evaluate noise after debayer
@@ -1788,27 +1638,31 @@ StackEngine.prototype.loadSettings = function()
          this.linearFitHigh[i] = o;
    }
 
-   if ( (o = load( "calibrateOnly",              DataType_Boolean )) != null )
+   if ( (o = load( "flatsLargeScaleRejection",       DataType_Boolean )) != null )
+      this.flatsLargeScaleRejection = o;
+   if ( (o = load( "flatsLargeScaleRejectionLayers", DataType_Int32 )) != null )
+      this.flatsLargeScaleRejectionLayers = o;
+   if ( (o = load( "flatsLargeScaleRejectionGrowth", DataType_Int32 )) != null )
+      this.flatsLargeScaleRejectionGrowth = o;
+   if ( (o = load( "calibrateOnly",                  DataType_Boolean )) != null )
       this.calibrateOnly = o;
-   if ( (o = load( "generateDrizzleData",        DataType_Boolean )) != null )
+   if ( (o = load( "generateDrizzleData",            DataType_Boolean )) != null )
       this.generateDrizzleData = o;
-   if ( (o = load( "bayerDrizzle",               DataType_Boolean )) != null )
-      this.bayerDrizzle = o;
-   if ( (o = load( "bayerPattern",               DataType_Int32 )) != null )
+   if ( (o = load( "bayerPattern",                   DataType_Int32 )) != null )
       this.bayerPattern = o;
-   if ( (o = load( "debayerMethod",              DataType_Int32 )) != null )
+   if ( (o = load( "debayerMethod",                  DataType_Int32 )) != null )
       this.debayerMethod = o;
-   if ( (o = load( "pixelInterpolation",         DataType_Int32 )) != null )
+   if ( (o = load( "pixelInterpolation",             DataType_Int32 )) != null )
       this.pixelInterpolation = o;
-   if ( (o = load( "clampingThreshold",          DataType_Float )) != null )
+   if ( (o = load( "clampingThreshold",              DataType_Float )) != null )
       this.clampingThreshold = o;
-   if ( (o = load( "maxStars",                   DataType_Int32 )) != null )
+   if ( (o = load( "maxStars",                       DataType_Int32 )) != null )
       this.maxStars = o;
-   if ( (o = load( "noiseReductionFilterRadius", DataType_Int32 )) != null )
+   if ( (o = load( "noiseReductionFilterRadius",     DataType_Int32 )) != null )
       this.noiseReductionFilterRadius = o;
-   if ( (o = load( "useTriangleSimilarity",      DataType_Boolean )) != null )
+   if ( (o = load( "useTriangleSimilarity",          DataType_Boolean )) != null )
       this.useTriangleSimilarity = o;
-   if ( (o = load( "integrate",                  DataType_Boolean )) != null )
+   if ( (o = load( "integrate",                      DataType_Boolean )) != null )
       this.integrate = o;
 };
 
@@ -1824,18 +1678,18 @@ StackEngine.prototype.saveSettings = function()
       save( key + '_' + index.toString(), type, value );
    }
 
-   save( "cfaImages",                 DataType_Boolean, this.cfaImages );
-   save( "upBottomFITS",              DataType_Boolean, this.upBottomFITS );
-   save( "exportCalibrationFiles",    DataType_Boolean, this.exportCalibrationFiles );
-   save( "saveProcessLog",            DataType_Boolean, this.saveProcessLog );
-   save( "generateRejectionMaps",     DataType_Boolean, this.generateRejectionMaps );
-   save( "optimizeDarks",             DataType_Boolean, this.optimizeDarks );
-   save( "darkOptimizationLow",       DataType_Float,   this.darkOptimizationLow );
-   save( "darkOptimizationWindow",    DataType_Int32,   this.darkOptimizationWindow );
-   save( "darkExposureTolerance",     DataType_Float,   this.darkExposureTolerance );
-   save( "evaluateNoise",             DataType_Boolean, this.evaluateNoise );
+   save( "cfaImages",              DataType_Boolean, this.cfaImages );
+   save( "upBottomFITS",           DataType_Boolean, this.upBottomFITS );
+   save( "exportCalibrationFiles", DataType_Boolean, this.exportCalibrationFiles );
+   save( "saveProcessLog",         DataType_Boolean, this.saveProcessLog );
+   save( "generateRejectionMaps",  DataType_Boolean, this.generateRejectionMaps );
+   save( "optimizeDarks",          DataType_Boolean, this.optimizeDarks );
+   save( "darkOptimizationLow",    DataType_Float,   this.darkOptimizationLow );
+   save( "darkOptimizationWindow", DataType_Int32,   this.darkOptimizationWindow );
+   save( "darkExposureTolerance",  DataType_Float,   this.darkExposureTolerance );
+   save( "evaluateNoise",          DataType_Boolean, this.evaluateNoise );
 
-   save( "overscanEnabled",           DataType_Boolean, this.overscan.enabled );
+   save( "overscanEnabled",        DataType_Boolean, this.overscan.enabled );
    for ( var i = 0; i < 4; ++i )
    {
       saveIndexed( "overscanRegionEnabled", i, DataType_Boolean, this.overscan.overscan[i].enabled );
@@ -1867,22 +1721,23 @@ StackEngine.prototype.saveSettings = function()
       saveIndexed( "linearFitHigh",  i, DataType_Float, this.linearFitHigh[i] );
    }
 
-   save( "calibrateOnly",              DataType_Boolean, this.calibrateOnly );
-   save( "generateDrizzleData",        DataType_Boolean, this.generateDrizzleData );
-   save( "bayerDrizzle",               DataType_Boolean, this.bayerDrizzle );
-   save( "bayerPattern",               DataType_Int32,   this.bayerPattern );
-   save( "debayerMethod",              DataType_Int32,   this.debayerMethod );
-   save( "pixelInterpolation",         DataType_Int32,   this.pixelInterpolation );
-   save( "clampingThreshold",          DataType_Float,   this.clampingThreshold );
-   save( "maxStars",                   DataType_Int32,   this.maxStars );
-   save( "noiseReductionFilterRadius", DataType_Int32,   this.noiseReductionFilterRadius );
-   save( "useTriangleSimilarity",      DataType_Boolean, this.useTriangleSimilarity );
-   save( "integrate",                  DataType_Boolean, this.integrate );
+   save( "flatsLargeScaleRejection",       DataType_Boolean, this.flatsLargeScaleRejection );
+   save( "flatsLargeScaleRejectionLayers", DataType_Int32,   this.flatsLargeScaleRejectionLayers );
+   save( "flatsLargeScaleRejectionGrowth", DataType_Int32,   this.flatsLargeScaleRejectionGrowth );
+   save( "calibrateOnly",                  DataType_Boolean, this.calibrateOnly );
+   save( "generateDrizzleData",            DataType_Boolean, this.generateDrizzleData );
+   save( "bayerPattern",                   DataType_Int32,   this.bayerPattern );
+   save( "debayerMethod",                  DataType_Int32,   this.debayerMethod );
+   save( "pixelInterpolation",             DataType_Int32,   this.pixelInterpolation );
+   save( "clampingThreshold",              DataType_Float,   this.clampingThreshold );
+   save( "maxStars",                       DataType_Int32,   this.maxStars );
+   save( "noiseReductionFilterRadius",     DataType_Int32,   this.noiseReductionFilterRadius );
+   save( "useTriangleSimilarity",          DataType_Boolean, this.useTriangleSimilarity );
+   save( "integrate",                      DataType_Boolean, this.integrate );
 };
 
 StackEngine.prototype.setDefaultParameters = function()
 {
-   this.outputSuffix = DEFAULT_OUTPUT_SUFFIX;
    this.outputDirectory = DEFAULT_OUTPUT_DIRECTORY;
    this.cfaImages = DEFAULT_CFA_IMAGES;
    this.upBottomFITS = DEFAULT_UP_BOTTOM_FITS;
@@ -1922,9 +1777,12 @@ StackEngine.prototype.setDefaultParameters = function()
       this.linearFitHigh[i] = 3.5;
    }
 
+   this.flatsLargeScaleRejection = DEFAULT_FLATS_LARGE_SCALE_REJECTION;
+   this.flatsLargeScaleRejectionLayers = DEFAULT_FLATS_LARGE_SCALE_LAYERS;
+   this.flatsLargeScaleRejectionGrowth = DEFAULT_FLATS_LARGE_SCALE_GROWTH;
+
    this.calibrateOnly = DEFAULT_CALIBRATE_ONLY;
    this.generateDrizzleData = DEFAULT_GENERATE_DRIZZLE_DATA;
-   this.bayerDrizzle = DEFAULT_BAYER_DRIZZLE;
 
    this.cosmeticCorrection = DEFAULT_COSMETIC_CORRECTION;
    this.cosmeticCorrectionTemplateId = DEFAULT_COSMETIC_CORRECTION_TEMPLATE;
@@ -1948,9 +1806,6 @@ StackEngine.prototype.importParameters = function()
    this.loadSettings();
 
    this.frameGroups.length = 0;
-
-   if ( Parameters.has( "outputSuffix" ) )
-      this.outputSuffix = Parameters.getString( "outputSuffix" );
 
    if ( Parameters.has( "outputDirectory" ) )
       this.outputDirectory = Parameters.getString( "outputDirectory" );
@@ -2069,14 +1924,20 @@ StackEngine.prototype.importParameters = function()
          this.linearFitHigh[i] = Parameters.getRealIndexed( "linearFitHigh", i );
    }
 
+   if ( Parameters.has( "flatsLargeScaleRejection" ) )
+      this.flatsLargeScaleRejection = Parameters.getBoolean( "flatsLargeScaleRejection" );
+
+   if ( Parameters.has( "flatsLargeScaleRejectionLayers" ) )
+      this.flatsLargeScaleRejectionLayers = Parameters.getInteger( "flatsLargeScaleRejectionLayers" );
+
+   if ( Parameters.has( "flatsLargeScaleRejectionGrowth" ) )
+      this.flatsLargeScaleRejectionGrowth = Parameters.getInteger( "flatsLargeScaleRejectionGrowth" );
+
    if ( Parameters.has( "calibrateOnly" ) )
       this.calibrateOnly = Parameters.getBoolean( "calibrateOnly" );
 
    if ( Parameters.has( "generateDrizzleData" ) )
       this.generateDrizzleData = Parameters.getBoolean( "generateDrizzleData" );
-
-   if ( Parameters.has( "bayerDrizzle" ) )
-      this.bayerDrizzle = Parameters.getBoolean( "bayerDrizzle" );
 
    if ( Parameters.has( "cosmeticCorrection" ) )
       this.cosmeticCorrection = Parameters.getBoolean( "cosmeticCorrection" );
@@ -2159,7 +2020,6 @@ StackEngine.prototype.exportParameters = function()
 
    Parameters.set( "version", VERSION );
 
-   Parameters.set( "outputSuffix",              this.outputSuffix );
    Parameters.set( "outputDirectory",           this.outputDirectory );
    Parameters.set( "cfaImages",                 this.cfaImages );
    Parameters.set( "upBottomFITS",              this.upBottomFITS );
@@ -2211,24 +2071,27 @@ StackEngine.prototype.exportParameters = function()
       Parameters.setIndexed( "linearFitHigh",  i, this.linearFitHigh[i] );
    }
 
-   Parameters.set( "calibrateOnly",                this.calibrateOnly );
-   Parameters.set( "generateDrizzleData",          this.generateDrizzleData );
-   Parameters.set( "bayerDrizzle",                 this.bayerDrizzle );
+   Parameters.set( "flatsLargeScaleRejection",       this.flatsLargeScaleRejection );
+   Parameters.set( "flatsLargeScaleRejectionLayers", this.flatsLargeScaleRejectionLayers );
+   Parameters.set( "flatsLargeScaleRejectionGrowth", this.flatsLargeScaleRejectionGrowth );
 
-   Parameters.set( "cosmeticCorrection",           this.cosmeticCorrection );
-   Parameters.set( "cosmeticCorrectionTemplateId", this.cosmeticCorrectionTemplateId );
+   Parameters.set( "calibrateOnly",                  this.calibrateOnly );
+   Parameters.set( "generateDrizzleData",            this.generateDrizzleData );
 
-   Parameters.set( "bayerPattern",                 this.bayerPattern );
-   Parameters.set( "debayerMethod",                this.debayerMethod );
+   Parameters.set( "cosmeticCorrection",             this.cosmeticCorrection );
+   Parameters.set( "cosmeticCorrectionTemplateId",   this.cosmeticCorrectionTemplateId );
 
-   Parameters.set( "pixelInterpolation",           this.pixelInterpolation );
-   Parameters.set( "clampingThreshold",            this.clampingThreshold );
-   Parameters.set( "maxStars",                     this.maxStars );
-   Parameters.set( "noiseReductionFilterRadius",   this.noiseReductionFilterRadius );
-   Parameters.set( "useTriangleSimilarity",        this.useTriangleSimilarity );
-   Parameters.set( "referenceImage",               this.referenceImage );
+   Parameters.set( "bayerPattern",                   this.bayerPattern );
+   Parameters.set( "debayerMethod",                  this.debayerMethod );
 
-   Parameters.set( "integrate",                    this.integrate );
+   Parameters.set( "pixelInterpolation",             this.pixelInterpolation );
+   Parameters.set( "clampingThreshold",              this.clampingThreshold );
+   Parameters.set( "maxStars",                       this.maxStars );
+   Parameters.set( "noiseReductionFilterRadius",     this.noiseReductionFilterRadius );
+   Parameters.set( "useTriangleSimilarity",          this.useTriangleSimilarity );
+   Parameters.set( "referenceImage",                 this.referenceImage );
+
+   Parameters.set( "integrate",                      this.integrate );
 
    if ( this.exportCalibrationFiles )
       for ( var i = 0; i < this.frameGroups.length; ++i )
@@ -2269,30 +2132,23 @@ StackEngine.prototype.runDiagnostics = function()
 
    try
    {
-      if ( this.outputSuffix.isEmpty() )
-         this.error( "No output file suffix specified." );
-      else if ( !this.outputSuffix.startsWith( '.' ) )
-         this.error( "Invalid output file suffix \'" + this.outputSuffix + "\'" );
-      else
+      try
       {
-         try
-         {
-            var F = new FileFormat( this.outputSuffix, false/*toRead*/, true/*toWrite*/ );
-            if ( F == null )
-               throw '';
-            if ( !F.canStoreFloat )
-               this.error( "The " + F.name + " format cannot store 32-bit floating point image data." );
-            if ( !F.canStoreKeywords )
-               this.warning( "The " + F.name + " format does not support keywords." );
-            if ( !F.canStoreProperties || !F.supportsViewProperties )
-               this.warning( "The " + F.name + " format does not support image properties." );
-            if ( F.isDeprecated )
-               this.warning( "Using a deprecated output file format: " + F.name );
-         }
-         catch ( x )
-         {
-            this.error( "No installed file format can write " + this.outputSuffix + " files." );
-         }
+         var F = new FileFormat( ".xisf", false/*toRead*/, true/*toWrite*/ );
+         if ( F == null )
+            throw '';
+         if ( !F.canStoreFloat )
+            this.error( "The " + F.name + " format cannot store 32-bit floating point image data." );
+         if ( !F.canStoreKeywords )
+            this.warning( "The " + F.name + " format does not support keywords." );
+         if ( !F.canStoreProperties || !F.supportsViewProperties )
+            this.warning( "The " + F.name + " format does not support image properties." );
+         if ( F.isDeprecated )
+            this.warning( "Using a deprecated output file format: " + F.name );
+      }
+      catch ( x )
+      {
+         this.error( "No installed file format can write " + ".xisf" + " files." );
       }
 
       if ( this.outputDirectory.isEmpty() )
@@ -2443,4 +2299,4 @@ StackEngine.prototype.getPath = function( filePath, imageType )
 };
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-engine.js - Released 2016/09/01 15:47:44 UTC
+// EOF BatchPreprocessing-engine.js - Released 2018-11-30T21:29:47Z

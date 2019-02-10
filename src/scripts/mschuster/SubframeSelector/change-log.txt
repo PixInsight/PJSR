@@ -3,6 +3,12 @@ SubframeSelector Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2018.11.05 - v1.12
+
+- Add minimum/maximum properties for SNRWeight, Eccentricity, FWHM. Contributed
+  by GitHub user; see: https://github.com/PixInsight/PJSR/pull/42
+
+-------------------------------------------------------------------------------
 2016.12.28 - v1.11
 
 - Disabled GUI messages from Crop process.

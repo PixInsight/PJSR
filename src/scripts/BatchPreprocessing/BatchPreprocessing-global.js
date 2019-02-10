@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// BatchPreprocessing-global.js - Released 2016/09/01 15:47:44 UTC
+// BatchPreprocessing-global.js - Released 2018-11-30T21:29:47Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of Batch Preprocessing Script version 1.43
+// This file is part of Batch Preprocessing Script version 1.47
 //
 // Copyright (c) 2012 Kai Wiechen
-// Copyright (c) 2012-2016 Pleiades Astrophoto S.L.
+// Copyright (c) 2012-2018 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -53,7 +53,7 @@
 
 // ----------------------------------------------------------------------------
 
-#define VERSION            "1.43"
+#define VERSION            "1.47"
 
 #define TITLE              "Batch Preprocessing Script"
 
@@ -62,7 +62,6 @@
 var ImageType = { UNKNOWN : -1, BIAS : 0, DARK : 1, FLAT : 2, LIGHT : 3 };
 
 // Default parameters
-#define DEFAULT_OUTPUT_SUFFIX                ".xisf"
 #define DEFAULT_OUTPUT_DIRECTORY             ""
 #define DEFAULT_CFA_IMAGES                   false
 #define DEFAULT_UP_BOTTOM_FITS               true
@@ -72,16 +71,18 @@ var ImageType = { UNKNOWN : -1, BIAS : 0, DARK : 1, FLAT : 2, LIGHT : 3 };
 #define DEFAULT_INTEGRATE                    true
 #define DEFAULT_DARK_OPTIMIZATION_WINDOW     1024
 #define DEFAULT_DARK_EXPOSURE_TOLERANCE      10
-#define DEFAULT_CFA_PATTERN                  Debayer.prototype.RGGB
+#define DEFAULT_CFA_PATTERN                  Debayer.prototype.Auto
 #define DEFAULT_DEBAYER_METHOD               Debayer.prototype.VNG
 #define DEFAULT_OPTIMIZE_DARKS               true
 #define DEFAULT_DARK_OPTIMIZATION_LOW        3.0
 #define DEFAULT_EVALUATE_NOISE               true
+#define DEFAULT_FLATS_LARGE_SCALE_REJECTION  false
+#define DEFAULT_FLATS_LARGE_SCALE_LAYERS     2
+#define DEFAULT_FLATS_LARGE_SCALE_GROWTH     2
 #define DEFAULT_COSMETIC_CORRECTION          false
 #define DEFAULT_COSMETIC_CORRECTION_TEMPLATE ""
 #define DEFAULT_CALIBRATE_ONLY               false
-#define DEFAULT_GENERATE_DRIZZLE_DATA        false
-#define DEFAULT_BAYER_DRIZZLE                false
+#define DEFAULT_GENERATE_DRIZZLE_DATA        true
 #define DEFAULT_SA_PIXEL_INTERPOLATION       StarAlignment.prototype.Auto
 #define DEFAULT_SA_CLAMPING_THRESHOLD        0.3
 #define DEFAULT_SA_MAX_STARS                 500
@@ -89,4 +90,4 @@ var ImageType = { UNKNOWN : -1, BIAS : 0, DARK : 1, FLAT : 2, LIGHT : 3 };
 #define DEFAULT_SA_USE_TRIANGLE_SIMILARITY   true
 
 // ----------------------------------------------------------------------------
-// EOF BatchPreprocessing-global.js - Released 2016/09/01 15:47:44 UTC
+// EOF BatchPreprocessing-global.js - Released 2018-11-30T21:29:47Z

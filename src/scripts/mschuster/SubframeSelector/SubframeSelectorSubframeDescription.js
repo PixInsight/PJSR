@@ -1,13 +1,13 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// SubframeSelectorSubframeDescription.js - Released 2016/12/28 00:00:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// SubframeSelectorSubframeDescription.js - Released 2018-11-05T16:53:08Z
+// ----------------------------------------------------------------------------
 //
-// This file is part of SubframeSelector Script version 1.11
+// This file is part of SubframeSelector Script version 1.12
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2018 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 function targetSubframeDescription(checked, selected, filePath) {
    this.checked = checked;
@@ -352,6 +352,30 @@ var evaluationDescriptionCompare = [
    ]
 ];
 
+function evaluationDescriptionStatistics() {
+   this.FWHMMinimum = Number.MAX_VALUE;
+   this.FWHMMaximum = Number.MIN_VALUE;
+   this.eccentricityMinimum = Number.MAX_VALUE;
+   this.eccentricityMaximum = Number.MIN_VALUE;
+   this.SNRWeightMinimum = Number.MAX_VALUE;
+   this.SNRWeightMaximum = Number.MIN_VALUE;
+}
+
+function generateEvaluationDescriptionStatistics(evaluationDescriptions) {
+   var statistics = new evaluationDescriptionStatistics();
+   evaluationDescriptions.forEach(function(description) {
+      if (description.FWHM < statistics.FWHMMinimum) statistics.FWHMMinimum = description.FWHM;
+      if (description.FWHM > statistics.FWHMMaximum) statistics.FWHMMaximum = description.FWHM;
+      if (description.eccentricity < statistics.eccentricityMinimum) statistics.eccentricityMinimum = description.eccentricity;
+      if (description.eccentricity > statistics.eccentricityMaximum) statistics.eccentricityMaximum = description.eccentricity;
+      if (description.SNRWeight < statistics.SNRWeightMinimum) statistics.SNRWeightMinimum = description.SNRWeight;
+      if (description.SNRWeight > statistics.SNRWeightMaximum) statistics.SNRWeightMaximum = description.SNRWeight;
+   });
+   return statistics;
+}
+
+var nullEvaluationDescriptionStatistics = new evaluationDescriptionStatistics();
+
 function SNRWeightFunction(meanDeviation, noise, cameraGain, cameraResolution) {
    return noise != 0 ? Math.pow(meanDeviation, 2.0) / Math.pow(noise, 2.0) : 0;
 }
@@ -572,5 +596,5 @@ function subframeCacheFlush() {
    }
 }
 
-// ****************************************************************************
-// EOF SubframeSelectorSubframeDescription.js - Released 2016/12/28 00:00:00 UTC
+// ----------------------------------------------------------------------------
+// EOF SubframeSelectorSubframeDescription.js - Released 2018-11-05T16:53:08Z

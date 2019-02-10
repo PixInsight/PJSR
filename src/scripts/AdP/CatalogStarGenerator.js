@@ -3,7 +3,7 @@
 
  Script for generating a simulation of an star field using Internet catalogs.
 
- Copyright (C) 2013-2015, Andres del Pozo
+ Copyright (C) 2013-2018, Andres del Pozo
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,14 @@
 
 /*
  Changelog:
+
+ 2.1.5: * The persistence to Parameters (icons) was incomplete
+
+ 2.1.4: * Better error management in the online catalogs
+
+ 2.1.3: * Changed the ambiguous term "Epoch" by "Obs date"
+
+ 2.1.2: * Added Gaia DR1 catalog
 
  2.1.1: * Increased the maximum size of the output image
 
@@ -74,7 +82,7 @@
 
 #feature-info  Script for generating a simulation of an star field using Internet catalogs.<br/>\
 <br/>\
-Copyright &copy;2013-15 Andr&eacute;s del Pozo
+Copyright &copy;2013-18 Andr&eacute;s del Pozo
 
 #include <pjsr/Sizer.jsh>
 #include <pjsr/FrameStyle.jsh>
@@ -86,7 +94,7 @@ Copyright &copy;2013-15 Andr&eacute;s del Pozo
 #include <pjsr/TextAlign.jsh>
 #include <pjsr/NumericControl.jsh>
 
-#define CSG_VERSION "2.1.1"
+#define CSG_VERSION "2.1.5"
 #define CSG_TITLE "Catalog Star Generator"
 #define CSG_SETTINGS_MODULE "CSGEN"
 
@@ -121,7 +129,7 @@ function CatStarGeneratorDialog(engine)
       "<p><b>Catalog Star Generator v" + CSG_VERSION +
          "</b> &mdash; A script for generating a simulation of an star field using Internet catalogs.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2013-15 Andr&eacute;s del Pozo</p>";
+         "Copyright &copy; 2013-18 Andr&eacute;s del Pozo</p>";
 
    // GEOMETRY
    this.sourceGeom_Frame = new Frame(this);
@@ -177,7 +185,7 @@ function CatStarGeneratorDialog(engine)
    this.copyGeom_Button.text = "Copy";
    this.copyGeom_Button.toolTip = "<p>Copies the geometry of the active image to the user defined geometry.<br/><br/>" +
       "The copied geometry can be different from the geometry of the image because the image has some parameters that" +
-      " can not be copied.</p>";
+      " cannot be copied.</p>";
    this.copyGeom_Button.enabled = engine.window != null;
    this.copyGeom_Button.icon = this.scaledResource( ":/icons/window-export.png" );
    this.copyGeom_Button.onClick = function ()
@@ -879,7 +887,14 @@ function CatStarGeneratorDialog(engine)
    {
       this.hasFocus = true;
 
-      engine.SaveParameters();
+      if (this.dialog.Validate())
+      {
+         var coords = this.dialog.coords_Editor.GetCoords();
+         engine.ra = coords.x;
+         engine.dec = coords.y;
+         engine.epoch = this.dialog.epoch_Editor.getEpoch();
+         engine.SaveParameters();
+      }
 
       this.pushed = false;
       this.dialog.newInstance();
@@ -1157,11 +1172,38 @@ function CatalogStarGenerator()
       Settings.remove(CSG_SETTINGS_MODULE);
    }
 
+   this._base_LoadParameters = this.LoadParameters;
+   this.LoadParameters = function ()
+   {
+      var catalogName = Parameters.getString(this.MakeParamsKey("catalogName"));
+      var catalog = __catalogRegister__.FindByName(catalogName);
+      if (catalog)
+         this.catalog = eval(catalog.constructor);
+
+      var catalog2Name = Parameters.getString(this.MakeParamsKey("catalog2Name"));
+      var catalog2 = __catalogRegister__.FindByName(catalog2Name);
+      if (catalog2)
+         this.catalog2 = eval(catalog2.constructor);
+
+      this._base_LoadParameters();
+   }
+
+   this._base_SaveParameters = this.SaveParameters;
+   this.SaveParameters = function ()
+   {
+      this._base_SaveParameters();
+      Parameters.set(this.MakeParamsKey("version"), CSG_VERSION);
+      Parameters.set(this.MakeParamsKey("catalogName"), this.catalog.name);
+      Parameters.set(this.MakeParamsKey("catalog2Name"), this.catalog2.name);
+   }
+
 
    this.LoadStars = function (catalog)
    {
       catalog.magMax = this.maxMagnitude;
       catalog.Load(this.metadata, this.vizierServer);
+      if(catalog.objects == null)
+         throw "Catalog error";
       var stars = new Array();
       for (var i = 0; i < catalog.objects.length; i++)
       {
@@ -1418,7 +1460,7 @@ function CatalogStarGenerator()
       if (!this.useImageMetadata)
          this.metadata = this.CreateUserMetadata();
       else if (this.metadata == null)
-         throw "The target image has not WCS coordinates.";
+         throw "The target image has no WCS coordinates.";
 
 
       var stars = this.LoadStars(this.catalog);
@@ -1509,6 +1551,9 @@ function CatalogStarGenerator()
       }
 
       targetW.mainView.endProcess();
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+      targetW.regenerateAstrometricSolution();
+#endif
 
       jsAbortable = abortableBackup;
       return targetW;

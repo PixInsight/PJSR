@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenMSVC9Projects.js - Released 2015/11/26 08:53:10 UTC
+// MakGenMSVC9Projects.js - Released 2019-01-20T14:05:16Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.109
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Generation of project files for Microsoft Visual C++ 2008 (.vcproj files).
@@ -78,12 +78,12 @@ function MSVCxx9( F, P )
    P.validate();
    P.validateMSVCxxBuild();
 
-   var buildDirectory = P.vccBuildDirectory( F.baseDirectory, 9 );
+   let buildDirectory = P.vccBuildDirectory( F.baseDirectory, 9 );
    if ( P.cleanUpPreviousBuilds )
       if ( File.directoryExists( buildDirectory ) )
          removeDirectory( buildDirectory );
 
-   var projectPath = buildDirectory + '/' + P.vccProject( 9 );
+   let projectPath = buildDirectory + '/' + P.vccProject( 9 );
 
    console.writeln( "<end><cbr><br>==> Generating VC++ 2008 project file:" );
    console.writeln( projectPath );
@@ -94,7 +94,7 @@ function MSVCxx9( F, P )
    createDirectoryIfNotExists( buildDirectory + "/Win32/Debug", true );
    createDirectoryIfNotExists( buildDirectory + "/x64/Debug", true );
 
-   var configurationType;
+   let configurationType;
    if ( P.isModule() || P.isDynamicLibrary() )
       configurationType = "2";
    else if ( P.isStaticLibrary() )
@@ -102,9 +102,9 @@ function MSVCxx9( F, P )
    else if ( P.isExecutable() || P.isCore() || P.isCoreAux() )
       configurationType = "1";
 
-   var includeDirectories = "&quot;$(PCLINCDIR)&quot;";
-   var includeDirectories32 = "";
-   var includeDirectories64 = "";
+   let includeDirectories = "&quot;$(PCLINCDIR)&quot;";
+   let includeDirectories32 = "";
+   let includeDirectories64 = "";
    if ( P.isCore() || P.isCoreAux() )
       includeDirectories += ";&quot;$(QTDIR)/include&quot;;&quot;$(QTDIR)/include/Qt&quot;;&quot;$(QTDIR)/mkspecs/win32-msvc2008&quot;";
    if ( P.isCore() )
@@ -114,11 +114,11 @@ function MSVCxx9( F, P )
       includeDirectories64 = ";&quot;$(PCLINCDIR)/js/windows/x64&quot;"; // ..
    }
    else
-      for ( var i = 0; i < P.extraIncludeDirs.length; ++i )
+      for ( let i = 0; i < P.extraIncludeDirs.length; ++i )
          includeDirectories += ";&quot;" + P.extraIncludeDirs[i] + "&quot;";
    includeDirectories = File.unixPathToWindows( includeDirectories );
 
-   var preprocessorDefinitions = "WIN32;_WINDOWS;__PCL_WINDOWS";
+   let preprocessorDefinitions = "WIN32;_WINDOWS;__PCL_WINDOWS";
    if ( P.isCore() )
    {
       preprocessorDefinitions += ";__PCL_BUILDING_PIXINSIGHT_APPLICATION;__PCL_QT_INTERFACE;" +
@@ -136,16 +136,16 @@ function MSVCxx9( F, P )
                      "QT_GUI_LIB;QT_CORE_LIB;" +
                      "QT_NO_QT_INCLUDE_WARN";
 
-      for ( var i = 0; i < P.extraDefinitions.length; ++i )
+      for ( let i = 0; i < P.extraDefinitions.length; ++i )
          preprocessorDefinitions += ";&quot;" + P.extraDefinitions[i] + "&quot;";
-      for ( var i = 0; i < P.winExtraDefinitions.length; ++i )
+      for ( let i = 0; i < P.winExtraDefinitions.length; ++i )
          preprocessorDefinitions += ";&quot;" + P.winExtraDefinitions[i] + "&quot;";
    }
 
-   var diagnosticsDefinition = (P.diagnostics != 0) ? ";__PCL_DIAGNOSTICS_LEVEL=" + P.diagnostics.toString() : "";
+   let diagnosticsDefinition = (P.diagnostics != 0) ? ";__PCL_DIAGNOSTICS_LEVEL=" + P.diagnostics.toString() : "";
 
-   var libraryDirectories32 = "$(PCLLIBDIR32)";
-   var libraryDirectories64 = "$(PCLLIBDIR64)";
+   let libraryDirectories32 = "$(PCLLIBDIR32)";
+   let libraryDirectories64 = "$(PCLLIBDIR64)";
    if ( P.isCore() || P.isCoreAux() )
    {
       // On Windows, we have all Qt libraries on PCL lib directories
@@ -153,7 +153,7 @@ function MSVCxx9( F, P )
       libraryDirectories64 += ";$(PCLLIBDIR64)/Qt";
    }
    if ( !P.isCore() )
-      for ( var i = 0; i < P.extraLibDirs.length; ++i )
+      for ( let i = 0; i < P.extraLibDirs.length; ++i )
       {
          libraryDirectories32 += ";&quot;" + P.extraLibDirs[i] + "\\x86&quot;";
          libraryDirectories64 += ";&quot;" + P.extraLibDirs[i] + "\\x64&quot;";
@@ -161,7 +161,7 @@ function MSVCxx9( F, P )
    libraryDirectories32 = File.unixPathToWindows( libraryDirectories32 );
    libraryDirectories64 = File.unixPathToWindows( libraryDirectories64 );
 
-   var libraries = "";
+   let libraries = "";
    if ( P.isCore() )
       libraries = "qtmain.lib QtCore4.lib QtGui4.lib QtXml4.lib QtSvg4.lib QtWebKit4.lib QtNetwork4.lib "
                 + "mozjs" + CORE_JS_ENGINE_VERSION + ".lib curl-pxi.lib lcms-pxi.lib PCL-pxi.lib "
@@ -173,23 +173,23 @@ function MSVCxx9( F, P )
                    + "imm32.lib shlwapi.lib Ws2_32.lib wldap32.lib Winmm.lib";
       if ( P.isModule() || P.isExecutable() )
          libraries = "PCL-pxi.lib";
-      for ( var i = 0; i < P.extraLibraries.length; ++i )
+      for ( let i = 0; i < P.extraLibraries.length; ++i )
       {
          // Make sure that all libraries carry the .lib suffix on Windows.
-         var extraLib = P.extraLibraries[i];
+         let extraLib = P.extraLibraries[i];
          if ( File.extractExtension( extraLib ).length == 0 )
             extraLib += ".lib";
          libraries += " &quot;" + extraLib + "&quot;";
       }
    }
 
-   var wholeProgramOptimization = P.isModule() || P.isDynamicLibrary();
+   let wholeProgramOptimization = P.isModule() || P.isDynamicLibrary();
 
    /*
     * Project file generation
     */
 
-   var f = new File;
+   let f = new File;
    f.createForWriting( projectPath );
 
    MSVCxxHeader( f, F, P, 9 );
@@ -459,8 +459,8 @@ function MSVCxx9( F, P )
     */
 
 #define PREPARE_FILE_ITERATION                           \
-   var prefix = File.unixPathToWindows( s.directory );   \
-   var indent = "         ";                             \
+   let prefix = File.unixPathToWindows( s.directory );   \
+   let indent = "         ";                             \
    if ( s.directory.length > 0 )                         \
    {                                                     \
       prefix += '\\';                                    \
@@ -475,13 +475,13 @@ function MSVCxx9( F, P )
    f.outTextLn( "         UniqueIdentifier=\"{4FC737F1-C7A5-4376-A066-2A32D752A2FF}\"" );
    f.outTextLn( "      >" );
 
-   for ( var i = 0; i < F.sources.length; ++i )
+   for ( let i = 0; i < F.sources.length; ++i )
    {
-      var s = F.sources[i];
+      let s = F.sources[i];
       if ( s.hasSourceFiles() )
       {
          PREPARE_FILE_ITERATION
-         for ( var j = 0; j < s.files.length; ++j )
+         for ( let j = 0; j < s.files.length; ++j )
             if ( P.isSourceFile( s.files[j] ) )
                outFileTag( f, indent, prefix, s.files[j] );
          if ( s.directory.length > 0 )
@@ -496,13 +496,13 @@ function MSVCxx9( F, P )
    f.outTextLn( "         UniqueIdentifier=\"{93995380-89BD-4b04-88EB-625FBE52EBFB}\"" );
    f.outTextLn( "      >" );
 
-   for ( var i = 0; i < F.sources.length; ++i )
+   for ( let i = 0; i < F.sources.length; ++i )
    {
-      var s = F.sources[i];
+      let s = F.sources[i];
       if ( s.hasHeaderFiles() )
       {
          PREPARE_FILE_ITERATION
-         for ( var j = 0; j < s.files.length; ++j )
+         for ( let j = 0; j < s.files.length; ++j )
             if ( isHeaderFile( s.files[j] ) )
                outFileTag( f, indent, prefix, s.files[j] );
          if ( s.directory.length > 0 )
@@ -517,13 +517,13 @@ function MSVCxx9( F, P )
    f.outTextLn( "         UniqueIdentifier=\"{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}\"" );
    f.outTextLn( "      >" );
 
-   for ( var i = 0; i < F.sources.length; ++i )
+   for ( let i = 0; i < F.sources.length; ++i )
    {
-      var s = F.sources[i];
+      let s = F.sources[i];
       if ( s.hasResourceFiles() )
       {
          PREPARE_FILE_ITERATION
-         for ( var j = 0; j < s.files.length; ++j )
+         for ( let j = 0; j < s.files.length; ++j )
             if ( isResourceFile( s.files[j] ) )
                outFileTag( f, indent, prefix, s.files[j] );
          if ( s.directory.length > 0 )
@@ -537,13 +537,13 @@ function MSVCxx9( F, P )
    {
       f.outTextLn( "      <Filter Name=\"Image Files\">" );
 
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.hasImageFiles() )
          {
             PREPARE_FILE_ITERATION
-            for ( var j = 0; j < s.files.length; ++j )
+            for ( let j = 0; j < s.files.length; ++j )
                if ( isImageFile( s.files[j] ) )
                   outFileTag( f, indent, prefix, s.files[j] );
             if ( s.directory.length > 0 )
@@ -567,4 +567,4 @@ function MSVCxx9( F, P )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenMSVC9Projects.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenMSVC9Projects.js - Released 2019-01-20T14:05:16Z

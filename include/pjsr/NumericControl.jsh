@@ -4,13 +4,13 @@
 //  / ____// /_/ / ___/ // _, _/   PixInsight JavaScript Runtime
 // /_/     \____/ /____//_/ |_|    PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// pjsr/NumericControl.jsh - Released 2015/11/09 15:21:11 UTC
+// pjsr/NumericControl.jsh - Released 2018-11-30T21:30:58Z
 // ----------------------------------------------------------------------------
 // This file is part of the PixInsight JavaScript Runtime (PJSR).
 // PJSR is an ECMA-262-5 compliant framework for development of scripts on the
 // PixInsight platform.
 //
-// Copyright (c) 2003-2015 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (c) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -97,22 +97,14 @@ function NumericEdit( parent )
    this.upperBound = 1.0;
    this.real = true;
    this.precision = 6;
+   this.fixed = false;
    this.scientific = false;
    this.sciTriggerExp = -1;
    this.autoEditWidth = true;
    this.onValueUpdated = null;
 
-   this.precisionForValue = function( precision, value )
-   {
-      value = Math.abs( value );
-      if ( value < 10 )
-         return precision;
-      return Math.max( 0, precision - Math.max( 0, Math.trunc( Math.log10( value ) ) ) )|0;
-   };
-
    this.label = new Label( this );
    this.label.textAlignment = TextAlign_Right|TextAlign_VertCenter;
-
    this.label.onMousePress = function()
    {
       if ( !this.parent.edit.readOnly )
@@ -124,18 +116,15 @@ function NumericEdit( parent )
    };
 
    this.edit = new Edit( this );
-
    this.edit.onEditCompleted = function()
    {
       this.parent.evaluate();
    };
-
    this.edit.onGetFocus = function()
    {
       //if ( !this.readOnly )
       //   this.selectAll();
    };
-
    this.edit.onLoseFocus = function()
    {
       if ( !this.readOnly )
@@ -153,9 +142,9 @@ function NumericEdit( parent )
 
    this.backgroundColor = 0; // transparent
 
-   this.setValue = function( val )
+   this.setValue = function( value )
    {
-      this.value = Math.range( this.real ? val : Math.round( val ), this.lowerBound, this.upperBound );
+      this.value = Math.range( this.real ? value : Math.round( value ), this.lowerBound, this.upperBound );
       this.updateControls();
    };
 
@@ -164,31 +153,28 @@ function NumericEdit( parent )
       this.edit.text = this.valueAsString( this.value );
    };
 
-   this.valueAsString = function( val )
+   this.valueAsString = function( value )
    {
-      let v = Math.range( val, this.lowerBound, this.upperBound );
+      value = Math.range( value, this.lowerBound, this.upperBound );
 
       if ( this.real )
       {
          if ( this.scientific )
-            if ( this.sciTriggerExp < 0 || v != 0 && (Math.abs( v ) > Math.pow10( +this.sciTriggerExp ) ||
-                                                      Math.abs( v ) < Math.pow10( -this.sciTriggerExp )) )
-               return format( "%.*le", this.precision, v );
+            if ( this.sciTriggerExp < 0 || value != 0 && (Math.abs( value ) > Math.pow10( +this.sciTriggerExp ) ||
+                                                          Math.abs( value ) < Math.pow10( -this.sciTriggerExp )) )
+               return format( "%.*e", this.precision, value );
 
-         return format( "%.*lf", this.precisionForValue( this.precision, v ), v );
+         return format( "%.*f", this.precisionForValue( this.precision, value ), value );
       }
 
-      return format( "%.0lf", v );
+      return format( "%.0f", value );
    };
 
    this.minEditWidth = function()
    {
       let n = Math.trunc( Math.max( this.valueAsString( this.lowerBound ).length,
                                     this.valueAsString( this.upperBound ).length ) );
-      let s = '';
-      for ( let i = 0; i <= n; ++i )
-         s += '0';
-      return this.edit.font.width( s ) + this.logicalPixelsToPhysical( 1+2+2+1 );
+      return this.edit.font.width( '0'.repeat( n+1 ) ) + this.logicalPixelsToPhysical( 1+2+2+1 );
    };
 
    this.adjustEditWidth = function()
@@ -197,11 +183,11 @@ function NumericEdit( parent )
       this.adjustToContents();
    };
 
-   this.setReal = function( r )
+   this.setReal = function( real )
    {
-      if ( this.real != r )
+      if ( this.real != real )
       {
-         this.real = r;
+         this.real = real;
          if ( !this.real )
             this.value = Math.round( this.value );
          if ( this.autoEditWidth )
@@ -210,26 +196,34 @@ function NumericEdit( parent )
       }
    };
 
-   this.setRange = function( l, u )
+   this.setRange = function( lr, ur )
    {
-      this.lowerBound = Math.min( l, u );
-      this.upperBound = Math.max( l, u );
+      this.lowerBound = Math.min( lr, ur );
+      this.upperBound = Math.max( lr, ur );
       if ( this.autoEditWidth )
          this.adjustEditWidth();
       this.setValue( this.value );
    };
 
-   this.setPrecision = function( n )
+   this.setPrecision = function( precision )
    {
-      this.precision = Math.range( n, 0, 15 );
+      this.precision = Math.range( precision, 0, 15 );
       if ( this.autoEditWidth )
          this.adjustEditWidth();
       this.updateControls();
    };
 
-   this.enableScientificNotation = function( s )
+   this.enableFixedPrecision = function( enable )
    {
-      this.scientific = s;
+      this.fixed = enable;
+      if ( this.autoEditWidth )
+         this.adjustEditWidth();
+      this.updateControls();
+   };
+
+   this.enableScientificNotation = function( enable )
+   {
+      this.scientific = enable;
       if ( this.autoEditWidth )
          this.adjustEditWidth();
       this.updateControls();
@@ -243,6 +237,17 @@ function NumericEdit( parent )
       this.updateControls();
    };
 
+   this.precisionForValue = function( precision, value )
+   {
+      if ( !this.fixed )
+      {
+         value = Math.abs( value );
+         if ( value >= 10 )
+            return Math.max( 0, precision - Math.max( 0, Math.trunc( Math.log10( value ) ) ) )|0;
+      }
+      return precision;
+   };
+
    this.evaluate = function()
    {
       if ( this.edit.readOnly ) // ?!
@@ -253,15 +258,15 @@ function NumericEdit( parent )
          let newValue;
          if ( this.real )
          {
-            newValue = parseFloat( this.edit.text );
+            newValue = this.edit.text.toNumber();
             newValue = Math.roundTo( newValue, this.precisionForValue( this.precision, newValue ) );
          }
          else
-            newValue = parseInt( this.edit.text );
+            newValue = this.edit.text.toInt();
 
          if ( this.lowerBound < this.upperBound )
             if ( newValue < this.lowerBound || newValue > this.upperBound )
-               throw new Error( format( "Numeric value out of range: %.16lg - valid range is [%.16lg,%.16lg]",
+               throw new Error( format( "Numeric value out of range: %.16g - valid range is [%.16g,%.16g]",
                                         newValue, this.lowerBound, this.upperBound ) );
          let changed = newValue != this.value;
          if ( changed )
@@ -294,6 +299,8 @@ function NumericControl( parent )
    this.__base_1__ = NumericEdit;
    this.__base_1__( parent );
 
+   this.exponential = false;
+
    this.slider = new HorizontalSlider( this );
    this.slider.setRange( 0, 50 );
    this.slider.setScaledMinWidth( 50+16 );
@@ -302,7 +309,6 @@ function NumericControl( parent )
    this.slider.tickInterval = 5;
    this.slider.tickStyle = TickStyle_NoTicks;
    this.slider.focusStyle = FocusStyle_Click;
-
    this.slider.onGetFocus = function()
    {
       if ( !this.parent.edit.readOnly )
@@ -311,33 +317,50 @@ function NumericControl( parent )
          this.parent.edit.selectAll();
       }
    };
-
-   this.slider.onValueUpdated = function( val )
+   this.slider.onValueUpdated = function( sliderValue )
    {
-      let d = this.maxValue - this.minValue;
-      let newValue = Math.roundTo(
-         this.parent.lowerBound + (this.parent.upperBound - this.parent.lowerBound)*((val - this.minValue)/d),
-         this.parent.real ? Math.max( 0, Math.trunc( Math.log10( d ) ) ) : 0 );
-
+      let newValue = this.parent.sliderValueToControl( sliderValue );
       if ( newValue != this.parent.value )
       {
-         this.parent.setValue( newValue );
+         this.parent.value = newValue;
+         this.parent.edit.text = this.parent.valueAsString( newValue );
          if ( this.parent.onValueUpdated )
-            this.parent.onValueUpdated( this.parent.value );
+            this.parent.onValueUpdated( newValue );
       }
    };
 
    this.sizer.add( this.slider, 100 );
    this.adjustToContents();
 
+   this.sliderValueToControl = function( sliderValue )
+   {
+      let sliderMinValue = this.slider.minValue;
+      let sliderMaxValue = this.slider.maxValue;
+      let sliderDelta = sliderMaxValue - sliderMinValue;
+      let sliderNormValue = (sliderValue - sliderMinValue)/sliderDelta;
+      return Math.range( Math.roundTo( this.exponential ?
+                                 (1 + this.lowerBound)*Math.exp( Math.ln( (1 + this.upperBound)/(1 + this.lowerBound) )*sliderNormValue ) - 1 :
+                                 this.lowerBound + (this.upperBound - this.lowerBound)*sliderNormValue,
+                              this.real ? Math.max( 0, Math.trunc( Math.log10( sliderDelta ) ) ) : 0 ), this.lowerBound, this.upperBound );
+   };
+
+   this.controlValueToSlider = function( value )
+   {
+      let sliderMinValue = this.slider.minValue;
+      let sliderMaxValue = this.slider.maxValue;
+      let sliderDelta = sliderMaxValue - sliderMinValue;
+      return Math.range( Math.round( sliderMinValue + sliderDelta*(this.exponential ?
+                                 Math.ln( (1 + value)/(1 + this.lowerBound) )/Math.ln( (1 + this.upperBound)/(1 + this.lowerBound) ) :
+                                 (value - this.lowerBound)/(this.upperBound - this.lowerBound)) ),
+                              sliderMinValue, sliderMaxValue );
+   };
+
    // Override NumericEdit.updateControls
    this.updateEditControls = this.updateControls;
    this.updateControls = function()
    {
       this.updateEditControls();
-      this.slider.value = this.slider.minValue +
-               Math.round( (this.value - this.lowerBound)/(this.upperBound - this.lowerBound)*
-                           (this.slider.maxValue - this.slider.minValue) );
+      this.slider.value = this.controlValueToSlider( this.value );
    };
 }
 
@@ -348,4 +371,4 @@ NumericControl.prototype = new NumericEdit;
 #endif   // __PJSR_NumericControl_jsh
 
 // ----------------------------------------------------------------------------
-// EOF pjsr/NumericControl.jsh - Released 2015/11/09 15:21:11 UTC
+// EOF pjsr/NumericControl.jsh - Released 2018-11-30T21:30:58Z

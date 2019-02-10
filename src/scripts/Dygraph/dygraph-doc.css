@@ -1,0 +1,372 @@
+/*
+ * PixInsight PJSR/PCL Development Platform
+ *
+ * Style sheet for dynamically generated graph documents.
+ * Updated 2017 June 21
+ *
+ * Copyright (c) 2017 Pleiades Astrophoto S.L. All Rights Reserved.
+ */
+
+/*
+ * Open Sans Font
+ */
+
+/* Open Sans Light */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-Light.ttf') format('truetype');
+   font-weight: 300;
+   font-style: normal;
+}
+
+/* Open Sans Light Italic */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-LightItalic.ttf') format('truetype');
+   font-weight: 300;
+   font-style: italic;
+}
+
+/* Open Sans Regular */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-Regular.ttf') format('truetype');
+   font-weight: normal;
+   font-style: normal;
+}
+
+/* Open Sans Regular Italic */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-Italic.ttf') format('truetype');
+   font-weight: normal;
+   font-style: italic;
+}
+
+/* Open Sans Semibold */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-Semibold.ttf') format('truetype');
+   font-weight: 500;
+   font-style: normal;
+}
+
+/* Open Sans Semibold Italic */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-SemiboldItalic.ttf') format('truetype');
+   font-weight: 500;
+   font-style: italic;
+}
+
+/* Open Sans Bold */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-Bold.ttf') format('truetype');
+   font-weight: bold;
+   font-style: normal;
+}
+
+/* Open Sans Bold Italic */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-BoldItalic.ttf') format('truetype');
+   font-weight: bold;
+   font-style: italic;
+}
+
+/* Open Sans Extrabold */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-ExtraBold.ttf') format('truetype');
+   font-weight: 800;
+   font-style: normal;
+}
+
+/* Open Sans Extrabold Italic */
+@font-face {
+   font-family: 'OpenSans';
+   src: url('../../../rsc/fonts/OpenSans/ttf/OpenSans-ExtraBoldItalic.ttf') format('truetype');
+   font-weight: 800;
+   font-style: italic;
+}
+
+/* -------------------------------------------------------------------------- */
+
+/*
+ * DejaVu Sans Font
+ */
+
+/* DejaVu Sans */
+@font-face {
+   font-family: 'DejaVu Sans';
+   src: url('../../../rsc/fonts/DejaVu/ttf/DejaVuSans.ttf') format('truetype');
+   font-weight: normal;
+   font-style: normal;
+}
+
+/* DejaVu Sans Italic */
+@font-face {
+   font-family: 'DejaVu Sans';
+   src: url('../../../rsc/fonts/DejaVu/ttf/DejaVuSans-Oblique.ttf') format('truetype');
+   font-weight: normal;
+   font-style: italic;
+}
+
+/* DejaVu Sans Bold */
+@font-face {
+   font-family: 'DejaVu Sans';
+   src: url('../../../rsc/fonts/DejaVu/ttf/DejaVuSans-Bold.ttf') format('truetype');
+   font-weight: bold;
+   font-style: normal;
+
+}
+
+/* DejaVu Sans Bold Italic */
+@font-face {
+   font-family: 'DejaVu Sans';
+   src: url('../../../rsc/fonts/DejaVu/ttf/DejaVuSans-BoldOblique.ttf') format('truetype');
+   font-weight: bold;
+   font-style: italic;
+}
+
+/* DejaVu Sans ExtraLight */
+@font-face {
+   font-family: 'DejaVu Sans';
+   src: url('../../../rsc/fonts/DejaVu/ttf/DejaVuSans-ExtraLight.ttf') format('truetype');
+   font-weight: 300;
+   font-style: normal;
+}
+
+/* -------------------------------------------------------------------------- */
+
+/*
+ * DejaVu Sans Mono Font
+ */
+
+/* DejaVu Sans Mono */
+@font-face {
+   font-family: 'DejaVu Sans Mono';
+   src: url('../../../rsc/fonts/DejaVu/ttf/DejaVuSansMono.ttf') format('truetype');
+   font-weight: normal;
+   font-style: normal;
+}
+
+/* DejaVu Sans Mono Italic */
+@font-face {
+   font-family: 'DejaVu Sans Mono';
+   src: url('../../../rsc/fonts/DejaVu/ttf/DejaVuSansMono-Oblique.ttf') format('truetype');
+   font-weight: normal;
+   font-style: italic;
+}
+
+/* DejaVu Sans Mono Bold */
+@font-face {
+   font-family: 'DejaVu Sans Mono';
+   src: url('../../../rsc/fonts/DejaVu/ttf/DejaVuSansMono-Bold.ttf') format('truetype');
+   font-weight: bold;
+   font-style: normal;
+
+}
+
+/* DejaVu Sans Mono Bold Italic */
+@font-face {
+   font-family: 'DejaVu Sans Mono';
+   src: url('../../../rsc/fonts/DejaVu/ttf/DejaVuSansMono-BoldOblique.ttf') format('truetype');
+   font-weight: bold;
+   font-style: italic;
+}
+
+/* -------------------------------------------------------------------------- */
+
+body {
+   margin: 0px;
+   padding: 1em;
+   height: 100%;
+   font-family: "DejaVu Sans",Verdana,Arial,Helvetica,sans-serif;
+   font-size: 10pt;
+   font-weight: normal;
+   line-height: 1.25em;
+   color: #000000;
+   background: #ffffff;
+}
+
+a {
+   text-decoration: none;
+   color: #3333ff;
+}
+a:visited {
+}
+a:active {
+}
+a:hover {
+   text-decoration: underline;
+}
+
+strong, b {
+   font-weight: bold;
+}
+strong strong {
+   font-weight: normal;
+}
+
+em, i {
+   font-style: italic;
+}
+em em {
+   font-style: normal;
+}
+
+p {
+   margin-top: 1em;
+   margin-bottom: 1em;
+}
+
+ul, ol {
+   position: relative;
+   left: 1em;
+   padding-left: 1em;
+   margin-top: 1em;
+   margin-bottom: 1em;
+   list-style-position: outside;
+}
+
+ul {
+   list-style-type: square;
+}
+
+li {
+   margin-top: 0.25em;
+   margin-bottom: 0.25em;
+}
+
+dl dl {
+   margin-left: 2em;
+}
+dt {
+   font-weight: bold;
+}
+dd {
+   margin-left: 2em;
+   margin-top: 0.4em;
+   margin-bottom: 1em;
+}
+
+h1 {
+   font-family: OpenSans,"DejaVu Sans",Verdana,Arial,Helvetica,sans-serif;
+   font-size: 24pt;
+   font-weight: 400; /* regular */
+   line-height: 1.2em;
+   letter-spacing: -1px;
+   margin-top: 1em;
+   margin-bottom: 0.5em;
+   color: #0066ff;
+}
+h2 {
+   font-family: OpenSans,"DejaVu Sans",Verdana,Arial,Helvetica,sans-serif;
+   font-size: 18pt;
+   font-weight: 400; /* regular */
+   line-height: 1.2em;
+   letter-spacing: -1px;
+   margin-top: 1.5em;
+   color: #0066ff;
+}
+h3 {
+   font-family: OpenSans,"DejaVu Sans",Verdana,Arial,Helvetica,sans-serif;
+   font-size: 16pt;
+   font-weight: 400; /* regular */
+   line-height: 1.2em;
+   letter-spacing: -0.5px;
+   color: #0066ff;
+}
+h4 {
+   font-family: OpenSans,"DejaVu Sans",Verdana,Arial,Helvetica,sans-serif;
+   font-size: 12pt;
+   font-weight: 500; /* semi-bold */
+   line-height: 1.2em;
+   color: #0066ff;
+}
+h5 {
+   font-family: OpenSans,"DejaVu Sans",Verdana,Arial,Helvetica,sans-serif;
+   font-size: 11pt;
+   font-weight: 500; /* semi-bold */
+   line-height: 1.2em;
+   color: #990000;
+}
+
+img {
+   border: none;
+   display: inline;
+   margin: 0;
+   padding: 0;
+}
+img.block {
+   display: block;
+}
+
+hr {
+   border: none;
+   background: #969696;
+   color: #969696;
+   width: 100%;
+   height: 2px;
+}
+hr.separator {
+   margin-top: 2em;
+   margin-bottom: 2em;
+   background: #d0d0d0;
+   color: #d0d0d0;
+}
+
+table {
+   border-collapse: collapse;
+}
+tr:nth-child(odd) {
+   background-color: #ebebeb;
+}
+tr:nth-child(even) {
+   background-color: #fbfbfb;
+}
+caption {
+   color: #ffffff;
+   background-color: #a0a0a0;
+   border-top: 1px solid #a0a0a0;
+   border-left: 1px solid #a0a0a0;
+   border-right: 1px solid #a0a0a0;
+   border-bottom: 1px solid #eeeeee;
+   font-size: 90%;
+   font-style: normal;
+   text-align: center;
+   padding: 0.15em;
+}
+th {
+   color: #ffffff;
+   background-color: #a0a0a0;
+   border: 1px solid #eeeeee;
+   border-top: 1px solid #a0a0a0;
+   font-size: 90%;
+   text-align: left;
+   padding-top: 0.30em;
+   padding-bottom: 0.30em;
+   padding-left: 0.55em;
+   padding-right: 0.55em;
+}
+th:first-child {
+   border-left: 1px solid #a0a0a0;
+}
+th:last-child {
+   border-right: 1px solid #a0a0a0;
+}
+td {
+   border: 1px solid #a0a0a0;
+   padding-top: 0.50em;
+   padding-bottom: 0.50em;
+   padding-left: 0.55em;
+   padding-right: 0.55em;
+}
+
+pre, code {
+   font-family: "DejaVu Sans Mono","Courier New",Courier,monospace;
+   font-size: 95%;
+   white-space: pre;
+}

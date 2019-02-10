@@ -1,0 +1,1 @@
+This file is part of LocalFuzzyHistogramHyperbolization Script version 1.10

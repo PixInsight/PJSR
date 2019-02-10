@@ -1,10 +1,10 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// PIDocSyntaxHighlighters.js - Released 2017/01/23 20:54:58 UTC
+// PIDocSyntaxHighlighters.js - Released 2017-10-11T18:41:38Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Documentation Compiler Script version 1.6.2
+// This file is part of PixInsight Documentation Compiler Script version 1.6.3
 //
 // Copyright (c) 2010-2017 Pleiades Astrophoto S.L.
 //
@@ -852,4 +852,4 @@ function PIDocSyntaxHighlighter()
 PIDocSyntaxHighlighter.prototype = new SyntaxHighlighter;
 
 // ----------------------------------------------------------------------------
-// EOF PIDocSyntaxHighlighters.js - Released 2017/01/23 20:54:58 UTC
+// EOF PIDocSyntaxHighlighters.js - Released 2017-10-11T18:41:38Z

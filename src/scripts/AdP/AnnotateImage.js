@@ -1,9 +1,9 @@
-﻿/*
+/*
    Annotate Image
 
    Annotation of astronomical images.
 
-   Copyright (C) 2012-2016, Andres del Pozo
+   Copyright (C) 2012-2018, Andres del Pozo
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,14 @@
 
 /*
    Changelog:
+
+   1.9.5:* AnnotateImage can now be used from another script
+
+   1.9.4:* Better error management in the online catalogs
+
+   1.9.3:* Changed the ambiguous term "Epoch" by "Obs date"
+
+   1.9.2:* Added Gaia DR1 and APASS DR9 catalogs
 
    1.9.1:* Added test for too big images (>0.5GigaPixels)
 
@@ -169,7 +177,7 @@
 
 #feature-info  A script for annotating astronomical images.<br/>\
                <br/>\
-               Copyright &copy; 2012-2016 Andr&eacute;s del Pozo
+               Copyright &copy; 2012-2018 Andr&eacute;s del Pozo
 
 #include <pjsr/DataType.jsh>
 #include <pjsr/FontFamily.jsh>
@@ -186,10 +194,12 @@
 #include <pjsr/SampleType.jsh>
 #include <pjsr/ColorSpace.jsh>
 
-#define VERSION "1.9.1"
+#define VERSION "1.9.5"
 #define TITLE "Annotate Image"
-#define SETTINGS_MODULE "ANNOT"
+#define ANNOT_SETTINGS_MODULE "ANNOT"
 
+#ifndef USE_ANNOTATE_LIBRARY
+#define SETTINGS_MODULE "ANNOT"
 #include "WCSmetadata.jsh"
 #include "SearchCoordinatesDialog.js"
 #include "CommonUIControls.js"
@@ -197,6 +207,7 @@
 #include "AstronomicalCatalogs.jsh"
 //#include "SpectrophotometricCatalogs.js"
 #include "PreviewControl.js"
+#endif
 
 // Output modes
 #define Output_Image    0  // Image annotated
@@ -468,7 +479,7 @@ function Layer()
       this.layerName = null;
    this.__base__ = ObjectWithSettings;
    this.__base__(
-      SETTINGS_MODULE,
+      ANNOT_SETTINGS_MODULE,
       this.layerName,
       new Array(
          [ "visible", DataType_Boolean ],
@@ -477,7 +488,7 @@ function Layer()
    );
 
    this.visible = true;
-   this.gprops = new GraphicProperties( SETTINGS_MODULE, this.layerName );
+   this.gprops = new GraphicProperties( ANNOT_SETTINGS_MODULE, this.layerName );
 
    this.GetObjects = function ()
    {
@@ -1010,7 +1021,10 @@ function CatalogLayer(catalog)
       this.catalog.Load(metadata, mirrorServer);
       // "objects" stores a shallow duplicate of the array of objects of the
       // catalog. RemoveDuplicates removes stars from this array.
-      this.objects = this.catalog.objects.slice();
+      if(this.catalog.objects)
+         this.objects = this.catalog.objects.slice();
+      else
+         this.objects = null;
    }
 
    this.Validate = function ()
@@ -1047,6 +1061,8 @@ function CatalogLayer(catalog)
    this.Draw = function (g, metadata, bounds, imageWnd, graphicsScale)
    {
       var objects = this.GetObjects();
+      if(objects==null)
+         return;
       var penMarker = new Pen(this.gprops.lineColor, this.gprops.lineWidth * graphicsScale);
       var penLabel = new Pen(this.gprops.labelColor, 0);
       var font = new Font(this.gprops.labelFace, this.gprops.labelSize * graphicsScale);
@@ -1738,7 +1754,7 @@ function AnnotateDialog(engine)
          "The script requires the image to have coordinates stored in FITS header keywords following the WCS convention.<br/>" +
          "The Image Plate Solver script can be used to generate these coordinates and keywords.<br/>" +
          "<br/>" +
-         "Copyright &copy; 2012-2016 Andr&eacute;s del Pozo</p>";
+         "Copyright &copy; 2012-2018 Andr&eacute;s del Pozo</p>";
 
    // Layers
    this.layer_TreeBox = new TreeBox(this);
@@ -2253,7 +2269,7 @@ function AnnotationEngine()
 {
    this.__base__ = ObjectWithSettings;
    this.__base__(
-      SETTINGS_MODULE,
+      ANNOT_SETTINGS_MODULE,
       "engine",
       new Array(
          [ "vizierServer", DataType_String ],
@@ -2291,14 +2307,14 @@ function AnnotationEngine()
       this.metadata.ExtractMetadata(w);
 
       if (this.metadata.ref_I_G == null)
-         throw Error("The image has not WCS coordinates");
+         throw Error("The image has no WCS coordinates");
 
       if (this.metadata.epoch)
          this.epoch = this.metadata.epoch;
       this.metadata.Print();
 
       if(this.metadata.width * this.metadata.height *4 >= 2*1024*1024*1024)
-         throw Error("The script can not annotate images bigger than 536,870,912 pixels");
+         throw Error("The script cannot annotate images bigger than 536,870,912 pixels");
    };
 
    this.SetDefaults = function ()
@@ -2414,7 +2430,7 @@ function AnnotationEngine()
 
    this.ResetSettings = function ()
    {
-      Settings.remove(SETTINGS_MODULE);
+      Settings.remove(ANNOT_SETTINGS_MODULE);
    }
 
 
@@ -2485,6 +2501,7 @@ function AnnotationEngine()
 
    this.Render = function ()
    {
+      var targetW = null;
       if (this.epoch)
          this.metadata.epoch = this.epoch;
       // Load data from catalogs
@@ -2538,7 +2555,7 @@ function AnnotationEngine()
             bmp.fill(0x00000000);
          var g = new VectorGraphics(bmp);
          if (!g.isPainting)
-            throw Error("The script can not draw on the image");
+            throw Error("The script cannot draw on the image");
 
          console.writeln("Rendering annotation");
          this.RenderGraphics(g, width, height);
@@ -2547,7 +2564,7 @@ function AnnotationEngine()
          {
             // if ( this.window.mainView.image.colorSpace != ColorSpace_RGB )
             // console.writeln("<end><cbr><b>WARNING</b>: The image is not RGB so the annotation will lose the colors");
-            this.window.mainView.beginProcess(UndoFlag_All);
+            this.window.mainView.beginProcess(UndoFlag_PixelData);
             if (this.window.mainView.image.colorSpace != ColorSpace_RGB)
             {
                var convertRGB = new ConvertToRGBColor();
@@ -2560,7 +2577,7 @@ function AnnotationEngine()
          {
             var newid = this.window.mainView.fullId + "_Annotated";
             console.writeln("<end><cbr>Generating output image: ", newid);
-            var targetW = new ImageWindow(width, height, (this.outputMode == Output_Overlay) ? 4 : 3, this.window.bitsPerSample, this.window.isFloatSample, true, newid);
+            targetW = new ImageWindow(width, height, (this.outputMode == Output_Overlay) ? 4 : 3, this.window.bitsPerSample, this.window.isFloatSample, true, newid);
 
             targetW.mainView.beginProcess(UndoFlag_NoSwapFile);
 
@@ -2580,6 +2597,7 @@ function AnnotationEngine()
 
       if (this.writeObjects)
          this.WriteObjects();
+      return targetW;
    };
 
    this.RenderPreview = function ()
@@ -2628,7 +2646,7 @@ function AnnotationEngine()
          bmp.fill(0x00000000);
       var g = new VectorGraphics(bmp);
       if (!g.isPainting)
-         throw Error("The script can not draw on the image");
+         throw Error("The script cannot draw on the image");
 
       console.writeln("Rendering annotation");
       this.RenderGraphics(g, width, height);
@@ -2775,6 +2793,8 @@ function AnnotationEngine()
    };
 }
 
+#ifndef USE_ANNOTATE_LIBRARY
+
 function CheckVersion(major, minor, release)
 {
    if (major == __PI_MAJOR__)
@@ -2829,6 +2849,7 @@ function main()
       }
 
       engine.Render();
+      ++__PJSR_AdpAnnotateImage_SuccessCount;
 
       console.show();
    }
@@ -2840,4 +2861,8 @@ function main()
    }
 }
 
+// Global control variable for PCL invocation.
+var __PJSR_AdpAnnotateImage_SuccessCount = 0;
+
 main();
+#endif

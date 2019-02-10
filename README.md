@@ -7,4 +7,4 @@ Scripts are smoothly integrated with the whole PixInsight platform: all installe
 
 This repository contains the source code of a number of important scripts that form part of the standard PixInsight distribution on all platforms, including BatchPreprocessing, the PIDoc compiler, Makefile Generator, SubframeSelector, and other critical components.
 
-###### Copyright (C) 2003-2015 Pleiades Astrophoto
+###### Copyright (C) 2003-2018 Pleiades Astrophoto

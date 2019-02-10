@@ -87,13 +87,24 @@ function WarpImage()
       {
          dynAlign.executeOn(window1.mainView);
          var resWindow = ImageWindow.windowById("__tmpCoordAlign");
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+         resWindow.mainView.beginProcess( UndoFlag_ImageId|UndoFlag_Keywords|UndoFlag_AstrometricSolution );
+#endif
          resWindow.mainView.id = window1.mainView.id + this.suffix;
 
          //this.SetWCSKeywords(resWindow, metadata0);
-         metadata0.SaveKeywords(resWindow, true);
+         metadata0.SaveKeywords(resWindow,
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+                               false/*beginProcess*/
+#else
+                               true/*beginProcess*/
+#endif
+                              );
          metadata0.SaveProperties(resWindow);
-
-
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+         resWindow.regenerateAstrometricSolution();
+         resWindow.mainView.endProcess();
+#endif
          console.writeln("<up><up><up><up><up><up><up><up></up><clrbol><clrend>Dynamic alignment ok.");
          console.writeln(format("Process time: %.2fs", ((new Date).getTime() - startTime) / 1000));
          return resWindow;
@@ -235,8 +246,11 @@ function WarpImage()
          for (var c = 0; c < numChannels; c++)
             resImage.setSamples(values[c], bounds, c);
          metadata0.SaveKeywords(resWindow, false);
-         resWindow.mainView.endProcess();
          metadata0.SaveProperties(resWindow);
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+         resWindow.regenerateAstrometricSolution();
+#endif
+         resWindow.mainView.endProcess();
 
          console.writeln(format("Process time: %.2fs", ((new Date).getTime() - startTime) / 1000));
          return resWindow;
@@ -339,8 +353,11 @@ function WarpImage()
          for (var c = 0; c < numChannels; c++)
             resImage.setSamples(values[c], bounds, c);
          metadata0.SaveKeywords(resWindow, false);
-         resWindow.mainView.endProcess();
          metadata0.SaveProperties(resWindow);
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+         resWindow.regenerateAstrometricSolution();
+#endif
+         resWindow.mainView.endProcess();
 
          console.writeln(format("Process time: %.2fs", ((new Date).getTime() - startTime) / 1000));
          return resWindow;

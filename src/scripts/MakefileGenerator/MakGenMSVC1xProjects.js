@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenMSVC1xProjects.js - Released 2015/11/26 08:53:10 UTC
+// MakGenMSVC1xProjects.js - Released 2019-01-20T14:05:16Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.109
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Generation of project files for Microsoft Visual C++ 2010, 2012 and 2013
@@ -84,7 +84,23 @@ function MSVCxx12( F, P )
 }
 
 /*
- * Microsoft Visual C++ 2010/2012/2013 project (.vcxproj)
+ * Microsoft Visual C++ 2015 project (.vcxproj)
+ */
+function MSVCxx14( F, P )
+{
+   MSVCxx( F, P, 14 );
+}
+
+/*
+ * Microsoft Visual C++ 2017 project (.vcxproj)
+ */
+function MSVCxx15( F, P )
+{
+   MSVCxx( F, P, 15 );
+}
+
+/*
+ * Microsoft Visual C++ 2010/2012/2013/2015/2017 project (.vcxproj)
  */
 function MSVCxx( F, P, vcVersion )
 {
@@ -136,33 +152,42 @@ function MSVCxx( F, P, vcVersion )
       f.outTextLn( indent + "</None>" );
    }
 
-   var vcYear;
-   var toolsVersion;
-   var projectGUID;
-   var platformToolset32;
-   var platformToolset64;
+   let vcYear;
+   let toolsVersion;
+   let platformToolset32;
+   let platformToolset64;
+   let projectGUID = UUID().toUpperCase();
    switch ( vcVersion )
    {
    case 10:
       vcYear = "2010";
       toolsVersion = "4.0";
-      projectGUID = "1E7F3743-070F-4407-928E-2A4A7664F5BE";
       platformToolset32 = "v100";
       platformToolset64 = "v100";
       break;
    case 11:
       vcYear = "2012";
       toolsVersion = "4.0";
-      projectGUID = "E0B74AC4-B124-45FC-9975-674D9F6B5530";
       platformToolset32 = "v110_xp"; // see: http://blogs.msdn.com/b/vcblog/archive/2012/10/08/10357555.aspx
       platformToolset64 = "v110";
       break;
    case 12:
       vcYear = "2013";
       toolsVersion = "12.0";
-      projectGUID = "9A65FDD9-FFE1-48A6-B8F0-DD61A64D9799";
       platformToolset32 = "v120_xp";
       platformToolset64 = "v120";
+      break;
+   case 14:
+      vcYear = "2015";
+      toolsVersion = "14.0";
+      platformToolset32 = "v140_xp";
+      platformToolset64 = "v140";
+      break;
+   case 15:
+      vcYear = "2017";
+      toolsVersion = "15.0";
+      platformToolset32 = "v141_xp";
+      platformToolset64 = "v141";
       break;
    default:
       throw new Error( "Internal error: Invalid/unsupported Visual C++ compiler version: " + vcVersion.toString() );
@@ -171,12 +196,12 @@ function MSVCxx( F, P, vcVersion )
    P.validate();
    P.validateMSVCxxBuild();
 
-   var buildDirectory = P.vccBuildDirectory( F.baseDirectory, vcVersion );
+   let buildDirectory = P.vccBuildDirectory( F.baseDirectory, vcVersion );
    if ( P.cleanUpPreviousBuilds )
       if ( File.directoryExists( buildDirectory ) )
          removeDirectory( buildDirectory );
 
-   var projectPath = buildDirectory + '/' + P.vccProject( vcVersion );
+   let projectPath = buildDirectory + '/' + P.vccProject( vcVersion );
 
    console.writeln( "<end><cbr><br>==> Generating VC++ " + vcYear + " project file:" );
    console.writeln( projectPath );
@@ -187,63 +212,79 @@ function MSVCxx( F, P, vcVersion )
    createDirectoryIfNotExists( buildDirectory + "/Win32/Debug", true );
    createDirectoryIfNotExists( buildDirectory + "/x64/Debug", true );
 
-   var includeDirectories = "$(PCLINCDIR)";
-   var includeDirectories32 = "";
-   var includeDirectories64 = "";
-   if ( P.isCore() || P.isCoreAux() ||
-        (P.isModule() || P.isDynamicLibrary() || P.isExecutable()) && P.dependsOnQt() )
+   let includeDirectories = "$(PCLINCDIR);$(PCLSRCDIR)/3rdparty";
+   let includeDirectories32 = "";
+   let includeDirectories64 = "";
+   let dependsOnQt = P.isCore() || P.isCoreAux() || (P.isModule() || P.isDynamicLibrary() || P.isExecutable()) && P.dependsOnQt();
+   if ( dependsOnQt )
    {
-      includeDirectories += ";$(QTDIR)/qtbase/include;$(QTDIR)/qtbase/mkspecs/win32-msvc" + vcYear;
-      includeDirectories += ";$(QTDIR)/qtbase/include/QtANGLE;$(QTDIR)/qtwinextras/include";
+      includeDirectories += ";$(QTDIR)/qtbase/include" +
+                            ";$(QTDIR)/qtbase/include/QtCore" +
+                            ";$(QTDIR)/qtbase/include/QtANGLE";
+      if ( P.isCoreAux() )
+         includeDirectories += ";$(QTDIR)/qtsvg/include";
    }
    if ( P.isCore() )
    {
-      includeDirectories += ";$(QTDIR)/qtsvg/include;$(QTDIR)/qtwebkit/include";
-      includeDirectories += ";$(PCLSRCDIR)/core/Components;$(PCLSRCDIR)/core";
+      includeDirectories += ";$(QTDIR)/qtsvg/include" +
+                            ";$(QTDIR)/qtwebchannel/include" +
+                            ";$(QTDIR)/qtwebengine/include" +
+                            ";$(QTDIR)/qtwebengine/include/QtWebEngineWidgets" +
+                            ";$(QTDIR)/qtdeclarative/include" +
+                            ";$(QTDIR)/qtlocation/include" +
+                            ";$(PCLSRCDIR)/core/Components" +
+                            ";$(PCLSRCDIR)/core";
+
       includeDirectories32 = ";$(PCLINCDIR)/js/windows/x86"; // SpiderMonkey
       includeDirectories64 = ";$(PCLINCDIR)/js/windows/x64"; // ..
    }
-   else
+   if ( dependsOnQt )
+      includeDirectories += ";$(QTDIR)/qtwinextras/include;$(QTDIR)/qtbase/mkspecs/win32-msvc" + vcYear;
+   if ( !P.isCore() )
    {
-      for ( var i = 0; i < P.extraIncludeDirs.length; ++i )
+      for ( let i = 0; i < P.extraIncludeDirs.length; ++i )
          includeDirectories += ";" + P.extraIncludeDirs[i];
    }
    includeDirectories = File.unixPathToWindows( includeDirectories );
 
-   var preprocessorDefinitions = "WIN32;WIN64;_WINDOWS;UNICODE;__PCL_WINDOWS;__PCL_NO_WIN32_MINIMUM_VERSIONS";
+   let preprocessorDefinitions = "WIN32;WIN64;_WINDOWS;UNICODE;__PCL_WINDOWS;__PCL_NO_WIN32_MINIMUM_VERSIONS";
    if ( P.isCore() )
    {
-      preprocessorDefinitions += ";__PCL_BUILDING_PIXINSIGHT_APPLICATION;__PCL_QT_INTERFACE" +
-                  ";XP_WIN" + // SpiderMonkey
-                  ";CMS_DLL;CURL_STATICLIB" +
-                  ";QT_EDITION=QT_EDITION_OPENSOURCE;QT_SHARED;QT_NO_EXCEPTIONS;QT_NO_DEBUG" +
-                  ";QT_UITOOLS_LIB;QT_WEBKITWIDGETS_LIB;QT_WEBKIT_LIB;QT_PRINTSUPPORT_LIB" +
-                  ";QT_WIDGETS_LIB;QT_GUI_LIB;QT_NETWORK_LIB;QT_CORE_LIB;QT_XML_LIB;QT_SVG_LIB";
+      preprocessorDefinitions += ";__PCL_BUILDING_PIXINSIGHT_APPLICATION" +
+                                 ";__PCL_QT_INTERFACE" +
+                                 ";XP_WIN" + // SpiderMonkey
+                                 ";CURL_STATICLIB" +
+                                 ";QT_EDITION=QT_EDITION_OPENSOURCE" +
+                                 ";QT_SHARED" +
+                                 ";QT_NO_EXCEPTIONS" +
+                                 ";QT_NO_DEBUG";
    }
    else
    {
       if ( P.isCoreAux() )
          preprocessorDefinitions += ";__PCL_QT_INTERFACE" +
-                  ";QT_EDITION=QT_EDITION_OPENSOURCE;QT_SHARED;QT_NO_EXCEPTIONS;QT_NO_DEBUG" +
-                  ";QT_WIDGETS_LIB;QT_GUI_LIB;QT_CORE_LIB";
+                                    ";QT_EDITION=QT_EDITION_OPENSOURCE" +
+                                    ";QT_SHARED" +
+                                    ";QT_NO_EXCEPTIONS" +
+                                    ";QT_NO_DEBUG";
 
-      for ( var i = 0; i < P.extraDefinitions.length; ++i )
+      for ( let i = 0; i < P.extraDefinitions.length; ++i )
          preprocessorDefinitions += ";" + P.extraDefinitions[i];
-      for ( var i = 0; i < P.winExtraDefinitions.length; ++i )
+      for ( let i = 0; i < P.winExtraDefinitions.length; ++i )
          preprocessorDefinitions += ";" + P.winExtraDefinitions[i];
    }
 
-   var diagnosticsDefinition = (P.diagnostics != 0) ? ";__PCL_DIAGNOSTICS_LEVEL=" + P.diagnostics.toString() : "";
+   let diagnosticsDefinition = (P.diagnostics != 0) ? ";__PCL_DIAGNOSTICS_LEVEL=" + P.diagnostics.toString() : "";
 
-   var libraryDirectories32 = "$(PCLLIBDIR32)";
-   var libraryDirectories64 = "$(PCLLIBDIR64)";
+   let libraryDirectories32 = "$(PCLLIBDIR32)";
+   let libraryDirectories64 = "$(PCLLIBDIR64)";
    if ( P.isCore() || P.isCoreAux() || P.dependsOnQt() )
    {
       libraryDirectories32 += ";$(QTDIR32)/qtbase/lib";
       libraryDirectories64 += ";$(QTDIR64)/qtbase/lib";
    }
    if ( !P.isCore() )
-      for ( var i = 0; i < P.extraLibDirs.length; ++i )
+      for ( let i = 0; i < P.extraLibDirs.length; ++i )
       {
          libraryDirectories32 += ";" + P.extraLibDirs[i] + "\\x86";
          libraryDirectories64 += ";" + P.extraLibDirs[i] + "\\x64";
@@ -251,46 +292,115 @@ function MSVCxx( F, P, vcVersion )
    libraryDirectories32 = File.unixPathToWindows( libraryDirectories32 );
    libraryDirectories64 = File.unixPathToWindows( libraryDirectories64 );
 
-   var libraries = "";
+   let windowsLibraries = ";kernel32.lib" +
+                          ";user32.lib" +
+                          ";gdi32.lib" +
+                          ";winspool.lib" +
+                          ";comdlg32.lib" +
+                          ";advapi32.lib" +
+                          ";shell32.lib" +
+                          ";ole32.lib" +
+                          ";oleaut32.lib" +
+                          ";uuid.lib" +
+                          ";odbc32.lib" +
+                          ";odbccp32.lib" +
+                          ";userenv.lib" +
+                          ";imm32.lib" +
+                          ";shlwapi.lib" +
+                          ";ws2_32.lib" +
+                          ";wldap32.lib" +
+                          ";mscms.lib" +
+                          ";winmm.lib" +
+                          ";crypt32.lib";
+
+   let libraries = "";
+
    if ( P.isCore() )
-      libraries = "qtmain.lib;Qt5UiTools.lib;Qt5Sensors.lib;Qt5Positioning.lib;Qt5MultimediaWidgets.lib;" +
-                  "Qt5Multimedia.lib;Qt5OpenGL.lib;Qt5Sql.lib;Qt5WebChannel.lib;Qt5Qml.lib;Qt5Quick.lib;" +
-                  "Qt5WebKitWidgets.lib;Qt5WebKit.lib;Qt5PrintSupport.lib;Qt5WinExtras.lib;Qt5Widgets.lib;" +
-                  "Qt5Gui.lib;Qt5Svg.lib;Qt5Xml.lib;Qt5Network.lib;Qt5Core.lib;libEGL.lib;libGLESv2.lib;" +
-                  "mozjs" + CORE_JS_ENGINE_VERSION + ".lib;zlib-pxi.lib;curl-pxi.lib;lcms-pxi.lib;PCL-pxi.lib;" +
-                  "shell32.lib;gdi32.lib;user32.lib;imm32.lib;shlwapi.lib;Ws2_32.lib;wldap32.lib;Mscms.lib;Winmm.lib";
+   {
+      libraries = "qtmain.lib" +
+                  ";Qt5UiTools.lib" +
+                  ";Qt5Sensors.lib" +
+                  ";Qt5Positioning.lib" +
+                  ";Qt5MultimediaWidgets.lib" +
+                  ";Qt5Multimedia.lib" +
+                  ";Qt5OpenGL.lib" +
+                  ";Qt5Sql.lib" +
+                  ";Qt5Qml.lib" +
+                  ";Qt5Quick.lib" +
+                  ";Qt5WebChannel.lib" +
+                  ";Qt5WebEngine.lib" +
+                  ";Qt5WebEngineCore.lib" +
+                  ";Qt5WebEngineWidgets.lib" +
+                  ";Qt5PrintSupport.lib" +
+                  ";Qt5WinExtras.lib" +
+                  ";Qt5Widgets.lib" +
+                  ";Qt5Gui.lib" +
+                  ";Qt5Svg.lib" +
+                  ";Qt5Xml.lib" +
+                  ";Qt5Network.lib" +
+                  ";Qt5Core.lib" +
+                  ";libEGL.lib" +
+                  ";libGLESv2.lib" +
+                  ";mozjs" + CORE_JS_ENGINE_VERSION + ".lib" +
+                  ";PCL-pxi.lib" +
+                  ";lz4-pxi.lib" +
+                  ";zlib-pxi.lib" +
+                  ";RFC6234-pxi.lib" +
+                  ";curl-pxi.lib" +
+                  ";lcms-pxi.lib" +
+                  ";cminpack-pxi.lib" +
+                  windowsLibraries;
+   }
    else
    {
       if ( P.isCoreAux() )
-         libraries = "qtmain.lib;Qt5Widgets.lib;Qt5Gui.lib;Qt5Core.lib;libEGL.lib;libGLESv2.lib;PCL-pxi.lib;" +
-                  "shell32.lib;gdi32.lib;user32.lib;imm32.lib;shlwapi.lib;Ws2_32.lib;wldap32.lib;Winmm.lib";
+         libraries = "qtmain.lib" +
+                     ";Qt5Widgets.lib" +
+                     ";Qt5Gui.lib" +
+                     ";Qt5Svg.lib" +
+                     ";Qt5Core.lib" +
+                     ";libEGL.lib" +
+                     ";libGLESv2.lib" +
+                     ";PCL-pxi.lib" +
+                     ";lz4-pxi.lib" +
+                     ";zlib-pxi.lib" +
+                     ";RFC6234-pxi.lib" +
+                     windowsLibraries;
+
       if ( P.isModule() || P.isExecutable() )
-         libraries = "PCL-pxi.lib";
-      for ( var i = 0; i < P.extraLibraries.length; ++i )
+         libraries = "PCL-pxi.lib" +
+                     ";lz4-pxi.lib" +
+                     ";zlib-pxi.lib" +
+                     ";RFC6234-pxi.lib" +
+                     ";lcms-pxi.lib" +
+                     ";cminpack-pxi.lib" +
+                     windowsLibraries;
+
+      for ( let i = 0; i < P.extraLibraries.length; ++i )
       {
          // Make sure that all libraries carry the .lib suffix on Windows.
-         var extraLib = P.extraLibraries[i];
+         let extraLib = P.extraLibraries[i];
          if ( File.extractExtension( extraLib ).length == 0 )
             extraLib += ".lib";
          libraries += ";" + extraLib;
       }
    }
 
-   var configurationType = (P.isModule() || P.isDynamicLibrary()) ? "DynamicLibrary" :
+   let configurationType = (P.isModule() || P.isDynamicLibrary()) ? "DynamicLibrary" :
                            (P.isStaticLibrary() ? "StaticLibrary" : "Application");
 
-   var outDir32 = P.isStaticLibrary() ? "$(PCLLIBDIR32)\\" : "$(PCLBINDIR32)\\"
-   var outDir64 = P.isStaticLibrary() ? "$(PCLLIBDIR64)\\" : "$(PCLBINDIR64)\\"
+   let outDir32 = P.isStaticLibrary() ? "$(PCLLIBDIR32)\\" : "$(PCLBINDIR32)\\"
+   let outDir64 = P.isStaticLibrary() ? "$(PCLLIBDIR64)\\" : "$(PCLBINDIR64)\\"
 
-   var targetName = File.extractName( P.mainTarget() );
+   let targetName = File.extractName( P.mainTarget() );
 
-   var wholeProgramOptimization = P.isModule() || P.isDynamicLibrary();
+   let wholeProgramOptimization = P.isModule() || P.isDynamicLibrary();
 
    /*
     * Project file generation
     */
 
-   var f = new File;
+   let f = new File;
    f.createForWriting( projectPath );
 
    MSVCxxHeader( f, F, P, vcVersion );
@@ -441,7 +551,8 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() ||
+           P.signed && (P.isModule() || P.isExecutable() || P.isDynamicLibrary()) )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -507,7 +618,8 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() ||
+           P.signed && (P.isModule() || P.isExecutable() || P.isDynamicLibrary()) )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -565,7 +677,8 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() ||
+           P.signed && (P.isModule() || P.isExecutable() || P.isDynamicLibrary()) )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -620,7 +733,8 @@ function MSVCxx( F, P, vcVersion )
       }
       f.outTextLn( "    </Link>" );
 
-      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() )
+      if ( P.isCore() || P.isCoreAux() || P.isOfficialModule() || P.isOfficialExecutable() || P.isOfficialDynamicLibrary() ||
+           P.signed && (P.isModule() || P.isExecutable() || P.isDynamicLibrary()) )
       {
          f.outTextLn( "    <PostBuildEvent>" );
          f.outTextLn( "      <Command>signtool.exe sign /a /t http://timestamp.verisign.com/scripts/timstamp.dll /v $(TargetDir)$(TargetFileName)</Command>" );
@@ -636,8 +750,8 @@ function MSVCxx( F, P, vcVersion )
 
 #undef PREPARE_FILE_ITERATION
 #define PREPARE_FILE_ITERATION                           \
-   var prefix = File.unixPathToWindows( s.directory );   \
-   var indent = "    ";                                  \
+   let prefix = File.unixPathToWindows( s.directory );   \
+   let indent = "    ";                                  \
    if ( s.directory.length > 0 )                         \
       prefix += '\\';
 
@@ -645,13 +759,13 @@ function MSVCxx( F, P, vcVersion )
     * Source files
     */
    f.outTextLn( "  <ItemGroup>" );
-   for ( var i = 0; i < F.sources.length; ++i )
+   for ( let i = 0; i < F.sources.length; ++i )
    {
-      var s = F.sources[i];
+      let s = F.sources[i];
       if ( s.hasSourceFiles() )
       {
          PREPARE_FILE_ITERATION
-         for ( var j = 0; j < s.files.length; ++j )
+         for ( let j = 0; j < s.files.length; ++j )
             if ( P.isSourceFile( s.files[j] ) )
                outSourceFileTag( f, indent, prefix, s.files[j] );
       }
@@ -664,13 +778,13 @@ function MSVCxx( F, P, vcVersion )
    if ( F.hFileCount > 0 )
    {
       f.outTextLn( "  <ItemGroup>" );
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.hasHeaderFiles() )
          {
             PREPARE_FILE_ITERATION
-            for ( var j = 0; j < s.files.length; ++j )
+            for ( let j = 0; j < s.files.length; ++j )
                if ( isHeaderFile( s.files[j] ) )
                   outHeaderFileTag( f, indent, prefix, s.files[j] );
          }
@@ -684,13 +798,13 @@ function MSVCxx( F, P, vcVersion )
    if ( F.resFileCount > 0 )
    {
       f.outTextLn( "  <ItemGroup>" );
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.hasResourceFiles() )
          {
             PREPARE_FILE_ITERATION
-            for ( var j = 0; j < s.files.length; ++j )
+            for ( let j = 0; j < s.files.length; ++j )
                if ( isResourceFile( s.files[j] ) )
                   outResourceFileTag( f, indent, prefix, s.files[j] );
          }
@@ -704,13 +818,13 @@ function MSVCxx( F, P, vcVersion )
    if ( F.imgFileCount > 0 )
    {
       f.outTextLn( "  <ItemGroup>" );
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.hasImageFiles() )
          {
             PREPARE_FILE_ITERATION
-            for ( var j = 0; j < s.files.length; ++j )
+            for ( let j = 0; j < s.files.length; ++j )
                if ( isImageFile( s.files[j] ) )
                   outImageFileTag( f, indent, prefix, s.files[j] );
          }
@@ -719,12 +833,14 @@ function MSVCxx( F, P, vcVersion )
    }
 
    // The 'resource' thing required for executables
+   /*
    if ( P.isExecutable() || P.isCore() || P.isCoreAux() )
    {
       f.outTextLn( "  <ItemGroup>" );
       outImageFileTag( f, "    ", "", "resource" );
       f.outTextLn( "  </ItemGroup>" );
    }
+   */
 
    f.outTextLn( "  <Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.targets\"/>" );
    f.outTextLn( "  <ImportGroup Label=\"ExtensionTargets\">" );
@@ -745,27 +861,27 @@ function MSVCxx( F, P, vcVersion )
    f.outTextLn( "<Project DefaultTargets=\"Build\" ToolsVersion=\"4.0\" xmlns=\"http:\/\/schemas.microsoft.com/developer/msbuild/2003\">" );
    f.outTextLn( "  <ItemGroup>" );
    f.outTextLn( "    <Filter Include=\"Source Files\">" );
-   f.outTextLn( "      <UniqueIdentifier>{01b3abbc-eea6-470d-acaa-1ab70a4ab8f6}</UniqueIdentifier>" );
+   f.outTextLn( "      <UniqueIdentifier>" + UUID() + "</UniqueIdentifier>" );
    f.outTextLn( "    </Filter>" );
 
    if ( F.hFileCount > 0 )
    {
       f.outTextLn( "    <Filter Include=\"Header Files\">" );
-      f.outTextLn( "      <UniqueIdentifier>{61114dbc-b961-4bb7-be8f-19901b89253d}</UniqueIdentifier>" );
+   f.outTextLn( "      <UniqueIdentifier>" + UUID() + "</UniqueIdentifier>" );
       f.outTextLn( "    </Filter>" );
    }
 
    if ( F.resFileCount > 0 )
    {
       f.outTextLn( "    <Filter Include=\"Resource Files\">" );
-      f.outTextLn( "      <UniqueIdentifier>{51976188-9de8-43cc-b7aa-83ab0a813575}</UniqueIdentifier>" );
+   f.outTextLn( "      <UniqueIdentifier>" + UUID() + "</UniqueIdentifier>" );
       f.outTextLn( "    </Filter>" );
    }
 
    if ( F.imgFileCount > 0 )
    {
       f.outTextLn( "    <Filter Include=\"Image Files\">" );
-      f.outTextLn( "      <UniqueIdentifier>{5f4b9cad-dcb5-426e-a182-4c299db01993}</UniqueIdentifier>" );
+   f.outTextLn( "      <UniqueIdentifier>" + UUID() + "</UniqueIdentifier>" );
       f.outTextLn( "    </Filter>" );
    }
 
@@ -775,13 +891,13 @@ function MSVCxx( F, P, vcVersion )
     * Source file filters
     */
    f.outTextLn( "  <ItemGroup>" );
-   for ( var i = 0; i < F.sources.length; ++i )
+   for ( let i = 0; i < F.sources.length; ++i )
    {
-      var s = F.sources[i];
+      let s = F.sources[i];
       if ( s.hasSourceFiles() )
       {
          PREPARE_FILE_ITERATION
-         for ( var j = 0; j < s.files.length; ++j )
+         for ( let j = 0; j < s.files.length; ++j )
             if ( P.isSourceFile( s.files[j] ) )
                outSourceFileFilterTag( f, indent, prefix, s.files[j] );
       }
@@ -794,13 +910,13 @@ function MSVCxx( F, P, vcVersion )
    if ( F.hFileCount > 0 )
    {
       f.outTextLn( "  <ItemGroup>" );
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.hasHeaderFiles() )
          {
             PREPARE_FILE_ITERATION
-            for ( var j = 0; j < s.files.length; ++j )
+            for ( let j = 0; j < s.files.length; ++j )
                if ( isHeaderFile( s.files[j] ) )
                   outHeaderFileFilterTag( f, indent, prefix, s.files[j] );
          }
@@ -814,13 +930,13 @@ function MSVCxx( F, P, vcVersion )
    if ( F.resFileCount > 0 )
    {
       f.outTextLn( "  <ItemGroup>" );
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.hasResourceFiles() )
          {
             PREPARE_FILE_ITERATION
-            for ( var j = 0; j < s.files.length; ++j )
+            for ( let j = 0; j < s.files.length; ++j )
                if ( isResourceFile( s.files[j] ) )
                   outResourceFileFilterTag( f, indent, prefix, s.files[j] );
          }
@@ -834,13 +950,13 @@ function MSVCxx( F, P, vcVersion )
    if ( F.imgFileCount > 0 )
    {
       f.outTextLn( "  <ItemGroup>" );
-      for ( var i = 0; i < F.sources.length; ++i )
+      for ( let i = 0; i < F.sources.length; ++i )
       {
-         var s = F.sources[i];
+         let s = F.sources[i];
          if ( s.hasImageFiles() )
          {
             PREPARE_FILE_ITERATION
-            for ( var j = 0; j < s.files.length; ++j )
+            for ( let j = 0; j < s.files.length; ++j )
                if ( isImageFile( s.files[j] ) )
                   outImageFileFilterTag( f, indent, prefix, s.files[j] );
          }
@@ -855,4 +971,4 @@ function MSVCxx( F, P, vcVersion )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenMSVC1xProjects.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenMSVC1xProjects.js - Released 2019-01-20T14:05:16Z

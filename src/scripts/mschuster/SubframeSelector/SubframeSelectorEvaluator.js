@@ -1,13 +1,13 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// SubframeSelectorEvaluator.js - Released 2016/12/28 00:00:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// SubframeSelectorEvaluator.js - Released 2018-11-05T16:53:08Z
+// ----------------------------------------------------------------------------
 //
-// This file is part of SubframeSelector Script version 1.11
+// This file is part of SubframeSelector Script version 1.12
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2018 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 function numberCompare(a, b) {
    return a < b ? -1 : a > b ? 1 : 0;
@@ -204,7 +204,7 @@ function findMedianDispersionDescription(descriptions) {
 }
 
 function selectorExpressionEvaluator(
-   expression, description, descriptions, subframeScale, cameraGain, cameraResolution
+   expression, description, descriptions, subframeScale, cameraGain, cameraResolution, statistics
 ) {
    this.expression = expression;
    this.description = description;
@@ -380,6 +380,12 @@ function selectorExpressionEvaluator(
       else if (property == "FWHM") {
          return this.subframeScale * this.description.FWHM;
       }
+      else if (property == "FWHMMaximum") {
+         return this.subframeScale * statistics.FWHMMaximum;
+      }
+      else if (property == "FWHMMinimum") {
+         return this.subframeScale * statistics.FWHMMinimum;
+      }
       else if (property == "FWHMSigma") {
          value = this.subframeScale * this.description.FWHM;
          medianDispersion = this.scaleMedianDispersion(
@@ -400,6 +406,12 @@ function selectorExpressionEvaluator(
       else if (property == "Eccentricity") {
          return this.description.eccentricity;
       }
+      else if (property == "EccentricityMaximum") {
+         return statistics.eccentricityMaximum;
+      }
+      else if (property == "EccentricityMinimum") {
+         return statistics.eccentricityMinimum;
+      }
       else if (property == "EccentricitySigma") {
          value = this.description.eccentricity;
          medianDispersion = this.medianDispersionDescription.eccentricity;
@@ -415,6 +427,12 @@ function selectorExpressionEvaluator(
       }
       else if (property == "SNRWeight") {
          return this.description.SNRWeight;
+      }
+      else if (property == "SNRWeightMaximum") {
+         return statistics.SNRWeightMaximum;
+      }
+      else if (property == "SNRWeightMinimum") {
+         return statistics.SNRWeightMinimum;
       }
       else if (property == "SNRWeightSigma") {
          value = this.description.SNRWeight;
@@ -753,7 +771,7 @@ function selectorExpressionEvaluator(
 }
 
 function weightingExpressionEvaluator(
-   expression, description, descriptions, subframeScale, cameraGain, cameraResolution
+   expression, description, descriptions, subframeScale, cameraGain, cameraResolution, statistics
 ) {
    this.expression = expression;
    this.description = description;
@@ -920,6 +938,12 @@ function weightingExpressionEvaluator(
       else if (property == "FWHM") {
          return this.subframeScale * this.description.FWHM;
       }
+      else if (property == "FWHMMaximum") {
+         return this.subframeScale * statistics.FWHMMaximum;
+      }
+      else if (property == "FWHMMinimum") {
+         return this.subframeScale * statistics.FWHMMinimum;
+      }
       else if (property == "FWHMSigma") {
          value = this.subframeScale * this.description.FWHM;
          medianDispersion = this.scaleMedianDispersion(
@@ -940,6 +964,12 @@ function weightingExpressionEvaluator(
       else if (property == "Eccentricity") {
          return this.description.eccentricity;
       }
+      else if (property == "EccentricityMaximum") {
+         return statistics.eccentricityMaximum;
+      }
+      else if (property == "EccentricityMinimum") {
+         return statistics.eccentricityMinimum;
+      }
       else if (property == "EccentricitySigma") {
          value = this.description.eccentricity;
          medianDispersion = this.medianDispersionDescription.eccentricity;
@@ -955,6 +985,12 @@ function weightingExpressionEvaluator(
       }
       else if (property == "SNRWeight") {
          return this.description.SNRWeight;
+      }
+      else if (property == "SNRWeightMaximum") {
+         return statistics.SNRWeightMaximum;
+      }
+      else if (property == "SNRWeightMinimum") {
+         return statistics.SNRWeightMinimum;
       }
       else if (property == "SNRWeightSigma") {
          value = this.description.SNRWeight;
@@ -1139,7 +1175,8 @@ function selectorExpressionIsValid(expression) {
       [nullEvaluationDescription],
       parameters.actualSubframeScale(),
       parameters.actualCameraGain(),
-      parameters.cameraResolutionValues[parameters.cameraResolution]
+      parameters.cameraResolutionValues[parameters.cameraResolution],
+      nullEvaluationDescriptionStatistics
    );
    selectorEvaluator.evaluate();
    return selectorEvaluator.error == null;
@@ -1152,11 +1189,12 @@ function weightingExpressionIsValid(expression) {
       [nullEvaluationDescription],
       parameters.actualSubframeScale(),
       parameters.actualCameraGain(),
-      parameters.cameraResolutionValues[parameters.cameraResolution]
+      parameters.cameraResolutionValues[parameters.cameraResolution],
+      nullEvaluationDescriptionStatistics
    );
    weightEvaluator.evaluate();
    return weightEvaluator.error == null;
 }
 
-// ****************************************************************************
-// EOF SubframeSelectorEvaluator.js - Released 2016/12/28 00:00:00 UTC
+// ----------------------------------------------------------------------------
+// EOF SubframeSelectorEvaluator.js - Released 2018-11-05T16:53:08Z

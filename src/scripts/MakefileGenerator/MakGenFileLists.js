@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenFileLists.js - Released 2015/11/26 08:53:10 UTC
+// MakGenFileLists.js - Released 2019-01-20T14:05:16Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.109
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Directory search routines.
@@ -71,7 +71,7 @@
 
 function isHeaderFileExtension( e )
 {
-   for ( var i = 0; i < headerFileExtensions.length; ++i )
+   for ( let i = 0; i < headerFileExtensions.length; ++i )
       if ( e == headerFileExtensions[i] )
          return true;
    return false;
@@ -85,7 +85,7 @@ function isHeaderFile( n )
 function isResourceFileExtension( e )
 {
    e = e.toLowerCase(); // for resources, use case-insensitive file extensions
-   for ( var i = 0; i < resourceFileExtensions.length; ++i )
+   for ( let i = 0; i < resourceFileExtensions.length; ++i )
       if ( e == resourceFileExtensions[i] )
          return true;
    return false;
@@ -99,7 +99,7 @@ function isResourceFile( n )
 function isImageFileExtension( e )
 {
    e = e.toLowerCase(); // for images, use case-insensitive file extensions
-   for ( var i = 0; i < imageFileExtensions.length; ++i )
+   for ( let i = 0; i < imageFileExtensions.length; ++i )
       if ( e == imageFileExtensions[i] )
          return true;
    return false;
@@ -128,7 +128,7 @@ function DirectoryItem( d )
 
    this.addFile = function( f )
    {
-      var e = File.extractExtension( f );
+      let e = File.extractExtension( f );
       if ( e == ".cpp" )
          ++this.cppFileCount;
       else if ( e == ".cxx" )
@@ -200,55 +200,63 @@ function FileLists( dirPath, noImages )
    this.baseDirectory = File.fullPath( dirPath );
    if ( this.baseDirectory.length == 0 )
       throw new Error( "No base directory has been specified." );
-   if ( this.baseDirectory[this.baseDirectory.length-1] == '/' )
+   if ( this.baseDirectory.endsWith( '/' ) )
       if ( this.baseDirectory != "/" )
-         this.baseDirectory.slice( this.baseDirectory.length-1, -1 );
+         this.baseDirectory = this.baseDirectory.slice( 0, this.baseDirectory.length-1 );
 
    console.writeln( "<end><cbr><br>==> Finding files for project directory:" );
    console.writeln( this.baseDirectory );
 
    // Find all source, header and resource files in our base tree recursively.
-   var sourceFiles = new Array;
-   for ( var i = 0; i < sourceFileExtensions.length; ++i )
+   let sourceFiles = new Array;
+   for ( let i = 0; i < sourceFileExtensions.length; ++i )
       sourceFiles = sourceFiles.concat( searchDirectory( this.baseDirectory + "/*" + sourceFileExtensions[i], true ) );
-   for ( var i = 0; i < headerFileExtensions.length; ++i )
+   for ( let i = 0; i < headerFileExtensions.length; ++i )
       sourceFiles = sourceFiles.concat( searchDirectory( this.baseDirectory + "/*" + headerFileExtensions[i], true ) );
-   for ( var i = 0; i < resourceFileExtensions.length; ++i )
+   for ( let i = 0; i < resourceFileExtensions.length; ++i )
       sourceFiles = sourceFiles.concat( searchDirectory( this.baseDirectory + "/*" + resourceFileExtensions[i], true ) );
    if ( !noImages )
-      for ( var i = 0; i < imageFileExtensions.length; ++i )
+      for ( let i = 0; i < imageFileExtensions.length; ++i )
          sourceFiles = sourceFiles.concat( searchDirectory( this.baseDirectory + "/*" + imageFileExtensions[i], true ) );
 
    console.writeln();
-   for ( var i = 0; i < sourceFiles.length; ++i )
+   for ( let i = 0; i < sourceFiles.length; ++i )
       console.writeln( sourceFiles[i] );
    console.writeln();
 
    // Delete baseDirectory + separator from the beginning of all source files.
-   var d = this.baseDirectory + '/';
-   for ( var i = 0; i < sourceFiles.length; ++i )
+   let d = this.baseDirectory;
+   if ( !d.endsWith( '/' ) )
+      d += '/';
+   for ( let i = 0; i < sourceFiles.length; ++i )
    {
-      if ( sourceFiles[i].indexOf( d ) != 0 )
+      if ( !sourceFiles[i].startsWith( d ) )
          throw new Error( "<* Panic *> Inconsistent directory search!" );
-      sourceFiles[i] = sourceFiles[i].slice( d.length, sourceFiles[i].length );
+      sourceFiles[i] = sourceFiles[i].slice( d.length );
    }
 
    // Sort all source files to ensure that all files in a given directory are
    // contiguous in the sourceFiles array.
-   sourceFiles.sort(); // ensure that the next sort will be stable
-   sourceFiles.sort( new Function( "a", "b", "{ var d1 = File.extractDirectory( a ); " +
-                                               "var d2 = File.extractDirectory( b ); " +
+   sourceFiles.sort(); // ensure the next sort will be stable
+   sourceFiles.sort( new Function( "a", "b", "{ let d1 = File.extractDirectory( a ); " +
+                                               "let d2 = File.extractDirectory( b ); " +
                                                "return (d1 < d2) ? -1 : ((d1 > d2) ? +1 : 0); }" ) );
    gc();
 
    // Build the source list.
    this.sources = new Array;
    this.sources.push( new DirectoryItem( "" ) ); // root item
-   for ( var i = 0, n = 0; i < sourceFiles.length; ++i )
+   for ( let i = 0, n = 0; i < sourceFiles.length; ++i )
    {
-      var d = File.extractDirectory( sourceFiles[i] );
+      // Exclude special private files.
+      if ( File.extractName( sourceFiles[i] ).startsWith( "__" ) )
+         continue;
+      let d = File.extractDirectory( sourceFiles[i] );
       if ( d != this.sources[n].directory )
       {
+         // Exclude special private subdirectories.
+         if ( File.extractName( d ).startsWith( "__" ) )
+            continue;
          this.sources.push( new DirectoryItem( d ) );
          ++n;
       }
@@ -264,7 +272,7 @@ function FileLists( dirPath, noImages )
    this.hFileCount = 0;
    this.resFileCount = 0;
    this.imgFileCount = 0;
-   for ( var i = 0; i < this.sources.length; ++i )
+   for ( let i = 0; i < this.sources.length; ++i )
    {
       this.cppFileCount += this.sources[i].cppFileCount;
       this.cxxFileCount += this.sources[i].cxxFileCount;
@@ -285,4 +293,4 @@ if ( !noImages )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenFileLists.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenFileLists.js - Released 2019-01-20T14:05:16Z

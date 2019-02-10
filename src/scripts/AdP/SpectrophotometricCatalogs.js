@@ -32,15 +32,14 @@
 // ******************************************************************
 function III_126_Catalog()
 {
-   this.name = "III/126 Burnashev";
    this.description = "Spectrophotometry of 1588 stars";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("III_126", "III/126 Burnashev");
 
    this.catalogMagnitude = 7;
 
-   this.fields = [ "Name", "Vmag1", "Vmag2", "Vmag3", "SpType1", "SpType2", "SpType3" ];
+   this.fields = [ "Name", "Coordinates", "Vmag1", "Vmag2", "Vmag3", "SpType1", "SpType2", "SpType3" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);
@@ -120,21 +119,20 @@ __catalogRegister__.Register(new III_126_Catalog);
 // ******************************************************************
 function II_183A_Catalog()
 {
-   this.name = "II/183A Landolt";
    this.description = "UBVRI Photometric Standard Stars (526 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("II/183A", "II/183A Landolt");
 
    this.catalogMagnitude = 16;
 
-   this.fields = [ "Name", "Vmag", "B-V", "U-B", "V-R", "R-I", "V-I" ];
+   this.fields = [ "Name", "Coordinates", "Vmag", "B-V", "U-B", "V-R", "R-I", "V-I", "B", "U", "R", "I" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);
    this.properties.push(["magnitudeFilter", DataType_UCString ]);
 
-   this.filters = [ "Vmag" ];
+   this.filters = [ "Vmag", "B", "U", "R", "I" ];
    this.magnitudeFilter = "Vmag";
 
    this.GetConstructor = function ()
@@ -170,6 +168,11 @@ function II_183A_Catalog()
          record["V-R"] = tokens[6].trim();
          record["R-I"] = tokens[7].trim();
          record["V-I"] = tokens[8].trim();
+         // B, U, R and I magnitudes implemetation by Colin McGill
+         record["B"] = record["B-V"] * 1.0 + record["Vmag"] * 1.0;
+         record["U"] = record["U-B"] * 1.0 + record["B"] * 1.0;
+         record["R"] = - record["V-R"] * 1.0 + record["Vmag"] * 1.0;
+         record["I"] = - record["V-I"] * 1.0 + record["Vmag"] * 1.0;
          record.magnitude = parseFloat(record[this.magnitudeFilter]);
          return record;
       }
@@ -186,15 +189,14 @@ __catalogRegister__.Register(new II_183A_Catalog);
 // ******************************************************************
 function III_201_Catalog()
 {
-   this.name = "III/201 Pulkovo";
    this.description = "Pulkovo Spectrophotometric Catalog (Alekseeva+ 609 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("III/201", "III/201 Pulkovo");
 
    this.catalogMagnitude = 7;
 
-   this.fields = [ "Name", "Vmag", "B-V", "SpType", "HD" ];
+   this.fields = [ "Name", "Coordinates", "Vmag", "B-V", "SpType", "HD" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);
@@ -250,15 +252,14 @@ __catalogRegister__.Register(new III_201_Catalog);
 // ******************************************************************
 function III_202_Catalog()
 {
-   this.name = "III/202 Kharitonov";
    this.description = "Spectrophotometric Catalogue of Stars (1147 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("III/202", "III/202 Kharitonov");
 
    this.catalogMagnitude = 10;
 
-   this.fields = [ "Name", "Vmag", "Sp", "HR" ];
+   this.fields = [ "Name", "Coordinates", "Vmag", "Sp", "HR" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);
@@ -313,15 +314,14 @@ __catalogRegister__.Register(new III_202_Catalog);
 // ******************************************************************
 function JA_AS_92_1_Catalog()
 {
-   this.name = "J/A+AS/92/1 Glushneva+";
    this.description = "Spectrophotometric Catalogue of Stars (238 stars)";
 
    this.__base__ = VizierCatalog;
-   this.__base__(this.name);
+   this.__base__("J/A+AS/92/1", "J/A+AS/92/1 Glushneva+");
 
    this.catalogMagnitude = 7;
 
-   this.fields = [ "Name", "Vmag", "Bmag", "SpType" ];
+   this.fields = [ "Name", "Coordinates", "Vmag", "Bmag", "SpType" ];
 
    this.properties.push(["magMin", DataType_Double]);
    this.properties.push(["magMax", DataType_Double]);

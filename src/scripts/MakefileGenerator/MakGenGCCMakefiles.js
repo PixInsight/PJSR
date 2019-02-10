@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGCCMakefiles.js - Released 2015/11/26 08:53:10 UTC
+// MakGenGCCMakefiles.js - Released 2019-01-20T14:05:16Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.109
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,7 +52,7 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Generation of makefiles for GCC and Clang compilers.
@@ -92,9 +92,9 @@ function GnuCxxAll( F, P )
 
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# PixInsight Makefile Generator Script v" + VERSION );
-   f.outTextLn( "# Copyright (C) 2009-2015 Pleiades Astrophoto" );
+   f.outTextLn( "# Copyright (C) 2009-" + YEAR + " Pleiades Astrophoto" );
    f.outTextLn( "######################################################################" );
-   f.outTextLn( "# Automatically generated on " + (new Date( Date.now() )).toUTCString() );
+   f.outTextLn( "# Generated on .... " + (new Date( Date.now() )).toISOString() );
    f.outTextLn( "# Project id ...... " + P.id );
    f.outTextLn( "# Project type .... " + P.type );
    f.outTextLn( "# Platform ........ " + P.platform + "/g++" );
@@ -182,9 +182,9 @@ function GnuCxx( F, P )
 
    f.outTextLn( "######################################################################" );
    f.outTextLn( "# PixInsight Makefile Generator Script v" + VERSION );
-   f.outTextLn( "# Copyright (C) 2009-2015 Pleiades Astrophoto" );
+   f.outTextLn( "# Copyright (C) 2009-" + YEAR + " Pleiades Astrophoto" );
    f.outTextLn( "######################################################################" );
-   f.outTextLn( "# Automatically generated on " + (new Date( Date.now() )).toUTCString() );
+   f.outTextLn( "# Generated on .... " + (new Date( Date.now() )).toISOString() );
    f.outTextLn( "# Project id ...... " + P.id );
    f.outTextLn( "# Project type .... " + P.type );
    f.outTextLn( "# Platform ........ " + P.platform + "/g++" );
@@ -308,14 +308,6 @@ function GnuCxx( F, P )
           * application bundle directory.
           */
          f.outTextLn( "\tinstall_name_tool" +
-                      " -change @executable_path/liblcms-pxi.dylib" +
-                      " @executable_path/../Frameworks/liblcms-pxi.dylib " +
-                      appBundle + "/Contents/MacOS/PixInsight" );
-         f.outTextLn( "\tinstall_name_tool" +
-                      " -change @executable_path/libzlib-pxi.dylib" +
-                      " @executable_path/../Frameworks/libzlib-pxi.dylib " +
-                      appBundle + "/Contents/MacOS/PixInsight" );
-         f.outTextLn( "\tinstall_name_tool" +
                       " -change @executable_path/libmozjs-24.dylib" +
                       " @executable_path/../Frameworks/libmozjs-24.dylib " +
                       appBundle + "/Contents/MacOS/PixInsight" );
@@ -326,8 +318,10 @@ function GnuCxx( F, P )
          f.outTextLn( "\trm -rf " + appBundle + "/Contents/Frameworks/Qt*" );
          f.outTextLn( "\trm -rf " + appBundle + "/Contents/PlugIns" );
          f.outTextLn( "\trm -f " + appBundle + "/Contents/Resources/qt.conf" );
-         f.outTextLn( "\texport DYLD_FRAMEWORK_PATH=$(QTDIR)/qtbase/lib" );
          f.outTextLn( "\tmacdeployqt " + appBundle );
+         f.outTextLn( "\tinstall_name_tool -add_rpath @executable_path/../../../../../../../../Frameworks " +
+            appBundle + "/Contents/Frameworks/QtWebEngineCore.framework/" +
+                        "Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess" );
 
          /*
           * Update creation time for the core application bundle.
@@ -344,45 +338,30 @@ function GnuCxx( F, P )
           * works fine to simplify things by doing this recursively.
           */
          f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + appBundle );
-      }
-      else if ( P.isCoreAux() )
-      {
-         f.outTextLn( "\tinstall_name_tool -change QtCore.framework/Versions/5/QtCore" +
-                      " @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore" +
-                      " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
-         f.outTextLn( "\tinstall_name_tool -change QtWidgets.framework/Versions/5/QtWidgets" +
-                      " @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets" +
-                      " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
-         f.outTextLn( "\tinstall_name_tool -change QtGui.framework/Versions/5/QtGui" +
-                      " @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui" +
-                      " " + appBundle + "/Contents/MacOS/" + P.mainTarget() );
+
+         /*
+          * The updater1 program requires administrative privileges on macOS
+          * since core version 1.8.5.
+          */
+         f.outTextLn( "\tchmod +s " + appBundle + "/Contents/MacOS/PixInsightUpdater" );
       }
       else if ( P.isModule() || P.isDynamicLibrary() || P.isExecutable() )
       {
          for ( let i = 0; i < P.extraLibraries.length; ++i )
-            if ( P.extraLibraries[i].startsWith( "Qt" ) )
-            {
-               // A Foo Qt framework is named QtFoo *instead* of Qt5Foo.
-               let qtFramework = P.extraLibraries[i].replace( "Qt5", "Qt" );
-               f.outTextLn( "\tinstall_name_tool -change " + qtFramework + ".framework/Versions/5/" + qtFramework +
-                            " " + "@executable_path/../Frameworks/" + qtFramework + ".framework/Versions/5/" + qtFramework +
-                            " " + P.destinationDirectory() + "/" + P.mainTarget() );
-            }
-            else
-            {
+            if ( !P.extraLibraries[i].startsWith( "Qt" ) )
                f.outTextLn( "\tinstall_name_tool -change @executable_path/lib" + P.extraLibraries[i] + ".dylib" +
                             " " + "@loader_path/lib" + P.extraLibraries[i] + ".dylib" +
                             " " + P.destinationDirectory() + "/" + P.mainTarget() );
-            }
          /*
           * In official distributions, all modules and executables are
           * digitally signed on OS X and Windows platforms.
           * ### N.B.: Updater executables are already signed within the core
           * application bundle on OS X.
           */
-         if ( P.isOfficialModule() || P.isOfficialDynamicLibrary() )
-            if ( P.isMacOSXPlatform() )
-               f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + P.destinationDirectory() + "/" + P.mainTarget() );
+         if ( P.official )
+            f.outTextLn( "\tcodesign --deep -s pleiades -f -v --timestamp " + P.destinationDirectory() + "/" + P.mainTarget() );
+         else if ( P.signed )
+            f.outTextLn( "\tcodesign --deep -s " + P.signingIdentity + " -f -v --timestamp " + P.destinationDirectory() + "/" + P.mainTarget() );
       }
    }
    f.outTextLn( '' );
@@ -449,4 +428,4 @@ function GnuCxx( F, P )
 }
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGCCMakefiles.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenGCCMakefiles.js - Released 2019-01-20T14:05:16Z

@@ -669,8 +669,22 @@ function ManualImageSolverEngine()
       metadata0.ExtractMetadata(window0);
 
       var result = this.GenerateMetadataFromControlPoints(da, metadata0, this.currentWindow, this.distortion);
-      result.metadata.SaveKeywords(this.currentWindow);
+
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+      this.currentWindow.mainView.beginProcess( UndoFlag_Keywords|UndoFlag_AstrometricSolution );
+#endif
+      result.metadata.SaveKeywords(this.currentWindow,
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+                                    false/*beginProcess*/
+#else
+                                    true/*beginProcess*/
+#endif
+                                 );
       result.metadata.SaveProperties(this.currentWindow);
+#ifgteq __PI_BUILD__ 1409 // core 1.8.6
+      this.currentWindow.regenerateAstrometricSolution();
+      this.currentWindow.mainView.endProcess();
+#endif
 
       // Distortion model
       if(this.generateDistortModel && this.distortion)

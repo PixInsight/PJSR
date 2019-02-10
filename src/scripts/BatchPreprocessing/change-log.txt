@@ -3,6 +3,42 @@ Batch Preprocessing Script Changelog
 ===============================================================================
 
 -------------------------------------------------------------------------------
+2018.11.30 - v1.47
+
+- Remove the 'Export calibration files' check box from the script's dialog.
+  This option was causing more confusion and problems than anything else.
+
+-------------------------------------------------------------------------------
+2017.07.04 - v1.46
+
+- The script now requires PixInsight Core version 1.8.5.1321 or higher.
+
+- High-level parallelization of the Debayer process.
+
+- New large-scale pixel rejection parameters for integration of master flats.
+
+- Several internal changes applied to the engine to adapt it to new features of
+  the ImageIntegration process.
+
+-------------------------------------------------------------------------------
+2017.06.20 - v1.45
+
+- The script now requires PixInsight Core version 1.8.5.1318 or higher.
+
+- Removed the output file suffix option. BatchPreprocessing now writes XISF
+  files exclusively. This is necessary because new tools and features in our
+  preprocessing pipelines will depend on image properties that cannot be stored
+  in FITS files.
+
+-------------------------------------------------------------------------------
+2017.04.29 - v1.44
+
+- Support for direct CFA drizzle integration in PixInsight 1.8.5.
+  The "Bayer drizzle" option and all associated actions and UI components have
+  been removed because CFA drizzle integration is now fully automated with the
+  new XML drizzle data format (.xdrz files).
+
+-------------------------------------------------------------------------------
 2016.09.01 - v1.43
 
 - Added an option to save the console log of the BPP process as a plain text

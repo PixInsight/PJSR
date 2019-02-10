@@ -1,13 +1,13 @@
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
-// ****************************************************************************
-// SubframeSelectorEditDialog.js - Released 2016/12/28 00:00:00 UTC
-// ****************************************************************************
+// ----------------------------------------------------------------------------
+// SubframeSelectorEditDialog.js - Released 2018-11-05T16:53:08Z
+// ----------------------------------------------------------------------------
 //
-// This file is part of SubframeSelector Script version 1.11
+// This file is part of SubframeSelector Script version 1.12
 //
-// Copyright (C) 2012-2016 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2016 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2018 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2018 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -45,7 +45,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-// ****************************************************************************
+// ----------------------------------------------------------------------------
 
 function editSelectorExpressionDialogPrototype() {
    this.__base__ = Dialog;
@@ -86,8 +86,9 @@ function editSelectorExpressionDialogPrototype() {
 "<i>weighting</i> | true | false | [ ! ] (<i>approval</i>) ]<br>" +
 "<i>weighting</i> = <i>term</i> [ [ + | - | * | / | ^ ] <i>term</i> ]...<br>" +
 "<i>term</i> = [ - ] [ <i>number</i> | <i>property</i> | (<i>weighting</i>) ]<br>" +
-"<i>property</i> = [ Index | Weight | WeightSigma | FWHM | FWHMSigma | Eccentricity | " +
-"EccentricitySigma | SNRWeight | SNRWeightSigma | Median | MedianSigma | " +
+"<i>property</i> = [ Index | Weight | WeightSigma | FWHM | FWHMSigma | FWHMMaximum | FWHMMinimum | " +
+"Eccentricity | EccentricitySigma | EccentricityMaximum | EccentricityMinimum | " +
+"SNRWeight | SNRWeightSigma | SNRWeightMaximum | SNRWeightMinimum | Median | MedianSigma | " +
 "MeanDeviation | MeanDeviationSigma | Noise | NoiseSigma | StarSupport | " +
 "StarSupportSigma | StarResidual | StarResidualSigma | NoiseSupport | " +
 "NoiseSupportSigma | FWHMMeanDev | FWHMMeanDevSigma | EccentricityMeanDev | " +
@@ -108,7 +109,8 @@ function editSelectorExpressionDialogPrototype() {
                [nullEvaluationDescription],
                parameters.actualSubframeScale(),
                parameters.actualCameraGain(),
-               parameters.cameraResolutionValues[parameters.cameraResolution]
+               parameters.cameraResolutionValues[parameters.cameraResolution],
+               nullEvaluationDescriptionStatistics
             );
             selectorEvaluator.evaluate();
             if (selectorEvaluator.error != null) {
@@ -212,8 +214,9 @@ function editWeightingExpressionDialogPrototype() {
 "properties. A blank expression will assign a zero weight to all subframes.</p>" +
 "<i>weighting</i> = [ <i>term</i> [ [ + | - | * | / | ^ ] <i>term</i> ]... ]<br>" +
 "<i>term</i> = [ - ] [ <i>number</i> | <i>property</i> | (<i>weighting</i>) ]<br>" +
-"<i>property</i> = [ Index | FWHM | FWHMSigma | Eccentricity | EccentricitySigma | " +
-"SNRWeight | SNRWeightSigma | Median | MedianSigma | MeanDeviation | " +
+"<i>property</i> = [ Index | FWHM | FWHMSigma | FWHMMaximum | FWHMMinimum | " +
+"Eccentricity | EccentricitySigma | EccentricityMaximum | EccentricityMinimum | " +
+"SNRWeight | SNRWeightSigma | SNRWeightMaximum | SNRWeightMinimum | Median | MedianSigma | MeanDeviation | " +
 "MeanDeviationSigma | Noise | NoiseSigma | StarSupport | StarSupportSigma | " +
 "StarResidual | StarResidualSigma | NoiseSupport | NoiseSupportSigma | FWHMMeanDev | " +
 "FWHMMeanDevSigma | EccentricityMeanDev | EccentricityMeanDevSigma | " +
@@ -234,7 +237,8 @@ function editWeightingExpressionDialogPrototype() {
                [nullEvaluationDescription],
                parameters.actualSubframeScale(),
                parameters.actualCameraGain(),
-               parameters.cameraResolutionValues[parameters.cameraResolution]
+               parameters.cameraResolutionValues[parameters.cameraResolution],
+               nullEvaluationDescriptionStatistics
             );
             weightEvaluator.evaluate();
             if (weightEvaluator.error != null) {
@@ -302,5 +306,5 @@ function editWeightingExpressionDialogPrototype() {
 }
 editWeightingExpressionDialogPrototype.prototype = new Dialog;
 
-// ****************************************************************************
-// EOF SubframeSelectorEditDialog.js - Released 2016/12/28 00:00:00 UTC
+// ----------------------------------------------------------------------------
+// EOF SubframeSelectorEditDialog.js - Released 2018-11-05T16:53:08Z

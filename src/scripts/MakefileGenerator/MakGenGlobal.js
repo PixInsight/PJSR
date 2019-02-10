@@ -1,12 +1,12 @@
 // ----------------------------------------------------------------------------
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ----------------------------------------------------------------------------
-// MakGenGlobal.js - Released 2015/11/26 08:53:10 UTC
+// MakGenGlobal.js - Released 2019-01-20T14:05:16Z
 // ----------------------------------------------------------------------------
 //
-// This file is part of PixInsight Makefile Generator Script version 1.100
+// This file is part of PixInsight Makefile Generator Script version 1.109
 //
-// Copyright (c) 2009-2015 Pleiades Astrophoto S.L.
+// Copyright (c) 2009-2019 Pleiades Astrophoto S.L.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -52,21 +52,43 @@
  * Automatic generation of PCL makefiles and projects for FreeBSD, Linux,
  * Mac OS X and Windows platforms.
  *
- * Copyright (c) 2009-2015, Pleiades Astrophoto S.L. All Rights Reserved.
+ * Copyright (c) 2009-2019, Pleiades Astrophoto S.L. All Rights Reserved.
  * Written by Juan Conejero (PTeam)
  *
  * Global variables and definitions.
  */
 
-#define VERSION "1.100"
+#define VERSION "1.109"
 #define TITLE   "Makefile Generator"
+
+var YEAR = (new Date).getFullYear().toString();
 
 /*
  * Default GCC versions
  * Set these to empty strings to use the system GCC compiler
  */
 #define DEFAULT_GCC_VERSION_SUFFIX_LINUX ""
-#define DEFAULT_GCC_VERSION_SUFFIX_HOST  "" /*"-4.8.5" "-4.9.3" "-5.2.0"*/ // since script version 1.96
+#define DEFAULT_GCC_VERSION_SUFFIX_HOST  "-7.3.0" // core version 1.8.5.1357
+
+/*
+ * Default macOS sysroot SDK version
+ */
+#define DEFAULT_OSX_SDK_VERSION "10.12"
+
+/*
+ * Minimum macOS version supported.
+ */
+#define MIN_OSX_VERSION "10.11"
+
+/*
+ * Whether to generate signed code by default.
+ */
+#define DEFAULT_SIGNED_CODE false
+
+/*
+ * The default code signing identity.
+ */
+#define DEFAULT_CODE_SIGNING_IDENTITY ""
 
 /*
  * - PixInsight Core 1.7.x Starbuck uses the SpiderMonkey engine version 1.8.5
@@ -150,4 +172,4 @@ var imageFileExtensions =
 #define OPTIMIZATION_DEFAULT_STR "3"
 
 // ----------------------------------------------------------------------------
-// EOF MakGenGlobal.js - Released 2015/11/26 08:53:10 UTC
+// EOF MakGenGlobal.js - Released 2019-01-20T14:05:16Z
