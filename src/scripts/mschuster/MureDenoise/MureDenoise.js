@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MureDenoise.js - Released 2017/02/16 00:00:00 UTC
+// MureDenoise.js - Released 2019/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.21
+// This file is part of MureDenoise Script Version 1.22
 //
-// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2019 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2019 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -48,11 +48,11 @@
 // ****************************************************************************
 
 #define TITLE "MureDenoise"
-#define VERSION "1.21"
+#define VERSION "1.22"
 
 #feature-id Noise Reduction > MureDenoise
 
-#feature-info <b>MureDenoise Version 1.21</b><br/>\
+#feature-info <b>MureDenoise Version 1.22</b><br/>\
    <br/>\
    Script for denoising linear monochannel images corrupted by mixed \
    Poisson-Gaussian noise. Applicable to single frame images and average \
@@ -85,8 +85,8 @@
    resolution, and be registered by projective transformation with no \
    distortion correction.<br/>\
    <br/>\
-   Copyright &copy; 2012-2017 Mike Schuster. All Rights Reserved.<br/>\
-   Copyright &copy; 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
+   Copyright &copy; 2012-2019 Mike Schuster. All Rights Reserved.<br/>\
+   Copyright &copy; 2003-2019 Pleiades Astrophoto S.L. All Rights Reserved.
 
 #include <pjsr/ColorSpace.jsh>
 #include <pjsr/DataType.jsh>
@@ -148,4 +148,4 @@ main();
 gc();
 
 // ****************************************************************************
-// EOF MureDenoise.js - Released 2017/02/16 00:00:00 UTC
+// EOF MureDenoise.js - Released 2019/02/16 00:00:00 UTC

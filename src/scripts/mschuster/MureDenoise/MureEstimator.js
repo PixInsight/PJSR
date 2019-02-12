@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MureEstimator.js - Released 2017/02/16 00:00:00 UTC
+// MureEstimator.js - Released 2019/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.21
+// This file is part of MureDenoise Script Version 1.22
 //
-// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2019 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2019 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -842,108 +842,112 @@ function MureEstimator(model, view) {
    // Assigns the estimate.
    this.assignEstimate = function(estimate) {
       var estimateImage = estimate.matrix().toImage();
-      model.imageView.beginProcess();
       model.imageView.image.assign(estimateImage);
-      model.imageView.endProcess();
       estimateImage.free();
    };
 
    // Denoises the image.
    this.denoise = function() {
-      if (model.flatfieldView != null && model.flatfieldView.isView) {
+      model.imageView.beginProcess();
+      try {
+         if (model.flatfieldView != null && model.flatfieldView.isView) {
+            console.writeln();
+            console.writeln(format(
+               "<b>Smooth:</b> Processing view: " + model.flatfieldViewFormat,
+               model.flatfieldView.fullId
+            ));
+            console.flush();
+         }
+
+         var flatfield = this.generateSmoothFlatfield();
+
+         if (flatfield != null) {
+            this.logSmoothFlatfieldScale(flatfield);
+         }
+
          console.writeln();
          console.writeln(format(
-            "<b>Smooth:</b> Processing view: " + model.flatfieldViewFormat,
-            model.flatfieldView.fullId
-         ));
-         console.flush();
-      }
-
-      var flatfield = this.generateSmoothFlatfield();
-
-      if (flatfield != null) {
-         this.logSmoothFlatfieldScale(flatfield);
-      }
-
-      console.writeln();
-      console.writeln(format(
-         "<b>Denoise:</b> Processing view: " + model.imageViewFormat,
-         model.imageView.fullId
-      ));
-      console.flush();
-
-      // this.logBaseParameters();
-
-      var levelsOfRefinement = this.generateLevelsOfRefinement();
-      var cycleSpinCount = model.denoiseCycleSpinCount;
-      var cycleSpinLocations = this.generateCycleSpinLocations(cycleSpinCount);
-      if (this.logLocations.length != 0) {
-         cycleSpinLocations = [new Point(0, 0)];
-      }
-
-      var estimate = new FrameMatrix(new Matrix(
-         0, model.imageView.image.height, model.imageView.image.width
-      ));
-
-      for (var i = 0; i != cycleSpinLocations.length; ++i) {
-         console.writeln(format(
-            "Cycle-spin: " + model.denoiseCycleSpinCountFormat,
-            i + 1
+            "<b>Denoise:</b> Processing view: " + model.imageViewFormat,
+            model.imageView.fullId
          ));
          console.flush();
 
-         var addition = this.denoiseCycleSpin(
-            flatfield, cycleSpinLocations[i], levelsOfRefinement
-         );
+         // this.logBaseParameters();
+
+         var levelsOfRefinement = this.generateLevelsOfRefinement();
+         var cycleSpinCount = model.denoiseCycleSpinCount;
+         var cycleSpinLocations = this.generateCycleSpinLocations(cycleSpinCount);
+         if (this.logLocations.length != 0) {
+            cycleSpinLocations = [new Point(0, 0)];
+         }
+
+         var estimate = new FrameMatrix(new Matrix(
+            0, model.imageView.image.height, model.imageView.image.width
+         ));
+
+         for (var i = 0; i != cycleSpinLocations.length; ++i) {
+            console.writeln(format(
+               "Cycle-spin: " + model.denoiseCycleSpinCountFormat,
+               i + 1
+            ));
+            console.flush();
+
+            var addition = this.denoiseCycleSpin(
+               flatfield, cycleSpinLocations[i], levelsOfRefinement
+            );
+            estimate = estimate.pipeline([
+               function(frame) {
+                  return frame.addFrame(addition);
+               }
+            ]);
+            addition.clear();
+            view.throwAbort();
+         }
+
          estimate = estimate.pipeline([
             function(frame) {
-               return frame.addFrame(addition);
-            }
-         ]);
-         addition.clear();
-         view.throwAbort();
-      }
-
-      estimate = estimate.pipeline([
-         function(frame) {
-            return frame.multiplyScalar(1 / cycleSpinLocations.length);
-         },
-         function(frame) {
-            return frame.truncate(0, 1);
-         }
-      ]);
-
-      if (!estimate.isFinite()) {
-         throw new Error(
-            "The denoise process did not find a representable result."
-         );
-      }
-
-      if (model.generateMethodNoiseImage) {
-         var self = this;
-         (this.generateMethodNoiseImage(estimate)).pipeline([
+               return frame.multiplyScalar(1 / cycleSpinLocations.length);
+            },
             function(frame) {
-               self.logMethodNoise(frame);
-
-               var varianceEstimate = self.generateVarianceEstimate(
-                  flatfield, model.varianceEstimateQuantile
-               );
-
-               self.logVarianceEstimate(varianceEstimate);
-
-               return self.generateMethodNoiseImageWindow(frame);
+               return frame.truncate(0, 1);
             }
          ]);
+
+         if (!estimate.isFinite()) {
+            throw new Error(
+               "The denoise process did not find a representable result."
+            );
+         }
+
+         if (model.generateMethodNoiseImage) {
+            var self = this;
+            (this.generateMethodNoiseImage(estimate)).pipeline([
+               function(frame) {
+                  self.logMethodNoise(frame);
+
+                  var varianceEstimate = self.generateVarianceEstimate(
+                     flatfield, model.varianceEstimateQuantile
+                  );
+
+                  self.logVarianceEstimate(varianceEstimate);
+
+                  return self.generateMethodNoiseImageWindow(frame);
+               }
+            ]);
+         }
+
+         this.assignEstimate(estimate);
+         estimate.clear();
+
+         if (flatfield != null) {
+            flatfield.clear();
+         }
       }
-
-      this.assignEstimate(estimate);
-      estimate.clear();
-
-      if (flatfield != null) {
-         flatfield.clear();
+      finally {
+         model.imageView.endProcess();
       }
    };
 };
 
 // ****************************************************************************
-// EOF MureEstimator.js - Released 2017/02/16 00:00:00 UTC
+// EOF MureEstimator.js - Released 2019/02/16 00:00:00 UTC
