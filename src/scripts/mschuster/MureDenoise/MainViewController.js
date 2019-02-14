@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainViewController.js - Released 2017/02/16 00:00:00 UTC
+// MainViewController.js - Released 2019/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.21
+// This file is part of MureDenoise Script Version 1.22
 //
-// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2019 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2019 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -1208,8 +1208,15 @@ function MainView(model, controller) {
             "<p>The gain of the detector in " + model.detectorGainUnits +
             ".</p>" +
 
+            "<p>Manufacture detector specifications usually include a gain " +
+            "value in " + model.detectorGainUnits + ". Use this value.</p>" +
+
             "<p>If detector gain is unknown, the <i>FlatSNREstimator</i> " +
-            "script can provide an estimate.</p>"
+            "script can provide an estimate (two flat images and one bias " +
+            "image must be provided).</p>" +
+
+            "<p>Note that detector gains for binned and unbinned images " +
+            "likely differ.</p>"
          );
 
          this.detectorGainEdit = this.addEdit(
@@ -1251,8 +1258,17 @@ function MainView(model, controller) {
             "read noise or an estimate of the quadrature sum of read noise " +
             "and dark current noise.</p>" +
 
+            "<p>Manufacture detector specifications usually include a read " +
+            "noise value in e-. Divide this value by Detector Gain to " +
+            "obtain a value in " + model.detectorGaussianNoiseUnits + ", and " +
+            "use this result.</p>" +
+
             "<p>If detector Gaussian noise is unknown, the " +
-            "<i>DarkBiasNoiseEstimator</i> script can provide an estimate.</p>"
+            "<i>DarkBiasNoiseEstimator</i> script can provide an estimate " +
+            "(two bias or dark images must be provided).</p>" +
+
+            "<p>Note that detector Gaussian noises for binned and unbinned " +
+            "images likely differ.</p>"
          );
 
          this.detectorGaussianNoiseEdit = this.addEdit(
@@ -1342,7 +1358,9 @@ function MainView(model, controller) {
 
             "<p><b>Warning</b>: Excessively large variance scale values " +
             "risk the generation of denoising artifacts and the loss of " +
-            "signal-to-noise ratio (SNR).</p>" +
+            "signal-to-noise ratio (SNR). Denoising artifacts typically " +
+            "take on a “checkerboard” pattern, visible with high stretch " +
+            "in the background areas of the denoised image.</p>" +
 
             "<p>To account for the effects of average combination image " +
             "normalization and weighting, variance scale may be loaded from " +
@@ -1401,6 +1419,16 @@ function MainView(model, controller) {
             "output quality and processing time. Increasing the number " +
             "of cycle-spins improves denoising quality, but also " +
             "increases (nearly linearly) processing time.</p>" +
+
+            "<p>The script works at multiple resolutions. To create the " +
+            "coarser resolutions, the script combines pixels from finer " +
+            "resolutions. There are multiple ways to choose which pixels " +
+            "to combine. Each cycle-spin chooses different pixels to " +
+            "combine, and performs a complete denoising operation. The " +
+            "results from all of the cycle-spins are averaged together to " +
+            "produced the final result. The net effect is to average out " +
+            "the variations in noise estimation due to pixel choice, and " +
+            "so gives a better result.</p>" +
 
             "<p>The default cycle-spin count of 8 typically provides very " +
             "good quality results in reasonable time.</p>"
@@ -1543,9 +1571,9 @@ function MainView(model, controller) {
          "have the same pixel resolution, and be registered by projective " +
          "transformation with no distortion correction.</p>" +
 
-         "<p>Copyright &copy; 2012-2017 Mike Schuster. All Rights " +
+         "<p>Copyright &copy; 2012-2019 Mike Schuster. All Rights " +
          "Reserved.<br>" +
-         "Copyright &copy; 2003-2017 Pleiades Astrophoto S.L. All Rights " +
+         "Copyright &copy; 2003-2019 Pleiades Astrophoto S.L. All Rights " +
          "Reserved.</p>"
       );
       this.versionLabel.setVariableWidth();
@@ -1595,4 +1623,4 @@ function MainView(model, controller) {
 MainView.prototype = new Dialog;
 
 // ****************************************************************************
-// EOF MainViewController.js - Released 2017/02/16 00:00:00 UTC
+// EOF MainViewController.js - Released 2019/02/16 00:00:00 UTC

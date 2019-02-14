@@ -1,13 +1,13 @@
 // ****************************************************************************
 // PixInsight JavaScript Runtime API - PJSR Version 1.0
 // ****************************************************************************
-// MainModel.js - Released 2017/02/16 00:00:00 UTC
+// MainModel.js - Released 2019/02/16 00:00:00 UTC
 // ****************************************************************************
 //
-// This file is part of MureDenoise Script Version 1.21
+// This file is part of MureDenoise Script Version 1.22
 //
-// Copyright (C) 2012-2017 Mike Schuster. All Rights Reserved.
-// Copyright (C) 2003-2017 Pleiades Astrophoto S.L. All Rights Reserved.
+// Copyright (C) 2012-2019 Mike Schuster. All Rights Reserved.
+// Copyright (C) 2003-2019 Pleiades Astrophoto S.L. All Rights Reserved.
 //
 // Redistribution and use in both source and binary forms, with or without
 // modification, is permitted provided that the following conditions are met:
@@ -471,4 +471,4 @@ function MainModel() {
 }
 
 // ****************************************************************************
-// EOF MainModel.js - Released 2017/02/16 00:00:00 UTC
+// EOF MainModel.js - Released 2019/02/16 00:00:00 UTC
